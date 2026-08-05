@@ -33,3 +33,15 @@ SQL Editor → вставить содержимое миграции → Run.
 
 - Email provider: enabled
 - Confirm email: можно отключить на время локальной разработки, чтобы сразу получать сессию после `signUp`
+
+## Demo seed
+
+См. [docs/demo-launch.md](../docs/demo-launch.md) и `seed/demo.sql`.
+
+```bash
+# при запущенном приложении
+DEMO_SEED_SECRET=... npm run seed:demo
+```
+
+Или `POST /api/demo/seed` с заголовком `x-demo-seed-secret`.  
+Требуется `SUPABASE_SERVICE_ROLE_KEY`. Без БД каталоги используют встроенный fallback из `src/lib/demo/seed-data.ts`.
