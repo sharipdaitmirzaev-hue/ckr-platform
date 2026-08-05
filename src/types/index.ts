@@ -123,7 +123,11 @@ export type ProjectActivityType =
   | "milestone_updated"
   | "deal_created"
   | "deal_updated"
-  | "note";
+  | "note"
+  | "roadmap_created"
+  | "roadmap_item_completed"
+  | "metric_updated"
+  | "project_progress_checked";
 
 export type InvestmentOfferStatus =
   | "draft"

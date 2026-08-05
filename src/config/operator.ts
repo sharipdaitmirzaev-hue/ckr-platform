@@ -56,6 +56,7 @@ export const TASK_RELATED_TYPES = [
   "deal",
   "document",
   "verification",
+  "roadmap_item",
 ] as const;
 
 export type TaskRelatedType = (typeof TASK_RELATED_TYPES)[number];
@@ -66,6 +67,7 @@ export const taskRelatedTypeLabels: Record<TaskRelatedType, string> = {
   deal: "Сделка",
   document: "Документ",
   verification: "Верификация",
+  roadmap_item: "Этап roadmap",
 };
 
 export const OPEN_TASK_STATUSES: OperatorTaskStatus[] = [

@@ -80,6 +80,10 @@ export const projectActivityTypeLabels: Record<ProjectActivityType, string> = {
   deal_created: "Сделка создана",
   deal_updated: "Сделка обновлена",
   note: "Заметка",
+  roadmap_created: "Roadmap создан",
+  roadmap_item_completed: "Этап roadmap завершён",
+  metric_updated: "KPI обновлён",
+  project_progress_checked: "Проверка прогресса",
 };
 
 /** Типовые этапы для кабинета проекта (пример: завод воды). */
