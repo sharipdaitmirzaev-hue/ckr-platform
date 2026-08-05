@@ -16,9 +16,15 @@ import { useState, useTransition } from "react";
 
 type CreateDealFormProps = {
   projectId: string;
+  applicationId?: string;
+  defaultPartnerId?: string;
 };
 
-export function CreateDealForm({ projectId }: CreateDealFormProps) {
+export function CreateDealForm({
+  projectId,
+  applicationId,
+  defaultPartnerId,
+}: CreateDealFormProps) {
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<DealActionState>({});
 
@@ -38,6 +44,9 @@ export function CreateDealForm({ projectId }: CreateDealFormProps) {
       <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
         Новая сделка
       </p>
+      {applicationId ? (
+        <input type="hidden" name="applicationId" value={applicationId} />
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <select
           name="dealType"
@@ -68,6 +77,7 @@ export function CreateDealForm({ projectId }: CreateDealFormProps) {
       </div>
       <Input
         name="partnerId"
+        defaultValue={defaultPartnerId ?? ""}
         placeholder="ID партнёра (опционально, uuid профиля)"
       />
       <textarea

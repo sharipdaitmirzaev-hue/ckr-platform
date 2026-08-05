@@ -15,6 +15,7 @@ import type {
   MilestoneStatus,
 } from "@/types";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export type DealActionState = {
   error?: string;
@@ -89,6 +90,8 @@ export async function createDealAction(
   const currency = String(formData.get("currency") || "RUB").trim() || "RUB";
   const amountRaw = String(formData.get("amount") || "").trim();
   const partnerId = String(formData.get("partnerId") || "").trim() || null;
+  const applicationId =
+    String(formData.get("applicationId") || "").trim() || null;
   const amount = amountRaw ? Number(amountRaw) : null;
 
   if (!DEAL_TYPES.includes(dealType)) {
@@ -104,6 +107,7 @@ export async function createDealAction(
       project_id: projectId,
       initiator_id: user.id,
       partner_id: partnerId,
+      application_id: applicationId,
       deal_type: dealType,
       amount: Number.isFinite(amount as number) ? amount : null,
       currency,
@@ -137,7 +141,12 @@ export async function createDealAction(
     activityType: "deal_created",
     title: "Создана сделка",
     body: description.slice(0, 200) || dealType,
-    metadata: { dealId: data.id, dealType, status },
+    metadata: {
+      dealId: data.id,
+      dealType,
+      status,
+      applicationId,
+    },
   });
 
   const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
@@ -146,7 +155,7 @@ export async function createDealAction(
     userId: user.id,
     entityType: "deal",
     entityId: data.id,
-    metadata: { projectId, dealType, status },
+    metadata: { projectId, dealType, status, applicationId },
   });
 
   const notifyIds = [user.id, partnerId].filter(
@@ -159,7 +168,7 @@ export async function createDealAction(
       p_title: "Создана сделка",
       p_body: `По проекту открыта сделка (${dealType}).`,
       p_link: `/dashboard/projects/${projectId}/workspace`,
-      p_application_id: null,
+      p_application_id: applicationId,
       p_related_type: "deal",
       p_related_id: data.id,
     });
@@ -177,7 +186,121 @@ export async function createDealAction(
   }
 
   revalidateWorkspace(projectId);
+  revalidatePath("/dashboard/applications");
   return { success: "Сделка создана." };
+}
+
+/**
+ * Полный цикл: accepted application → deal → workspace.
+ */
+export async function createDealFromApplicationAction(formData: FormData) {
+  const applicationId = String(formData.get("applicationId") ?? "").trim();
+  if (!applicationId) {
+    redirect("/dashboard/applications");
+  }
+
+  const { supabase, user } = await requireUser();
+  if (!user) redirect("/login?next=/dashboard/applications");
+
+  const { data: application } = await supabase
+    .from("applications")
+    .select("*")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (!application || application.status !== "accepted") {
+    redirect("/dashboard/applications");
+  }
+  if (application.target_type !== "project") {
+    redirect("/dashboard/applications");
+  }
+
+  const projectId = application.target_id as string;
+  const project = await assertProjectOwner(supabase, projectId, user.id);
+  if (!project) {
+    redirect("/dashboard/applications");
+  }
+
+  const { data: existing } = await supabase
+    .from("deals")
+    .select("id")
+    .eq("application_id", applicationId)
+    .maybeSingle();
+
+  if (existing) {
+    redirect(`/dashboard/projects/${projectId}/workspace`);
+  }
+
+  const partnerId = application.from_user_id as string;
+  const dealType =
+    partnerId && application.message?.toLowerCase().includes("инвест")
+      ? "investment"
+      : "partnership";
+
+  const { data, error } = await supabase
+    .from("deals")
+    .insert({
+      project_id: projectId,
+      initiator_id: user.id,
+      partner_id: partnerId,
+      application_id: applicationId,
+      deal_type: dealType,
+      status: "negotiation",
+      description: `Сделка по заявке: ${(application.message as string)?.slice(0, 280) || "без описания"}`,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    redirect(`/dashboard/projects/${projectId}/workspace`);
+  }
+
+  await supabase.from("deal_participants").insert({
+    deal_id: data.id,
+    user_id: user.id,
+    role: "owner",
+  });
+
+  if (partnerId !== user.id) {
+    await supabase.from("deal_participants").insert({
+      deal_id: data.id,
+      user_id: partnerId,
+      role: dealType === "investment" ? "investor" : "partner",
+    });
+  }
+
+  await logActivity(supabase, {
+    projectId,
+    actorId: user.id,
+    activityType: "deal_created",
+    title: "Сделка создана из заявки",
+    body: application.message?.slice(0, 200) || dealType,
+    metadata: { dealId: data.id, applicationId, dealType },
+  });
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "deal_created",
+    userId: user.id,
+    entityType: "deal",
+    entityId: data.id,
+    metadata: { projectId, applicationId, from: "application" },
+  });
+
+  await supabase.rpc("create_notification", {
+    p_user_id: partnerId,
+    p_type: "deal_update",
+    p_title: "Открыта сделка по вашей заявке",
+    p_body: `Проект «${project.title}»: перейдите в кабинет сделки.`,
+    p_link: `/dashboard/projects/${projectId}/workspace`,
+    p_application_id: applicationId,
+    p_related_type: "deal",
+    p_related_id: data.id,
+  });
+
+  revalidateWorkspace(projectId);
+  revalidatePath("/dashboard/applications");
+  redirect(`/dashboard/projects/${projectId}/workspace`);
 }
 
 export async function updateDealStatusAction(

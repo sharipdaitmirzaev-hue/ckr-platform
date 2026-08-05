@@ -234,4 +234,14 @@
 - Отчёт ЦКР 1.0 readiness + план запуска
 - Без новых бизнес-функций
 
-## Этап 28 — API для мобильного приложения
+## Этап 28 — Closed pilot ✅ (код готов)
+
+Подробности: [launch-readiness.md](./launch-readiness.md)
+
+- Application → Deal (`application_id`, UX «Создать сделку»)
+- Интересы инвестора (`investor_interests`, `/dashboard/interests`)
+- Роли: operator без полного admin (CRM + модерация)
+- Лия: контекст интересов / заявок / сделок
+- Без новых крупных модулей
+
+## Этап 29 — API для мобильного приложения

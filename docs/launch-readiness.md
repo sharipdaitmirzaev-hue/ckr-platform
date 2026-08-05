@@ -1,10 +1,11 @@
 # ЦКР 1.0 — Launch Readiness Report
 
-Этап 27: финальный аудит платформы как единого продукта перед запуском версии 1.0.
+Этап 27: финальный аудит платформы как единого продукта.  
+Этап 28: закрытие критических ограничений для **closed pilot**.
 
 **Дата аудита:** 2026-03-25  
-**Версия кода:** `0.27.0-beta` (кандидат 1.0)  
-**Новые функции в этапе не добавлялись** — только аудит, документация и точечное выравнивание маршрутов.
+**Обновление closed pilot:** 2026-03-25 (этап 28)  
+**Версия кода:** `0.28.0-beta` (closed pilot)  
 
 Связанные материалы: [platform-overview.md](./platform-overview.md) · [security-audit.md](./security-audit.md) · [production-checklist.md](./production-checklist.md) · [core-audit.md](./core-audit.md)
 
@@ -14,21 +15,40 @@
 
 | Область | Оценка |
 |---|---|
-| Ядро продукта (проекты, заявки, Лия, кабинеты) | **Готово к closed launch / pilot** |
-| End-to-end «как в презентации» для всех ролей | **Частично** — см. ограничения |
+| Ядро продукта (проекты, заявки, сделки, Лия, кабинеты) | **Готово к closed pilot** |
+| End-to-end критические пути (entrepreneur / investor / operator) | **Готово к closed pilot** |
 | Security / production prep (этап 26) | **Готово при выполнении checklist** |
-| Публичный 1.0 без оговорок | **Не рекомендуется** до закрытия ограничений ниже |
+| Публичный 1.0 без оговорок | **Не рекомендуется** — остаются mock payments, внешний LLM, `/solutions` |
 
-**Рекомендуемый формат запуска 1.0:** controlled beta / pilot с приглашениями (`NEXT_PUBLIC_BETA_REQUIRE_INVITE=true`), demo mode выкл., mock payments.
+**Рекомендуемый формат запуска:** controlled beta / closed pilot с приглашениями (`NEXT_PUBLIC_BETA_REQUIRE_INVITE=true`), demo mode выкл., mock payments.
+
+**Статус closed pilot:** готов к запуску после применения миграции `20260325360000_closed_pilot.sql` и smoke по [production-checklist.md](./production-checklist.md).
+
+---
+
+## Этап 28 — что закрыто
+
+| Ограничение (этап 27) | Статус | Реализация |
+|---|---|---|
+| Application → Deal | ✅ | `deals.application_id`, кнопка «Создать сделку», redirect в workspace |
+| Интерес инвестора | ✅ | `investor_interests`, кнопка «Интересно», `/dashboard/interests` |
+| Operator ≠ Admin (CRM / модерация) | ✅ | `requireStaff`, middleware staff paths, sidebar без admin-only |
+| Лия без контекста интересов/заявок/сделок | ✅ | `buildLiaRecommendations` учитывает интересы, заявки, сделки |
+
+Путь пилота:
+
+```text
+Проект → Заявка (accepted) → Создать сделку → Deal workspace
+```
 
 ---
 
 ## 1. Пользовательские сценарии
 
-### 1.1. Предприниматель — **partial → ready for pilot**
+### 1.1. Предприниматель — **ready for closed pilot**
 
 ```text
-Регистрация → Онбординг → Лия → Проект → Анализ → Поиск решений → Заявки → Сделка
+Регистрация → Онбординг → Лия → Проект → Анализ → Поиск решений → Заявки → Сделка → Workspace
 ```
 
 | Шаг | Статус | Реализация |
@@ -39,14 +59,12 @@
 | Создание проекта | ✅ | draft из Лии / формы |
 | Анализ | ✅ | `/api/lia/analyze` + UI на edit/public |
 | Поиск решений | ✅ | mode `find_solutions` |
-| Заявки | ✅ | входящие/исходящие `/dashboard/applications` |
-| Сделка | ⚠️ | workspace `/dashboard/projects/[id]/workspace`; **вручную** после принятия заявки |
-
-**Требует внимания:** нет жёсткой связи `application_id` → `deal`; после accept открывается диалог (`/messages`), сделку создаёт владелец проекта.
+| Заявки | ✅ | `/dashboard/applications` |
+| Сделка | ✅ | «Создать сделку» из accepted project application → workspace |
 
 ---
 
-### 1.2. Инвестор — **partial**
+### 1.2. Инвестор — **ready for closed pilot**
 
 ```text
 Регистрация → Профиль → Поиск проектов → Интерес → Заявка → Сделка
@@ -57,11 +75,9 @@
 | Регистрация | ✅ | роль `investor` |
 | Профиль | ✅ | onboarding + settings; offers в `/dashboard/investments` |
 | Поиск проектов | ✅ | `/projects` |
-| Интерес | ❌ | избранное — stub `/dashboard/favorites` |
-| Заявка | ✅ | `ApplicationButton` на проект / investment |
-| Сделка | ⚠️ | только через владельца проекта (+ participant) |
-
-**Ограничение для 1.0:** «интерес» = заявка (или публикация investment offer). Избранное — post-1.0.
+| Интерес | ✅ | `investor_interests` + «Интересно» + `/dashboard/interests` |
+| Заявка | ✅ | `ApplicationButton` |
+| Сделка | ✅ | через владельца проекта (participant + workspace) |
 
 ---
 
@@ -79,7 +95,7 @@
 
 ---
 
-### 1.4. Организация — **ready** (после выравнивания онбординга)
+### 1.4. Организация — **ready**
 
 ```text
 Создание профиля → Сотрудники → Проекты → Партнёрство
@@ -92,11 +108,9 @@
 | Проекты | ✅ `/partner/projects` + `organization_id` |
 | Партнёрство | ✅ `/partner/profile` |
 
-**Исправление этапа 27:** CTA роли `company` ведёт на `/partner` (ранее — create project).
-
 ---
 
-### 1.5. Оператор ЦКР — **partial**
+### 1.5. Оператор ЦКР — **ready for closed pilot**
 
 ```text
 CRM → Лиды → Задачи → Модерация → Сопровождение
@@ -104,12 +118,13 @@ CRM → Лиды → Задачи → Модерация → Сопровожд�
 
 | Шаг | Статус | Примечание |
 |---|---|---|
-| CRM / лиды | ⚠️ | CRUD в `/admin/crm` — **requireAdmin** |
-| Задачи | ✅ | `/operator/tasks`, `requireOperator` |
-| Модерация | ⚠️ | UI очереди в `/operator`, действия — admin |
-| Сопровождение | ⚠️ | очередь сделок; работа — в project workspace |
+| CRM / лиды | ✅ | `/admin/crm` — `requireStaff` (admin **или** operator) |
+| Задачи | ✅ | `/operator/tasks` |
+| Модерация | ✅ | проекты / возможности / инвестиции / эксперты / верификации |
+| Пользователи / invites / analytics | 🔒 | только platform **admin** |
+| Сопровождение | ✅ | очередь + project workspace |
 
-**Ограничение:** полный операторский контур = admin **или** связка admin+operator. Чистый operator видит очередь/задачи, но не все CRM/модерационные mutations.
+Оператор работает без полного admin-доступа.
 
 ---
 
@@ -117,34 +132,27 @@ CRM → Лиды → Задачи → Модерация → Сопровожд�
 
 | Связь | Состояние |
 |---|---|
-| `users` (Auth) ↔ `profiles` | ✅ trigger / RLS |
+| `users` (Auth) ↔ `profiles` | ✅ |
 | `user_roles` | ✅ multi-role |
 | `organizations` ↔ `organization_members` | ✅ |
-| `projects.organization_id` | ✅ nullable FK |
-| `opportunities` / `investment_offers`.`organization_id` | ✅ |
-| `applications` → polymorphic target | ✅ (без FK на цель — by design) |
-| `applications` → `conversations` (on accept) | ✅ trigger |
+| `projects.organization_id` | ✅ |
+| `applications` → polymorphic target | ✅ |
+| `applications` → `conversations` (on accept) | ✅ |
 | `deals.project_id` → projects | ✅ |
-| `deal_participants`, milestones, `project_activity` | ✅ workspace |
-| `analytics_events` | ✅ ключевые события этапа 25–26 |
-| `application` ↔ `deal` | ❌ прямой связи нет |
-| favorites / interest | ❌ нет таблицы |
+| `deals.application_id` → applications | ✅ (этап 28, unique where not null) |
+| `investor_interests` | ✅ (этап 28) |
+| `deal_participants`, milestones, `project_activity` | ✅ |
+| `analytics_events` | ✅ |
 
 ---
 
 ## 3. Проверка Лии
 
-| Сценарий | Код | Док |
-|---|---|---|
-| Создание проекта (`business_idea`) | ✅ | ✅ |
-| Анализ проекта | ✅ API analyze | ✅ |
-| Поиск решений | ✅ find_solutions | ✅ |
-| Реализация (`realize_project`) | ✅ | ✅ |
-| Рекомендации пользователя | ✅ dashboard | ✅ |
-| Рекомендации оператора | ✅ crm lia helper | ✅ |
-| Org / reliability | ✅ | ✅ lia-flows |
-
-Публичная страница `/solutions` остаётся маркетинговой/mock — реальный путь через Лию и проект.
+| Сценарий | Статус |
+|---|---|
+| Создание / анализ / поиск решений / реализация | ✅ |
+| Рекомендации пользователя | ✅ + интересы / заявки / сделки |
+| Рекомендации оператора | ✅ crm lia helper |
 
 ---
 
@@ -152,46 +160,42 @@ CRM → Лиды → Задачи → Модерация → Сопровожд�
 
 | Роль | Gate | Статус |
 |---|---|---|
-| user (authenticated) | middleware dashboard/onboarding/partner/messages | ✅ `/messages` добавлен в matcher (этап 27) |
+| user | middleware dashboard/onboarding/partner/messages | ✅ |
 | organization member | `requirePartnerMembership` | ✅ |
-| operator | middleware + `requireOperator` | ✅ |
+| operator | middleware + `requireOperator` / `requireStaff` | ✅ |
 | admin | middleware + `requireAdmin` | ✅ |
+| staff (admin\|operator) | CRM + moderation paths | ✅ этап 28 |
 | blocked user | signOut | ✅ |
 
 Подробнее: [roles-and-permissions.md](./roles-and-permissions.md).
 
 ---
 
-## 5. Что готово
+## 5. Что готово (closed pilot)
 
-- Полный контур предпринимателя до заявки и ручной сделки  
-- Каталоги: проекты, возможности, инвестиции, эксперты  
-- Лия: 9 сценариев + analyze/find_solutions  
-- Партнёрская сеть `/partner`  
-- Репутация `/profile/[id]`  
-- CRM (admin) + operator queue/tasks/SLA  
+- Контур предпринимателя: проект → заявка → сделка → workspace  
+- Интересы инвестора и список `/dashboard/interests`  
+- Operator: CRM + модерация без полного admin  
+- Лия с контекстом интересов / заявок / сделок  
+- Каталоги, партнёрская сеть, репутация  
 - Production prep: security audit, system_logs, deploy/backup docs  
-- Lint/build зелёные на кандидате  
 
 ---
 
-## 6. Что требует внимания перед публичным 1.0
+## 6. Что осталось (после closed pilot / перед публичным 1.0)
 
-1. **Application → Deal** — продуктовый bridge или явный UX «создать сделку из заявки».  
-2. **Избранное / интерес инвестора** — либо убрать из навигации, либо реализовать.  
-3. **Operator vs Admin** — дать operator права на модерацию/CRM или явно описать в runbook.  
-4. **Платежи** — только mock; не обещать биллинг в 1.0.  
-5. **Внешний LLM/search** — проверить ключи и лимиты; mock допустим для pilot.  
-6. **`/solutions`** — согласовать копирайт с реальным путём через Лию.  
-7. Выполнить [production-checklist.md](./production-checklist.md) на стенде.
+1. **Платежи** — только mock; не обещать биллинг в 1.0.  
+2. **Внешний LLM/search** — ключи и лимиты; mock допустим для pilot.  
+3. **`/solutions`** — согласовать копирайт с реальным путём через Лию.  
+4. Выполнить [production-checklist.md](./production-checklist.md) на стенде.  
+5. Юридические страницы / поддержка / backup drill для public 1.0.  
+6. Мобильный API — отдельный этап после pilot.
 
 ---
 
-## 7. Известные ограничения (accept for pilot 1.0)
+## 7. Известные ограничения (accept for closed pilot)
 
-- Нет мобильного API (перенесено после 1.0).  
-- Нет favorites.  
-- Нет автосоздания сделки из заявки.  
+- Нет мобильного API.  
 - Rate-limit Лии — in-memory (не multi-instance).  
 - Payment provider = mock.  
 - Demo seed и catalog fallback должны быть выключены в production.  
@@ -199,23 +203,23 @@ CRM → Лиды → Задачи → Модерация → Сопровожд�
 
 ---
 
-## 8. План запуска 1.0
+## 8. План запуска
 
-### Фаза A — Closed pilot (рекомендуется как «1.0»)
+### Фаза A — Closed pilot (текущий целевой статус)
 
-1. Применить все миграции на production Supabase.  
+1. Применить миграции, включая `20260325360000_closed_pilot.sql`.  
 2. Secrets по [deployment.md](./deployment.md); demo/seed off.  
 3. `NEXT_PUBLIC_BETA_REQUIRE_INVITE=true`.  
-4. Создать admin + 1–2 operator вручную.  
+4. Создать admin + 1–2 operator (`operator_roles`).  
 5. Smoke по [production-checklist.md](./production-checklist.md).  
-6. Пилот: 5–15 организаций / предпринимателей по сценарию entrepreneur + investor.  
-7. Сбор feedback (`/admin` beta feedback).  
+6. Пилот: 5–15 организаций; сценарии entrepreneur + investor + operator.  
+7. Feedback через `/admin` (admin).  
 
 ### Фаза B — Open beta
 
-1. Снять invite (или расширить когорты).  
-2. Закрыть пункты §6 (1–3) по приоритету.  
-3. Включить боевой `LIA_PROVIDER` при необходимости.  
+1. Снять / расширить invite.  
+2. Закрыть пункты §6 по приоритету.  
+3. Боевой `LIA_PROVIDER` при необходимости.  
 
 ### Фаза C — Public 1.0
 
@@ -226,17 +230,17 @@ CRM → Лиды → Задачи → Модерация → Сопровожд�
 
 ---
 
-## 9. Финальные проверки кода (этап 27)
+## 9. Проверки кода (этап 28)
 
 | Команда | Результат |
 |---|---|
-| `npm run lint` | см. отчёт агента / CI |
-| `npm run build` | см. отчёт агента / CI |
+| `npm run lint` | (заполнить после прогона) |
+| `npm run build` | (заполнить после прогона) |
 
 ---
 
 ## 10. Итог
 
-Платформа ЦКР как **единый продукт для pilot / closed 1.0** — готова при условии соблюдения production checklist и явной коммуникации ограничений (избранное, auto-deal, operator≠admin, mock payments).
+Платформа ЦКР **готова к closed pilot**: критические разрывы application→deal, интерес инвестора и доступ оператора закрыты. Новые крупные модули не добавлялись.
 
-Для **открытого публичного 1.0 без оговорок** сначала закрыть §6.
+Для **открытого публичного 1.0** закрыть оставшиеся пункты §6 и выполнить production checklist на боевом стенде.

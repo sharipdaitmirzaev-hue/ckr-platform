@@ -340,6 +340,7 @@ export type Deal = {
   projectId: string;
   initiatorId: string;
   partnerId: string | null;
+  applicationId: string | null;
   dealType: DealType;
   amount: number | null;
   currency: string;
@@ -350,6 +351,16 @@ export type Deal = {
   commissionStatus: CommissionStatus | null;
   createdAt?: string;
   updatedAt?: string;
+};
+
+/** Интерес инвестора (closed pilot). */
+export type InvestorInterest = {
+  id: string;
+  userId: string;
+  targetType: "project" | "opportunity" | "investment";
+  targetId: string;
+  createdAt?: string;
+  title?: string;
 };
 
 /** Тариф подписки ЦКР. */

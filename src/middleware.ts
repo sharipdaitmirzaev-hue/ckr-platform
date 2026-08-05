@@ -1,3 +1,4 @@
+import { isStaffAdminPath } from "@/config/staff";
 import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -49,17 +50,39 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isAdminRoute) {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .limit(1);
+      const [{ data: adminRoles }, { data: operatorRoles }] = await Promise.all([
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .limit(1),
+        supabase
+          .from("operator_roles")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("active", true)
+          .limit(1),
+      ]);
 
-      if (!roles?.length) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
+      const isAdmin = Boolean(adminRoles?.length);
+      const isOperator = Boolean(operatorRoles?.length);
+
+      if (!isAdmin) {
+        if (
+          isOperator &&
+          (pathname === "/admin" || pathname === "/admin/")
+        ) {
+          const url = request.nextUrl.clone();
+          url.pathname = "/admin/crm";
+          return NextResponse.redirect(url);
+        }
+
+        if (!(isOperator && isStaffAdminPath(pathname))) {
+          const url = request.nextUrl.clone();
+          url.pathname = isOperator ? "/operator" : "/dashboard";
+          return NextResponse.redirect(url);
+        }
       }
     }
 
@@ -85,7 +108,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
-
   }
 
   if (user && isAuthRoute) {

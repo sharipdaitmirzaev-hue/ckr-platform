@@ -73,7 +73,9 @@ Helpers RLS: `is_admin`, `has_role`, `is_operator`, `is_org_member`, `can_manage
 | Создать сделку | участник workspace проекта |
 | Загрузить документ | владелец |
 | Выдать trust badge | admin |
-| Управление CRM / invites | admin |
+| Управление CRM | admin **или** operator (`requireStaff`) |
+| Модерация каталогов / верификации | admin **или** operator (`requireStaff`) |
+| Users / invites / analytics / product-tests | admin |
 | Задачи оператора | operator / admin |
 | Управление org | owner / manager |
 

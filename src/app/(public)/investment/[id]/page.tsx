@@ -7,8 +7,10 @@ import {
   investmentTypeLabels,
 } from "@/config/investments";
 import { ApplicationButton } from "@/features/applications/components/application-button";
+import { InterestButton } from "@/features/interests/components/interest-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { maskDisplayName } from "@/lib/demo/mode";
+import { hasInterest } from "@/lib/interests/queries";
 import { getInvestmentOfferById } from "@/lib/investments/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -51,6 +53,10 @@ export default async function InvestmentPage({ params }: InvestmentPageProps) {
 
   const current = await getCurrentUser();
   const isOwner = current?.user.id === offer.ownerId;
+  const interested =
+    current && offer.status === "published"
+      ? await hasInterest(current.user.id, "investment", offer.id)
+      : false;
 
   if (offer.status !== "published" && !isOwner) {
     notFound();
@@ -145,13 +151,22 @@ export default async function InvestmentPage({ params }: InvestmentPageProps) {
           </div>
 
           {offer.status === "published" ? (
-            <ApplicationButton
-              targetType="investment"
-              targetId={offer.id}
-              label="Отправить предложение инвестору"
-              isAuthenticated={Boolean(current)}
-              isOwner={isOwner}
-            />
+            <div className="flex flex-wrap items-start gap-3">
+              <ApplicationButton
+                targetType="investment"
+                targetId={offer.id}
+                label="Отправить предложение инвестору"
+                isAuthenticated={Boolean(current)}
+                isOwner={isOwner}
+              />
+              {current && !isOwner ? (
+                <InterestButton
+                  targetType="investment"
+                  targetId={offer.id}
+                  initiallyInterested={interested}
+                />
+              ) : null}
+            </div>
           ) : null}
         </div>
       </Container>

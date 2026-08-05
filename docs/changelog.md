@@ -4,6 +4,20 @@
 
 ---
 
+## 0.28.0-beta — 2026-03-25
+
+Closed pilot: закрыты критические ограничения launch-readiness.
+
+### Изменения
+
+- Application → Deal: `deals.application_id`, кнопка «Создать сделку», история в карточке сделки
+- `investor_interests` + «Интересно» + `/dashboard/interests`
+- Operator vs admin: `requireStaff` для CRM и модерации; admin-only для users/invites/analytics
+- Лия: рекомендации с учётом интересов, заявок и сделок
+- Обновлён `docs/launch-readiness.md` (статус closed pilot)
+
+---
+
 ## 0.27.0-beta — 2026-03-25
 
 Финальный аудит перед 1.0 (без новых бизнес-функций).

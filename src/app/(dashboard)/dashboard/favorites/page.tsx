@@ -1,13 +1,5 @@
-import { SectionHeading } from "@/components/ui/section-heading";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = { title: "Избранное" };
+import { redirect } from "next/navigation";
 
 export default function DashboardFavoritesPage() {
-  return (
-    <SectionHeading
-      title="Избранное"
-      description="Сохранённые проекты, возможности и решения."
-    />
-  );
+  redirect("/dashboard/interests");
 }

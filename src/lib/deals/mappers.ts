@@ -17,6 +17,7 @@ export function mapDealRow(row: DealRow): Deal {
     projectId: row.project_id,
     initiatorId: row.initiator_id,
     partnerId: row.partner_id,
+    applicationId: row.application_id ?? null,
     dealType: row.deal_type,
     amount: row.amount === null || row.amount === undefined
       ? null

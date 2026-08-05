@@ -1,9 +1,11 @@
 import { listActivityFeed } from "@/lib/activity/queries";
+import { listMyApplications } from "@/lib/applications/queries";
 import {
   listDealsForProject,
   listMilestonesForProject,
 } from "@/lib/deals/queries";
 import { countUnreadNotifications } from "@/lib/notifications/queries";
+import { listMyInterests } from "@/lib/interests/queries";
 import { listMyConversations } from "@/lib/messages/queries";
 import { listMyProjects } from "@/lib/projects/queries";
 import { milestoneStatusLabels } from "@/config/deals";
@@ -19,16 +21,20 @@ export type LiaRecommendation = {
 /**
  * Блок «Мои рекомендации» для Лии / кабинета.
  * Только подсказки — без автодействий.
+ * Учитывает интересы, заявки и сделки (closed pilot).
  */
 export async function buildLiaRecommendations(
   userId: string,
 ): Promise<LiaRecommendation[]> {
-  const [unread, activity, projects, conversations] = await Promise.all([
-    countUnreadNotifications(userId),
-    listActivityFeed(userId, 8),
-    listMyProjects(userId),
-    listMyConversations(userId),
-  ]);
+  const [unread, activity, projects, conversations, applications, interests] =
+    await Promise.all([
+      countUnreadNotifications(userId),
+      listActivityFeed(userId, 8),
+      listMyProjects(userId),
+      listMyConversations(userId),
+      listMyApplications(userId),
+      listMyInterests(userId),
+    ]);
 
   const items: LiaRecommendation[] = [];
 
@@ -49,6 +55,58 @@ export async function buildLiaRecommendations(
       description: "Ответьте партнёрам в центре сообщений.",
       href: "/messages",
       priority: "high",
+    });
+  }
+
+  const acceptedWithoutDeal = applications.incoming.filter(
+    (app) =>
+      app.status === "accepted" &&
+      app.targetType === "project" &&
+      !app.dealId,
+  );
+  if (acceptedWithoutDeal[0]) {
+    items.push({
+      id: `app-to-deal-${acceptedWithoutDeal[0].id}`,
+      title: "Создать сделку по принятой заявке",
+      description: `«${acceptedWithoutDeal[0].targetTitle || "Проект"}» — оформите сделку и откройте workspace.`,
+      href: "/dashboard/applications?tab=incoming",
+      priority: "high",
+    });
+  }
+
+  const dealWorkspace = [...applications.incoming, ...applications.outgoing]
+    .find((app) => app.dealId && app.dealProjectId);
+  if (dealWorkspace?.dealProjectId) {
+    items.push({
+      id: `deal-workspace-${dealWorkspace.dealId}`,
+      title: "Продолжить работу по сделке",
+      description: `Кабинет проекта «${dealWorkspace.targetTitle || "проект"}».`,
+      href: `/dashboard/projects/${dealWorkspace.dealProjectId}/workspace`,
+      priority: "medium",
+    });
+  }
+
+  const pendingOutgoing = applications.outgoing.filter(
+    (app) => app.status === "new" || app.status === "reviewing",
+  );
+  if (pendingOutgoing.length > 0) {
+    items.push({
+      id: "pending-applications",
+      title: `Исходящие заявки: ${pendingOutgoing.length}`,
+      description: "Отслеживайте статус откликов и готовьтесь к сделке.",
+      href: "/dashboard/applications?tab=outgoing",
+      priority: "medium",
+    });
+  }
+
+  if (interests.length > 0) {
+    const top = interests[0];
+    items.push({
+      id: "investor-interests",
+      title: `Интересы: ${interests.length}`,
+      description: `Вернитесь к «${top.title}» или откройте список интересов.`,
+      href: "/dashboard/interests",
+      priority: "medium",
     });
   }
 
@@ -98,6 +156,19 @@ export async function buildLiaRecommendations(
         priority: "low",
       });
     }
+
+    const activeDeal = deals.find(
+      (d) => d.status === "negotiation" || d.status === "active",
+    );
+    if (activeDeal) {
+      items.push({
+        id: `active-deal-${activeDeal.id}`,
+        title: `Активная сделка по «${project.title}»`,
+        description: "Проверьте этапы и участников в workspace.",
+        href: `/dashboard/projects/${project.id}/workspace`,
+        priority: "medium",
+      });
+    }
   }
 
   if (activity[0]) {
@@ -123,10 +194,9 @@ export async function buildLiaRecommendations(
     });
   }
 
-  // Deduplicate by id, keep top 6 by priority
   const priorityRank = { high: 0, medium: 1, low: 2 };
   const unique = Array.from(new Map(items.map((i) => [i.id, i])).values());
   return unique
     .sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority])
-    .slice(0, 6);
+    .slice(0, 8);
 }

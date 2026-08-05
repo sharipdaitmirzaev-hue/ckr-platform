@@ -2,6 +2,7 @@
 
 import { ASSIGNABLE_ROLES } from "@/config/roles";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireStaff } from "@/lib/auth/require-staff";
 import { createClient } from "@/lib/supabase/server";
 import { PROJECT_STATUSES, PUBLISH_STATUSES } from "@/config/projects";
 import type {
@@ -112,7 +113,7 @@ export async function adminSetUserBlockedAction(formData: FormData) {
 }
 
 export async function adminUpdateProjectModerationAction(formData: FormData) {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as ProjectStatus;
   const verificationStatus = String(
@@ -139,7 +140,7 @@ export async function adminUpdateProjectModerationAction(formData: FormData) {
 export async function adminUpdateOpportunityModerationAction(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as PublishStatus;
   const verificationStatus = String(
@@ -166,7 +167,7 @@ export async function adminUpdateOpportunityModerationAction(
 export async function adminUpdateInvestmentModerationAction(
   formData: FormData,
 ) {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as InvestmentOfferStatus;
   const verificationStatus = String(
@@ -191,7 +192,7 @@ export async function adminUpdateInvestmentModerationAction(
 }
 
 export async function adminUpdateExpertModerationAction(formData: FormData) {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as ExpertProfileStatus;
   const verificationStatus = String(

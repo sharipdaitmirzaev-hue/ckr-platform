@@ -35,7 +35,7 @@ export default async function DashboardApplicationsPage({
     <div className="space-y-8">
       <SectionHeading
         title="Заявки"
-        description="Входящие и исходящие взаимодействия по проектам и возможностям. После принятия заявки позже откроется чат."
+        description="Входящие и исходящие взаимодействия. Принятая заявка по проекту → «Создать сделку» → кабинет workspace."
       />
 
       {unread > 0 ? (

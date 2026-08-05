@@ -501,6 +501,7 @@ export type DealRow = {
   project_id: string;
   initiator_id: string;
   partner_id: string | null;
+  application_id: string | null;
   deal_type: DbDealType;
   amount: number | string | null;
   currency: string;
@@ -511,6 +512,19 @@ export type DealRow = {
   commission_status?: DbCommissionStatus | null;
   created_at: string;
   updated_at: string;
+};
+
+export type DbInvestorInterestTargetType =
+  | "project"
+  | "opportunity"
+  | "investment";
+
+export type InvestorInterestRow = {
+  id: string;
+  user_id: string;
+  target_type: DbInvestorInterestTargetType;
+  target_id: string;
+  created_at: string;
 };
 
 export type SubscriptionPlanRow = {
@@ -1452,6 +1466,7 @@ export type Database = {
           project_id: string;
           initiator_id: string;
           partner_id?: string | null;
+          application_id?: string | null;
           deal_type?: DbDealType;
           amount?: number | null;
           currency?: string;
@@ -1463,6 +1478,7 @@ export type Database = {
         };
         Update: Partial<{
           partner_id: string | null;
+          application_id: string | null;
           deal_type: DbDealType;
           amount: number | null;
           currency: string;
@@ -1472,6 +1488,16 @@ export type Database = {
           commission_amount: number | null;
           commission_status: DbCommissionStatus | null;
         }>;
+      };
+      investor_interests: {
+        Row: InvestorInterestRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_type: DbInvestorInterestTargetType;
+          target_id: string;
+        };
+        Update: Partial<Omit<InvestorInterestRow, "id" | "created_at">>;
       };
       deal_participants: {
         Row: DealParticipantRow;
@@ -1576,6 +1602,7 @@ export type Database = {
       entity_history_kind: DbEntityHistoryKind;
       trust_badge_key: DbTrustBadgeKey;
       system_log_level: DbSystemLogLevel;
+      investor_interest_target_type: DbInvestorInterestTargetType;
     };
   };
 };

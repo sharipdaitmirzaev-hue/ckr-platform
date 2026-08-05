@@ -7,8 +7,10 @@ import {
   opportunityVerificationLabels,
 } from "@/config/opportunities";
 import { ApplicationButton } from "@/features/applications/components/application-button";
+import { InterestButton } from "@/features/interests/components/interest-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { maskDisplayName } from "@/lib/demo/mode";
+import { hasInterest } from "@/lib/interests/queries";
 import { getOpportunityById } from "@/lib/opportunities/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -45,6 +47,10 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
 
   const current = await getCurrentUser();
   const isOwner = current?.user.id === opportunity.ownerId;
+  const interested =
+    current && opportunity.status === "published"
+      ? await hasInterest(current.user.id, "opportunity", opportunity.id)
+      : false;
 
   if (opportunity.status !== "published" && !isOwner) {
     notFound();
@@ -134,13 +140,22 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
           </div>
 
           {opportunity.status === "published" ? (
-            <ApplicationButton
-              targetType="opportunity"
-              targetId={opportunity.id}
-              label="Связаться с владельцем"
-              isAuthenticated={Boolean(current)}
-              isOwner={isOwner}
-            />
+            <div className="flex flex-wrap items-start gap-3">
+              <ApplicationButton
+                targetType="opportunity"
+                targetId={opportunity.id}
+                label="Связаться с владельцем"
+                isAuthenticated={Boolean(current)}
+                isOwner={isOwner}
+              />
+              {current && !isOwner ? (
+                <InterestButton
+                  targetType="opportunity"
+                  targetId={opportunity.id}
+                  initiallyInterested={interested}
+                />
+              ) : null}
+            </div>
           ) : null}
         </div>
       </Container>

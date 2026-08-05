@@ -9,7 +9,7 @@ import {
   isCrmLeadStage,
 } from "@/config/crm";
 import { generateInviteCode } from "@/config/beta";
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireStaff } from "@/lib/auth/require-staff";
 import { slugifyTitle, withSlugSuffix } from "@/lib/projects/slug";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -55,7 +55,7 @@ export async function createCrmContactAction(
   _prev: CrmActionState,
   formData: FormData,
 ): Promise<CrmActionState> {
-  const admin = await requireAdmin();
+  const staff = await requireStaff();
   const name = String(formData.get("name") ?? "").trim();
   const companyName = String(formData.get("companyName") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -83,8 +83,8 @@ export async function createCrmContactAction(
     source,
     status,
     notes,
-    assigned_to: admin.user.id,
-    created_by: admin.user.id,
+    assigned_to: staff.user.id,
+    created_by: staff.user.id,
   });
 
   if (error) return { error: error.message };
@@ -95,7 +95,7 @@ export async function createCrmContactAction(
 export async function updateCrmContactStatusAction(
   formData: FormData,
 ): Promise<void> {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("contactId") ?? "");
   const status = String(formData.get("status") ?? "");
   if (!id || !isCrmContactStatus(status)) return;
@@ -109,7 +109,7 @@ export async function createCrmLeadAction(
   _prev: CrmActionState,
   formData: FormData,
 ): Promise<CrmActionState> {
-  const admin = await requireAdmin();
+  const staff = await requireStaff();
   const contactId = String(formData.get("contactId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -127,8 +127,8 @@ export async function createCrmLeadAction(
     description,
     category,
     stage,
-    assigned_to: admin.user.id,
-    created_by: admin.user.id,
+    assigned_to: staff.user.id,
+    created_by: staff.user.id,
   });
 
   if (error) return { error: error.message };
@@ -139,7 +139,7 @@ export async function createCrmLeadAction(
 export async function updateCrmLeadStageAction(
   formData: FormData,
 ): Promise<void> {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("leadId") ?? "");
   const stage = String(formData.get("stage") ?? "");
   if (!id || !isCrmLeadStage(stage)) return;
@@ -153,7 +153,7 @@ export async function createCrmActivityAction(
   _prev: CrmActionState,
   formData: FormData,
 ): Promise<CrmActionState> {
-  const admin = await requireAdmin();
+  const staff = await requireStaff();
   const type = String(formData.get("type") ?? "comment");
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
@@ -176,7 +176,7 @@ export async function createCrmActivityAction(
     type,
     title: title || crmActivityFallbackTitle(type),
     body,
-    createdBy: admin.user.id,
+    createdBy: staff.user.id,
     taskStatus: type === "task" ? "open" : null,
     dueAt: dueAtRaw ? new Date(dueAtRaw).toISOString() : null,
   });
@@ -194,7 +194,7 @@ function crmActivityFallbackTitle(type: string) {
 }
 
 export async function completeCrmTaskAction(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireStaff();
   const id = String(formData.get("activityId") ?? "");
   if (!id) return;
 
@@ -218,7 +218,7 @@ export async function convertCrmLeadAction(
   _prev: CrmActionState,
   formData: FormData,
 ): Promise<CrmActionState> {
-  const admin = await requireAdmin();
+  const staff = await requireStaff();
   const leadId = String(formData.get("leadId") ?? "");
   const target = String(formData.get("target") ?? "");
   const confirmed = formData.get("confirm") === "on";
@@ -259,15 +259,15 @@ export async function convertCrmLeadAction(
   if (!contact) return { error: "Контакт лида не найден." };
 
   if (target === "user") {
-    return convertLeadToUser(supabase, admin.user.id, leadId, contact);
+    return convertLeadToUser(supabase, staff.user.id, leadId, contact);
   }
   if (target === "project") {
-    return convertLeadToProject(supabase, admin.user.id, lead, contact);
+    return convertLeadToProject(supabase, staff.user.id, lead, contact);
   }
   if (target === "opportunity") {
-    return convertLeadToOpportunity(supabase, admin.user.id, lead, contact);
+    return convertLeadToOpportunity(supabase, staff.user.id, lead, contact);
   }
-  return convertLeadToInvestment(supabase, admin.user.id, lead, contact);
+  return convertLeadToInvestment(supabase, staff.user.id, lead, contact);
 }
 
 async function convertLeadToUser(

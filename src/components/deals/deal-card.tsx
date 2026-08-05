@@ -14,6 +14,7 @@ import {
 import { updateDealStatusAction } from "@/features/deals/actions";
 import type { DealWithNames } from "@/lib/deals/queries";
 import type { DealStatus } from "@/types";
+import Link from "next/link";
 import { useTransition } from "react";
 
 type DealCardProps = {
@@ -56,6 +57,20 @@ export function DealCard({ deal, canManage }: DealCardProps) {
         Инициатор: {deal.initiatorName || "—"}
         {deal.partnerName ? ` · Партнёр: ${deal.partnerName}` : ""}
       </p>
+      {deal.applicationId ? (
+        <p className="text-xs text-muted">
+          История: создана из{" "}
+          <Link
+            href="/dashboard/applications"
+            className="text-accent underline-offset-2 hover:underline"
+          >
+            заявки
+          </Link>
+          <span className="ml-1 font-mono text-[11px] opacity-70">
+            {deal.applicationId.slice(0, 8)}…
+          </span>
+        </p>
+      ) : null}
 
       {canManage ? (
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">

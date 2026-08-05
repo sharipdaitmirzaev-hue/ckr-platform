@@ -8,6 +8,8 @@ export type ApplicationListItem = Application & {
   fromUserName: string | null;
   targetTitle: string | null;
   direction: "incoming" | "outgoing";
+  dealId: string | null;
+  dealProjectId: string | null;
 };
 
 async function resolveTargetTitle(
@@ -73,6 +75,27 @@ export async function listMyApplications(userId: string): Promise<{
     return { incoming: [], outgoing: [] };
   }
 
+  const applicationIds = data.map((row) => row.id as string);
+  const dealByApplication = new Map<
+    string,
+    { id: string; projectId: string }
+  >();
+
+  if (applicationIds.length > 0) {
+    const { data: deals } = await supabase
+      .from("deals")
+      .select("id, project_id, application_id")
+      .in("application_id", applicationIds);
+
+    for (const deal of deals ?? []) {
+      if (!deal.application_id) continue;
+      dealByApplication.set(deal.application_id as string, {
+        id: deal.id as string,
+        projectId: deal.project_id as string,
+      });
+    }
+  }
+
   const incoming: ApplicationListItem[] = [];
   const outgoing: ApplicationListItem[] = [];
 
@@ -84,6 +107,7 @@ export async function listMyApplications(userId: string): Promise<{
       application.targetType,
       application.targetId,
     );
+    const linkedDeal = dealByApplication.get(application.id) ?? null;
 
     const item: ApplicationListItem = {
       ...application,
@@ -91,6 +115,8 @@ export async function listMyApplications(userId: string): Promise<{
       targetTitle,
       direction:
         application.fromUserId === userId ? "outgoing" : "incoming",
+      dealId: linkedDeal?.id ?? null,
+      dealProjectId: linkedDeal?.projectId ?? null,
     };
 
     if (item.direction === "outgoing") {

@@ -9,10 +9,12 @@ import {
   projectStatusLabels,
 } from "@/config/projects";
 import { ApplicationButton } from "@/features/applications/components/application-button";
+import { InterestButton } from "@/features/interests/components/interest-button";
 import { ProjectLiaActions } from "@/features/lia/components/project-lia-actions";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { maskDisplayName } from "@/lib/demo/mode";
 import { listExpertsForProjectRegion } from "@/lib/experts/queries";
+import { hasInterest } from "@/lib/interests/queries";
 import { listMatchingInvestmentOffersForProject } from "@/lib/investments/queries";
 import { listLiaAnalysesForProject } from "@/lib/lia/queries";
 import { getProjectById } from "@/lib/projects/queries";
@@ -50,6 +52,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const current = await getCurrentUser();
   const isOwner = current?.user.id === project.ownerId;
+  const interested =
+    current && project.status === "published"
+      ? await hasInterest(current.user.id, "project", project.id)
+      : false;
 
   if (project.status !== "published" && !isOwner) {
     notFound();
@@ -275,13 +281,22 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </div>
 
           {project.status === "published" ? (
-            <ApplicationButton
-              targetType="project"
-              targetId={project.id}
-              label="Предложить сотрудничество"
-              isAuthenticated={Boolean(current)}
-              isOwner={isOwner}
-            />
+            <div className="flex flex-wrap items-start gap-3">
+              <ApplicationButton
+                targetType="project"
+                targetId={project.id}
+                label="Предложить сотрудничество"
+                isAuthenticated={Boolean(current)}
+                isOwner={isOwner}
+              />
+              {current && !isOwner ? (
+                <InterestButton
+                  targetType="project"
+                  targetId={project.id}
+                  initiallyInterested={interested}
+                />
+              ) : null}
+            </div>
           ) : null}
         </div>
       </Container>

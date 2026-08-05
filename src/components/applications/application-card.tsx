@@ -7,6 +7,7 @@ import {
   ownerActionStatuses,
 } from "@/config/applications";
 import { updateApplicationStatusAction } from "@/features/applications/actions";
+import { createDealFromApplicationAction } from "@/features/deals/actions";
 import type { ApplicationListItem } from "@/lib/applications/queries";
 import Link from "next/link";
 
@@ -37,6 +38,14 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
     isIncoming &&
     application.status !== "closed" &&
     application.status !== "rejected";
+  const canCreateDeal =
+    isIncoming &&
+    application.status === "accepted" &&
+    application.targetType === "project" &&
+    !application.dealId;
+  const workspaceHref = application.dealProjectId
+    ? `/dashboard/projects/${application.dealProjectId}/workspace`
+    : null;
 
   return (
     <Card as="article" variant="surface" className="space-y-4">
@@ -50,6 +59,9 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         <Badge variant="default">
           {isIncoming ? "Входящая" : "Исходящая"}
         </Badge>
+        {application.dealId ? (
+          <Badge variant="soft">Сделка создана</Badge>
+        ) : null}
       </div>
 
       <div>
@@ -74,6 +86,14 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
             className="text-sm text-accent transition-colors hover:underline"
           >
             Открыть объект
+          </Link>
+        ) : null}
+        {workspaceHref ? (
+          <Link
+            href={workspaceHref}
+            className="text-sm text-accent transition-colors hover:underline"
+          >
+            Кабинет сделки
           </Link>
         ) : null}
         <span className="text-xs text-muted">
@@ -105,12 +125,36 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         </div>
       ) : null}
 
-      {application.status === "accepted" ? (
+      {canCreateDeal ? (
+        <form action={createDealFromApplicationAction} className="space-y-2">
+          <input type="hidden" name="applicationId" value={application.id} />
+          <Button type="submit" size="sm">
+            Создать сделку
+          </Button>
+          <p className="text-xs text-muted">
+            Путь: заявка → сделка → workspace проекта.
+          </p>
+        </form>
+      ) : null}
+
+      {application.status === "accepted" && !canCreateDeal ? (
         <p className="text-xs text-accent">
           Заявка принята.{" "}
-          <a href="/messages" className="underline-offset-2 hover:underline">
-            Открыть сообщения
-          </a>
+          {workspaceHref ? (
+            <Link
+              href={workspaceHref}
+              className="underline-offset-2 hover:underline"
+            >
+              Открыть кабинет сделки
+            </Link>
+          ) : (
+            <Link
+              href="/messages"
+              className="underline-offset-2 hover:underline"
+            >
+              Открыть сообщения
+            </Link>
+          )}
         </p>
       ) : null}
     </Card>

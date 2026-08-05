@@ -1,7 +1,7 @@
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { Container } from "@/components/ui/container";
-import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireStaff } from "@/lib/auth/require-staff";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const current = await requireAdmin();
+  const current = await requireStaff("/admin/crm");
 
   return (
     <div className="min-h-screen">
@@ -19,7 +19,7 @@ export default async function AdminLayout({
         email={current.user.email}
       />
       <Container className="grid gap-6 py-8 md:grid-cols-[260px_1fr] lg:gap-8">
-        <AdminSidebar />
+        <AdminSidebar isPlatformAdmin={current.isPlatformAdmin} />
         <div className="min-w-0">{children}</div>
       </Container>
     </div>
