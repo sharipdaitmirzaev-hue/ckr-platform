@@ -8,7 +8,7 @@ export function isDemoMode(): boolean {
 }
 
 /** Использовать встроенный demo-каталог, если БД пуста или нет Supabase. */
-export function useDemoCatalogFallback(): boolean {
+export function isDemoCatalogFallbackEnabled(): boolean {
   return (
     isDemoMode() ||
     process.env.DEMO_CATALOG_FALLBACK !== "false"

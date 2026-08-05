@@ -1,5 +1,5 @@
 import { getDemoExpertById, getDemoExperts } from "@/lib/demo/catalog";
-import { useDemoCatalogFallback } from "@/lib/demo/mode";
+import { isDemoCatalogFallbackEnabled } from "@/lib/demo/mode";
 import { mapExpertProfileRow } from "@/lib/experts/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -34,7 +34,7 @@ export async function listPublishedExperts(filters?: {
     });
 
   if (!hasSupabaseEnv()) {
-    return useDemoCatalogFallback() ? fromDemo() : [];
+    return isDemoCatalogFallbackEnabled() ? fromDemo() : [];
   }
 
   const supabase = createClient();
@@ -55,7 +55,7 @@ export async function listPublishedExperts(filters?: {
 
   const { data, error } = await query;
   if (error || !data || data.length === 0) {
-    return useDemoCatalogFallback() ? fromDemo() : [];
+    return isDemoCatalogFallbackEnabled() ? fromDemo() : [];
   }
 
   return data.map((row) => {
@@ -79,7 +79,7 @@ export async function listPublishedExperts(filters?: {
 
 export async function getExpertById(id: string): Promise<ExpertWithUser | null> {
   if (!hasSupabaseEnv()) {
-    return useDemoCatalogFallback() ? getDemoExpertById(id) : null;
+    return isDemoCatalogFallbackEnabled() ? getDemoExpertById(id) : null;
   }
 
   const supabase = createClient();
@@ -92,7 +92,7 @@ export async function getExpertById(id: string): Promise<ExpertWithUser | null> 
     .maybeSingle();
 
   if (error || !data) {
-    return useDemoCatalogFallback() ? getDemoExpertById(id) : null;
+    return isDemoCatalogFallbackEnabled() ? getDemoExpertById(id) : null;
   }
 
   const expert = mapExpertProfileRow(data as ExpertProfileRow);

@@ -2,7 +2,7 @@ import {
   getDemoProjectById,
   getDemoProjects,
 } from "@/lib/demo/catalog";
-import { useDemoCatalogFallback } from "@/lib/demo/mode";
+import { isDemoCatalogFallbackEnabled } from "@/lib/demo/mode";
 import { mapProjectRow } from "@/lib/projects/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +38,7 @@ export async function listCategories(): Promise<CategoryRow[]> {
 
 export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
   if (!hasSupabaseEnv()) {
-    return useDemoCatalogFallback() ? getDemoProjects() : [];
+    return isDemoCatalogFallbackEnabled() ? getDemoProjects() : [];
   }
 
   const supabase = createClient();
@@ -51,7 +51,7 @@ export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
     .order("created_at", { ascending: false });
 
   if (error || !data || data.length === 0) {
-    return useDemoCatalogFallback() ? getDemoProjects() : [];
+    return isDemoCatalogFallbackEnabled() ? getDemoProjects() : [];
   }
 
   return data.map((row) => {
@@ -83,7 +83,7 @@ export async function getProjectById(
   id: string,
 ): Promise<ProjectWithOwner | null> {
   if (!hasSupabaseEnv()) {
-    return useDemoCatalogFallback() ? getDemoProjectById(id) : null;
+    return isDemoCatalogFallbackEnabled() ? getDemoProjectById(id) : null;
   }
 
   const supabase = createClient();
@@ -96,7 +96,7 @@ export async function getProjectById(
     .maybeSingle();
 
   if (error || !data) {
-    return useDemoCatalogFallback() ? getDemoProjectById(id) : null;
+    return isDemoCatalogFallbackEnabled() ? getDemoProjectById(id) : null;
   }
 
   const project = mapProjectRow(data as ProjectRow);

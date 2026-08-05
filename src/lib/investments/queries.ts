@@ -6,7 +6,7 @@ import {
   getDemoInvestmentById,
   getDemoInvestments,
 } from "@/lib/demo/catalog";
-import { useDemoCatalogFallback } from "@/lib/demo/mode";
+import { isDemoCatalogFallbackEnabled } from "@/lib/demo/mode";
 import { mapInvestmentOfferRow } from "@/lib/investments/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -48,7 +48,7 @@ export async function listPublishedInvestmentOffers(
       .filter((offer) => overlapsAmount(offer, filters.amount));
 
   if (!hasSupabaseEnv()) {
-    return useDemoCatalogFallback() ? fromDemo() : [];
+    return isDemoCatalogFallbackEnabled() ? fromDemo() : [];
   }
 
   const supabase = createClient();
@@ -64,7 +64,7 @@ export async function listPublishedInvestmentOffers(
 
   const { data, error } = await query;
   if (error || !data || data.length === 0) {
-    return useDemoCatalogFallback() ? fromDemo() : [];
+    return isDemoCatalogFallbackEnabled() ? fromDemo() : [];
   }
 
   return data
@@ -99,7 +99,7 @@ export async function getInvestmentOfferById(
   id: string,
 ): Promise<InvestmentOfferWithOwner | null> {
   if (!hasSupabaseEnv()) {
-    return useDemoCatalogFallback() ? getDemoInvestmentById(id) : null;
+    return isDemoCatalogFallbackEnabled() ? getDemoInvestmentById(id) : null;
   }
 
   const supabase = createClient();
@@ -110,7 +110,7 @@ export async function getInvestmentOfferById(
     .maybeSingle();
 
   if (error || !data) {
-    return useDemoCatalogFallback() ? getDemoInvestmentById(id) : null;
+    return isDemoCatalogFallbackEnabled() ? getDemoInvestmentById(id) : null;
   }
 
   const offer = mapInvestmentOfferRow(data as InvestmentOfferRow);
