@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isInviteRequired } from "@/config/beta";
 import {
   ASSIGNABLE_ROLES,
   roleDescriptions,
@@ -9,6 +10,7 @@ import {
 } from "@/config/roles";
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message";
 import { registerAction, type ActionState } from "@/features/auth/actions";
+import { useSearchParams } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 
 const initialState: ActionState = {};
@@ -24,10 +26,27 @@ function SubmitButton() {
 
 export function RegisterForm() {
   const [state, formAction] = useFormState(registerAction, initialState);
+  const searchParams = useSearchParams();
+  const inviteFromQuery = searchParams.get("invite") ?? "";
+  const requireInvite = isInviteRequired();
 
   return (
     <form action={formAction} className="mt-8 space-y-4">
       <AuthFormMessage error={state.error} success={state.success} />
+
+      <div className="space-y-2">
+        <label htmlFor="inviteCode" className="text-sm text-muted">
+          Код приглашения{requireInvite ? "" : " (если есть)"}
+        </label>
+        <Input
+          id="inviteCode"
+          name="inviteCode"
+          defaultValue={inviteFromQuery}
+          placeholder="CKR-XXXXXXXX"
+          required={requireInvite}
+          autoComplete="off"
+        />
+      </div>
 
       <div className="space-y-2">
         <label htmlFor="fullName" className="text-sm text-muted">
@@ -83,8 +102,9 @@ export function RegisterForm() {
                 type="radio"
                 name="role"
                 value={role}
-                required
+                defaultChecked={role === "entrepreneur"}
                 className="mt-1 accent-[var(--ckr-accent)]"
+                required
               />
               <span>
                 <span className="block text-sm font-medium text-foreground">

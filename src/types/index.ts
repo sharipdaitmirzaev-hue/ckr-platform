@@ -429,6 +429,43 @@ export type ProductTestChecklistItem = {
   note?: string;
 };
 
+export type BetaInviteStatus = "created" | "sent" | "used" | "expired";
+
+export type BetaInvite = {
+  id: string;
+  email: string;
+  code: string;
+  role: string;
+  status: BetaInviteStatus;
+  createdAt?: string;
+  usedAt: string | null;
+  createdBy: string | null;
+  usedBy: string | null;
+};
+
+export type FeedbackType = "bug" | "idea" | "question" | "review";
+
+export type Feedback = {
+  id: string;
+  userId: string | null;
+  type: FeedbackType;
+  message: string;
+  rating: number | null;
+  page: string;
+  createdAt?: string;
+};
+
+export type UserFeedbackEvent = {
+  id: string;
+  userId: string | null;
+  eventType: string;
+  entityType: string | null;
+  entityId: string | null;
+  rating: number | null;
+  comment: string;
+  createdAt?: string;
+};
+
 /** Прогон сценария или тестовая задача (Этап 19). */
 export type ProductTest = {
   id: string;

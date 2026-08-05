@@ -1,6 +1,7 @@
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/container";
 import { LogoutButton } from "@/features/auth/components/logout-button";
+import { BetaBadge } from "@/features/beta/components/beta-badge";
 import Link from "next/link";
 
 type AdminHeaderProps = {
@@ -14,6 +15,7 @@ export function AdminHeader({ fullName, email }: AdminHeaderProps) {
       <Container className="flex h-16 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
           <Logo size="sm" />
+          <BetaBadge className="shrink-0" />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
               Админ-панель ЦКР

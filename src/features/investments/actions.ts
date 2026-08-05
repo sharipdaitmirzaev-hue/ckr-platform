@@ -98,9 +98,19 @@ export async function createInvestmentOfferAction(
     },
   });
 
+  const { trackUserFeedbackEvent } = await import(
+    "@/lib/beta/track-feedback-event"
+  );
+  await trackUserFeedbackEvent({
+    eventType: "investment_created",
+    userId: user.id,
+    entityType: "investment",
+    entityId: data.id,
+  });
+
   revalidatePath("/investments");
   revalidatePath("/dashboard/investments");
-  redirect("/dashboard/investments");
+  redirect("/dashboard/investments?feedback=investment_created");
 }
 
 export async function updateInvestmentOfferAction(

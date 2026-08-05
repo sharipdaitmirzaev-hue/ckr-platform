@@ -2,6 +2,7 @@ import { Logo } from "@/components/brand/logo";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { Container } from "@/components/ui/container";
 import { LogoutButton } from "@/features/auth/components/logout-button";
+import { BetaBadge } from "@/features/beta/components/beta-badge";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -25,6 +26,7 @@ export default async function DashboardLayout({
         <Container className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Logo size="sm" />
+            <BetaBadge />
             <p className="hidden text-sm text-muted sm:block">
               {current.user.fullName || current.user.email}
             </p>

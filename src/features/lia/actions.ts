@@ -129,12 +129,22 @@ export async function createProjectFromLiaDraftAction(
     metadata: { source: "lia", category: draft.category, region: draft.region },
   });
 
+  const { trackUserFeedbackEvent } = await import(
+    "@/lib/beta/track-feedback-event"
+  );
+  await trackUserFeedbackEvent({
+    eventType: "project_created",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+  });
+
   revalidatePath("/projects");
   revalidatePath("/dashboard/projects");
   revalidatePath(`/dashboard/projects/${data.id}/edit`);
   revalidatePath(`/project/${data.id}`);
   revalidatePath("/lia");
-  redirect(`/dashboard/projects/${data.id}/edit`);
+  redirect(`/dashboard/projects/${data.id}/edit?feedback=project_created`);
 }
 
 /**

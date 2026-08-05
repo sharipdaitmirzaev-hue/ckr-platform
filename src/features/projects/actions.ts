@@ -102,10 +102,20 @@ export async function createProjectAction(
     },
   });
 
+  const { trackUserFeedbackEvent } = await import(
+    "@/lib/beta/track-feedback-event"
+  );
+  await trackUserFeedbackEvent({
+    eventType: "project_created",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+  });
+
   revalidatePath("/projects");
   revalidatePath("/dashboard/projects");
   revalidatePath(`/project/${data.id}`);
-  redirect("/dashboard/projects");
+  redirect("/dashboard/projects?feedback=project_created");
 }
 
 export async function updateProjectAction(

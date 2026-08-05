@@ -1,7 +1,10 @@
 import { LiaWidget } from "@/components/lia/lia-widget";
+import { FeedbackButton } from "@/features/beta/components/feedback-button";
+import { ScenarioFeedbackPrompt } from "@/features/beta/components/scenario-feedback-prompt";
 import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import { Manrope, Onest } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -58,6 +61,10 @@ export default function RootLayout({
       <body className={`${manrope.variable} ${onest.variable}`}>
         {children}
         <LiaWidget />
+        <FeedbackButton />
+        <Suspense fallback={null}>
+          <ScenarioFeedbackPrompt />
+        </Suspense>
       </body>
     </html>
   );

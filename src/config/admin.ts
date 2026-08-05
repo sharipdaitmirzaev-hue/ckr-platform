@@ -21,6 +21,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Сценарии и контроль качества",
   },
   {
+    label: "Приглашения",
+    href: "/admin/invites",
+    description: "Closed beta: коды доступа",
+  },
+  {
     label: "Пользователи",
     href: "/admin/users",
     description: "Роли и блокировка",

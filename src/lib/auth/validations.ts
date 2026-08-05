@@ -8,6 +8,7 @@ export const registerSchema = z.object({
   role: z.enum(ASSIGNABLE_ROLES, {
     error: "Выберите роль",
   }),
+  inviteCode: z.string().trim().optional(),
 });
 
 export const loginSchema = z.object({

@@ -71,9 +71,19 @@ export async function createOpportunityAction(
     metadata: { type: parsed.data.type, region: parsed.data.region },
   });
 
+  const { trackUserFeedbackEvent } = await import(
+    "@/lib/beta/track-feedback-event"
+  );
+  await trackUserFeedbackEvent({
+    eventType: "opportunity_created",
+    userId: user.id,
+    entityType: "opportunity",
+    entityId: data.id,
+  });
+
   revalidatePath("/opportunities");
   revalidatePath("/dashboard/opportunities");
-  redirect("/dashboard/opportunities");
+  redirect("/dashboard/opportunities?feedback=opportunity_created");
 }
 
 export async function updateOpportunityAction(

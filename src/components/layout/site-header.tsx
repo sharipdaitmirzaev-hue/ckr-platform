@@ -4,6 +4,7 @@ import { Logo } from "@/components/brand/logo";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { authNav, mainNav } from "@/config/navigation";
+import { BetaBadge } from "@/features/beta/components/beta-badge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,7 +21,10 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-md">
       <Container className="flex h-16 items-center justify-between gap-4 lg:h-[4.25rem]">
-        <Logo size="md" />
+        <div className="flex items-center gap-3">
+          <Logo size="md" />
+          <BetaBadge className="hidden sm:inline-flex" />
+        </div>
 
         <nav
           className="hidden items-center gap-7 md:flex"

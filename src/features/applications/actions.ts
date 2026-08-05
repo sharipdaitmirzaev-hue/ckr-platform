@@ -5,6 +5,7 @@ import { createApplicationSchema } from "@/lib/applications/validations";
 import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus, ApplicationTargetType } from "@/types";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export type ApplicationActionState = {
   error?: string;
@@ -122,13 +123,23 @@ export async function createApplicationAction(
     entityId: parsed.data.targetId,
   });
 
+  const { trackUserFeedbackEvent } = await import(
+    "@/lib/beta/track-feedback-event"
+  );
+  await trackUserFeedbackEvent({
+    eventType: "application_sent",
+    userId: user.id,
+    entityType: parsed.data.targetType,
+    entityId: parsed.data.targetId,
+  });
+
   revalidatePath("/dashboard/applications");
   revalidatePath(`/project/${parsed.data.targetId}`);
   revalidatePath(`/opportunity/${parsed.data.targetId}`);
   revalidatePath(`/investment/${parsed.data.targetId}`);
   revalidatePath(`/expert/${parsed.data.targetId}`);
 
-  return { success: "Заявка отправлена. Владелец получит уведомление." };
+  redirect("/dashboard/applications?feedback=application_sent");
 }
 
 export async function updateApplicationStatusAction(

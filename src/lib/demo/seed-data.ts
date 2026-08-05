@@ -7,8 +7,31 @@
 export const DEMO_OWNER_ID = "a0000001-0000-4000-8000-000000000001";
 
 export const demoSeedMeta = {
-  version: 1,
-  note: "Демонстрационные данные ЦКР. Не содержат реальных ПДн.",
+  version: 2,
+  note: "Демонстрационные и beta-данные ЦКР. Не содержат реальных ПДн.",
+  categories: {
+    projects: [
+      "production",
+      "real-estate",
+      "agriculture",
+      "tourism",
+      "it",
+      "trade",
+      "services",
+      "energy",
+    ],
+    opportunities: [
+      "land",
+      "premises",
+      "equipment",
+      "ready_business",
+      "technology",
+      "service",
+      "partner",
+    ],
+    investments: ["equity", "loan", "partnership", "purchase"],
+    experts: ["lawyer", "accountant", "marketer", "engineer"],
+  },
 } as const;
 
 export const demoProjectsSeed = [
@@ -69,6 +92,21 @@ export const demoProjectsSeed = [
     categoryName: "IT",
     region: "Москва",
     investmentRequired: 18_000_000,
+    currency: "RUB",
+    stage: "startup" as const,
+  },
+  {
+    id: "a1000001-0000-4000-8000-000000000005",
+    slug: "energeticheskiy-kompleks",
+    title: "Локальная энергоустановка",
+    summary:
+      "Мини-ТЭС для промышленной площадки с возможностью продажи избытка мощности.",
+    description:
+      "Вымышленный beta-кейс: есть ТЭО и площадка. Нужны партнёры по оборудованию и капитал на монтаж.",
+    category: "energy",
+    categoryName: "Энергетика",
+    region: "Свердловская область",
+    investmentRequired: 95_000_000,
     currency: "RUB",
     stage: "startup" as const,
   },
@@ -149,6 +187,18 @@ export const demoInvestmentsSeed = [
     regions: ["Краснодарский край", "Ростовская область", "Южный ФО"],
     categories: ["tourism", "agriculture", "real-estate"],
     investmentType: "partnership" as const,
+  },
+  {
+    id: "a3000001-0000-4000-8000-000000000003",
+    title: "Инвестиционное предложение 25 млн ₽",
+    description:
+      "Beta-кейс: заёмное финансирование производственных проектов без реальных ПДн.",
+    amountMin: 10_000_000,
+    amountMax: 25_000_000,
+    currency: "RUB",
+    regions: ["Поволжье", "Урал"],
+    categories: ["production", "energy", "trade"],
+    investmentType: "loan" as const,
   },
 ] as const;
 

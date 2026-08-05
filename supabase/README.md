@@ -13,6 +13,7 @@
 | `migrations/20260325190000_documents_and_verification.sql` | documents, verification_requests, entity statuses, Storage bucket |
 | `migrations/20260325200000_admin_panel.sql` | profiles.is_blocked, is_blocked helper |
 | `migrations/20260325210000_lia_sessions_and_messages.sql` | lia_sessions, lia_messages, RLS |
+| `migrations/20260325290000_beta_launch.sql` | beta_invites, feedback, user_feedback_events, RLS |
 
 ## Как применить
 
@@ -34,9 +35,10 @@ SQL Editor → вставить содержимое миграции → Run.
 - Email provider: enabled
 - Confirm email: можно отключить на время локальной разработки, чтобы сразу получать сессию после `signUp`
 
-## Demo seed
+## Demo / beta seed
 
-См. [docs/demo-launch.md](../docs/demo-launch.md) и `seed/demo.sql`.
+См. [docs/demo-launch.md](../docs/demo-launch.md), [docs/beta-launch.md](../docs/beta-launch.md),
+`seed/demo.sql` и `seed/beta-categories.sql`.
 
 ```bash
 # при запущенном приложении

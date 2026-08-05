@@ -161,4 +161,13 @@
 - `/admin/product-tests` — прогоны, задачи, результаты
 - Чеклисты, проблемы, рекомендации, статусы
 
-## Этап 20 — API для мобильного приложения
+## Этап 20 — Закрытый beta-запуск ✅ (код готов)
+
+Подробности: [beta-launch.md](./beta-launch.md), [changelog.md](./changelog.md)
+
+- `beta_invites` + `/admin/invites`
+- `feedback` + FeedbackButton
+- `user_feedback_events` после ключевых действий
+- Beta badge, seed-категории, документация запуска
+
+## Этап 21 — API для мобильного приложения

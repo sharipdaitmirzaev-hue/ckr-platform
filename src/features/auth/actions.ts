@@ -7,7 +7,7 @@ import {
   registerSchema,
 } from "@/lib/auth/validations";
 import { createClient } from "@/lib/supabase/server";
-import type { AssignableRole } from "@/config/roles";
+import { ASSIGNABLE_ROLES, type AssignableRole } from "@/config/roles";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -69,14 +69,51 @@ export async function registerAction(
     password: formData.get("password"),
     fullName: formData.get("fullName"),
     role: formData.get("role"),
+    inviteCode: formData.get("inviteCode") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Проверьте форму" };
   }
 
-  const { email, password, fullName, role } = parsed.data;
+  const { email, password, fullName, inviteCode } = parsed.data;
+  let { role } = parsed.data;
   const supabase = createClient();
+
+  const { isInviteRequired } = await import("@/config/beta");
+  let inviteId: string | null = null;
+
+  if (isInviteRequired() || inviteCode) {
+    if (!inviteCode) {
+      return { error: "Для закрытой beta нужен код приглашения." };
+    }
+    const normalized = inviteCode.trim().toUpperCase();
+    const { data: invite, error: inviteError } = await supabase
+      .from("beta_invites")
+      .select("*")
+      .eq("code", normalized)
+      .maybeSingle();
+
+    if (inviteError || !invite) {
+      return { error: "Приглашение не найдено." };
+    }
+    if (invite.status !== "created" && invite.status !== "sent") {
+      return { error: "Приглашение уже использовано или отключено." };
+    }
+    if (
+      invite.email &&
+      invite.email.toLowerCase() !== email.toLowerCase()
+    ) {
+      return { error: "Email не совпадает с приглашением." };
+    }
+    if (
+      invite.role &&
+      (ASSIGNABLE_ROLES as readonly string[]).includes(invite.role)
+    ) {
+      role = invite.role as typeof role;
+    }
+    inviteId = invite.id;
+  }
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -102,8 +139,19 @@ export async function registerAction(
     userId: data.user.id,
     entityType: "user",
     entityId: data.user.id,
-    metadata: { role },
+    metadata: { role, inviteId },
   });
+
+  if (inviteId) {
+    await supabase
+      .from("beta_invites")
+      .update({
+        status: "used",
+        used_at: new Date().toISOString(),
+        used_by: data.user.id,
+      })
+      .eq("id", inviteId);
+  }
 
   // Если email confirmation включён и сессии нет — просим подтвердить почту.
   if (!data.session) {

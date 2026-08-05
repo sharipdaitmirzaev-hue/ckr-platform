@@ -176,6 +176,43 @@ export type ProductTestRow = {
   updated_at: string;
 };
 
+export type DbBetaInviteStatus = "created" | "sent" | "used" | "expired";
+
+export type BetaInviteRow = {
+  id: string;
+  email: string;
+  code: string;
+  role: string;
+  status: DbBetaInviteStatus;
+  created_at: string;
+  used_at: string | null;
+  created_by: string | null;
+  used_by: string | null;
+};
+
+export type DbFeedbackType = "bug" | "idea" | "question" | "review";
+
+export type FeedbackRow = {
+  id: string;
+  user_id: string | null;
+  type: DbFeedbackType;
+  message: string;
+  rating: number | null;
+  page: string;
+  created_at: string;
+};
+
+export type UserFeedbackEventRow = {
+  id: string;
+  user_id: string | null;
+  event_type: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  rating: number | null;
+  comment: string;
+  created_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -839,6 +876,55 @@ export type Database = {
           completed_at: string | null;
         }>;
       };
+      beta_invites: {
+        Row: BetaInviteRow;
+        Insert: {
+          id?: string;
+          email: string;
+          code: string;
+          role?: string;
+          status?: DbBetaInviteStatus;
+          created_by?: string | null;
+          used_by?: string | null;
+          used_at?: string | null;
+        };
+        Update: Partial<{
+          status: DbBetaInviteStatus;
+          used_at: string | null;
+          used_by: string | null;
+        }>;
+      };
+      feedback: {
+        Row: FeedbackRow;
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          type: DbFeedbackType;
+          message: string;
+          rating?: number | null;
+          page?: string;
+        };
+        Update: Partial<{
+          message: string;
+          rating: number | null;
+        }>;
+      };
+      user_feedback_events: {
+        Row: UserFeedbackEventRow;
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          event_type: string;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          rating?: number | null;
+          comment?: string;
+        };
+        Update: Partial<{
+          rating: number | null;
+          comment: string;
+        }>;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -992,6 +1078,8 @@ export type Database = {
       commission_status: DbCommissionStatus;
       product_test_kind: DbProductTestKind;
       product_test_status: DbProductTestStatus;
+      beta_invite_status: DbBetaInviteStatus;
+      feedback_type: DbFeedbackType;
     };
   };
 };
