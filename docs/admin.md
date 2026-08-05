@@ -41,6 +41,8 @@ values ('USER_UUID', 'admin');
 | `/admin/analytics` | Аналитика платформы (периоды, графики) |
 | `/admin/product-tests` | Продуктовые сценарии и задачи |
 | `/admin/invites` | Приглашения closed beta |
+| `/admin/crm` | CRM: контакты, лиды, задачи, история |
+| `/admin/crm/leads/[id]` | Карточка лида и конвертация |
 | `/admin/users` | Список и поиск пользователей |
 | `/admin/users/[id]` | Профиль, роли, блокировка |
 | `/admin/projects` | Модерация проектов |

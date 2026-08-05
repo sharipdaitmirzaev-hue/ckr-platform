@@ -466,6 +466,88 @@ export type UserFeedbackEvent = {
   createdAt?: string;
 };
 
+/** CRM ЦКР — контакт (Этап 21). */
+export type CrmContactType =
+  | "entrepreneur"
+  | "investor"
+  | "expert"
+  | "company"
+  | "partner"
+  | "other";
+
+export type CrmContactStatus = "new" | "active" | "inactive";
+
+export type CrmLeadStage =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "project_created"
+  | "deal"
+  | "closed";
+
+export type CrmActivityType =
+  | "call"
+  | "meeting"
+  | "email"
+  | "comment"
+  | "task";
+
+export type CrmTaskStatus = "open" | "done" | "cancelled";
+
+export type CrmContact = {
+  id: string;
+  name: string;
+  companyName: string;
+  phone: string;
+  email: string;
+  type: CrmContactType;
+  source: string;
+  assignedTo: string | null;
+  status: CrmContactStatus;
+  notes: string;
+  linkedUserId: string | null;
+  createdBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** CRM ЦКР — лид. */
+export type CrmLead = {
+  id: string;
+  contactId: string;
+  title: string;
+  description: string;
+  category: string;
+  assignedTo: string | null;
+  stage: CrmLeadStage;
+  convertedUserId: string | null;
+  convertedProjectId: string | null;
+  convertedOpportunityId: string | null;
+  convertedInvestmentId: string | null;
+  createdBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  contactName?: string;
+  contactEmail?: string;
+};
+
+/** CRM ЦКР — активность / задача. */
+export type CrmActivity = {
+  id: string;
+  contactId: string | null;
+  leadId: string | null;
+  type: CrmActivityType;
+  title: string;
+  body: string;
+  taskStatus: CrmTaskStatus | null;
+  dueAt: string | null;
+  completedAt: string | null;
+  createdBy: string | null;
+  createdAt?: string;
+  contactName?: string;
+  leadTitle?: string;
+};
+
 /** Прогон сценария или тестовая задача (Этап 19). */
 export type ProductTest = {
   id: string;

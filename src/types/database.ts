@@ -213,6 +213,81 @@ export type UserFeedbackEventRow = {
   created_at: string;
 };
 
+export type DbCrmContactType =
+  | "entrepreneur"
+  | "investor"
+  | "expert"
+  | "company"
+  | "partner"
+  | "other";
+
+export type DbCrmContactStatus = "new" | "active" | "inactive";
+
+export type DbCrmLeadStage =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "project_created"
+  | "deal"
+  | "closed";
+
+export type DbCrmActivityType =
+  | "call"
+  | "meeting"
+  | "email"
+  | "comment"
+  | "task";
+
+export type DbCrmTaskStatus = "open" | "done" | "cancelled";
+
+export type CrmContactRow = {
+  id: string;
+  name: string;
+  company_name: string;
+  phone: string;
+  email: string;
+  type: DbCrmContactType;
+  source: string;
+  assigned_to: string | null;
+  status: DbCrmContactStatus;
+  notes: string;
+  linked_user_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LeadRow = {
+  id: string;
+  contact_id: string;
+  title: string;
+  description: string;
+  category: string;
+  assigned_to: string | null;
+  stage: DbCrmLeadStage;
+  converted_user_id: string | null;
+  converted_project_id: string | null;
+  converted_opportunity_id: string | null;
+  converted_investment_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CrmActivityRow = {
+  id: string;
+  contact_id: string | null;
+  lead_id: string | null;
+  type: DbCrmActivityType;
+  title: string;
+  body: string;
+  task_status: DbCrmTaskStatus | null;
+  due_at: string | null;
+  completed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -925,6 +1000,62 @@ export type Database = {
           comment: string;
         }>;
       };
+      crm_contacts: {
+        Row: CrmContactRow;
+        Insert: {
+          id?: string;
+          name: string;
+          company_name?: string;
+          phone?: string;
+          email?: string;
+          type?: DbCrmContactType;
+          source?: string;
+          assigned_to?: string | null;
+          status?: DbCrmContactStatus;
+          notes?: string;
+          linked_user_id?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<
+          Omit<CrmContactRow, "id" | "created_at" | "created_by">
+        >;
+      };
+      leads: {
+        Row: LeadRow;
+        Insert: {
+          id?: string;
+          contact_id: string;
+          title: string;
+          description?: string;
+          category?: string;
+          assigned_to?: string | null;
+          stage?: DbCrmLeadStage;
+          converted_user_id?: string | null;
+          converted_project_id?: string | null;
+          converted_opportunity_id?: string | null;
+          converted_investment_id?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<Omit<LeadRow, "id" | "created_at" | "created_by">>;
+      };
+      crm_activities: {
+        Row: CrmActivityRow;
+        Insert: {
+          id?: string;
+          contact_id?: string | null;
+          lead_id?: string | null;
+          type: DbCrmActivityType;
+          title?: string;
+          body?: string;
+          task_status?: DbCrmTaskStatus | null;
+          due_at?: string | null;
+          completed_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<
+          Omit<CrmActivityRow, "id" | "created_at" | "created_by">
+        >;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -1080,6 +1211,11 @@ export type Database = {
       product_test_status: DbProductTestStatus;
       beta_invite_status: DbBetaInviteStatus;
       feedback_type: DbFeedbackType;
+      crm_contact_type: DbCrmContactType;
+      crm_contact_status: DbCrmContactStatus;
+      crm_lead_stage: DbCrmLeadStage;
+      crm_activity_type: DbCrmActivityType;
+      crm_task_status: DbCrmTaskStatus;
     };
   };
 };
