@@ -5,6 +5,14 @@ export type DbUserRole =
   | "company"
   | "admin";
 
+export type DbProjectStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "archived";
+
+export type DbProjectStage = "idea" | "startup" | "operating" | "expansion";
+
 export type ProfileRow = {
   id: string;
   full_name: string;
@@ -23,6 +31,32 @@ export type UserRoleRow = {
   user_id: string;
   role: DbUserRole;
   created_at: string;
+};
+
+export type CategoryRow = {
+  id: string;
+  name: string;
+  icon: string | null;
+  slug: string;
+  created_at: string;
+};
+
+export type ProjectRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  description: string;
+  category: string;
+  region: string;
+  investment_required: number | string;
+  currency: string;
+  stage: DbProjectStage;
+  status: DbProjectStatus;
+  cover_url: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Database = {
@@ -52,9 +86,41 @@ export type Database = {
         };
         Update: Partial<Omit<UserRoleRow, "id">>;
       };
+      categories: {
+        Row: CategoryRow;
+        Insert: {
+          id?: string;
+          name: string;
+          icon?: string | null;
+          slug: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<CategoryRow, "id" | "created_at">>;
+      };
+      projects: {
+        Row: ProjectRow;
+        Insert: {
+          id?: string;
+          owner_id: string;
+          title: string;
+          slug: string;
+          summary?: string;
+          description?: string;
+          category: string;
+          region?: string;
+          investment_required?: number;
+          currency?: string;
+          stage?: DbProjectStage;
+          status?: DbProjectStatus;
+          cover_url?: string | null;
+        };
+        Update: Partial<Omit<ProjectRow, "id" | "owner_id" | "created_at">>;
+      };
     };
     Enums: {
       user_role: DbUserRole;
+      project_status: DbProjectStatus;
+      project_stage: DbProjectStage;
     };
   };
 };

@@ -1,5 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import {
+  projectStageLabels,
+  projectStatusLabels,
+} from "@/config/projects";
 import type { Project } from "@/types";
 import Link from "next/link";
 
@@ -12,26 +16,43 @@ const currencyLabels: Record<string, string> = {
 type ProjectCardProps = {
   project: Project;
   href?: string;
+  categoryName?: string | null;
+  showStatus?: boolean;
 };
 
 function formatNeed(project: Project) {
   const symbol = currencyLabels[project.currency] ?? project.currency;
-  const amount = new Intl.NumberFormat("ru-RU").format(project.investmentRequired);
-  return `от ${amount} ${symbol}`;
+  const amount = new Intl.NumberFormat("ru-RU").format(
+    project.investmentRequired,
+  );
+  return `${amount} ${symbol}`;
 }
 
-export function ProjectCard({ project, href }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  href,
+  categoryName,
+  showStatus = false,
+}: ProjectCardProps) {
   const content = (
     <>
       <div className="flex flex-wrap items-center gap-2">
+        {categoryName || project.category ? (
+          <Badge variant="accent">
+            {categoryName ?? project.category}
+          </Badge>
+        ) : null}
         <Badge variant="soft">{project.region}</Badge>
-        <Badge variant="accent">{formatNeed(project)}</Badge>
-        {project.seekingPartners ? (
-          <Badge variant="default">Партнёры</Badge>
+        <Badge variant="default">{formatNeed(project)}</Badge>
+        {showStatus ? (
+          <Badge variant="soft">{projectStatusLabels[project.status]}</Badge>
         ) : null}
       </div>
       <CardTitle className="mt-4">{project.title}</CardTitle>
       <CardDescription>{project.summary}</CardDescription>
+      <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted">
+        {projectStageLabels[project.stage]}
+      </p>
     </>
   );
 

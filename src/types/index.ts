@@ -10,7 +10,7 @@ export type UserRole =
   | "company"
   | "admin";
 
-export type ProjectStage = "idea" | "mvp" | "operating" | "scaling";
+export type ProjectStage = "idea" | "startup" | "operating" | "expansion";
 
 export type PublishStatus = "draft" | "moderation" | "published" | "archived";
 
@@ -54,20 +54,28 @@ export type User = {
   updatedAt: string;
 };
 
-/** Бизнес-проект / идея. */
+/** Отраслевая категория проекта. */
+export type Category = {
+  id: string;
+  name: string;
+  icon?: string | null;
+  slug: string;
+};
+
+/** Бизнес-проект — центральная сущность ЦКР. */
 export type Project = {
   id: string;
   ownerId: string;
   title: string;
-  slug?: string;
+  slug: string;
   summary: string;
-  description?: string;
+  description: string;
+  category: string;
   region: string;
   investmentRequired: number;
   currency: string;
   stage: ProjectStage;
   status: PublishStatus;
-  seekingPartners: boolean;
   coverUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -117,7 +125,6 @@ export type Investment = {
   currency: string;
   sectors?: string[];
   regions?: string[];
-  /** Связь с конкретным проектом, если предложение целевое */
   projectId?: string | null;
   status: InvestmentOfferStatus;
   createdAt?: string;

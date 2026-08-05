@@ -1,42 +1,51 @@
 import type { Opportunity, Project, Solution } from "@/types";
 
-/** Плейсхолдеры каталогов до подключения Supabase. */
+/** Плейсхолдеры для модулей без БД (возможности/решения). */
 export const mockProjects: Project[] = [
   {
     id: "proj-1",
     ownerId: "user-demo",
     title: "Производственная линия в регионе",
+    slug: "proizvodstvennaya-liniya",
     summary: "Масштабирование производства с поиском инвестора и площадки.",
+    description:
+      "Действующее производство готовит расширение линии. Требуются инвестиции и партнёр по площадке.",
+    category: "production",
     region: "Центральный ФО",
     investmentRequired: 25_000_000,
     currency: "RUB",
     stage: "operating",
     status: "published",
-    seekingPartners: true,
   },
   {
     id: "proj-2",
     ownerId: "user-demo",
     title: "Цифровой сервис для B2B",
-    summary: "MVP готов, требуется капитал на выход в новые отрасли.",
+    slug: "cifrovoy-servis-b2b",
+    summary: "Продукт на стадии стартапа, требуется капитал на выход в новые отрасли.",
+    description:
+      "B2B-сервис с работающим MVP. Команда ищет инвестора для масштабирования продаж.",
+    category: "it",
     region: "Москва",
     investmentRequired: 8_000_000,
     currency: "RUB",
-    stage: "mvp",
+    stage: "startup",
     status: "published",
-    seekingPartners: true,
   },
   {
     id: "proj-3",
     ownerId: "user-demo",
     title: "Агропроект с переработкой",
+    slug: "agroproekt-pererabotka",
     summary: "Поиск земли, оборудования и отраслевых партнёров.",
+    description:
+      "Идея агропроекта с переработкой сырья. Нужны земельный участок и технологическое оборудование.",
+    category: "agriculture",
     region: "Южный ФО",
     investmentRequired: 40_000_000,
     currency: "RUB",
     stage: "idea",
     status: "published",
-    seekingPartners: true,
   },
 ];
 

@@ -56,7 +56,7 @@ export default function HomePage() {
               <ButtonLink href="/projects" size="lg">
                 Найти возможности
               </ButtonLink>
-              <ButtonLink href="/register" variant="outline" size="lg">
+              <ButtonLink href="/dashboard/projects/create" variant="outline" size="lg">
                 Разместить проект
               </ButtonLink>
             </div>

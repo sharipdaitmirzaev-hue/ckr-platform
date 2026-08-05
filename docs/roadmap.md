@@ -13,30 +13,14 @@
 
 Подробности: [auth.md](./auth.md)
 
-### Сделано в коде
+## Этап 2 — Проекты ✅ (код готов)
 
-1. Clients `@supabase/ssr`, middleware сессии, env  
-2. Миграция `profiles` + `user_roles` + trigger + RLS  
-3. `/login`, `/register`, `/onboarding`, logout, `getCurrentUser()`  
-4. Защита `/dashboard`  
-5. Документация `docs/auth.md`
+Подробности: [projects.md](./projects.md)
 
-### Что нужно со стороны Supabase-проекта
-
-- Создать проект и прописать ключи в `.env.local`
-- Применить SQL-миграцию
-- (Опционально) отключить confirm email для удобной разработки
-
-### Вне скоупа Этапа 1
-
-- CRUD проектов и каталоги из БД
-- Storage документов
-- Лия API
-- OAuth-провайдеры
-
-## Этап 2 — Проекты
-
-- CRUD, каталог, фильтры, детальная страница
+- Таблицы `categories` + `projects`
+- RLS, публичный каталог, страница проекта
+- CRUD владельца: `/dashboard/projects`, create, edit
+- `ProjectCard` в стиле ЦКР
 
 ## Этап 3 — Возможности
 

@@ -42,6 +42,7 @@ supabase           # миграции и functions (далее)
 
 - [Продукт](./docs/product.md)
 - [Auth](./docs/auth.md)
+- [Проекты](./docs/projects.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 
