@@ -2,6 +2,7 @@ import {
   BUSINESS_AUDIT_START_PATTERN,
   BUSINESS_AUDIT_STEPS,
   BUSINESS_IDEA_STEPS,
+  CHECK_PROGRESS_START_PATTERN,
   CHECK_RELIABILITY_PATTERN,
   DEVELOP_STRATEGY_START_PATTERN,
   DEVELOP_STRATEGY_STEPS,
@@ -9,6 +10,8 @@ import {
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
 } from "@/config/lia";
+import { trackAnalyticsEvent } from "@/lib/analytics/track";
+import { getProjectProgressSummary } from "@/lib/execution/queries";
 import { getLiaProvider } from "@/lib/lia/provider";
 import { buildRealizeProjectGuidance } from "@/lib/lia/realize";
 import {
@@ -17,6 +20,8 @@ import {
   searchOpportunities,
   searchProjects,
 } from "@/lib/lia/search";
+import { getProjectById } from "@/lib/projects/queries";
+import { createClient } from "@/lib/supabase/server";
 import type {
   BusinessAuditReport,
   LiaCatalogDraft,
@@ -24,6 +29,7 @@ import type {
   LiaMessageMetadata,
   LiaResultLink,
   LiaScenarioId,
+  ProgressReport,
   ProjectDraft,
   SolutionDraft,
   StrategyReport,
@@ -75,6 +81,9 @@ function detectScenario(
   }
   if (DEVELOP_STRATEGY_START_PATTERN.test(value)) {
     return "develop_strategy";
+  }
+  if (CHECK_PROGRESS_START_PATTERN.test(value)) {
+    return "check_progress";
   }
   return null;
 }
@@ -770,6 +779,176 @@ async function handleSolution(query: string): Promise<LiaEngineResult> {
   };
 }
 
+async function handleCheckProgress(input: {
+  userMessage: string;
+  projectId?: string | null;
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const projectId =
+    input.projectId || extractProjectIdFromMessage(input.userMessage);
+
+  if (!projectId) {
+    return {
+      content: [
+        "Сценарий «Проверь прогресс проекта».",
+        "",
+        "Укажите проект: откройте workspace и нажмите «Проверь прогресс проекта»,",
+        "или пришлите UUID в формате `projectId: <uuid>`.",
+        "",
+        "Лия только анализирует — данные не изменяет.",
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario: "check_progress",
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const project = await getProjectById(projectId);
+  if (!project) {
+    return {
+      content: `Проект не найден.\n\n_${LIA_DISCLAIMER}_`,
+      metadata: { scenario: "check_progress", disclaimer: LIA_DISCLAIMER },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const summary = await getProjectProgressSummary(projectId);
+  const completed_items = summary.items
+    .filter((item) => item.status === "completed")
+    .map((item) => `${item.orderNumber}. ${item.title}`);
+  const delayed_items = [
+    ...summary.overdueItems.map(
+      (item) => `Этап: ${item.orderNumber}. ${item.title}`,
+    ),
+    ...summary.overdueTasks.map((task) => `Задача: ${task.title}`),
+  ];
+
+  const laggingMetrics = summary.metrics.filter((metric) => {
+    if (metric.targetValue <= 0) return false;
+    return metric.currentValue / metric.targetValue < 0.4;
+  });
+
+  const risks = [
+    ...(summary.overdueTasks.length > 0
+      ? [`Просрочено задач: ${summary.overdueTasks.length}`]
+      : []),
+    ...(summary.overdueItems.length > 0
+      ? [`Просрочено этапов roadmap: ${summary.overdueItems.length}`]
+      : []),
+    ...(summary.items.some((item) => item.status === "blocked")
+      ? ["Есть заблокированные этапы roadmap"]
+      : []),
+    ...laggingMetrics.map(
+      (metric) =>
+        `KPI «${metric.name}» отстаёт: ${metric.currentValue}/${metric.targetValue} ${metric.unit}`,
+    ),
+    ...(!summary.roadmap
+      ? ["Дорожная карта не создана — прогресс сложно контролировать"]
+      : []),
+  ];
+
+  const recommendations = [
+    summary.currentItem
+      ? `Сфокусируйтесь на этапе «${summary.currentItem.title}» и закройте его задачи`
+      : "Задайте или активируйте текущий этап roadmap",
+    summary.overdueTasks.length > 0
+      ? "Разберите просроченные задачи: переназначьте срок или статус"
+      : "Держите ритм обновления статусов задач еженедельно",
+    summary.metrics.length > 0
+      ? "Обновите текущие значения KPI в workspace"
+      : "Добавьте KPI проекта (клиенты, партнёры, сделки)",
+    "После корректировок снова запустите проверку прогресса",
+  ];
+
+  const next_steps = [
+    summary.upcomingTasks[0]
+      ? `Ближайшая задача: ${summary.upcomingTasks[0].title}`
+      : "Добавьте задачи к текущему этапу roadmap",
+    "Зафиксируйте проверку прогресса в workspace (кнопка)",
+    "При необходимости обновите статусы этапов и milestones",
+  ];
+
+  const report: ProgressReport = {
+    projectTitle: project.title,
+    summary: summary.roadmap
+      ? `Прогресс «${project.title}»: ${summary.percentComplete}% этапов roadmap. Текущий этап — ${
+          summary.currentItem?.title ?? "не определён"
+        }.`
+      : `У проекта «${project.title}» пока нет активной дорожной карты. Создайте roadmap в workspace.`,
+    completed_items,
+    delayed_items,
+    risks:
+      risks.length > 0
+        ? risks
+        : ["Критических отклонений по срокам не видно"],
+    recommendations,
+    next_steps,
+    percentComplete: summary.percentComplete,
+    currentStage: summary.currentItem?.title ?? null,
+  };
+
+  try {
+    const supabase = createClient();
+    await supabase.from("project_activity").insert({
+      project_id: projectId,
+      actor_id: input.userId,
+      activity_type: "project_progress_checked",
+      title: "Лия: проверка прогресса проекта",
+      body: report.summary,
+      metadata: { source: "lia", scenario: "check_progress" },
+    });
+  } catch {
+    // мягкий сбой истории не блокирует ответ
+  }
+
+  await trackAnalyticsEvent({
+    eventType: "project_progress_checked",
+    userId: input.userId,
+    entityType: "project",
+    entityId: projectId,
+    metadata: { source: "lia", percentComplete: report.percentComplete },
+  });
+
+  return {
+    content: [
+      "Проверка прогресса проекта завершена.",
+      "",
+      report.summary,
+      "",
+      "Ниже — ProgressReport. Лия не изменяет данные проекта — только анализирует и предлагает.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "check_progress",
+      progressReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [
+      {
+        type: "project",
+        id: project.id,
+        title: project.title,
+        summary: project.summary,
+        href: `/dashboard/projects/${project.id}/workspace`,
+      },
+    ],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleRealizeProject(input: {
   userMessage: string;
   projectId?: string | null;
@@ -999,6 +1178,24 @@ export async function runLiaEngine(input: {
       };
     }
     return handleRealizeProject({
+      userMessage: input.userMessage,
+      projectId: input.projectId,
+      userId: input.userId,
+    });
+  }
+
+  if (scenario === "check_progress") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы проверить прогресс проекта.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "check_progress", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleCheckProgress({
       userMessage: input.userMessage,
       projectId: input.projectId,
       userId: input.userId,

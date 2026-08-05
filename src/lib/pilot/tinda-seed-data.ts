@@ -41,12 +41,181 @@ export const TINDA_LEAD_IDS = {
   supplierOnboard: "b000000a-0000-4000-8000-000000000002",
 } as const;
 
+/** Project Execution (этап 33) */
+export const TINDA_ROADMAP_ID = "b000000b-0000-4000-8000-000000000001";
+
+export const TINDA_ROADMAP_ITEM_IDS = {
+  prep: "b000000c-0000-4000-8000-000000000001",
+  sales: "b000000c-0000-4000-8000-000000000002",
+  scale: "b000000c-0000-4000-8000-000000000003",
+} as const;
+
+export const TINDA_TASK_IDS = {
+  assortment: "b000000d-0000-4000-8000-000000000001",
+  suppliers: "b000000d-0000-4000-8000-000000000002",
+  warehouse: "b000000d-0000-4000-8000-000000000003",
+  findClients: "b000000d-0000-4000-8000-000000000004",
+  negotiations: "b000000d-0000-4000-8000-000000000005",
+  firstDeals: "b000000d-0000-4000-8000-000000000006",
+  expandClients: "b000000d-0000-4000-8000-000000000007",
+  newRegions: "b000000d-0000-4000-8000-000000000008",
+  newCategories: "b000000d-0000-4000-8000-000000000009",
+} as const;
+
+export const TINDA_METRIC_IDS = {
+  clients: "b000000e-0000-4000-8000-000000000001",
+  contacts: "b000000e-0000-4000-8000-000000000002",
+  partners: "b000000e-0000-4000-8000-000000000003",
+  deals: "b000000e-0000-4000-8000-000000000004",
+} as const;
+
 export const tindaSeedMeta = {
-  version: 1,
+  version: 2,
   organization: "ООО ТИНДА",
   projectTitle: "Развитие оптовой платформы ТИНДА",
-  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн сотрудников.",
+  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн сотрудников. Этап 33: roadmap + KPI.",
 } as const;
+
+export const tindaExecutionRoadmap = {
+  id: TINDA_ROADMAP_ID,
+  projectId: TINDA_PROJECT_ID,
+  title: "Roadmap реализации оптовой платформы ТИНДА",
+  description:
+    "Рабочая дорожная карта: подготовка → продажи → масштабирование. Связана с milestones и задачами.",
+  status: "active" as const,
+};
+
+export const tindaExecutionItems = [
+  {
+    id: TINDA_ROADMAP_ITEM_IDS.prep,
+    title: "Подготовка",
+    description: "Ассортимент, поставщики, склад — готовность к росту продаж.",
+    orderNumber: 1,
+    status: "completed" as const,
+    milestoneId: TINDA_MILESTONE_IDS.prep,
+  },
+  {
+    id: TINDA_ROADMAP_ITEM_IDS.sales,
+    title: "Продажи",
+    description: "Поиск клиентов, переговоры, первые сделки.",
+    orderNumber: 2,
+    status: "in_progress" as const,
+    milestoneId: TINDA_MILESTONE_IDS.sales,
+  },
+  {
+    id: TINDA_ROADMAP_ITEM_IDS.scale,
+    title: "Масштабирование",
+    description: "Расширение клиентов, новые регионы, новые категории.",
+    orderNumber: 3,
+    status: "planned" as const,
+    milestoneId: TINDA_MILESTONE_IDS.scale,
+  },
+] as const;
+
+export const tindaExecutionTasks = [
+  {
+    id: TINDA_TASK_IDS.assortment,
+    itemId: TINDA_ROADMAP_ITEM_IDS.prep,
+    title: "Ассортимент",
+    description: "Зафиксировать приоритетные категории SKU для пилота.",
+    status: "completed" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.suppliers,
+    itemId: TINDA_ROADMAP_ITEM_IDS.prep,
+    title: "Поставщики",
+    description: "Сегментировать ключевых и логистических поставщиков в CRM.",
+    status: "completed" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.warehouse,
+    itemId: TINDA_ROADMAP_ITEM_IDS.prep,
+    title: "Склад",
+    description: "Проверить складскую схему по ключевым SKU.",
+    status: "completed" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.findClients,
+    itemId: TINDA_ROADMAP_ITEM_IDS.sales,
+    title: "Поиск клиентов",
+    description: "Расширить воронку B2B-клиентов в регионе.",
+    status: "in_progress" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.negotiations,
+    itemId: TINDA_ROADMAP_ITEM_IDS.sales,
+    title: "Переговоры",
+    description: "Вести переговоры с ключевыми розничными сетями.",
+    status: "in_progress" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.firstDeals,
+    itemId: TINDA_ROADMAP_ITEM_IDS.sales,
+    title: "Первые сделки",
+    description: "Закрыть пилотные сделки через workspace ЦКР.",
+    status: "new" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.expandClients,
+    itemId: TINDA_ROADMAP_ITEM_IDS.scale,
+    title: "Расширение клиентов",
+    description: "Увеличить клиентскую базу за пределами текущего ядра.",
+    status: "new" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.newRegions,
+    itemId: TINDA_ROADMAP_ITEM_IDS.scale,
+    title: "Новые регионы",
+    description: "Подготовить выход в соседние регионы ДВ.",
+    status: "new" as const,
+  },
+  {
+    id: TINDA_TASK_IDS.newCategories,
+    itemId: TINDA_ROADMAP_ITEM_IDS.scale,
+    title: "Новые категории",
+    description: "Добавить 1–2 новые категории ассортимента.",
+    status: "new" as const,
+  },
+] as const;
+
+export const tindaExecutionMetrics = [
+  {
+    id: TINDA_METRIC_IDS.clients,
+    name: "Количество клиентов",
+    description: "Активные B2B-клиенты оптовой платформы",
+    targetValue: 100,
+    currentValue: 25,
+    unit: "шт",
+    period: "year",
+  },
+  {
+    id: TINDA_METRIC_IDS.contacts,
+    name: "Количество контактов",
+    description: "Контакты CRM по сегментам клиентов / поставщиков / партнёров",
+    targetValue: 50,
+    currentValue: 6,
+    unit: "шт",
+    period: "year",
+  },
+  {
+    id: TINDA_METRIC_IDS.partners,
+    name: "Количество партнёров",
+    description: "Стратегические и операционные партнёры",
+    targetValue: 20,
+    currentValue: 2,
+    unit: "шт",
+    period: "year",
+  },
+  {
+    id: TINDA_METRIC_IDS.deals,
+    name: "Количество сделок",
+    description: "Сделки в контуре ЦКР по проекту ТИНДА",
+    targetValue: 10,
+    currentValue: 1,
+    unit: "шт",
+    period: "year",
+  },
+] as const;
 
 export const tindaOrganization = {
   id: TINDA_ORG_ID,

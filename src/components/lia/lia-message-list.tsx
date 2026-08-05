@@ -1,5 +1,6 @@
 import { BusinessAuditReportCard } from "@/components/lia/business-audit-report";
 import { LiaResults } from "@/components/lia/lia-results";
+import { ProgressReportCard } from "@/components/lia/progress-report";
 import { StrategyReportCard } from "@/components/lia/strategy-report";
 import { LiaProjectFlow } from "@/features/lia/components/lia-project-flow";
 import type { LiaMessage } from "@/types/lia";
@@ -53,6 +54,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const projectDraft = message.metadata?.projectDraft;
         const auditReport = message.metadata?.businessAuditReport;
         const strategyReport = message.metadata?.strategyReport;
+        const progressReport = message.metadata?.progressReport;
+        const progressProjectId =
+          results.find((item) => item.type === "project")?.id ?? null;
 
         return (
           <li
@@ -81,6 +85,12 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && strategyReport ? (
               <StrategyReportCard report={strategyReport} />
+            ) : null}
+            {!isUser && progressReport ? (
+              <ProgressReportCard
+                report={progressReport}
+                projectId={progressProjectId}
+              />
             ) : null}
           </li>
         );

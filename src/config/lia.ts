@@ -79,6 +79,13 @@ export const LIA_SCENARIOS: {
     prompt: "Разработать стратегию развития",
     description: "Цели, направления роста, ресурсы, риски, план действий",
   },
+  {
+    id: "check_progress",
+    label: "Проверь прогресс проекта",
+    prompt: "Проверь прогресс проекта",
+    description:
+      "Анализ roadmap, задач, KPI и активности → ProgressReport (без изменений данных)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -140,6 +147,9 @@ export const BUSINESS_AUDIT_START_PATTERN =
 
 export const DEVELOP_STRATEGY_START_PATTERN =
   /разработать\s+стратегию|стратегия\s+развития|develop\s+strategy|построй\s+стратегию/i;
+
+export const CHECK_PROGRESS_START_PATTERN =
+  /проверь\s+прогресс|проверка\s+прогресса|прогресс\s+проекта|check\s+progress|как\s+ид[её]т\s+реализац/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

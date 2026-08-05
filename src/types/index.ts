@@ -598,7 +598,8 @@ export type TaskRelatedType =
   | "project"
   | "deal"
   | "document"
-  | "verification";
+  | "verification"
+  | "roadmap_item";
 
 export type OperatorRoleName =
   | "manager"

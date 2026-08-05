@@ -11,6 +11,10 @@ export const ANALYTICS_EVENT_TYPES = [
   "document_uploaded",
   "document_verified",
   "milestone_completed",
+  "roadmap_created",
+  "roadmap_item_completed",
+  "metric_updated",
+  "project_progress_checked",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -28,6 +32,10 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   document_uploaded: "Загрузка документа",
   document_verified: "Верификация документа",
   milestone_completed: "Завершение этапа",
+  roadmap_created: "Создание roadmap",
+  roadmap_item_completed: "Завершение этапа roadmap",
+  metric_updated: "Обновление KPI",
+  project_progress_checked: "Проверка прогресса проекта",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

@@ -8,8 +8,13 @@ import {
   TINDA_OWNER_ID,
   TINDA_PARTNERSHIP_IDS,
   TINDA_PROJECT_ID,
+  TINDA_ROADMAP_ID,
   buildTindaLiaReport,
   tindaCrmContacts,
+  tindaExecutionItems,
+  tindaExecutionMetrics,
+  tindaExecutionRoadmap,
+  tindaExecutionTasks,
   tindaMilestones,
   tindaOrganization,
   tindaProject,
@@ -174,6 +179,86 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         sort_order: item.sortOrder,
       });
       if (!error) milestones += 1;
+    }
+
+    const { error: roadmapError } = await admin.from("project_roadmaps").upsert({
+      id: tindaExecutionRoadmap.id,
+      project_id: tindaExecutionRoadmap.projectId,
+      title: tindaExecutionRoadmap.title,
+      description: tindaExecutionRoadmap.description,
+      status: tindaExecutionRoadmap.status,
+    });
+    if (roadmapError) {
+      throw new Error(`project_roadmaps: ${roadmapError.message}`);
+    }
+
+    let roadmapItems = 0;
+    for (const item of tindaExecutionItems) {
+      const { error } = await admin.from("roadmap_items").upsert({
+        id: item.id,
+        roadmap_id: TINDA_ROADMAP_ID,
+        title: item.title,
+        description: item.description,
+        order_number: item.orderNumber,
+        responsible_user_id: ownerId,
+        status: item.status,
+        milestone_id: item.milestoneId,
+      });
+      if (!error) roadmapItems += 1;
+    }
+
+    let roadmapTasks = 0;
+    for (const task of tindaExecutionTasks) {
+      const { error } = await admin.from("tasks").upsert({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        assigned_to: ownerId,
+        related_type: "roadmap_item",
+        related_id: task.itemId,
+        roadmap_item_id: task.itemId,
+        priority: "medium",
+        status: task.status,
+        created_by: ownerId,
+      });
+      if (!error) roadmapTasks += 1;
+    }
+
+    let metrics = 0;
+    for (const metric of tindaExecutionMetrics) {
+      const { error } = await admin.from("project_metrics").upsert({
+        id: metric.id,
+        project_id: TINDA_PROJECT_ID,
+        name: metric.name,
+        description: metric.description,
+        target_value: metric.targetValue,
+        current_value: metric.currentValue,
+        unit: metric.unit,
+        period: metric.period,
+      });
+      if (!error) metrics += 1;
+    }
+
+    const { count: roadmapActivityCount } = await admin
+      .from("project_activity")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", TINDA_PROJECT_ID)
+      .eq("activity_type", "roadmap_created")
+      .contains("metadata", { source: "tinda-pilot-seed" });
+
+    if (!roadmapActivityCount) {
+      await admin.from("project_activity").insert({
+        project_id: TINDA_PROJECT_ID,
+        actor_id: ownerId,
+        activity_type: "roadmap_created",
+        title: "Создана дорожная карта ТИНДА",
+        body: tindaExecutionRoadmap.title,
+        metadata: {
+          source: "tinda-pilot-seed",
+          roadmapId: TINDA_ROADMAP_ID,
+          version: tindaSeedMeta.version,
+        },
+      });
     }
 
     const { count: activityCount } = await admin
@@ -386,6 +471,9 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         organization: 1,
         project: 1,
         milestones,
+        roadmapItems,
+        roadmapTasks,
+        metrics,
         contacts,
         deals: 1,
         liaAnalyses: 1,

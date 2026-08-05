@@ -5,7 +5,7 @@
 
 Логика: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Версия ядра после Этапа 32: `0.32.0-beta` (методология ЦКР и шаблоны проектов, см. [ckr-methodology.md](./ckr-methodology.md)).
+Версия ядра после Этапа 33: `0.33.0-beta` (Project Execution — roadmap, KPI, контроль прогресса, см. [project-execution.md](./project-execution.md)).
 
 ---
 
@@ -37,6 +37,7 @@
 | Документы / верификация | `/dashboard/documents` | verification.md |
 | Лия | `/lia` | lia.md, lia-flows.md |
 | Сделки и workspace | `/dashboard/projects/[id]/workspace` | deals-and-workspace.md |
+| Project Execution | roadmap / KPI / прогресс в workspace | project-execution.md |
 | Публичная платформа | `/`, SEO | public-platform.md |
 | Монетизация | `/pricing`, billing | monetization.md |
 | Аналитика | admin analytics | analytics.md |
@@ -56,7 +57,7 @@ draft → moderation → published → active → completed → archived
 - `stage` (idea/startup/…) — зрелость бизнеса  
 - `status` — этап жизненного цикла на платформе  
 
-Связи: applications, investments, deals, milestones, workspace, analytics, reputation.
+Связи: applications, investments, deals, milestones, roadmap, metrics, workspace, analytics, reputation.
 
 ---
 

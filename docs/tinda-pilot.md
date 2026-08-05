@@ -1,9 +1,10 @@
 # Пилот ЦКР — ООО ТИНДА
 
 Этап 30: первый пилотный проект на реальной организации.  
-Этап 32: применена методология ЦКР (текущий этап, стратегические цели, roadmap).
+Этап 32: применена методология ЦКР (текущий этап, стратегические цели, roadmap).  
+Этап 33: Project Execution — рабочая дорожная карта, задачи, KPI.
 
-Версия: `0.32.0-beta` · Связано: [ckr-methodology.md](./ckr-methodology.md) · [closed-pilot.md](./closed-pilot.md) · [partners.md](./partners.md) · [crm.md](./crm.md)
+Версия: `0.33.0-beta` · Связано: [project-execution.md](./project-execution.md) · [ckr-methodology.md](./ckr-methodology.md) · [closed-pilot.md](./closed-pilot.md) · [crm.md](./crm.md)
 
 Новые бизнес-модули **не добавлялись**. Использованы существующие контуры ЦКР.
 
@@ -71,7 +72,21 @@
 | 5 | Реализация | realization | planned |
 | 6 | Контроль результата | result_control | planned |
 
-Структура в коде: `tindaMethodology`, `tindaRoadmap` (`src/lib/pilot/tinda-seed-data.ts`) — без генерации файлов.
+Структура методологии: `tindaMethodology`, `tindaRoadmap` (черновик этапа 32).
+
+### Project Execution (этап 33)
+
+Рабочая roadmap в БД (`project_roadmaps` / `roadmap_items` / `tasks` / `project_metrics`):
+
+| Этап | Задачи | Статус seed |
+|---|---|---|
+| Подготовка | ассортимент, поставщики, склад | completed |
+| Продажи | поиск клиентов, переговоры, первые сделки | in_progress |
+| Масштабирование | расширение клиентов, новые регионы, новые категории | planned |
+
+KPI seed: клиенты 25/100 · контакты 6/50 · партнёры 2/20 · сделки 1/10.
+
+Код: `tindaExecutionRoadmap`, `tindaExecutionItems`, `tindaExecutionTasks`, `tindaExecutionMetrics`.
 
 Маршруты:
 

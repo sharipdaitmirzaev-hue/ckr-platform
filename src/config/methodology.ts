@@ -105,8 +105,8 @@ export const CKR_METHODOLOGY: CkrMethodologyStageDef[] = [
       "Активность проекта",
       "Связь с оператором / CRM задачами",
     ],
-    liaHints: ["realize_project"],
-    outputs: ["обновлённый roadmap", "статус сделки active"],
+    liaHints: ["realize_project", "check_progress"],
+    outputs: ["обновлённый roadmap", "статус сделки active", "ProjectProgress"],
   },
   {
     id: "result_control",
@@ -115,11 +115,12 @@ export const CKR_METHODOLOGY: CkrMethodologyStageDef[] = [
     goal: "Оценить итог, репутацию и следующие циклы роста.",
     activities: [
       "Завершение milestones / deal completed",
+      "Лия: «Проверь прогресс проекта»",
       "Отзывы и reputation",
       "Feedback / pilot issues",
     ],
-    liaHints: ["check_reliability"],
-    outputs: ["completed project/deal", "уроки для следующего цикла"],
+    liaHints: ["check_progress", "check_reliability"],
+    outputs: ["ProgressReport", "completed project/deal", "уроки для следующего цикла"],
   },
 ];
 

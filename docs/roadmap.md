@@ -284,4 +284,15 @@
 - Применение к пилоту ТИНДА
 - Без новых крупных модулей
 
-## Этап 33 — API для мобильного приложения
+## Этап 33 — Project Execution ✅ (код готов)
+
+Подробности: [project-execution.md](./project-execution.md)
+
+- `project_roadmaps` / `roadmap_items` / `project_metrics`
+- Связь с `tasks` и `project_milestones`
+- `ProjectProgress` в workspace
+- Лия: «Проверь прогресс проекта» → `ProgressReport`
+- Применение к пилоту ТИНДА
+- Без новых типов участников и крупных модулей
+
+## Этап 34 — API для мобильного приложения

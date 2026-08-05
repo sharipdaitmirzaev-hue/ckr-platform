@@ -3,6 +3,7 @@ import { ActivityTimeline } from "@/components/deals/activity-timeline";
 import { DealCard } from "@/components/deals/deal-card";
 import { MilestoneList } from "@/components/deals/milestone-list";
 import { DocumentList } from "@/components/documents/document-list";
+import { ProjectProgress } from "@/components/execution/project-progress";
 import { ProjectLifecycle } from "@/components/projects/project-lifecycle";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -23,6 +24,7 @@ import {
   listParticipantsForProject,
 } from "@/lib/deals/queries";
 import { listDocumentsForTarget } from "@/lib/documents/queries";
+import { getProjectProgressSummary } from "@/lib/execution/queries";
 import { getProjectById } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -56,15 +58,23 @@ export default async function ProjectWorkspacePage({
 
   const isOwner = project.ownerId === current.user.id;
 
-  const [deals, participants, milestones, activity, documents, analytics] =
-    await Promise.all([
-      listDealsForProject(project.id),
-      listParticipantsForProject(project.id),
-      listMilestonesForProject(project.id),
-      listActivityForProject(project.id),
-      listDocumentsForTarget("project", project.id),
-      getProjectAnalytics(project.id),
-    ]);
+  const [
+    deals,
+    participants,
+    milestones,
+    activity,
+    documents,
+    analytics,
+    progress,
+  ] = await Promise.all([
+    listDealsForProject(project.id),
+    listParticipantsForProject(project.id),
+    listMilestonesForProject(project.id),
+    listActivityForProject(project.id),
+    listDocumentsForTarget("project", project.id),
+    getProjectAnalytics(project.id),
+    getProjectProgressSummary(project.id),
+  ]);
 
   // Unique participants by userId for display
   const uniqueParticipants = Array.from(
@@ -87,6 +97,12 @@ export default async function ProjectWorkspacePage({
         <div className="flex flex-wrap gap-2">
           <ButtonLink href={`/lia?project=${project.id}`} variant="outline">
             Помоги реализовать проект
+          </ButtonLink>
+          <ButtonLink
+            href={`/lia?project=${project.id}&scenario=check_progress`}
+            variant="outline"
+          >
+            Проверь прогресс проекта
           </ButtonLink>
           {isOwner ? (
             <ButtonLink
@@ -119,6 +135,12 @@ export default async function ProjectWorkspacePage({
           canAdvance={isOwner}
         />
       </Card>
+
+      <ProjectProgress
+        summary={progress}
+        canManage={isOwner}
+        projectTitle={project.title}
+      />
 
       <ProjectAnalytics data={analytics} />
 

@@ -330,7 +330,21 @@ export type DbTaskRelatedType =
   | "project"
   | "deal"
   | "document"
-  | "verification";
+  | "verification"
+  | "roadmap_item";
+
+export type DbRoadmapStatus =
+  | "draft"
+  | "active"
+  | "completed"
+  | "archived";
+
+export type DbRoadmapItemStatus =
+  | "planned"
+  | "in_progress"
+  | "blocked"
+  | "completed"
+  | "cancelled";
 
 export type OperatorRoleRow = {
   id: string;
@@ -348,10 +362,48 @@ export type TaskRow = {
   assigned_to: string | null;
   related_type: DbTaskRelatedType | null;
   related_id: string | null;
+  roadmap_item_id?: string | null;
   priority: DbTaskPriority;
   status: DbTaskStatus;
   deadline: string | null;
   created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProjectRoadmapRow = {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string;
+  status: DbRoadmapStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RoadmapItemRow = {
+  id: string;
+  roadmap_id: string;
+  title: string;
+  description: string;
+  order_number: number;
+  responsible_user_id: string | null;
+  deadline: string | null;
+  status: DbRoadmapItemStatus;
+  milestone_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProjectMetricRow = {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string;
+  target_value: number | string;
+  current_value: number | string;
+  unit: string;
+  period: string;
   created_at: string;
   updated_at: string;
 };
@@ -514,7 +566,11 @@ export type DbProjectActivityType =
   | "milestone_updated"
   | "deal_created"
   | "deal_updated"
-  | "note";
+  | "note"
+  | "roadmap_created"
+  | "roadmap_item_completed"
+  | "metric_updated"
+  | "project_progress_checked";
 
 export type DealRow = {
   id: string;
@@ -1330,12 +1386,59 @@ export type Database = {
           assigned_to?: string | null;
           related_type?: DbTaskRelatedType | null;
           related_id?: string | null;
+          roadmap_item_id?: string | null;
           priority?: DbTaskPriority;
           status?: DbTaskStatus;
           deadline?: string | null;
           created_by?: string | null;
         };
         Update: Partial<Omit<TaskRow, "id" | "created_at" | "created_by">>;
+      };
+      project_roadmaps: {
+        Row: ProjectRoadmapRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          title: string;
+          description?: string;
+          status?: DbRoadmapStatus;
+        };
+        Update: Partial<
+          Omit<ProjectRoadmapRow, "id" | "created_at" | "project_id">
+        >;
+      };
+      roadmap_items: {
+        Row: RoadmapItemRow;
+        Insert: {
+          id?: string;
+          roadmap_id: string;
+          title: string;
+          description?: string;
+          order_number?: number;
+          responsible_user_id?: string | null;
+          deadline?: string | null;
+          status?: DbRoadmapItemStatus;
+          milestone_id?: string | null;
+        };
+        Update: Partial<
+          Omit<RoadmapItemRow, "id" | "created_at" | "roadmap_id">
+        >;
+      };
+      project_metrics: {
+        Row: ProjectMetricRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          name: string;
+          description?: string;
+          target_value?: number;
+          current_value?: number;
+          unit?: string;
+          period?: string;
+        };
+        Update: Partial<
+          Omit<ProjectMetricRow, "id" | "created_at" | "project_id">
+        >;
       };
       sla_rules: {
         Row: SlaRuleRow;
@@ -1633,6 +1736,8 @@ export type Database = {
       task_status: DbTaskStatus;
       task_priority: DbTaskPriority;
       task_related_type: DbTaskRelatedType;
+      roadmap_status: DbRoadmapStatus;
+      roadmap_item_status: DbRoadmapItemStatus;
       organization_type: DbOrganizationType;
       organization_verification_status: DbOrganizationVerificationStatus;
       organization_member_role: DbOrganizationMemberRole;

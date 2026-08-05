@@ -4,6 +4,21 @@
 
 ---
 
+## 0.33.0-beta — 2026-03-25
+
+Project Execution — управление реализацией проектов (без новых крупных модулей).
+
+### Изменения
+
+- Таблицы `project_roadmaps`, `roadmap_items`, `project_metrics` + связь `tasks.roadmap_item_id`
+- Компонент `ProjectProgress` в workspace (этап, %, задачи, просрочки, KPI)
+- Лия: «Проверь прогресс проекта» → `ProgressReport`
+- Аналитика: `roadmap_created`, `roadmap_item_completed`, `metric_updated`, `project_progress_checked`
+- Пилот ТИНДА: roadmap (подготовка / продажи / масштабирование) + KPI
+- Документ `docs/project-execution.md`
+
+---
+
 ## 0.32.0-beta — 2026-03-25
 
 Методология ЦКР и стандартизация сопровождения проектов (без крупных модулей).
