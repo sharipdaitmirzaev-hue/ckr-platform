@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ckr-bg: #071522;
+  --ckr-fg: #f2f2f2;
+  --ckr-muted: #bfc4ca;
+  --ckr-accent: #c9a227;
+  --ckr-accent-muted: rgba(201, 162, 39, 0.14);
+  --ckr-surface: #0c1e2e;
+  --ckr-surface-elevated: #122839;
+  --ckr-border: rgba(191, 196, 202, 0.18);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 100% -10%, rgba(201, 162, 39, 0.07), transparent 45%),
+      radial-gradient(ellipse 60% 40% at -10% 30%, rgba(18, 40, 57, 0.8), transparent 50%);
+    background-attachment: fixed;
+    min-height: 100%;
+  }
+
+  ::selection {
+    background: rgba(201, 162, 39, 0.35);
+    color: #f2f2f2;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .ckr-grid-overlay {
+    background-size: 56px 56px;
+  }
+}
