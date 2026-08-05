@@ -43,6 +43,12 @@ export const LIA_SCENARIOS: {
     prompt: "Собери комплексное решение",
     description: "Сборка: проекты, ресурсы, капитал, эксперты + ориентиры",
   },
+  {
+    id: "realize_project",
+    label: "Помоги реализовать проект",
+    prompt: "Помоги реализовать проект",
+    description: "Сопровождение: этапы, следующий шаг, эксперт и партнёр",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -92,3 +98,6 @@ export const BUSINESS_IDEA_STEPS = [
 
 export const PROJECT_FLOW_START_PATTERN =
   /помоги создать бизнес-проект|помоги оформить бизнес-идею|создать бизнес-проект/i;
+
+export const REALIZE_PROJECT_PATTERN =
+  /помоги реализовать проект|сопровождени|реализац(ия|ии) проекта|следующий шаг проекта/i;

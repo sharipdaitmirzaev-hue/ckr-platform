@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 type LiaPageProps = {
-  searchParams?: { session?: string };
+  searchParams?: { session?: string; project?: string };
 };
 
 export default async function LiaPage({ searchParams }: LiaPageProps) {
@@ -36,6 +36,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
   ]);
 
   const requestedSessionId = searchParams?.session ?? null;
+  const projectId = searchParams?.project ?? null;
   const activeSession =
     current && requestedSessionId
       ? await getLiaSession(requestedSessionId, current.user.id)
@@ -73,6 +74,8 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
               initialMessages={messages}
               isAuthenticated={Boolean(current)}
               categories={categories}
+              projectId={projectId}
+              autoStartRealize={Boolean(projectId && !activeSessionId)}
             />
           </div>
 

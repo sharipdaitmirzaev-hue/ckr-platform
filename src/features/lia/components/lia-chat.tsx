@@ -15,6 +15,8 @@ type LiaChatProps = {
   initialMessages: LiaMessage[];
   isAuthenticated: boolean;
   categories: CategoryRow[];
+  projectId?: string | null;
+  autoStartRealize?: boolean;
 };
 
 export function LiaChat({
@@ -23,6 +25,8 @@ export function LiaChat({
   initialMessages,
   isAuthenticated,
   categories,
+  projectId = null,
+  autoStartRealize = false,
 }: LiaChatProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(activeSessionId);
@@ -31,6 +35,7 @@ export function LiaChat({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const autoStartedRef = useRef(false);
 
   useEffect(() => {
     setSessionId(activeSessionId);
@@ -40,6 +45,21 @@ export function LiaChat({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, pending]);
+
+  useEffect(() => {
+    if (
+      !autoStartRealize ||
+      !projectId ||
+      !isAuthenticated ||
+      autoStartedRef.current ||
+      initialMessages.length > 0
+    ) {
+      return;
+    }
+    autoStartedRef.current = true;
+    void sendMessage("Помоги реализовать проект", "realize_project");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartRealize, projectId, isAuthenticated]);
 
   async function sendMessage(message: string, scenario?: LiaScenarioId | null) {
     if (!isAuthenticated) {
@@ -74,6 +94,7 @@ export function LiaChat({
             sessionId,
             message: text,
             scenario: scenario ?? null,
+            projectId: projectId ?? null,
           }),
         });
         const data = (await response.json()) as LiaChatResponse & {

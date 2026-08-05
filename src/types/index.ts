@@ -46,6 +46,41 @@ export type ApplicationStatus =
 
 export type InvestmentType = "equity" | "loan" | "partnership" | "purchase";
 
+export type DealType =
+  | "investment"
+  | "partnership"
+  | "service"
+  | "purchase"
+  | "lease"
+  | "other";
+
+export type DealStatus =
+  | "draft"
+  | "negotiation"
+  | "agreement"
+  | "active"
+  | "completed"
+  | "cancelled";
+
+export type DealParticipantRole = "owner" | "investor" | "partner" | "expert";
+
+export type MilestoneStatus =
+  | "planned"
+  | "in_progress"
+  | "completed"
+  | "blocked";
+
+export type ProjectActivityType =
+  | "status_change"
+  | "participant_added"
+  | "document_uploaded"
+  | "milestone_completed"
+  | "milestone_created"
+  | "milestone_updated"
+  | "deal_created"
+  | "deal_updated"
+  | "note";
+
 export type InvestmentOfferStatus =
   | "draft"
   | "moderation"
@@ -253,4 +288,52 @@ export type InvestmentOffer = {
   verificationStatus?: VerificationStatus;
   createdAt?: string;
   updatedAt?: string;
+};
+
+/** Сделка — переход от решения к реализации. */
+export type Deal = {
+  id: string;
+  projectId: string;
+  initiatorId: string;
+  partnerId: string | null;
+  dealType: DealType;
+  amount: number | null;
+  currency: string;
+  status: DealStatus;
+  description: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type DealParticipant = {
+  id: string;
+  dealId: string;
+  userId: string;
+  role: DealParticipantRole;
+  createdAt?: string;
+};
+
+/** Этап реализации проекта. */
+export type ProjectMilestone = {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  status: MilestoneStatus;
+  deadline: string | null;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Событие истории проекта. */
+export type ProjectActivity = {
+  id: string;
+  projectId: string;
+  actorId: string | null;
+  activityType: ProjectActivityType;
+  title: string;
+  body: string;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
 };

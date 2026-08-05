@@ -2,14 +2,16 @@ import {
   BUSINESS_IDEA_STEPS,
   LIA_DISCLAIMER,
   PROJECT_FLOW_START_PATTERN,
+  REALIZE_PROJECT_PATTERN,
 } from "@/config/lia";
+import { getLiaProvider } from "@/lib/lia/provider";
+import { buildRealizeProjectGuidance } from "@/lib/lia/realize";
 import {
   searchExperts,
   searchInvestments,
   searchOpportunities,
   searchProjects,
 } from "@/lib/lia/search";
-import { getLiaProvider } from "@/lib/lia/provider";
 import type {
   LiaCatalogDraft,
   LiaMessage,
@@ -47,7 +49,15 @@ function detectScenario(
     return "find_expert";
   }
   if (/комплексн|решени|собери/.test(value)) return "solution";
+  if (REALIZE_PROJECT_PATTERN.test(value)) return "realize_project";
   return null;
+}
+
+function extractProjectIdFromMessage(message: string) {
+  const match = message.match(
+    /(?:projectId|project|проект)[:\s]+([0-9a-f-]{36})/i,
+  );
+  return match?.[1] || null;
 }
 
 function mapCategorySlug(raw: string) {
@@ -386,10 +396,75 @@ async function handleSolution(query: string): Promise<LiaEngineResult> {
   };
 }
 
+async function handleRealizeProject(input: {
+  userMessage: string;
+  projectId?: string | null;
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const projectId =
+    input.projectId || extractProjectIdFromMessage(input.userMessage);
+
+  if (!projectId) {
+    return {
+      content: [
+        "Сценарий «Помоги реализовать проект».",
+        "",
+        "Укажите проект: откройте кабинет проекта и нажмите «Помоги реализовать проект»,",
+        "или пришлите UUID проекта в формате `projectId: <uuid>`.",
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario: "realize_project",
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const guidance = await buildRealizeProjectGuidance(
+    projectId,
+    input.userId,
+  );
+
+  if ("error" in guidance) {
+    return {
+      content: `${guidance.error}\n\n_${LIA_DISCLAIMER}_`,
+      metadata: {
+        scenario: "realize_project",
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  return {
+    content: guidance.content,
+    metadata: {
+      scenario: "realize_project",
+      results: guidance.results,
+      projectId: guidance.projectId,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: guidance.results,
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 export async function runLiaEngine(input: {
   userMessage: string;
   scenario?: LiaScenarioId | null;
   history: LiaMessage[];
+  projectId?: string | null;
+  userId?: string | null;
 }): Promise<LiaEngineResult> {
   const scenario = detectScenario(input.userMessage, input.scenario ?? null);
 
@@ -407,6 +482,24 @@ export async function runLiaEngine(input: {
 
   if (scenario === "solution") {
     return handleSolution(input.userMessage);
+  }
+
+  if (scenario === "realize_project") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить сопровождение проекта.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "realize_project", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleRealizeProject({
+      userMessage: input.userMessage,
+      projectId: input.projectId,
+      userId: input.userId,
+    });
   }
 
   const [projects, opportunities, investments, experts] = await Promise.all([

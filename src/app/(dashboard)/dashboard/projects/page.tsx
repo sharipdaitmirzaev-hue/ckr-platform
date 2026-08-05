@@ -57,8 +57,14 @@ export default async function DashboardProjectsPage() {
               />
               <div className="flex flex-wrap gap-3">
                 <Link
-                  href={`/dashboard/projects/${project.id}/edit`}
+                  href={`/dashboard/projects/${project.id}/workspace`}
                   className="text-sm text-accent transition-colors hover:underline"
+                >
+                  Кабинет проекта
+                </Link>
+                <Link
+                  href={`/dashboard/projects/${project.id}/edit`}
+                  className="text-sm text-muted transition-colors hover:text-accent"
                 >
                   Редактировать
                 </Link>

@@ -5,7 +5,8 @@ export type LiaScenarioId =
   | "find_investments"
   | "find_property"
   | "find_expert"
-  | "solution";
+  | "solution"
+  | "realize_project";
 
 export type LiaSession = {
   id: string;
@@ -178,6 +179,8 @@ export type LiaChatRequest = {
   sessionId?: string | null;
   message: string;
   scenario?: LiaScenarioId | null;
+  /** Контекст проекта для сценария сопровождения. */
+  projectId?: string | null;
 };
 
 export type LiaChatResponse = {

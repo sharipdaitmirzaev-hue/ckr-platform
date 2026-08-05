@@ -33,6 +33,7 @@ export async function GET() {
       "external_search",
       "external_search_providers",
       "solution_report",
+      "realize_project",
       "dialog_sessions",
     ],
     disclaimer: LIA_DISCLAIMER,
@@ -142,10 +143,17 @@ export async function POST(request: Request) {
     metadata: scenario ? { scenario } : {},
   });
 
+  const projectId =
+    typeof body.projectId === "string" && body.projectId.trim()
+      ? body.projectId.trim()
+      : null;
+
   const engine = await runLiaEngine({
     userMessage: message,
     scenario,
     history,
+    projectId,
+    userId: current.user.id,
   });
 
   const assistantMessage = await insertLiaMessage({

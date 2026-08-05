@@ -93,6 +93,90 @@ export type DbDocumentStatus =
 
 export type DbVerificationRequestStatus = "pending" | "approved" | "rejected";
 
+export type DbDealType =
+  | "investment"
+  | "partnership"
+  | "service"
+  | "purchase"
+  | "lease"
+  | "other";
+
+export type DbDealStatus =
+  | "draft"
+  | "negotiation"
+  | "agreement"
+  | "active"
+  | "completed"
+  | "cancelled";
+
+export type DbDealParticipantRole =
+  | "owner"
+  | "investor"
+  | "partner"
+  | "expert";
+
+export type DbMilestoneStatus =
+  | "planned"
+  | "in_progress"
+  | "completed"
+  | "blocked";
+
+export type DbProjectActivityType =
+  | "status_change"
+  | "participant_added"
+  | "document_uploaded"
+  | "milestone_completed"
+  | "milestone_created"
+  | "milestone_updated"
+  | "deal_created"
+  | "deal_updated"
+  | "note";
+
+export type DealRow = {
+  id: string;
+  project_id: string;
+  initiator_id: string;
+  partner_id: string | null;
+  deal_type: DbDealType;
+  amount: number | string | null;
+  currency: string;
+  status: DbDealStatus;
+  description: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DealParticipantRow = {
+  id: string;
+  deal_id: string;
+  user_id: string;
+  role: DbDealParticipantRole;
+  created_at: string;
+};
+
+export type ProjectMilestoneRow = {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string;
+  status: DbMilestoneStatus;
+  deadline: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProjectActivityRow = {
+  id: string;
+  project_id: string;
+  actor_id: string | null;
+  activity_type: DbProjectActivityType;
+  title: string;
+  body: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export type LiaAnalysisRow = {
   id: string;
   user_id: string;
@@ -518,6 +602,76 @@ export type Database = {
           report: unknown;
         }>;
       };
+      deals: {
+        Row: DealRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          initiator_id: string;
+          partner_id?: string | null;
+          deal_type?: DbDealType;
+          amount?: number | null;
+          currency?: string;
+          status?: DbDealStatus;
+          description?: string;
+        };
+        Update: Partial<{
+          partner_id: string | null;
+          deal_type: DbDealType;
+          amount: number | null;
+          currency: string;
+          status: DbDealStatus;
+          description: string;
+        }>;
+      };
+      deal_participants: {
+        Row: DealParticipantRow;
+        Insert: {
+          id?: string;
+          deal_id: string;
+          user_id: string;
+          role?: DbDealParticipantRole;
+        };
+        Update: Partial<{
+          role: DbDealParticipantRole;
+        }>;
+      };
+      project_milestones: {
+        Row: ProjectMilestoneRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          title: string;
+          description?: string;
+          status?: DbMilestoneStatus;
+          deadline?: string | null;
+          sort_order?: number;
+        };
+        Update: Partial<{
+          title: string;
+          description: string;
+          status: DbMilestoneStatus;
+          deadline: string | null;
+          sort_order: number;
+        }>;
+      };
+      project_activity: {
+        Row: ProjectActivityRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          actor_id?: string | null;
+          activity_type?: DbProjectActivityType;
+          title: string;
+          body?: string;
+          metadata?: Record<string, unknown>;
+        };
+        Update: Partial<{
+          title: string;
+          body: string;
+          metadata: Record<string, unknown>;
+        }>;
+      };
     };
     Enums: {
       user_role: DbUserRole;
@@ -537,6 +691,11 @@ export type Database = {
       document_status: DbDocumentStatus;
       verification_request_status: DbVerificationRequestStatus;
       lia_message_role: "user" | "assistant" | "system" | "tool";
+      deal_type: DbDealType;
+      deal_status: DbDealStatus;
+      deal_participant_role: DbDealParticipantRole;
+      milestone_status: DbMilestoneStatus;
+      project_activity_type: DbProjectActivityType;
     };
   };
 };

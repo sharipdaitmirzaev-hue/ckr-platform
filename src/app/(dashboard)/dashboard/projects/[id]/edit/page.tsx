@@ -1,3 +1,4 @@
+import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ProjectLiaActions } from "@/features/lia/components/project-lia-actions";
@@ -29,11 +30,19 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
 
   return (
     <div className="space-y-8">
-      <SectionHeading
-        eyebrow="Проекты"
-        title="Редактирование"
-        description="Обновляйте описание, стадию и статус публикации. В каталоге видны только проекты со статусом «Опубликован»."
-      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <SectionHeading
+          eyebrow="Проекты"
+          title="Редактирование"
+          description="Обновляйте описание, стадию и статус публикации. В каталоге видны только проекты со статусом «Опубликован»."
+        />
+        <ButtonLink
+          href={`/dashboard/projects/${project.id}/workspace`}
+          variant="outline"
+        >
+          Кабинет проекта
+        </ButtonLink>
+      </div>
 
       <Card variant="surface" className="p-5 sm:p-6">
         <ProjectForm
