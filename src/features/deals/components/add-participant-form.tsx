@@ -62,7 +62,7 @@ export function AddParticipantForm({
       >
         {deals.map((deal) => (
           <option key={deal.id} value={deal.id}>
-            {dealTypeLabelSafe(deal)} · {deal.status}
+            {dealTypeLabels[deal.dealType]} · {deal.status}
           </option>
         ))}
       </select>
@@ -91,8 +91,4 @@ export function AddParticipantForm({
       ) : null}
     </form>
   );
-}
-
-function dealTypeLabelSafe(deal: DealWithNames) {
-  return deal.dealType;
 }
