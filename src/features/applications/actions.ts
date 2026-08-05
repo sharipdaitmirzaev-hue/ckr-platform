@@ -185,9 +185,14 @@ export async function markNotificationsReadAction() {
 
   await supabase
     .from("notifications")
-    .update({ read_at: new Date().toISOString() })
+    .update({
+      read_at: new Date().toISOString(),
+      is_read: true,
+    })
     .eq("user_id", user.id)
-    .is("read_at", null);
+    .or("is_read.eq.false,read_at.is.null");
 
   revalidatePath("/dashboard/applications");
+  revalidatePath("/dashboard/notifications");
+  revalidatePath("/dashboard");
 }

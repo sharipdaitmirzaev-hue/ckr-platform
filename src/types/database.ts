@@ -324,9 +324,47 @@ export type NotificationRow = {
   type: string;
   title: string;
   body: string;
+  message?: string;
   link: string | null;
   application_id: string | null;
+  related_type?: string | null;
+  related_id?: string | null;
+  is_read?: boolean;
   read_at: string | null;
+  created_at: string;
+};
+
+export type ActivityFeedRow = {
+  id: string;
+  user_id: string;
+  project_id: string | null;
+  action_type: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type ConversationRow = {
+  id: string;
+  application_id: string | null;
+  project_id: string | null;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ConversationMemberRow = {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  created_at: string;
+};
+
+export type ChatMessageRow = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
   created_at: string;
 };
 
@@ -503,11 +541,63 @@ export type Database = {
           type: string;
           title: string;
           body?: string;
+          message?: string;
           link?: string | null;
           application_id?: string | null;
+          related_type?: string | null;
+          related_id?: string | null;
+          is_read?: boolean;
           read_at?: string | null;
         };
         Update: Partial<Omit<NotificationRow, "id" | "user_id" | "created_at">>;
+      };
+      activity_feed: {
+        Row: ActivityFeedRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          project_id?: string | null;
+          action_type: string;
+          description?: string;
+          metadata?: Record<string, unknown>;
+        };
+        Update: Partial<{
+          description: string;
+          metadata: Record<string, unknown>;
+        }>;
+      };
+      conversations: {
+        Row: ConversationRow;
+        Insert: {
+          id?: string;
+          application_id?: string | null;
+          project_id?: string | null;
+          title?: string;
+        };
+        Update: Partial<{
+          project_id: string | null;
+          title: string;
+          updated_at: string;
+        }>;
+      };
+      conversation_members: {
+        Row: ConversationMemberRow;
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          user_id: string;
+        };
+        Update: Partial<{ user_id: string }>;
+      };
+      messages: {
+        Row: ChatMessageRow;
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          body: string;
+        };
+        Update: Partial<{ body: string }>;
       };
       investment_offers: {
         Row: InvestmentOfferRow;

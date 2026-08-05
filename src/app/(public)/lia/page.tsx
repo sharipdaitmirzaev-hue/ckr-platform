@@ -1,4 +1,5 @@
 import { AnalysisHistory } from "@/components/lia/analysis-history";
+import { LiaRecommendations } from "@/components/lia/lia-recommendations";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -12,6 +13,7 @@ import {
   listLiaMessages,
   listLiaSessions,
 } from "@/lib/lia/queries";
+import { buildLiaRecommendations } from "@/lib/lia/recommendations";
 import { listCategories } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 
@@ -29,10 +31,13 @@ type LiaPageProps = {
 
 export default async function LiaPage({ searchParams }: LiaPageProps) {
   const current = await getCurrentUser();
-  const [sessions, categories, analyses] = await Promise.all([
+  const [sessions, categories, analyses, recommendations] = await Promise.all([
     current ? listLiaSessions(current.user.id) : Promise.resolve([]),
     listCategories(),
     current ? listLiaAnalyses(current.user.id, 12) : Promise.resolve([]),
+    current
+      ? buildLiaRecommendations(current.user.id)
+      : Promise.resolve([]),
   ]);
 
   const requestedSessionId = searchParams?.session ?? null;
@@ -80,17 +85,21 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
           </div>
 
           <aside className="space-y-4">
-            <Card variant="surface" className="space-y-3 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
-                Как работает Лия
-              </p>
-              <ol className="space-y-2 text-sm text-muted">
-                <li>1. Создайте бизнес-проект через сценарий.</li>
-                <li>2. Подтвердите создание — статус draft.</li>
-                <li>3. Запустите анализ и поиск решений на карточке проекта.</li>
-                <li>4. Проверьте совпадения ЦКР и внешние ориентиры.</li>
-              </ol>
-            </Card>
+            {current ? (
+              <LiaRecommendations items={recommendations} />
+            ) : (
+              <Card variant="surface" className="space-y-3 p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
+                  Как работает Лия
+                </p>
+                <ol className="space-y-2 text-sm text-muted">
+                  <li>1. Создайте бизнес-проект через сценарий.</li>
+                  <li>2. Подтвердите создание — статус draft.</li>
+                  <li>3. Запустите анализ и поиск решений.</li>
+                  <li>4. Сопровождайте реализацию в кабинете проекта.</li>
+                </ol>
+              </Card>
+            )}
 
             <div>
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-muted">

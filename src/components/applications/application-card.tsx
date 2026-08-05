@@ -107,7 +107,10 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
 
       {application.status === "accepted" ? (
         <p className="text-xs text-accent">
-          Заявка принята. Диалог (messages) будет доступен в следующем этапе.
+          Заявка принята.{" "}
+          <a href="/messages" className="underline-offset-2 hover:underline">
+            Открыть сообщения
+          </a>
         </p>
       ) : null}
     </Card>

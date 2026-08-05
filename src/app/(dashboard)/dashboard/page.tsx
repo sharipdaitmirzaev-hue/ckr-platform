@@ -1,3 +1,5 @@
+import { ActivityFeed } from "@/components/activity/activity-feed";
+import { LiaRecommendations } from "@/components/lia/lia-recommendations";
 import { LiaWidget } from "@/components/lia/lia-widget";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -6,6 +8,9 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { VerificationBadge } from "@/components/verification/verification-badge";
 import { roleLabels } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { listActivityFeed } from "@/lib/activity/queries";
+import { buildLiaRecommendations } from "@/lib/lia/recommendations";
+import { countUnreadNotifications } from "@/lib/notifications/queries";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -21,14 +26,46 @@ export default async function DashboardPage() {
   }
 
   const { user, profile } = current;
+  const [recommendations, activity, unread] = await Promise.all([
+    buildLiaRecommendations(user.id),
+    listActivityFeed(user.id, 6),
+    countUnreadNotifications(user.id),
+  ]);
 
   return (
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Кабинет"
         title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
-        description="Профиль, проекты, возможности, инвестиции и эксперты — в одном кабинете ЦКР."
+        description="Профиль, проекты, коммуникации и рекомендации Лии — в одном месте."
       />
+
+      <div className="flex flex-wrap gap-3">
+        <ButtonLink href="/dashboard/notifications" variant="outline" size="sm">
+          Уведомления{unread > 0 ? ` (${unread})` : ""}
+        </ButtonLink>
+        <ButtonLink href="/messages" variant="outline" size="sm">
+          Сообщения
+        </ButtonLink>
+        <ButtonLink href="/dashboard/activity" variant="outline" size="sm">
+          Активность
+        </ButtonLink>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <LiaRecommendations items={recommendations} />
+        <Card variant="surface" className="space-y-4 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-xl text-foreground">
+              Недавняя активность
+            </h2>
+            <ButtonLink href="/dashboard/activity" variant="outline" size="sm">
+              Вся лента
+            </ButtonLink>
+          </div>
+          <ActivityFeed items={activity} />
+        </Card>
+      </div>
 
       <Card variant="surface">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -45,24 +82,12 @@ export default async function DashboardPage() {
                   <dd className="text-foreground">{profile.company_name}</dd>
                 </div>
               ) : null}
-              {profile.website ? (
-                <div className="flex gap-2">
-                  <dt className="text-muted">Сайт:</dt>
-                  <dd className="text-foreground">{profile.website}</dd>
-                </div>
-              ) : null}
               {profile.city || profile.region ? (
                 <div className="flex gap-2">
                   <dt className="text-muted">Локация:</dt>
                   <dd className="text-foreground">
                     {[profile.city, profile.region].filter(Boolean).join(", ")}
                   </dd>
-                </div>
-              ) : null}
-              {profile.phone ? (
-                <div className="flex gap-2">
-                  <dt className="text-muted">Телефон:</dt>
-                  <dd className="text-foreground">{profile.phone}</dd>
                 </div>
               ) : null}
               <div className="flex flex-wrap items-center gap-2">
@@ -103,49 +128,34 @@ export default async function DashboardPage() {
               title: "Мои проекты",
               text: "Управление проектами — ядром платформы.",
               href: "/dashboard/projects",
-              ready: true,
-            },
-            {
-              title: "Мои возможности",
-              text: "Ресурсы для реализации проектов.",
-              href: "/dashboard/opportunities",
-              ready: true,
-            },
-            {
-              title: "Мои инвестиции",
-              text: "Инвестиционные предложения и интересы капитала.",
-              href: "/dashboard/investments",
-              ready: true,
-            },
-            {
-              title: "Профиль эксперта",
-              text: "Компетенции, опыт и публикация в каталоге доверия.",
-              href: "/dashboard/expert",
-              ready: true,
             },
             {
               title: "Заявки",
               text: "Входящие и исходящие взаимодействия.",
               href: "/dashboard/applications",
-              ready: true,
+            },
+            {
+              title: "Сообщения",
+              text: "Диалоги после принятия заявок.",
+              href: "/messages",
+            },
+            {
+              title: "Документы",
+              text: "Файлы и проверка ЦКР.",
+              href: "/dashboard/documents",
             },
           ] as const
         ).map((block) => (
           <Card key={block.title} variant="surface">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-lg text-foreground">
-                {block.title}
-              </h2>
-              {block.ready ? null : <Badge variant="soft">Скоро</Badge>}
-            </div>
+            <h2 className="font-display text-lg text-foreground">
+              {block.title}
+            </h2>
             <p className="mt-2 text-sm text-muted">{block.text}</p>
-            {"href" in block ? (
-              <div className="mt-4">
-                <ButtonLink href={block.href} variant="outline" size="sm">
-                  Открыть
-                </ButtonLink>
-              </div>
-            ) : null}
+            <div className="mt-4">
+              <ButtonLink href={block.href} variant="outline" size="sm">
+                Открыть
+              </ButtonLink>
+            </div>
           </Card>
         ))}
       </div>
