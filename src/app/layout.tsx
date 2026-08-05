@@ -1,3 +1,4 @@
+import { LiaWidget } from "@/components/lia/lia-widget";
 import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import { Manrope, Onest } from "next/font/google";
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${manrope.variable} ${onest.variable}`}>
         {children}
+        <LiaWidget />
       </body>
     </html>
   );

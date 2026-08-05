@@ -429,6 +429,51 @@ export type Database = {
           Omit<InvestmentOfferRow, "id" | "owner_id" | "created_at">
         >;
       };
+      lia_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          context_type: string | null;
+          context_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string;
+          context_type?: string | null;
+          context_id?: string | null;
+        };
+        Update: Partial<{
+          title: string;
+          context_type: string | null;
+          context_id: string | null;
+          updated_at: string;
+        }>;
+      };
+      lia_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          role: "user" | "assistant" | "system" | "tool";
+          content: string;
+          metadata: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          role: "user" | "assistant" | "system" | "tool";
+          content?: string;
+          metadata?: Record<string, unknown>;
+        };
+        Update: Partial<{
+          content: string;
+          metadata: Record<string, unknown>;
+        }>;
+      };
     };
     Enums: {
       user_role: DbUserRole;
@@ -447,6 +492,7 @@ export type Database = {
       document_visibility: DbDocumentVisibility;
       document_status: DbDocumentStatus;
       verification_request_status: DbVerificationRequestStatus;
+      lia_message_role: "user" | "assistant" | "system" | "tool";
     };
   };
 };

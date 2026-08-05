@@ -144,7 +144,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <LiaWidget />
+          <LiaWidget embedded />
         </Container>
       </section>
 

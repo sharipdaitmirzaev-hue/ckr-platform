@@ -2,17 +2,34 @@ import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ProjectForm } from "@/features/projects/components/project-form";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { projectDraftFromSearchParams } from "@/lib/lia/project-draft";
 import { listCategories } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Создать проект" };
 
-export default async function CreateProjectPage() {
+type CreateProjectPageProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+export default async function CreateProjectPage({
+  searchParams,
+}: CreateProjectPageProps) {
   const current = await getCurrentUser();
   if (!current) redirect("/login");
 
   const categories = await listCategories();
+  const defaults = projectDraftFromSearchParams(searchParams ?? {});
+
+  // Если slug категории от Лии не найден — подставляем первую доступную
+  if (
+    defaults?.category &&
+    categories.length > 0 &&
+    !categories.some((item) => item.slug === defaults.category)
+  ) {
+    defaults.category = categories[0].slug;
+  }
 
   return (
     <div className="space-y-8">
@@ -29,7 +46,11 @@ export default async function CreateProjectPage() {
             Supabase, затем обновите страницу.
           </p>
         ) : (
-          <ProjectForm mode="create" categories={categories} />
+          <ProjectForm
+            mode="create"
+            categories={categories}
+            defaults={defaults}
+          />
         )}
       </Card>
     </div>

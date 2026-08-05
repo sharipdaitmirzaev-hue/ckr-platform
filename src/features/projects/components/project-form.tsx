@@ -34,16 +34,30 @@ type ProjectFormProps = {
   mode: "create" | "edit";
   categories: CategoryRow[];
   project?: Project;
+  /** Prefill из Лии / query params (только create). */
+  defaults?: Partial<Project> | null;
 };
 
-export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
+export function ProjectForm({
+  mode,
+  categories,
+  project,
+  defaults,
+}: ProjectFormProps) {
   const action = mode === "create" ? createProjectAction : updateProjectAction;
   const [state, formAction] = useFormState(action, initialState);
+  const seed = mode === "create" ? defaults : null;
 
   return (
     <form action={formAction} className="space-y-6">
       {mode === "edit" && project ? (
         <input type="hidden" name="projectId" value={project.id} />
+      ) : null}
+
+      {seed ? (
+        <p className="rounded-sm border border-accent/30 bg-accent-muted px-3 py-2 text-sm text-accent">
+          Форма заполнена черновиком от Лии. Проверьте поля перед сохранением.
+        </p>
       ) : null}
 
       {state.error ? (
@@ -71,7 +85,7 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
           id="title"
           name="title"
           required
-          defaultValue={project?.title ?? ""}
+          defaultValue={project?.title ?? seed?.title ?? ""}
           placeholder="Например: Производственная линия в регионе"
         />
       </div>
@@ -85,7 +99,7 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
           name="summary"
           required
           rows={3}
-          defaultValue={project?.summary ?? ""}
+          defaultValue={project?.summary ?? seed?.summary ?? ""}
           className="flex w-full rounded-sm border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted/70 focus-visible:border-accent/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/40"
           placeholder="Суть проекта в 1–3 предложениях для каталога"
         />
@@ -100,7 +114,7 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
           name="description"
           required
           rows={8}
-          defaultValue={project?.description ?? ""}
+          defaultValue={project?.description ?? seed?.description ?? ""}
           className="flex w-full rounded-sm border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted/70 focus-visible:border-accent/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/40"
           placeholder="Модель, рынок, команда, что требуется для реализации"
         />
@@ -115,7 +129,7 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
             id="category"
             name="category"
             required
-            defaultValue={project?.category ?? ""}
+            defaultValue={project?.category ?? seed?.category ?? ""}
             className="flex h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm text-foreground"
           >
             <option value="" disabled>
@@ -137,7 +151,7 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
             id="region"
             name="region"
             required
-            defaultValue={project?.region ?? ""}
+            defaultValue={project?.region ?? seed?.region ?? ""}
             placeholder="Москва / Центральный ФО"
           />
         </div>
@@ -155,7 +169,9 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
             min={0}
             step="1000"
             required
-            defaultValue={project?.investmentRequired ?? ""}
+            defaultValue={
+              project?.investmentRequired ?? seed?.investmentRequired ?? ""
+            }
             placeholder="25000000"
           />
         </div>
@@ -168,7 +184,7 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
             id="currency"
             name="currency"
             required
-            defaultValue={project?.currency ?? "RUB"}
+            defaultValue={project?.currency ?? seed?.currency ?? "RUB"}
             className="flex h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm text-foreground"
           >
             {CURRENCIES.map((currency) => (
@@ -189,7 +205,13 @@ export function ProjectForm({ mode, categories, project }: ProjectFormProps) {
             id="stage"
             name="stage"
             required
-            defaultValue={project?.stage ?? "idea"}
+            defaultValue={
+              project?.stage ??
+              (seed?.stage &&
+              PROJECT_STAGES.includes(seed.stage as (typeof PROJECT_STAGES)[number])
+                ? seed.stage
+                : "idea")
+            }
             className="flex h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm text-foreground"
           >
             {PROJECT_STAGES.map((stage) => (

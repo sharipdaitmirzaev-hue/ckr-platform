@@ -150,7 +150,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <LiaWidget compact />
+      <LiaWidget embedded compact />
     </div>
   );
 }

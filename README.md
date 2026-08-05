@@ -49,6 +49,7 @@ supabase           # миграции и functions (далее)
 - [Эксперты](./docs/experts.md)
 - [Документы и верификация](./docs/verification.md)
 - [Админ-панель](./docs/admin.md)
+- [Лия](./docs/lia.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 

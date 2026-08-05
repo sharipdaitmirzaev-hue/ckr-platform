@@ -83,8 +83,14 @@
 - Компоненты AdminSidebar / AdminHeader / StatsCard / AdminTable / StatusBadge
 - `profiles.is_blocked`, middleware + `requireAdmin`, RLS через `is_admin`
 
-## Этап 9 — Лия (навигатор)
+## Этап 9 — Лия (навигатор) ✅ (код готов)
 
-- Помощь в создании проекта, анализ, подбор ресурсов и решений
+Подробности: [lia.md](./lia.md)
+
+- `/lia` + плавающий `LiaWidget`
+- `lia_sessions` / `lia_messages` + RLS
+- `/api/lia` + `provider.ts` (mock / openai-compatible)
+- Поиск по проектам, возможностям, инвестициям, экспертам
+- Сценарий бизнес-идеи → черновик проекта; `SolutionDraft`
 
 ## Этап 10 — API для мобильного приложения

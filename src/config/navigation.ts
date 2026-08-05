@@ -31,6 +31,11 @@ export const mainNav: NavItem[] = [
     description: "Комплексные предложения для реализации проектов",
   },
   {
+    label: "Лия",
+    href: "/lia",
+    description: "ИИ-навигатор: идея → ресурсы → решение",
+  },
+  {
     label: "О платформе",
     href: "/about",
     description: "Миссия и подход ЦКР",

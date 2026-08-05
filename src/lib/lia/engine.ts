@@ -1,0 +1,410 @@
+import { BUSINESS_IDEA_STEPS, LIA_DISCLAIMER } from "@/config/lia";
+import {
+  searchExperts,
+  searchInvestments,
+  searchOpportunities,
+  searchProjects,
+} from "@/lib/lia/search";
+import { getLiaProvider } from "@/lib/lia/provider";
+import type {
+  LiaMessage,
+  LiaMessageMetadata,
+  LiaResultLink,
+  LiaScenarioId,
+  ProjectDraft,
+  SolutionDraft,
+} from "@/types/lia";
+
+export type LiaEngineResult = {
+  content: string;
+  metadata: LiaMessageMetadata;
+  results: LiaResultLink[];
+  projectDraft: ProjectDraft | null;
+  solutionDraft: SolutionDraft | null;
+};
+
+function detectScenario(
+  message: string,
+  explicit: LiaScenarioId | null,
+): LiaScenarioId | null {
+  if (explicit) return explicit;
+  const value = message.toLowerCase();
+  if (/бизнес-иде|оформить.*иде|создать проект|идею/.test(value)) {
+    return "business_idea";
+  }
+  if (/инвест/.test(value)) return "find_investments";
+  if (/земл|помещен|недвиж|аренд/.test(value)) return "find_property";
+  if (/эксперт|юрист|бухгалтер|инженер|консульт/.test(value)) {
+    return "find_expert";
+  }
+  if (/комплексн|решени|собери/.test(value)) return "solution";
+  return null;
+}
+
+function mapCategorySlug(raw: string) {
+  const value = raw.toLowerCase();
+  if (/производ/.test(value)) return "production";
+  if (/недвиж|строит/.test(value)) return "real-estate";
+  if (/сельск|агро/.test(value)) return "agriculture";
+  if (/\bit\b|цифр|софт|tech/.test(value)) return "it";
+  if (/туризм|hotel|гостин/.test(value)) return "tourism";
+  return value.trim().slice(0, 40) || "production";
+}
+
+function mapStage(raw: string) {
+  const value = raw.toLowerCase();
+  if (value.includes("startup") || value.includes("стартап")) return "startup";
+  if (value.includes("operating") || value.includes("действ")) {
+    return "operating";
+  }
+  if (value.includes("expansion") || value.includes("расшир")) {
+    return "expansion";
+  }
+  return "idea";
+}
+
+function parseInvestment(raw: string) {
+  const digits = raw.replace(/[^\d]/g, "");
+  const amount = Number(digits || "0");
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function getBusinessIdeaState(history: LiaMessage[]) {
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const message = history[i];
+    if (
+      message.role === "assistant" &&
+      message.metadata?.scenario === "business_idea" &&
+      typeof message.metadata.businessIdeaStep === "number"
+    ) {
+      return {
+        step: message.metadata.businessIdeaStep,
+        answers: (message.metadata.businessIdeaAnswers as Record<
+          string,
+          string
+        >) || {},
+      };
+    }
+  }
+  return { step: 0, answers: {} as Record<string, string> };
+}
+
+function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
+  const title = answers.title?.trim() || "Новый проект";
+  const region = answers.region?.trim() || "Россия";
+  const category = mapCategorySlug(answers.category || "production");
+  const investmentRequired = parseInvestment(answers.investment || "0");
+  const stage = mapStage(answers.stage || "idea");
+  const assets = answers.assets?.trim() || "";
+  const needs = answers.needs?.trim() || "";
+  const description = answers.description?.trim() || "";
+
+  const summary = [
+    description.slice(0, 180) || `Проект «${title}» в регионе ${region}.`,
+    needs ? `Требуется: ${needs}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const fullDescription = [
+    description,
+    assets ? `\n\nЧто уже есть: ${assets}` : "",
+    needs ? `\nЧто требуется: ${needs}` : "",
+  ]
+    .join("")
+    .trim();
+
+  return {
+    title,
+    summary,
+    description: fullDescription || summary,
+    category,
+    region,
+    investmentRequired,
+    currency: "RUB",
+    stage,
+    assets,
+    needs,
+  };
+}
+
+async function handleBusinessIdea(
+  userMessage: string,
+  history: LiaMessage[],
+): Promise<LiaEngineResult> {
+  const state = getBusinessIdeaState(history);
+  const answers = { ...state.answers };
+  let step = state.step;
+
+  // Если это старт сценария без ответа на первый вопрос
+  const isStart =
+    /помоги оформить бизнес-идею/i.test(userMessage) &&
+    Object.keys(answers).length === 0 &&
+    step === 0 &&
+    !history.some((m) => m.metadata?.scenario === "business_idea");
+
+  if (!isStart && step < BUSINESS_IDEA_STEPS.length) {
+    const current = BUSINESS_IDEA_STEPS[step];
+    answers[current.key] = userMessage.trim();
+    step += 1;
+  }
+
+  if (step < BUSINESS_IDEA_STEPS.length) {
+    const next = BUSINESS_IDEA_STEPS[step];
+    const progress = `Шаг ${step + 1} из ${BUSINESS_IDEA_STEPS.length}`;
+    return {
+      content: `${progress}\n\n${next.question}\n\n_${LIA_DISCLAIMER}_`,
+      metadata: {
+        scenario: "business_idea",
+        businessIdeaStep: step,
+        businessIdeaAnswers: answers,
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+    };
+  }
+
+  const projectDraft = buildProjectDraft(answers);
+  const content = [
+    "Черновик проекта готов. Это предварительная сборка — данные можно отредактировать в форме создания.",
+    "",
+    `**Название:** ${projectDraft.title}`,
+    `**Отрасль (slug):** ${projectDraft.category}`,
+    `**Регион:** ${projectDraft.region}`,
+    `**Инвестиции:** ${new Intl.NumberFormat("ru-RU").format(projectDraft.investmentRequired)} ₽`,
+    `**Стадия:** ${projectDraft.stage}`,
+    `**Кратко:** ${projectDraft.summary}`,
+    "",
+    "Нажмите «Перейти к созданию проекта», чтобы заполнить форму этими данными.",
+    "",
+    `_${LIA_DISCLAIMER}_`,
+  ].join("\n");
+
+  return {
+    content,
+    metadata: {
+      scenario: "business_idea",
+      businessIdeaStep: step,
+      businessIdeaAnswers: answers,
+      projectDraft,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft,
+    solutionDraft: null,
+  };
+}
+
+async function handleSearchScenario(
+  scenario: LiaScenarioId,
+  query: string,
+): Promise<LiaEngineResult> {
+  let results: LiaResultLink[] = [];
+  let intro = "";
+
+  if (scenario === "find_investments") {
+    results = await searchInvestments(query || "инвестиции");
+    intro = "Подобрала инвестиционные предложения из каталога ЦКР.";
+  } else if (scenario === "find_property") {
+    results = await searchOpportunities(query || "земля помещение");
+    intro = "Подобрала возможности по земле и помещениям.";
+  } else if (scenario === "find_expert") {
+    results = await searchExperts(query || "эксперт");
+    intro = "Подобрала экспертов из каталога ЦКР.";
+  }
+
+  if (results.length === 0) {
+    return {
+      content: [
+        intro,
+        "",
+        "Пока точных совпадений нет. Уточните регион, отрасль или сумму — или откройте каталог вручную.",
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario,
+        results: [],
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+    };
+  }
+
+  const list = results
+    .map((item, index) => `${index + 1}. [${item.title}](${item.href}) — ${item.summary}`)
+    .join("\n");
+
+  return {
+    content: `${intro}\n\n${list}\n\n_${LIA_DISCLAIMER}_`,
+    metadata: {
+      scenario,
+      results,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results,
+    projectDraft: null,
+    solutionDraft: null,
+  };
+}
+
+async function handleSolution(query: string): Promise<LiaEngineResult> {
+  const task = query.trim() || "Собрать комплексное решение для проекта";
+  const [projects, opportunities, investments, experts] = await Promise.all([
+    searchProjects(task, 3),
+    searchOpportunities(task, 3),
+    searchInvestments(task, 3),
+    searchExperts(task, 3),
+  ]);
+
+  const missingData: string[] = [];
+  if (!/регион|област|край|город/i.test(task)) {
+    missingData.push("Регион реализации");
+  }
+  if (!/\d/.test(task)) {
+    missingData.push("Ориентир по сумме инвестиций");
+  }
+  if (!/отрасл|производ|недвиж|it|агро|туризм/i.test(task)) {
+    missingData.push("Отрасль / направление");
+  }
+
+  const solutionDraft: SolutionDraft = {
+    task,
+    projects,
+    opportunities,
+    investments,
+    experts,
+    nextSteps: [
+      "Уточнить регион, стадию и бюджет проекта",
+      "Выбрать 1–2 возможности и проверить совместимость с проектом",
+      "Отправить заявки инвестору и эксперту через модуль applications",
+      "Собрать документы для проверки ЦКР",
+    ],
+    risks: [
+      "Подбор выполнен по открытым каталогам и может быть неполным",
+      "Без проверки документов нельзя считать партнёров подтверждёнными",
+      "Финансовые и юридические условия нужно согласовывать отдельно",
+    ],
+    missingData,
+  };
+
+  const section = (title: string, items: LiaResultLink[]) =>
+    items.length
+      ? `${title}:\n${items.map((item) => `- [${item.title}](${item.href})`).join("\n")}`
+      : `${title}: пока нет точных совпадений`;
+
+  const content = [
+    "Собрала аналитическое комплексное решение (черновик, не запись в БД).",
+    "",
+    `**Задача:** ${task}`,
+    "",
+    section("Проекты", projects),
+    "",
+    section("Возможности", opportunities),
+    "",
+    section("Инвестиции", investments),
+    "",
+    section("Эксперты", experts),
+    "",
+    "**Следующие шаги:**",
+    ...solutionDraft.nextSteps.map((step, i) => `${i + 1}. ${step}`),
+    "",
+    "**Риски:**",
+    ...solutionDraft.risks.map((risk) => `- ${risk}`),
+    "",
+    missingData.length
+      ? `**Недостающие данные:** ${missingData.join("; ")}`
+      : "**Недостающие данные:** критичных пробелов не видно",
+    "",
+    `_${LIA_DISCLAIMER}_`,
+  ].join("\n");
+
+  const results = [
+    ...projects,
+    ...opportunities,
+    ...investments,
+    ...experts,
+  ];
+
+  return {
+    content,
+    metadata: {
+      scenario: "solution",
+      results,
+      solutionDraft,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results,
+    projectDraft: null,
+    solutionDraft,
+  };
+}
+
+export async function runLiaEngine(input: {
+  userMessage: string;
+  scenario?: LiaScenarioId | null;
+  history: LiaMessage[];
+}): Promise<LiaEngineResult> {
+  const scenario = detectScenario(input.userMessage, input.scenario ?? null);
+
+  if (scenario === "business_idea") {
+    return handleBusinessIdea(input.userMessage, input.history);
+  }
+
+  if (
+    scenario === "find_investments" ||
+    scenario === "find_property" ||
+    scenario === "find_expert"
+  ) {
+    return handleSearchScenario(scenario, input.userMessage);
+  }
+
+  if (scenario === "solution") {
+    return handleSolution(input.userMessage);
+  }
+
+  // Общий запрос: лёгкий подбор + текст провайдера
+  const [projects, opportunities, investments, experts] = await Promise.all([
+    searchProjects(input.userMessage, 2),
+    searchOpportunities(input.userMessage, 2),
+    searchInvestments(input.userMessage, 2),
+    searchExperts(input.userMessage, 2),
+  ]);
+  const results = [
+    ...projects,
+    ...opportunities,
+    ...investments,
+    ...experts,
+  ];
+
+  const provider = getLiaProvider();
+  const generated = await provider.generate({
+    userMessage: input.userMessage,
+    scenario: null,
+    history: input.history,
+  });
+
+  const links =
+    results.length > 0
+      ? `\n\nНашла связанные объекты ЦКР:\n${results
+          .map((item) => `- [${item.title}](${item.href})`)
+          .join("\n")}`
+      : "\n\nТочных совпадений в каталогах пока нет. Уточните отрасль, регион или выберите быстрый сценарий.";
+
+  return {
+    content: `${generated.content}${links}\n\n_${LIA_DISCLAIMER}_`,
+    metadata: {
+      ...generated.metadata,
+      results,
+      disclaimer: LIA_DISCLAIMER,
+      provider: generated.provider,
+    },
+    results,
+    projectDraft: null,
+    solutionDraft: null,
+  };
+}
