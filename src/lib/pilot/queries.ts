@@ -8,11 +8,7 @@ import { mapPilotIssueRow } from "@/lib/pilot/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Feedback, PilotIssue } from "@/types";
-import type {
-  FeedbackRow,
-  PilotIssueRow,
-  ProjectRow,
-} from "@/types/database";
+import type { FeedbackRow, PilotIssueRow } from "@/types/database";
 
 export type PilotMetricCount = {
   key: PilotMetricType;
@@ -170,10 +166,18 @@ export async function getPilotDashboard(): Promise<PilotDashboardData> {
       }));
 
     const activeProjects = (projectsRes.data ?? []).map((row) => {
-      const project = row as ProjectRow & {
-        owner?: { full_name: string | null } | null;
+      const project = row as {
+        id: string;
+        title: string;
+        status: string;
+        updated_at: string;
+        owner?:
+          | { full_name: string | null }
+          | { full_name: string | null }[]
+          | null;
       };
-      const owner = project.owner;
+      const ownerRaw = project.owner;
+      const owner = Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw;
       return {
         id: project.id,
         title: project.title,
