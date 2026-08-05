@@ -53,6 +53,7 @@
 | `services` | Услуги |
 | `region` | Регион |
 | `status` | Статус публикации |
+| `verification_status` | Проверка эксперта (Этап 7) |
 | `created_at` / `updated_at` | Служебные |
 
 ---

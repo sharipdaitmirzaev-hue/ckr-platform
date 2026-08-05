@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   INVESTMENT_DIRECTIONS,
   investmentStatusLabels,
@@ -44,6 +45,7 @@ export function InvestmentCard({
           {investmentTypeLabels[offer.investmentType]}
         </Badge>
         <Badge variant="default">{formatAmount(offer)}</Badge>
+        <VerificationBadge status={offer.verificationStatus} />
         {showStatus ? (
           <Badge variant="soft">{investmentStatusLabels[offer.status]}</Badge>
         ) : null}

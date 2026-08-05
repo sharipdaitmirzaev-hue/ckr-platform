@@ -47,6 +47,7 @@ supabase           # миграции и functions (далее)
 - [Заявки](./docs/applications.md)
 - [Инвестиции](./docs/investments.md)
 - [Эксперты](./docs/experts.md)
+- [Документы и верификация](./docs/verification.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 

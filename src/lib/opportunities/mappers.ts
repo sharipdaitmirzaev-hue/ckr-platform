@@ -1,4 +1,9 @@
-import type { Opportunity, OpportunityType, PublishStatus } from "@/types";
+import type {
+  Opportunity,
+  OpportunityType,
+  PublishStatus,
+  VerificationStatus,
+} from "@/types";
 import type { OpportunityRow } from "@/types/database";
 
 export function mapOpportunityRow(row: OpportunityRow): Opportunity {
@@ -13,6 +18,9 @@ export function mapOpportunityRow(row: OpportunityRow): Opportunity {
     price: row.price === null || row.price === undefined ? null : Number(row.price),
     currency: row.currency,
     status: row.status as PublishStatus,
+    verificationStatus:
+      (row.verification_status as VerificationStatus | undefined) ??
+      "unverified",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

@@ -72,13 +72,6 @@ export async function createExpertProfileAction(
     return { error: error.message };
   }
 
-  // Запрос на проверку профиля участника
-  await supabase
-    .from("profiles")
-    .update({ verification_status: "pending" })
-    .eq("id", user.id)
-    .eq("verification_status", "unverified");
-
   revalidatePath("/experts");
   revalidatePath("/dashboard/expert");
   redirect("/dashboard/expert");
@@ -125,21 +118,3 @@ export async function updateExpertProfileAction(
   return { success: "Профиль эксперта сохранён." };
 }
 
-export async function requestProfileVerificationAction() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  await supabase
-    .from("profiles")
-    .update({ verification_status: "pending" })
-    .eq("id", user.id);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/expert");
-  revalidatePath("/onboarding");
-  redirect("/dashboard/expert");
-}

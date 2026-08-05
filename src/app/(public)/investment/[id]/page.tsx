@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   INVESTMENT_DIRECTIONS,
   investmentTypeLabels,
@@ -64,6 +65,7 @@ export default async function InvestmentPage({ params }: InvestmentPageProps) {
           <Badge variant="default">
             {formatAmount(offer.amountMin, offer.amountMax, offer.currency)}
           </Badge>
+          <VerificationBadge status={offer.verificationStatus} />
         </div>
 
         <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">

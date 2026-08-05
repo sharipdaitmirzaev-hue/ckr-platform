@@ -2,7 +2,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
 const authRoutes = ["/login", "/register"];
-const protectedPrefixes = ["/dashboard", "/onboarding"];
+const protectedPrefixes = ["/dashboard", "/onboarding", "/admin"];
 
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
@@ -34,6 +34,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/admin/:path*",
     "/onboarding",
     "/login",
     "/register",

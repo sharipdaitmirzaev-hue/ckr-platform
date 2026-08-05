@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { verificationStatusLabels } from "@/config/experts";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import { roleLabels } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import type { Metadata } from "next";
@@ -68,13 +68,9 @@ export default async function DashboardPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <dt className="text-muted">Проверка:</dt>
                 <dd>
-                  <Badge variant="soft">
-                    {
-                      verificationStatusLabels[
-                        profile.verification_status ?? "unverified"
-                      ]
-                    }
-                  </Badge>
+                  <VerificationBadge
+                    status={profile.verification_status ?? "unverified"}
+                  />
                 </dd>
               </div>
             </dl>

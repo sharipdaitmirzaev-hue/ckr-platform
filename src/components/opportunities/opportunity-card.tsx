@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   opportunityStatusLabels,
   opportunityTypeLabels,
@@ -46,6 +47,7 @@ export function OpportunityCard({
           {typeName ?? opportunityTypeLabels[opportunity.type]}
         </Badge>
         <Badge variant="default">{formatPrice(opportunity)}</Badge>
+        <VerificationBadge status={opportunity.verificationStatus} />
         {showStatus ? (
           <Badge variant="soft">
             {opportunityStatusLabels[opportunity.status]}

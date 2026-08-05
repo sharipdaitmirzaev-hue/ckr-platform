@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   expertSpecializationLabels,
   expertStatusLabels,
-  verificationStatusLabels,
 } from "@/config/experts";
 import type { ExpertWithUser } from "@/lib/experts/queries";
 import Link from "next/link";
@@ -29,9 +29,7 @@ export function ExpertCard({
           Опыт: {expert.experienceYears}{" "}
           {expert.experienceYears === 1 ? "год" : "лет"}
         </Badge>
-        <Badge variant="soft">
-          {verificationStatusLabels[expert.verificationStatus]}
-        </Badge>
+        <VerificationBadge status={expert.verificationStatus} />
         {showStatus ? (
           <Badge variant="soft">{expertStatusLabels[expert.status]}</Badge>
         ) : null}

@@ -66,6 +66,33 @@ export type DbExpertProfileStatus =
   | "published"
   | "archived";
 
+export type DbDocumentRelatedType =
+  | "profile"
+  | "project"
+  | "opportunity"
+  | "investment"
+  | "expert";
+
+export type DbDocumentType =
+  | "business_plan"
+  | "presentation"
+  | "company_document"
+  | "ownership_document"
+  | "license"
+  | "certificate"
+  | "financial"
+  | "other";
+
+export type DbDocumentVisibility = "private" | "review" | "public";
+
+export type DbDocumentStatus =
+  | "uploaded"
+  | "pending"
+  | "verified"
+  | "rejected";
+
+export type DbVerificationRequestStatus = "pending" | "approved" | "rejected";
+
 export type ProfileRow = {
   id: string;
   full_name: string;
@@ -92,6 +119,32 @@ export type ExpertProfileRow = {
   services: string;
   region: string;
   status: DbExpertProfileStatus;
+  verification_status: DbVerificationStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DocumentRow = {
+  id: string;
+  owner_id: string;
+  related_type: DbDocumentRelatedType;
+  related_id: string;
+  name: string;
+  document_type: DbDocumentType;
+  file_url: string;
+  visibility: DbDocumentVisibility;
+  status: DbDocumentStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type VerificationRequestRow = {
+  id: string;
+  user_id: string;
+  target_type: DbDocumentRelatedType;
+  target_id: string;
+  status: DbVerificationRequestStatus;
+  admin_comment: string;
   created_at: string;
   updated_at: string;
 };
@@ -124,6 +177,7 @@ export type ProjectRow = {
   currency: string;
   stage: DbProjectStage;
   status: DbProjectStatus;
+  verification_status: DbVerificationStatus;
   cover_url: string | null;
   created_at: string;
   updated_at: string;
@@ -147,6 +201,7 @@ export type OpportunityRow = {
   price: number | string | null;
   currency: string;
   status: DbOpportunityStatus;
+  verification_status: DbVerificationStatus;
   created_at: string;
   updated_at: string;
 };
@@ -186,6 +241,7 @@ export type InvestmentOfferRow = {
   categories: string[];
   investment_type: DbInvestmentType;
   status: DbInvestmentOfferStatus;
+  verification_status: DbVerificationStatus;
   created_at: string;
   updated_at: string;
 };
@@ -222,8 +278,38 @@ export type Database = {
           services?: string;
           region?: string;
           status?: DbExpertProfileStatus;
+          verification_status?: DbVerificationStatus;
         };
         Update: Partial<Omit<ExpertProfileRow, "id" | "user_id" | "created_at">>;
+      };
+      documents: {
+        Row: DocumentRow;
+        Insert: {
+          id?: string;
+          owner_id: string;
+          related_type: DbDocumentRelatedType;
+          related_id: string;
+          name: string;
+          document_type?: DbDocumentType;
+          file_url: string;
+          visibility?: DbDocumentVisibility;
+          status?: DbDocumentStatus;
+        };
+        Update: Partial<Omit<DocumentRow, "id" | "owner_id" | "created_at">>;
+      };
+      verification_requests: {
+        Row: VerificationRequestRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_type: DbDocumentRelatedType;
+          target_id: string;
+          status?: DbVerificationRequestStatus;
+          admin_comment?: string;
+        };
+        Update: Partial<
+          Omit<VerificationRequestRow, "id" | "user_id" | "created_at">
+        >;
       };
       user_roles: {
         Row: UserRoleRow;
@@ -261,6 +347,7 @@ export type Database = {
           currency?: string;
           stage?: DbProjectStage;
           status?: DbProjectStatus;
+          verification_status?: DbVerificationStatus;
           cover_url?: string | null;
         };
         Update: Partial<Omit<ProjectRow, "id" | "owner_id" | "created_at">>;
@@ -288,6 +375,7 @@ export type Database = {
           price?: number | null;
           currency?: string;
           status?: DbOpportunityStatus;
+          verification_status?: DbVerificationStatus;
         };
         Update: Partial<Omit<OpportunityRow, "id" | "owner_id" | "created_at">>;
       };
@@ -333,6 +421,7 @@ export type Database = {
           categories?: string[];
           investment_type?: DbInvestmentType;
           status?: DbInvestmentOfferStatus;
+          verification_status?: DbVerificationStatus;
         };
         Update: Partial<
           Omit<InvestmentOfferRow, "id" | "owner_id" | "created_at">
@@ -351,6 +440,11 @@ export type Database = {
       verification_status: DbVerificationStatus;
       expert_specialization: DbExpertSpecialization;
       expert_profile_status: DbExpertProfileStatus;
+      document_related_type: DbDocumentRelatedType;
+      document_type: DbDocumentType;
+      document_visibility: DbDocumentVisibility;
+      document_status: DbDocumentStatus;
+      verification_request_status: DbVerificationRequestStatus;
     };
   };
 };

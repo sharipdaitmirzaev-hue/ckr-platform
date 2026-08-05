@@ -54,3 +54,11 @@ export const authNav = {
   register: { label: "Регистрация", href: "/register" },
   dashboard: { label: "Кабинет", href: "/dashboard" },
 } as const;
+
+export const adminNav: NavItem[] = [
+  {
+    label: "Проверки",
+    href: "/admin/verifications",
+    description: "Заявки на верификацию и документы",
+  },
+];

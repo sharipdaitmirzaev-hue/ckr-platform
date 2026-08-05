@@ -1,14 +1,13 @@
 import { ExpertCard } from "@/components/experts/expert-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { verificationStatusLabels } from "@/config/experts";
-import { requestProfileVerificationAction } from "@/features/experts/actions";
+import { VerificationBadge } from "@/components/verification/verification-badge";
+import { RequestVerificationForm } from "@/features/verification/components/request-verification-form";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getMyExpertProfile } from "@/lib/experts/queries";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Профиль эксперта" };
@@ -18,8 +17,6 @@ export default async function DashboardExpertPage() {
   if (!current) redirect("/login");
 
   const expert = await getMyExpertProfile(current.user.id);
-  const verification =
-    current.user.verificationStatus ?? "unverified";
 
   if (!expert) {
     return (
@@ -46,7 +43,7 @@ export default async function DashboardExpertPage() {
     ...expert,
     fullName: current.user.fullName,
     companyName: current.user.companyName ?? null,
-    verificationStatus: verification,
+    verificationStatus: expert.verificationStatus ?? "unverified",
   };
 
   return (
@@ -61,18 +58,23 @@ export default async function DashboardExpertPage() {
 
       <Card variant="surface" className="space-y-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm text-muted">Статус проверки участника</p>
-          <Badge variant="accent">
-            {verificationStatusLabels[verification]}
-          </Badge>
+          <p className="text-sm text-muted">Статус проверки эксперта</p>
+          <VerificationBadge status={expert.verificationStatus} />
         </div>
-        {verification === "unverified" ? (
-          <form action={requestProfileVerificationAction}>
-            <Button type="submit" size="sm" variant="outline">
-              Запросить проверку
-            </Button>
-          </form>
+        {expert.verificationStatus !== "verified" &&
+        expert.verificationStatus !== "pending" ? (
+          <RequestVerificationForm
+            targetType="expert"
+            targetId={expert.id}
+          />
         ) : null}
+        <p className="text-xs text-muted">
+          Документы для проверки — в разделе{" "}
+          <Link href="/dashboard/documents" className="text-accent hover:underline">
+            Документы
+          </Link>
+          .
+        </p>
         {current.user.website ? (
           <p className="text-sm text-muted">
             Сайт:{" "}

@@ -46,7 +46,10 @@ export async function listPublishedExperts(filters?: {
       ...expert,
       fullName: profiles?.full_name ?? null,
       companyName: profiles?.company_name ?? null,
-      verificationStatus: profiles?.verification_status ?? "unverified",
+      verificationStatus:
+        expert.verificationStatus ??
+        profiles?.verification_status ??
+        "unverified",
     };
   });
 }
@@ -76,7 +79,10 @@ export async function getExpertById(id: string): Promise<ExpertWithUser | null> 
     ...expert,
     fullName: profiles?.full_name ?? null,
     companyName: profiles?.company_name ?? null,
-    verificationStatus: profiles?.verification_status ?? "unverified",
+    verificationStatus:
+      expert.verificationStatus ??
+      profiles?.verification_status ??
+      "unverified",
   };
 }
 
@@ -128,7 +134,10 @@ export async function listExpertsForProjectRegion(
         ...expert,
         fullName: profiles?.full_name ?? null,
         companyName: profiles?.company_name ?? null,
-        verificationStatus: profiles?.verification_status ?? "unverified",
+        verificationStatus:
+          expert.verificationStatus ??
+          profiles?.verification_status ??
+          "unverified",
       };
     })
     .filter((expert) =>

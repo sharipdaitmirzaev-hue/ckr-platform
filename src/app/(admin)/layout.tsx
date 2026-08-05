@@ -1,23 +1,17 @@
 import { Logo } from "@/components/brand/logo";
-import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { Container } from "@/components/ui/container";
 import { LogoutButton } from "@/features/auth/components/logout-button";
-import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const current = await getCurrentUser();
-
-  if (!current) {
-    redirect("/login");
-  }
+  const current = await requireAdmin();
 
   return (
     <div className="min-h-screen">
@@ -25,26 +19,26 @@ export default async function DashboardLayout({
         <Container className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Logo size="sm" />
-            <p className="hidden text-sm text-muted sm:block">
-              {current.user.fullName || current.user.email}
-            </p>
+            <p className="text-sm text-muted">Админ · {current.user.fullName}</p>
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href="/admin/verifications"
+              className="text-sm text-accent transition-colors hover:text-foreground"
+            >
+              Проверки
+            </Link>
+            <Link
+              href="/dashboard"
               className="text-sm text-muted transition-colors hover:text-accent"
             >
-              На сайт
+              Кабинет
             </Link>
             <LogoutButton />
           </div>
         </Container>
       </header>
-
-      <Container className="grid gap-6 py-8 md:grid-cols-[240px_1fr] lg:gap-8">
-        <DashboardSidebar isAdmin={current.roles.includes("admin")} />
-        <div>{children}</div>
-      </Container>
+      <Container className="py-8">{children}</Container>
     </div>
   );
 }

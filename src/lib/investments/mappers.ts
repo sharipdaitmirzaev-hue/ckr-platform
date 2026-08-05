@@ -2,6 +2,7 @@ import type {
   InvestmentOffer,
   InvestmentOfferStatus,
   InvestmentType,
+  VerificationStatus,
 } from "@/types";
 import type { InvestmentOfferRow } from "@/types/database";
 
@@ -18,6 +19,9 @@ export function mapInvestmentOfferRow(row: InvestmentOfferRow): InvestmentOffer 
     categories: row.categories ?? [],
     investmentType: row.investment_type as InvestmentType,
     status: row.status as InvestmentOfferStatus,
+    verificationStatus:
+      (row.verification_status as VerificationStatus | undefined) ??
+      "unverified",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

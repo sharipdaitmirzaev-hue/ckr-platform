@@ -1,8 +1,12 @@
 import type {
   ExpertProfileStatus,
   ExpertSpecialization,
-  VerificationStatus,
 } from "@/types";
+
+export {
+  VERIFICATION_STATUSES,
+  verificationStatusLabels,
+} from "@/config/verification";
 
 export const EXPERT_SPECIALIZATIONS = [
   "lawyer",
@@ -20,12 +24,6 @@ export const EXPERT_STATUSES = [
   "published",
   "archived",
 ] as const satisfies readonly ExpertProfileStatus[];
-
-export const VERIFICATION_STATUSES = [
-  "unverified",
-  "pending",
-  "verified",
-] as const satisfies readonly VerificationStatus[];
 
 export const expertSpecializationLabels: Record<ExpertSpecialization, string> =
   {
@@ -50,10 +48,4 @@ export const expertStatusDescriptions: Record<ExpertProfileStatus, string> = {
   moderation: "На проверке перед публикацией в каталоге.",
   published: "Доступен в каталоге экспертов ЦКР.",
   archived: "Скрыт из каталога.",
-};
-
-export const verificationStatusLabels: Record<VerificationStatus, string> = {
-  unverified: "Не проверен",
-  pending: "На проверке",
-  verified: "Проверен",
 };

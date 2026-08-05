@@ -2,6 +2,7 @@ import type {
   ExpertProfile,
   ExpertProfileStatus,
   ExpertSpecialization,
+  VerificationStatus,
 } from "@/types";
 import type { ExpertProfileRow } from "@/types/database";
 
@@ -16,6 +17,9 @@ export function mapExpertProfileRow(row: ExpertProfileRow): ExpertProfile {
     services: row.services,
     region: row.region,
     status: row.status as ExpertProfileStatus,
+    verificationStatus:
+      (row.verification_status as VerificationStatus | undefined) ??
+      "unverified",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

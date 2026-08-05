@@ -3,6 +3,7 @@ import { InvestmentCard } from "@/components/investments/investment-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   projectStageLabels,
   projectStatusLabels,
@@ -70,6 +71,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Badge>
           <Badge variant="soft">{project.region}</Badge>
           <Badge variant="default">{projectStageLabels[project.stage]}</Badge>
+          <VerificationBadge status={project.verificationStatus} />
           {isOwner ? (
             <Badge variant="soft">
               {projectStatusLabels[project.status]}

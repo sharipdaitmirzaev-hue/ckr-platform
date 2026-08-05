@@ -1,4 +1,9 @@
-import type { Project, ProjectStage, PublishStatus } from "@/types";
+import type {
+  Project,
+  ProjectStage,
+  PublishStatus,
+  VerificationStatus,
+} from "@/types";
 import type { ProjectRow } from "@/types/database";
 
 export function mapProjectRow(row: ProjectRow): Project {
@@ -15,6 +20,9 @@ export function mapProjectRow(row: ProjectRow): Project {
     currency: row.currency,
     stage: row.stage as ProjectStage,
     status: row.status as PublishStatus,
+    verificationStatus:
+      (row.verification_status as VerificationStatus | undefined) ??
+      "unverified",
     coverUrl: row.cover_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

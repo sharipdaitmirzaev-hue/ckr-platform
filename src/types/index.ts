@@ -69,11 +69,65 @@ export type ExpertProfileStatus =
 
 export type VerificationStatus = "unverified" | "pending" | "verified";
 
+export type DocumentRelatedType =
+  | "profile"
+  | "project"
+  | "opportunity"
+  | "investment"
+  | "expert";
+
+export type DocumentType =
+  | "business_plan"
+  | "presentation"
+  | "company_document"
+  | "ownership_document"
+  | "license"
+  | "certificate"
+  | "financial"
+  | "other";
+
+export type DocumentVisibility = "private" | "review" | "public";
+
+export type DocumentStatus =
+  | "uploaded"
+  | "pending"
+  | "verified"
+  | "rejected";
+
+export type VerificationRequestStatus = "pending" | "approved" | "rejected";
+
 export type SocialLinks = {
   telegram?: string;
   linkedin?: string;
   vk?: string;
   other?: string;
+};
+
+/** Документ для системы доверия. */
+export type Document = {
+  id: string;
+  ownerId: string;
+  relatedType: DocumentRelatedType;
+  relatedId: string;
+  name: string;
+  documentType: DocumentType;
+  fileUrl: string;
+  visibility: DocumentVisibility;
+  status: DocumentStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Заявка на проверку сущности. */
+export type VerificationRequest = {
+  id: string;
+  userId: string;
+  targetType: DocumentRelatedType;
+  targetId: string;
+  status: VerificationRequestStatus;
+  adminComment: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 /** Универсальная заявка на взаимодействие. */
@@ -118,6 +172,7 @@ export type ExpertProfile = {
   services: string;
   region: string;
   status: ExpertProfileStatus;
+  verificationStatus?: VerificationStatus;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -144,6 +199,7 @@ export type Project = {
   currency: string;
   stage: ProjectStage;
   status: PublishStatus;
+  verificationStatus?: VerificationStatus;
   coverUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -161,6 +217,7 @@ export type Opportunity = {
   price?: number | null;
   currency: string;
   status: PublishStatus;
+  verificationStatus?: VerificationStatus;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -193,6 +250,7 @@ export type InvestmentOffer = {
   categories: string[];
   investmentType: InvestmentType;
   status: InvestmentOfferStatus;
+  verificationStatus?: VerificationStatus;
   createdAt?: string;
   updatedAt?: string;
 };

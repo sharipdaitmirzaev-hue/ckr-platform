@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   opportunityTypeLabels,
   opportunityVerificationLabels,
@@ -61,6 +62,7 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
           <Badge variant="default">
             {opportunityVerificationLabels[opportunity.status]}
           </Badge>
+          <VerificationBadge status={opportunity.verificationStatus} />
         </div>
 
         <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">

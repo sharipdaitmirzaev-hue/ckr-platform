@@ -63,7 +63,17 @@
 - Dashboard: профиль эксперта, create/edit
 - Блок «Нужен эксперт» на проекте + заявки `target_type = expert`
 
-## Этап 7 — Сообщения, избранное, документы
+## Этап 7 — Документы и верификация ✅ (код готов)
+
+Подробности: [verification.md](./verification.md)
+
+- Таблицы `documents` + `verification_requests`
+- `verification_status` на projects / opportunities / investment_offers / expert_profiles
+- Storage bucket `documents` + RLS
+- `/dashboard/documents`, `/admin/verifications`
+- Компоненты `VerificationBadge`, `DocumentList`, `UploadDocumentForm`
+
+## Этап 7b — Сообщения и избранное
 
 ## Этап 8 — Лия (навигатор)
 

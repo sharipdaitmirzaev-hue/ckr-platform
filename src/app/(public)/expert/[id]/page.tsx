@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import {
   expertSpecializationLabels,
   expertStatusLabels,
-  verificationStatusLabels,
 } from "@/config/experts";
 import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
@@ -50,9 +50,7 @@ export default async function ExpertPage({ params }: ExpertPageProps) {
           <Badge variant="default">
             Опыт: {expert.experienceYears} лет
           </Badge>
-          <Badge variant="soft">
-            {verificationStatusLabels[expert.verificationStatus]}
-          </Badge>
+          <VerificationBadge status={expert.verificationStatus} />
           {isOwner ? (
             <Badge variant="soft">{expertStatusLabels[expert.status]}</Badge>
           ) : null}
@@ -82,8 +80,8 @@ export default async function ExpertPage({ params }: ExpertPageProps) {
             <dt className="text-xs uppercase tracking-[0.16em] text-muted">
               Статус проверки
             </dt>
-            <dd className="mt-2 text-foreground">
-              {verificationStatusLabels[expert.verificationStatus]}
+            <dd className="mt-2">
+              <VerificationBadge status={expert.verificationStatus} />
             </dd>
           </div>
           <div>
