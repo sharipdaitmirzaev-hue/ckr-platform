@@ -5,7 +5,7 @@ export async function requireAdmin(): Promise<CurrentUser> {
   const current = await getCurrentUser();
 
   if (!current) {
-    redirect("/login?next=/admin/verifications");
+    redirect("/login?next=/admin/dashboard");
   }
 
   if (!current.roles.includes("admin")) {

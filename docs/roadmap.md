@@ -75,8 +75,16 @@
 
 ## Этап 7b — Сообщения и избранное
 
-## Этап 8 — Лия (навигатор)
+## Этап 8 — Админ-панель ✅ (код готов)
+
+Подробности: [admin.md](./admin.md)
+
+- `/admin/dashboard`, users, projects, opportunities, investments, experts, verifications
+- Компоненты AdminSidebar / AdminHeader / StatsCard / AdminTable / StatusBadge
+- `profiles.is_blocked`, middleware + `requireAdmin`, RLS через `is_admin`
+
+## Этап 9 — Лия (навигатор)
 
 - Помощь в создании проекта, анализ, подбор ресурсов и решений
 
-## Этап 9 — Admin, API для мобильного приложения
+## Этап 10 — API для мобильного приложения

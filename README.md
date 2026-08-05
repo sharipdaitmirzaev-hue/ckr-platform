@@ -48,6 +48,7 @@ supabase           # миграции и functions (далее)
 - [Инвестиции](./docs/investments.md)
 - [Эксперты](./docs/experts.md)
 - [Документы и верификация](./docs/verification.md)
+- [Админ-панель](./docs/admin.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 

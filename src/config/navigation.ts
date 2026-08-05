@@ -57,8 +57,8 @@ export const authNav = {
 
 export const adminNav: NavItem[] = [
   {
-    label: "Проверки",
-    href: "/admin/verifications",
-    description: "Заявки на верификацию и документы",
+    label: "Админ-панель",
+    href: "/admin/dashboard",
+    description: "Рабочее место оператора ЦКР",
   },
 ];

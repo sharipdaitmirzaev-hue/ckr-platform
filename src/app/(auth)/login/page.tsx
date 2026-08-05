@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   title: "Вход",
 };
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams?: { error?: string };
+};
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <Card as="div" variant="surface" className="p-6 sm:p-8">
       <h1 className="font-display text-2xl font-semibold text-foreground">
@@ -17,6 +21,15 @@ export default function LoginPage() {
       <p className="mt-2 text-sm text-muted">
         Войдите, чтобы открыть личный кабинет и управлять профилем.
       </p>
+
+      {searchParams?.error === "blocked" ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-sm border border-danger/40 bg-danger-muted px-3 py-2 text-sm text-danger"
+        >
+          Аккаунт заблокирован администратором ЦКР. Обратитесь в поддержку.
+        </p>
+      ) : null}
 
       <Suspense fallback={<p className="mt-8 text-sm text-muted">Загрузка формы...</p>}>
         <LoginForm />

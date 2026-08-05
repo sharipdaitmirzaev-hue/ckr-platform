@@ -100,6 +100,7 @@ export type ProfileRow = {
   website: string | null;
   social_links: Record<string, string> | null;
   verification_status: DbVerificationStatus;
+  is_blocked?: boolean;
   avatar_url: string | null;
   bio: string | null;
   phone: string | null;
@@ -258,6 +259,7 @@ export type Database = {
           website?: string | null;
           social_links?: Record<string, string> | null;
           verification_status?: DbVerificationStatus;
+          is_blocked?: boolean;
           avatar_url?: string | null;
           bio?: string | null;
           phone?: string | null;
