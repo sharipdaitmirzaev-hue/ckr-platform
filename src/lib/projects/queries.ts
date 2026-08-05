@@ -47,7 +47,7 @@ export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
   const { data, error } = await supabase
     .from("projects")
     .select("*, profiles:owner_id ( full_name )")
-    .eq("status", "published")
+    .in("status", ["published", "active", "completed"])
     .order("created_at", { ascending: false });
 
   if (error || !data || data.length === 0) {

@@ -3,21 +3,16 @@
 import { ASSIGNABLE_ROLES } from "@/config/roles";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createClient } from "@/lib/supabase/server";
+import { PROJECT_STATUSES, PUBLISH_STATUSES } from "@/config/projects";
 import type {
   ExpertProfileStatus,
   InvestmentOfferStatus,
+  ProjectStatus,
   PublishStatus,
   UserRole,
   VerificationStatus,
 } from "@/types";
 import { revalidatePath } from "next/cache";
-
-const PUBLISH_STATUSES: PublishStatus[] = [
-  "draft",
-  "moderation",
-  "published",
-  "archived",
-];
 
 const INVESTMENT_STATUSES: InvestmentOfferStatus[] = [
   "draft",
@@ -119,13 +114,13 @@ export async function adminSetUserBlockedAction(formData: FormData) {
 export async function adminUpdateProjectModerationAction(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
-  const status = String(formData.get("status") ?? "") as PublishStatus;
+  const status = String(formData.get("status") ?? "") as ProjectStatus;
   const verificationStatus = String(
     formData.get("verificationStatus") ?? "",
   ) as VerificationStatus;
 
   if (!id) return;
-  if (!PUBLISH_STATUSES.includes(status)) return;
+  if (!PROJECT_STATUSES.includes(status)) return;
   if (!VERIFICATION_STATUSES.includes(verificationStatus)) return;
 
   const supabase = createClient();
@@ -152,7 +147,7 @@ export async function adminUpdateOpportunityModerationAction(
   ) as VerificationStatus;
 
   if (!id) return;
-  if (!PUBLISH_STATUSES.includes(status)) return;
+  if (!(PUBLISH_STATUSES as readonly string[]).includes(status)) return;
   if (!VERIFICATION_STATUSES.includes(verificationStatus)) return;
 
   const supabase = createClient();

@@ -5,9 +5,12 @@ export const ANALYTICS_EVENT_TYPES = [
   "opportunity_created",
   "investment_created",
   "application_sent",
+  "application_accepted",
   "deal_created",
   "deal_completed",
+  "document_uploaded",
   "document_verified",
+  "milestone_completed",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -19,9 +22,12 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   opportunity_created: "Создание возможности",
   investment_created: "Создание инвестиции",
   application_sent: "Отправка заявки",
+  application_accepted: "Принятие заявки",
   deal_created: "Создание сделки",
   deal_completed: "Завершение сделки",
+  document_uploaded: "Загрузка документа",
   document_verified: "Верификация документа",
+  milestone_completed: "Завершение этапа",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

@@ -4,14 +4,17 @@ import { LiaWidget } from "@/components/lia/lia-widget";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { VerificationBadge } from "@/components/verification/verification-badge";
+import { projectStatusLabels } from "@/config/projects";
 import { roleLabels } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { listActivityFeed } from "@/lib/activity/queries";
+import { getDashboardOverview } from "@/lib/dashboard/overview";
 import { buildLiaRecommendations } from "@/lib/lia/recommendations";
-import { countUnreadNotifications } from "@/lib/notifications/queries";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -26,10 +29,10 @@ export default async function DashboardPage() {
   }
 
   const { user, profile } = current;
-  const [recommendations, activity, unread] = await Promise.all([
+  const [recommendations, activity, overview] = await Promise.all([
     buildLiaRecommendations(user.id),
     listActivityFeed(user.id, 6),
-    countUnreadNotifications(user.id),
+    getDashboardOverview(user.id),
   ]);
 
   return (
@@ -37,12 +40,73 @@ export default async function DashboardPage() {
       <SectionHeading
         eyebrow="Кабинет"
         title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
-        description="Профиль, проекты, коммуникации и рекомендации Лии — в одном месте."
+        description="Единый обзор: проекты, заявки, инвестиции, сделки, уведомления и рекомендации Лии."
       />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {(
+          [
+            {
+              label: "Проекты",
+              value: overview.projects.length,
+              href: "/dashboard/projects",
+              hint: "последние",
+            },
+            {
+              label: "Заявки",
+              value:
+                overview.applicationsIncoming + overview.applicationsOutgoing,
+              href: "/dashboard/applications",
+              hint: `${overview.applicationsIncoming} вх. · ${overview.applicationsOutgoing} исх.`,
+            },
+            {
+              label: "Инвестиции",
+              value: overview.investments,
+              href: "/dashboard/investments",
+              hint: "мои предложения",
+            },
+            {
+              label: "Сделки",
+              value: overview.deals,
+              href: "/dashboard/projects",
+              hint: "как участник",
+            },
+            {
+              label: "Уведомления",
+              value: overview.unreadNotifications,
+              href: "/dashboard/notifications",
+              hint: "непрочитанные",
+            },
+            {
+              label: "Задачи",
+              value: overview.openMilestones,
+              href: "/dashboard/projects",
+              hint: "открытые этапы",
+            },
+          ] as const
+        ).map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className="rounded-sm border border-border bg-surface/60 px-4 py-3 transition-colors hover:border-accent/40"
+          >
+            <p className="text-xs uppercase tracking-[0.14em] text-muted">
+              {item.label}
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold text-foreground">
+              {item.value}
+            </p>
+            <p className="mt-1 text-xs text-muted">{item.hint}</p>
+          </Link>
+        ))}
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <ButtonLink href="/dashboard/notifications" variant="outline" size="sm">
-          Уведомления{unread > 0 ? ` (${unread})` : ""}
+          Уведомления
+          {overview.unreadNotifications > 0
+            ? ` (${overview.unreadNotifications})`
+            : ""}
         </ButtonLink>
         <ButtonLink href="/messages" variant="outline" size="sm">
           Сообщения
@@ -50,7 +114,45 @@ export default async function DashboardPage() {
         <ButtonLink href="/dashboard/activity" variant="outline" size="sm">
           Активность
         </ButtonLink>
+        <ButtonLink href="/lia" variant="outline" size="sm">
+          Лия
+        </ButtonLink>
       </div>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-xl text-foreground">Мои проекты</h2>
+          <ButtonLink href="/dashboard/projects" variant="outline" size="sm">
+            Все проекты
+          </ButtonLink>
+        </div>
+        {overview.projects.length === 0 ? (
+          <EmptyState
+            title="Проектов пока нет"
+            description="Создайте проект или начните сценарий с Лией «Помоги создать бизнес-проект»."
+            actionHref="/dashboard/projects/create"
+            actionLabel="Создать проект"
+          />
+        ) : (
+          <ul className="space-y-2">
+            {overview.projects.map((project) => (
+              <li key={project.id}>
+                <Link
+                  href={`/dashboard/projects/${project.id}/workspace`}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-sm border border-border bg-background/40 px-4 py-3 transition-colors hover:border-accent/40"
+                >
+                  <span className="font-medium text-foreground">
+                    {project.title}
+                  </span>
+                  <Badge variant="soft">
+                    {projectStatusLabels[project.status]}
+                  </Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <LiaRecommendations items={recommendations} />
@@ -120,45 +222,6 @@ export default async function DashboardPage() {
           </div>
         </div>
       </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {(
-          [
-            {
-              title: "Мои проекты",
-              text: "Управление проектами — ядром платформы.",
-              href: "/dashboard/projects",
-            },
-            {
-              title: "Заявки",
-              text: "Входящие и исходящие взаимодействия.",
-              href: "/dashboard/applications",
-            },
-            {
-              title: "Сообщения",
-              text: "Диалоги после принятия заявок.",
-              href: "/messages",
-            },
-            {
-              title: "Документы",
-              text: "Файлы и проверка ЦКР.",
-              href: "/dashboard/documents",
-            },
-          ] as const
-        ).map((block) => (
-          <Card key={block.title} variant="surface">
-            <h2 className="font-display text-lg text-foreground">
-              {block.title}
-            </h2>
-            <p className="mt-2 text-sm text-muted">{block.text}</p>
-            <div className="mt-4">
-              <ButtonLink href={block.href} variant="outline" size="sm">
-                Открыть
-              </ButtonLink>
-            </div>
-          </Card>
-        ))}
-      </div>
 
       <LiaWidget embedded compact />
     </div>

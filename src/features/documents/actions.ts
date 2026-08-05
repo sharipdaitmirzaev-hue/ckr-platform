@@ -85,8 +85,47 @@ export async function uploadDocumentAction(
     return { error: insertError.message };
   }
 
+  if (parsed.data.relatedType === "project") {
+    await supabase.from("project_activity").insert({
+      project_id: parsed.data.relatedId,
+      actor_id: user.id,
+      activity_type: "document_uploaded",
+      title: "Загружен документ",
+      body: parsed.data.name,
+      metadata: {
+        documentType: parsed.data.documentType,
+        visibility: parsed.data.visibility,
+      },
+    });
+  }
+
+  await supabase.rpc("create_notification", {
+    p_user_id: user.id,
+    p_type: "document",
+    p_title: "Документ загружен",
+    p_body: parsed.data.name,
+    p_link: "/dashboard/documents",
+    p_application_id: null,
+    p_related_type: "document",
+    p_related_id: parsed.data.relatedId,
+  });
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "document_uploaded",
+    userId: user.id,
+    entityType: parsed.data.relatedType,
+    entityId: parsed.data.relatedId,
+    metadata: { documentType: parsed.data.documentType },
+  });
+
   revalidatePath("/dashboard/documents");
   revalidatePath("/admin/verifications");
+  if (parsed.data.relatedType === "project") {
+    revalidatePath(
+      `/dashboard/projects/${parsed.data.relatedId}/workspace`,
+    );
+  }
   return { success: "Документ загружен." };
 }
 

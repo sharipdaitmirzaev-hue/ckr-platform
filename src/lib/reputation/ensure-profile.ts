@@ -33,7 +33,7 @@ export async function ensureReputationProfile(
           .from("projects")
           .select("id", { count: "exact", head: true })
           .eq("owner_id", entityId)
-          .eq("status", "published"),
+          .in("status", ["published", "active", "completed"]),
         supabase
           .from("deals")
           .select("id", { count: "exact", head: true })
@@ -54,7 +54,7 @@ export async function ensureReputationProfile(
           .from("projects")
           .select("id", { count: "exact", head: true })
           .eq("organization_id", entityId)
-          .eq("status", "published"),
+          .in("status", ["published", "active", "completed"]),
       ]);
       platformVerified = org?.verification_status === "verified";
       completedProjects = projectsRes.count ?? 0;

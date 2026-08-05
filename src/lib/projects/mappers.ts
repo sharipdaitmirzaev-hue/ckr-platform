@@ -1,7 +1,7 @@
 import type {
   Project,
   ProjectStage,
-  PublishStatus,
+  ProjectStatus,
   VerificationStatus,
 } from "@/types";
 import type { ProjectRow } from "@/types/database";
@@ -19,7 +19,7 @@ export function mapProjectRow(row: ProjectRow): Project {
     investmentRequired: Number(row.investment_required),
     currency: row.currency,
     stage: row.stage as ProjectStage,
-    status: row.status as PublishStatus,
+    status: row.status as ProjectStatus,
     verificationStatus:
       (row.verification_status as VerificationStatus | undefined) ??
       "unverified",

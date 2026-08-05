@@ -1,58 +1,72 @@
 # ЦКР — Центр комплексных решений
 
-Цифровая бизнес-платформа: предприниматели, инвесторы, владельцы активов и эксперты.
+Цифровая бизнес-платформа: предприниматели, инвесторы, владельцы активов, эксперты и организации.
 
 **Партнёрство. Надёжность. Результат.**
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
+
+Текущая версия ядра: **0.25.0-beta** (closed beta). Обзор: [docs/platform-overview.md](./docs/platform-overview.md).
 
 ## Стек
 
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
-- Supabase (подключение с Этапа 1)
+- Supabase (Auth, Postgres, RLS, Storage)
 
 ## Быстрый старт
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
 Откройте [http://localhost:3000](http://localhost:3000).
 
-Скопируйте `.env.example` в `.env.local` и укажите ключи Supabase.
+Примените миграции из `supabase/migrations/` (см. [supabase/README.md](./supabase/README.md)).
 
-Примените миграцию из `supabase/migrations/` (см. [docs/auth.md](./docs/auth.md)).
+```bash
+npm run lint
+npm run build
+```
 
 ## Структура
 
 ```text
-src/app            # маршруты (public, auth, dashboard, api)
-src/components     # ui, layout, brand, lia
-src/config         # бренд, навигация, site
-src/lib            # utils, supabase stubs
-src/types          # доменные типы
-docs               # архитектура и roadmap
-supabase           # миграции и functions (далее)
+src/app            # маршруты (public, auth, dashboard, admin, operator, partner, api)
+src/components     # ui, layout, brand, domain, lia
+src/features       # server actions и feature UI
+src/config         # бренд, роли, сценарии Лии, статусы
+src/lib            # queries, auth gates, analytics, reputation
+src/types          # доменные и DB типы
+docs               # продукт, архитектура, модули
+supabase           # миграции
 ```
 
 ## Документация
 
-- [Продукт](./docs/product.md)
-- [Auth](./docs/auth.md)
-- [Проекты](./docs/projects.md)
-- [Возможности](./docs/opportunities.md)
-- [Заявки](./docs/applications.md)
-- [Инвестиции](./docs/investments.md)
-- [Эксперты](./docs/experts.md)
-- [Документы и верификация](./docs/verification.md)
-- [Админ-панель](./docs/admin.md)
-- [Лия](./docs/lia.md)
-- [От идеи до проекта](./docs/project-flow.md)
+### Ядро
+
+- [Обзор платформы](./docs/platform-overview.md)
+- [Аудит ядра](./docs/core-audit.md)
+- [Роли и права](./docs/roles-and-permissions.md)
+- [Потоки Лии](./docs/lia-flows.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
+- [Changelog](./docs/changelog.md)
+
+### Модули
+
+- [Продукт](./docs/product.md) · [Auth](./docs/auth.md) · [Проекты](./docs/projects.md)
+- [Возможности](./docs/opportunities.md) · [Заявки](./docs/applications.md) · [Инвестиции](./docs/investments.md)
+- [Эксперты](./docs/experts.md) · [Верификация](./docs/verification.md) · [Админ](./docs/admin.md)
+- [Лия](./docs/lia.md) · [Сделки и workspace](./docs/deals-and-workspace.md)
+- [Коммуникации](./docs/notifications-and-communication.md) · [Публичная платформа](./docs/public-platform.md)
+- [Монетизация](./docs/monetization.md) · [Аналитика](./docs/analytics.md)
+- [Demo](./docs/demo-launch.md) · [Beta](./docs/beta-launch.md) · [CRM](./docs/crm.md)
+- [Операторский центр](./docs/operator-center.md) · [Партнёры](./docs/partners.md) · [Репутация](./docs/reputation.md)
 
 ## Фирменный стиль
 
@@ -62,3 +76,5 @@ supabase           # миграции и functions (далее)
 | Светлый | `#F2F2F2` |
 | Вторичный | `#BFC4CA` |
 | Акцент | `#C9A227` |
+
+Цвета в UI — через CSS-переменные `--ckr-*` и Tailwind-токены (`background`, `foreground`, `muted`, `accent`, `surface`, `border`).

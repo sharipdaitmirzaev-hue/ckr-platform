@@ -149,6 +149,33 @@ export async function createDealAction(
     metadata: { projectId, dealType, status },
   });
 
+  const notifyIds = [user.id, partnerId].filter(
+    (id): id is string => Boolean(id),
+  );
+  for (const notifyId of notifyIds) {
+    await supabase.rpc("create_notification", {
+      p_user_id: notifyId,
+      p_type: "deal_update",
+      p_title: "Создана сделка",
+      p_body: `По проекту открыта сделка (${dealType}).`,
+      p_link: `/dashboard/projects/${projectId}/workspace`,
+      p_application_id: null,
+      p_related_type: "deal",
+      p_related_id: data.id,
+    });
+  }
+
+  if (status === "active" || status === "completed") {
+    const { syncProjectLifecycleFromDeal } = await import(
+      "@/features/projects/actions"
+    );
+    await syncProjectLifecycleFromDeal({
+      projectId,
+      dealStatus: status,
+      actorId: user.id,
+    });
+  }
+
   revalidateWorkspace(projectId);
   return { success: "Сделка создана." };
 }
@@ -179,6 +206,17 @@ export async function updateDealStatusAction(
     body: status,
     metadata: { dealId, status },
   });
+
+  if (status === "active" || status === "completed") {
+    const { syncProjectLifecycleFromDeal } = await import(
+      "@/features/projects/actions"
+    );
+    await syncProjectLifecycleFromDeal({
+      projectId,
+      dealStatus: status,
+      actorId: user.id,
+    });
+  }
 
   if (status === "completed") {
     const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
@@ -216,6 +254,16 @@ export async function updateDealStatusAction(
           meta: { projectId, status },
         });
         await ensureReputationProfile("user", participantId);
+        await supabase.rpc("create_notification", {
+          p_user_id: participantId,
+          p_type: "deal_update",
+          p_title: "Сделка завершена",
+          p_body: title,
+          p_link: `/dashboard/projects/${projectId}/workspace`,
+          p_application_id: null,
+          p_related_type: "deal",
+          p_related_id: dealId,
+        });
       }
     }
   }
@@ -406,6 +454,15 @@ export async function updateMilestoneStatusAction(
       relatedType: "milestone",
       relatedId: milestoneId,
       meta: { projectId, status },
+    });
+
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "milestone_completed",
+      userId: user.id,
+      entityType: "project",
+      entityId: projectId,
+      metadata: { milestoneId, title: milestone?.title },
     });
   }
 

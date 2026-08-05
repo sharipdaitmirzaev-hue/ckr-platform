@@ -18,7 +18,7 @@ import {
 import { adminUpdateProjectModerationAction } from "@/features/admin/actions";
 import { ModerationForm } from "@/features/admin/components/moderation-form";
 import { listAdminProjects } from "@/lib/admin/queries";
-import type { PublishStatus, VerificationStatus } from "@/types";
+import type { ProjectStatus, VerificationStatus } from "@/types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Админ — Проекты" };
@@ -31,9 +31,9 @@ export default async function AdminProjectsPage({
   searchParams,
 }: ProjectsPageProps) {
   const status = PROJECT_STATUSES.includes(
-    searchParams?.status as PublishStatus,
+    searchParams?.status as ProjectStatus,
   )
-    ? (searchParams?.status as PublishStatus)
+    ? (searchParams?.status as ProjectStatus)
     : null;
   const verificationStatus = VERIFICATION_STATUSES.includes(
     searchParams?.verification as VerificationStatus,

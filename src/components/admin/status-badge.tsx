@@ -46,7 +46,9 @@ export function StatusBadge({
 export function publishStatusTone(
   status: string,
 ): StatusTone {
-  if (status === "published") return "success";
+  if (status === "published" || status === "active" || status === "completed") {
+    return "success";
+  }
   if (status === "moderation" || status === "pending") return "warning";
   if (status === "archived" || status === "closed" || status === "rejected") {
     return "danger";

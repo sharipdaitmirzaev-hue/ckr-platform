@@ -12,7 +12,17 @@ export type UserRole =
 
 export type ProjectStage = "idea" | "startup" | "operating" | "expansion";
 
+/** Статус публикации возможностей / офферов. */
 export type PublishStatus = "draft" | "moderation" | "published" | "archived";
+
+/** Жизненный цикл проекта ЦКР. */
+export type ProjectStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "active"
+  | "completed"
+  | "archived";
 
 export type OpportunityType =
   | "land"
@@ -267,7 +277,7 @@ export type Project = {
   investmentRequired: number;
   currency: string;
   stage: ProjectStage;
-  status: PublishStatus;
+  status: ProjectStatus;
   verificationStatus?: VerificationStatus;
   coverUrl?: string | null;
   createdAt?: string;

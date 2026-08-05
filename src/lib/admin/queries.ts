@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   ExpertProfileStatus,
   InvestmentOfferStatus,
+  ProjectStatus,
   PublishStatus,
   UserRole,
   VerificationStatus,
@@ -182,14 +183,14 @@ export type AdminProjectItem = {
   ownerId: string;
   ownerName: string | null;
   region: string;
-  status: PublishStatus;
+  status: ProjectStatus;
   verificationStatus: VerificationStatus;
   stage: string;
   updatedAt: string;
 };
 
 export async function listAdminProjects(filters?: {
-  status?: PublishStatus | null;
+  status?: ProjectStatus | null;
   verificationStatus?: VerificationStatus | null;
 }): Promise<AdminProjectItem[]> {
   if (!hasSupabaseEnv()) return [];
@@ -219,7 +220,7 @@ export async function listAdminProjects(filters?: {
       ownerId: project.owner_id,
       ownerName: project.profiles?.full_name ?? null,
       region: project.region,
-      status: project.status as PublishStatus,
+      status: project.status as ProjectStatus,
       verificationStatus:
         (project.verification_status as VerificationStatus) ?? "unverified",
       stage: project.stage,

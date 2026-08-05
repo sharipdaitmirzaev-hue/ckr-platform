@@ -1,3 +1,4 @@
+import { ProjectLifecycle } from "@/components/projects/project-lifecycle";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -34,7 +35,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         <SectionHeading
           eyebrow="Проекты"
           title="Редактирование"
-          description="Обновляйте описание, стадию и статус публикации. В каталоге видны только проекты со статусом «Опубликован»."
+          description="Обновляйте описание и стадию бизнеса. Жизненный цикл проекта меняется отдельными действиями."
         />
         <ButtonLink
           href={`/dashboard/projects/${project.id}/workspace`}
@@ -43,6 +44,14 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
           Кабинет проекта
         </ButtonLink>
       </div>
+
+      <Card variant="surface" className="p-5 sm:p-6">
+        <ProjectLifecycle
+          projectId={project.id}
+          status={project.status}
+          canAdvance
+        />
+      </Card>
 
       <Card variant="surface" className="p-5 sm:p-6">
         <ProjectForm

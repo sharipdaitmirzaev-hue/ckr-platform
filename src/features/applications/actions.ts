@@ -99,8 +99,15 @@ export async function createApplicationAction(
     return { error: "Нельзя отправить заявку на собственный объект." };
   }
 
-  if (target.status !== "published") {
-    return { error: "Заявку можно отправить только на опубликованный объект." };
+  const statusOk =
+    parsed.data.targetType === "project"
+      ? target.status === "published" || target.status === "active"
+      : target.status === "published";
+  if (!statusOk) {
+    return {
+      error:
+        "Заявку можно отправить только на доступный объект (опубликован / в реализации).",
+    };
   }
 
   const { error } = await supabase.from("applications").insert({
@@ -190,6 +197,17 @@ export async function updateApplicationStatusAction(
     p_link: "/dashboard/applications",
     p_application_id: applicationId,
   });
+
+  if (status === "accepted") {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "application_accepted",
+      userId: user.id,
+      entityType: application.target_type,
+      entityId: application.target_id,
+      metadata: { applicationId },
+    });
+  }
 
   revalidatePath("/dashboard/applications");
 }

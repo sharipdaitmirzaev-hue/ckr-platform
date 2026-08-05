@@ -18,6 +18,8 @@
 | `migrations/20260325310000_operator_center.sql` | tasks, operator_roles, sla_rules, is_operator, RLS |
 | `migrations/20260325320000_partners.sql` | organizations, members, partnerships, organization_id, RLS |
 | `migrations/20260325330000_reputation.sql` | reputation_profiles, reviews, entity_history, trust_badges, RLS |
+| `migrations/20260325340000_project_lifecycle.sql` | project_status: active, completed |
+| `migrations/20260325341000_project_lifecycle_rls.sql` | RLS каталога published/active/completed |
 
 ## Как применить
 

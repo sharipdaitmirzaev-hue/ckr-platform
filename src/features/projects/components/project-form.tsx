@@ -5,9 +5,7 @@ import { Input } from "@/components/ui/input";
 import {
   CURRENCIES,
   PROJECT_STAGES,
-  PROJECT_STATUSES,
   projectStageLabels,
-  projectStatusDescriptions,
   projectStatusLabels,
 } from "@/config/projects";
 import {
@@ -223,24 +221,14 @@ export function ProjectForm({
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="status" className="text-sm text-muted">
-            Статус публикации
-          </label>
-          <select
-            id="status"
-            name="status"
-            required
-            defaultValue={project?.status ?? "draft"}
-            className="flex h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm text-foreground"
-          >
-            {PROJECT_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {projectStatusLabels[status]}
-              </option>
-            ))}
-          </select>
+          <p className="text-sm text-muted">Этап жизненного цикла</p>
+          <p className="rounded-sm border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground">
+            {projectStatusLabels[project?.status ?? "draft"]}
+          </p>
           <p className="text-xs text-muted">
-            {projectStatusDescriptions[project?.status ?? "draft"]}
+            {mode === "create"
+              ? "Новый проект создаётся как черновик. Этап меняется отдельными действиями."
+              : "Смену этапа выполняйте кнопками жизненного цикла на карточке проекта."}
           </p>
         </div>
       </div>

@@ -1,10 +1,7 @@
-import {
-  CURRENCIES,
-  PROJECT_STAGES,
-  PROJECT_STATUSES,
-} from "@/config/projects";
+import { CURRENCIES, PROJECT_STAGES } from "@/config/projects";
 import { z } from "zod";
 
+/** Форма контента проекта. Жизненный цикл меняется отдельным action. */
 export const projectFormSchema = z.object({
   title: z.string().trim().min(3, "Название не короче 3 символов").max(160),
   summary: z
@@ -25,7 +22,6 @@ export const projectFormSchema = z.object({
     .max(1_000_000_000_000, "Слишком большая сумма"),
   currency: z.enum(CURRENCIES, { error: "Выберите валюту" }),
   stage: z.enum(PROJECT_STAGES, { error: "Выберите стадию" }),
-  status: z.enum(PROJECT_STATUSES, { error: "Выберите статус" }),
 });
 
 export type ProjectFormInput = z.infer<typeof projectFormSchema>;

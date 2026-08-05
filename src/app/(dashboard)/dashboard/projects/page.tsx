@@ -1,5 +1,6 @@
 import { ProjectCard } from "@/components/projects/project-card";
 import { ButtonLink } from "@/components/ui/button-link";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ArchiveProjectButton } from "@/features/projects/components/archive-project-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
@@ -34,17 +35,12 @@ export default async function DashboardProjectsPage() {
       </div>
 
       {projects.length === 0 ? (
-        <div className="border border-border bg-surface/60 p-6">
-          <p className="text-sm text-muted">
-            У вас пока нет проектов. Создайте первый — опишите идею, стадию и
-            потребность в ресурсах.
-          </p>
-          <div className="mt-4">
-            <ButtonLink href="/dashboard/projects/create" variant="outline">
-              Создать проект
-            </ButtonLink>
-          </div>
-        </div>
+        <EmptyState
+          title="У вас пока нет проектов"
+          description="Создайте первый — опишите идею, стадию бизнеса и потребность в ресурсах. Жизненный цикл начнётся с черновика."
+          actionHref="/dashboard/projects/create"
+          actionLabel="Создать проект"
+        />
       ) : (
         <div className="space-y-8">
           {projects.map((project) => (

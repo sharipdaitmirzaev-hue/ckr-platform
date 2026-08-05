@@ -3,6 +3,7 @@ import { ActivityTimeline } from "@/components/deals/activity-timeline";
 import { DealCard } from "@/components/deals/deal-card";
 import { MilestoneList } from "@/components/deals/milestone-list";
 import { DocumentList } from "@/components/documents/document-list";
+import { ProjectLifecycle } from "@/components/projects/project-lifecycle";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -110,6 +111,14 @@ export default async function ProjectWorkspacePage({
         </Badge>
         <Badge variant="soft">{project.region}</Badge>
       </div>
+
+      <Card variant="surface" className="p-5">
+        <ProjectLifecycle
+          projectId={project.id}
+          status={project.status}
+          canAdvance={isOwner}
+        />
+      </Card>
 
       <ProjectAnalytics data={analytics} />
 

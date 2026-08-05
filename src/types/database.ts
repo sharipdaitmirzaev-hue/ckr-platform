@@ -9,6 +9,8 @@ export type DbProjectStatus =
   | "draft"
   | "moderation"
   | "published"
+  | "active"
+  | "completed"
   | "archived";
 
 export type DbProjectStage = "idea" | "startup" | "operating" | "expansion";
