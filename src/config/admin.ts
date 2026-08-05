@@ -31,6 +31,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Контакты, лиды, задачи команды ЦКР",
   },
   {
+    label: "Операционный центр",
+    href: "/operator",
+    description: "Очередь, задачи, SLA, insights",
+  },
+  {
     label: "Пользователи",
     href: "/admin/users",
     description: "Роли и блокировка",

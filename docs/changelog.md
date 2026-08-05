@@ -4,6 +4,20 @@
 
 ---
 
+## 0.22.0-beta — 2026-03-25
+
+Операционный центр ЦКР.
+
+### Изменения
+
+- `/operator` — OperatorStats, OperatorQueue, OperatorActivity, OperatorInsights
+- Таблицы `tasks`, `operator_roles`, `sla_rules` + RLS `is_operator`
+- Задачи со связями lead / project / deal / document / verification
+- Базовые SLA: lead 24ч, application 48ч, verification 72ч
+- Документация `docs/operator-center.md`
+
+---
+
 ## 0.21.0-beta — 2026-03-25
 
 CRM ЦКР: внутренняя система операторов.

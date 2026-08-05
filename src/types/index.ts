@@ -548,6 +548,90 @@ export type CrmActivity = {
   leadTitle?: string;
 };
 
+/** Операционный центр — задача (Этап 22). */
+export type OperatorTaskStatus =
+  | "new"
+  | "in_progress"
+  | "waiting"
+  | "completed"
+  | "cancelled";
+
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
+export type TaskRelatedType =
+  | "lead"
+  | "project"
+  | "deal"
+  | "document"
+  | "verification";
+
+export type OperatorRoleName =
+  | "manager"
+  | "analyst"
+  | "moderator"
+  | "admin";
+
+export type OperatorTask = {
+  id: string;
+  title: string;
+  description: string;
+  assignedTo: string | null;
+  relatedType: TaskRelatedType | null;
+  relatedId: string | null;
+  priority: TaskPriority;
+  status: OperatorTaskStatus;
+  deadline: string | null;
+  createdBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  assigneeName?: string;
+};
+
+export type OperatorRoleRecord = {
+  id: string;
+  userId: string;
+  role: OperatorRoleName;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type SlaRule = {
+  id: string;
+  entityType: string;
+  timeLimitHours: number;
+  active: boolean;
+  label: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type OperatorQueueItem = {
+  id: string;
+  kind:
+    | "lead"
+    | "project"
+    | "application"
+    | "deal"
+    | "document"
+    | "verification"
+    | "task";
+  title: string;
+  subtitle?: string;
+  status: string;
+  href: string;
+  createdAt?: string;
+  overdue?: boolean;
+};
+
+export type OperatorActivityItem = {
+  id: string;
+  label: string;
+  detail?: string;
+  href?: string;
+  at?: string;
+};
+
 /** Прогон сценария или тестовая задача (Этап 19). */
 export type ProductTest = {
   id: string;

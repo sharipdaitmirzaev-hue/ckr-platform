@@ -2,7 +2,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
 const authRoutes = ["/login", "/register"];
-const protectedPrefixes = ["/dashboard", "/onboarding", "/admin"];
+const protectedPrefixes = ["/dashboard", "/onboarding", "/admin", "/operator"];
 
 export async function middleware(request: NextRequest) {
   const { response, user, supabase } = await updateSession(request);
@@ -16,6 +16,8 @@ export async function middleware(request: NextRequest) {
   );
   const isAdminRoute =
     pathname === "/admin" || pathname.startsWith("/admin/");
+  const isOperatorRoute =
+    pathname === "/operator" || pathname.startsWith("/operator/");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
@@ -53,6 +55,29 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+
+    if (isOperatorRoute) {
+      const [{ data: adminRoles }, { data: operatorRoles }] = await Promise.all([
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .limit(1),
+        supabase
+          .from("operator_roles")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("active", true)
+          .limit(1),
+      ]);
+
+      if (!adminRoles?.length && !operatorRoles?.length) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   if (user && isAuthRoute) {
@@ -69,6 +94,8 @@ export const config = {
     "/dashboard/:path*",
     "/admin",
     "/admin/:path*",
+    "/operator",
+    "/operator/:path*",
     "/onboarding",
     "/login",
     "/register",

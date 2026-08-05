@@ -179,4 +179,13 @@
 - Конвертация лида (user / project / opportunity / investment) с подтверждением
 - Архитектура Лии для оператора ЦКР
 
-## Этап 22 — API для мобильного приложения
+## Этап 22 — Операционный центр ЦКР ✅ (код готов)
+
+Подробности: [operator-center.md](./operator-center.md)
+
+- `/operator` — stats, queue, activity, insights
+- `tasks`, `operator_roles`, `sla_rules` + RLS
+- Связи задач с lead / project / deal / document / verification
+- OperatorInsights: просрочки, зависшие проекты, рекомендации
+
+## Этап 23 — API для мобильного приложения

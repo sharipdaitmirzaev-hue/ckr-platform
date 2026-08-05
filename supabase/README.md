@@ -15,6 +15,7 @@
 | `migrations/20260325210000_lia_sessions_and_messages.sql` | lia_sessions, lia_messages, RLS |
 | `migrations/20260325290000_beta_launch.sql` | beta_invites, feedback, user_feedback_events, RLS |
 | `migrations/20260325300000_crm.sql` | crm_contacts, leads, crm_activities, RLS |
+| `migrations/20260325310000_operator_center.sql` | tasks, operator_roles, sla_rules, is_operator, RLS |
 
 ## Как применить
 

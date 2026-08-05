@@ -43,6 +43,8 @@ values ('USER_UUID', 'admin');
 | `/admin/invites` | Приглашения closed beta |
 | `/admin/crm` | CRM: контакты, лиды, задачи, история |
 | `/admin/crm/leads/[id]` | Карточка лида и конвертация |
+| `/operator` | Операционный центр команды |
+| `/operator/tasks` | Задачи операторов |
 | `/admin/users` | Список и поиск пользователей |
 | `/admin/users/[id]` | Профиль, роли, блокировка |
 | `/admin/projects` | Модерация проектов |

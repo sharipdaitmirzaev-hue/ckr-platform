@@ -288,6 +288,62 @@ export type CrmActivityRow = {
   created_at: string;
 };
 
+export type DbOperatorRole =
+  | "manager"
+  | "analyst"
+  | "moderator"
+  | "admin";
+
+export type DbTaskStatus =
+  | "new"
+  | "in_progress"
+  | "waiting"
+  | "completed"
+  | "cancelled";
+
+export type DbTaskPriority = "low" | "medium" | "high" | "urgent";
+
+export type DbTaskRelatedType =
+  | "lead"
+  | "project"
+  | "deal"
+  | "document"
+  | "verification";
+
+export type OperatorRoleRow = {
+  id: string;
+  user_id: string;
+  role: DbOperatorRole;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TaskRow = {
+  id: string;
+  title: string;
+  description: string;
+  assigned_to: string | null;
+  related_type: DbTaskRelatedType | null;
+  related_id: string | null;
+  priority: DbTaskPriority;
+  status: DbTaskStatus;
+  deadline: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SlaRuleRow = {
+  id: string;
+  entity_type: string;
+  time_limit_hours: number;
+  active: boolean;
+  label: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -1056,6 +1112,45 @@ export type Database = {
           Omit<CrmActivityRow, "id" | "created_at" | "created_by">
         >;
       };
+      operator_roles: {
+        Row: OperatorRoleRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          role?: DbOperatorRole;
+          active?: boolean;
+        };
+        Update: Partial<
+          Omit<OperatorRoleRow, "id" | "created_at" | "user_id">
+        >;
+      };
+      tasks: {
+        Row: TaskRow;
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string;
+          assigned_to?: string | null;
+          related_type?: DbTaskRelatedType | null;
+          related_id?: string | null;
+          priority?: DbTaskPriority;
+          status?: DbTaskStatus;
+          deadline?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<Omit<TaskRow, "id" | "created_at" | "created_by">>;
+      };
+      sla_rules: {
+        Row: SlaRuleRow;
+        Insert: {
+          id?: string;
+          entity_type: string;
+          time_limit_hours: number;
+          active?: boolean;
+          label?: string;
+        };
+        Update: Partial<Omit<SlaRuleRow, "id" | "created_at">>;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -1216,6 +1311,10 @@ export type Database = {
       crm_lead_stage: DbCrmLeadStage;
       crm_activity_type: DbCrmActivityType;
       crm_task_status: DbCrmTaskStatus;
+      operator_role: DbOperatorRole;
+      task_status: DbTaskStatus;
+      task_priority: DbTaskPriority;
+      task_related_type: DbTaskRelatedType;
     };
   };
 };
