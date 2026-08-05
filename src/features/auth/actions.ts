@@ -96,6 +96,15 @@ export async function registerAction(
     return { error: "Не удалось создать пользователя." };
   }
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "user_registered",
+    userId: data.user.id,
+    entityType: "user",
+    entityId: data.user.id,
+    metadata: { role },
+  });
+
   // Если email confirmation включён и сессии нет — просим подтвердить почту.
   if (!data.session) {
     return {

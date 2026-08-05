@@ -516,11 +516,15 @@ export async function runLiaEngine(input: {
   ];
 
   const provider = getLiaProvider();
-  const generated = await provider.generate({
-    userMessage: input.userMessage,
-    scenario: null,
-    history: input.history,
-  });
+  const { getLiaMarketSnapshot } = await import("@/lib/analytics/lia-context");
+  const [generated, marketSnapshot] = await Promise.all([
+    provider.generate({
+      userMessage: input.userMessage,
+      scenario: null,
+      history: input.history,
+    }),
+    getLiaMarketSnapshot(),
+  ]);
 
   const links =
     results.length > 0
@@ -536,6 +540,8 @@ export async function runLiaEngine(input: {
       results,
       disclaimer: LIA_DISCLAIMER,
       provider: generated.provider,
+      /** Факты рынка для будущего анализа — без автовыводов */
+      marketSnapshot,
     },
     results,
     projectDraft: null,

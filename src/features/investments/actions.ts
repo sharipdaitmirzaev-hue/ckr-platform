@@ -64,22 +64,39 @@ export async function createInvestmentOfferAction(
     return { error: "Необходимо войти в аккаунт." };
   }
 
-  const { error } = await supabase.from("investment_offers").insert({
-    owner_id: user.id,
-    title: parsed.data.title,
-    description: parsed.data.description,
-    amount_min: parsed.data.amountMin,
-    amount_max: parsed.data.amountMax,
-    currency: parsed.data.currency,
-    regions: parsed.data.regions,
-    categories: parsed.data.categories,
-    investment_type: parsed.data.investmentType,
-    status: parsed.data.status,
-  });
+  const { data, error } = await supabase
+    .from("investment_offers")
+    .insert({
+      owner_id: user.id,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      amount_min: parsed.data.amountMin,
+      amount_max: parsed.data.amountMax,
+      currency: parsed.data.currency,
+      regions: parsed.data.regions,
+      categories: parsed.data.categories,
+      investment_type: parsed.data.investmentType,
+      status: parsed.data.status,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    return { error: error.message };
+  if (error || !data) {
+    return { error: error?.message ?? "Не удалось создать предложение." };
   }
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "investment_created",
+    userId: user.id,
+    entityType: "investment",
+    entityId: data.id,
+    metadata: {
+      investmentType: parsed.data.investmentType,
+      amountMin: parsed.data.amountMin,
+      amountMax: parsed.data.amountMax,
+    },
+  });
 
   revalidatePath("/investments");
   revalidatePath("/dashboard/investments");

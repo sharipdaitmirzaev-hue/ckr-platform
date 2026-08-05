@@ -135,4 +135,13 @@
 - `/pricing`, `/services`, `/dashboard/billing`
 - `PaymentProvider` (mock: карта, СБП, другие)
 
-## Этап 17 — API для мобильного приложения
+## Этап 17 — Аналитика ЦКР ✅ (код готов)
+
+Подробности: [analytics.md](./analytics.md)
+
+- `analytics_events` + RLS
+- `/admin/analytics` — пользователи, проекты, инвестиции, сделки, эксперты
+- `ProjectAnalytics` в workspace проекта
+- Снимок рынка для Лии (без автовыводов)
+
+## Этап 18 — API для мобильного приложения

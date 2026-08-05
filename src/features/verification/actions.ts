@@ -252,6 +252,15 @@ export async function adminDecideVerificationAction(
       .eq("related_type", request.target_type)
       .eq("related_id", request.target_id)
       .in("status", ["uploaded", "pending"]);
+
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "document_verified",
+      userId: user.id,
+      entityType: request.target_type,
+      entityId: request.target_id,
+      metadata: { requestId: request.id },
+    });
   } else {
     await supabase
       .from("documents")

@@ -139,6 +139,16 @@ export type DbCommissionType = "fixed" | "percent";
 
 export type DbCommissionStatus = "pending" | "paid" | "cancelled";
 
+export type AnalyticsEventRow = {
+  id: string;
+  user_id: string | null;
+  event_type: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -756,6 +766,21 @@ export type Database = {
           internal_matches: unknown;
           external_results: unknown;
           report: unknown;
+        }>;
+      };
+      analytics_events: {
+        Row: AnalyticsEventRow;
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          event_type: string;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: Partial<{
+          metadata: Record<string, unknown>;
         }>;
       };
       subscription_plans: {

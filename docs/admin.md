@@ -38,6 +38,7 @@ values ('USER_UUID', 'admin');
 |---|---|
 | `/admin` | Редирект на dashboard |
 | `/admin/dashboard` | Сводка показателей |
+| `/admin/analytics` | Аналитика платформы (периоды, графики) |
 | `/admin/users` | Список и поиск пользователей |
 | `/admin/users/[id]` | Профиль, роли, блокировка |
 | `/admin/projects` | Модерация проектов |

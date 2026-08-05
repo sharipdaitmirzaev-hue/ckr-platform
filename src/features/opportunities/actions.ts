@@ -42,21 +42,34 @@ export async function createOpportunityAction(
     return { error: "Необходимо войти в аккаунт." };
   }
 
-  const { error } = await supabase.from("opportunities").insert({
-    owner_id: user.id,
-    title: parsed.data.title,
-    description: parsed.data.description,
-    type: parsed.data.type,
-    region: parsed.data.region,
-    city: parsed.data.city,
-    price: parsed.data.price,
-    currency: parsed.data.currency,
-    status: parsed.data.status,
-  });
+  const { data, error } = await supabase
+    .from("opportunities")
+    .insert({
+      owner_id: user.id,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      type: parsed.data.type,
+      region: parsed.data.region,
+      city: parsed.data.city,
+      price: parsed.data.price,
+      currency: parsed.data.currency,
+      status: parsed.data.status,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    return { error: error.message };
+  if (error || !data) {
+    return { error: error?.message ?? "Не удалось создать возможность." };
   }
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "opportunity_created",
+    userId: user.id,
+    entityType: "opportunity",
+    entityId: data.id,
+    metadata: { type: parsed.data.type, region: parsed.data.region },
+  });
 
   revalidatePath("/opportunities");
   revalidatePath("/dashboard/opportunities");

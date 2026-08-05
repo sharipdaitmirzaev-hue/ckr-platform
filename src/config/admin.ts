@@ -11,6 +11,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Сводка по платформе",
   },
   {
+    label: "Аналитика",
+    href: "/admin/analytics",
+    description: "Показатели и события ЦКР",
+  },
+  {
     label: "Пользователи",
     href: "/admin/users",
     description: "Роли и блокировка",

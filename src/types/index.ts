@@ -88,6 +88,16 @@ export type CommissionType = "fixed" | "percent";
 
 export type CommissionStatus = "pending" | "paid" | "cancelled";
 
+export type AnalyticsEvent = {
+  id: string;
+  userId: string | null;
+  eventType: string;
+  entityType: string | null;
+  entityId: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
 export type MilestoneStatus =
   | "planned"
   | "in_progress"

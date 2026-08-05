@@ -114,6 +114,14 @@ export async function createApplicationAction(
     return { error: error.message };
   }
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "application_sent",
+    userId: user.id,
+    entityType: parsed.data.targetType,
+    entityId: parsed.data.targetId,
+  });
+
   revalidatePath("/dashboard/applications");
   revalidatePath(`/project/${parsed.data.targetId}`);
   revalidatePath(`/opportunity/${parsed.data.targetId}`);

@@ -1,3 +1,4 @@
+import { ProjectAnalytics } from "@/components/analytics/project-analytics";
 import { ActivityTimeline } from "@/components/deals/activity-timeline";
 import { DealCard } from "@/components/deals/deal-card";
 import { MilestoneList } from "@/components/deals/milestone-list";
@@ -11,6 +12,7 @@ import { projectStageLabels, projectStatusLabels } from "@/config/projects";
 import { AddParticipantForm } from "@/features/deals/components/add-participant-form";
 import { CreateDealForm } from "@/features/deals/components/create-deal-form";
 import { CreateMilestoneForm } from "@/features/deals/components/create-milestone-form";
+import { getProjectAnalytics } from "@/lib/analytics/queries";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
   canAccessProjectWorkspace,
@@ -53,13 +55,14 @@ export default async function ProjectWorkspacePage({
 
   const isOwner = project.ownerId === current.user.id;
 
-  const [deals, participants, milestones, activity, documents] =
+  const [deals, participants, milestones, activity, documents, analytics] =
     await Promise.all([
       listDealsForProject(project.id),
       listParticipantsForProject(project.id),
       listMilestonesForProject(project.id),
       listActivityForProject(project.id),
       listDocumentsForTarget("project", project.id),
+      getProjectAnalytics(project.id),
     ]);
 
   // Unique participants by userId for display
@@ -107,6 +110,8 @@ export default async function ProjectWorkspacePage({
         </Badge>
         <Badge variant="soft">{project.region}</Badge>
       </div>
+
+      <ProjectAnalytics data={analytics} />
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Card variant="surface" className="space-y-4 p-5">

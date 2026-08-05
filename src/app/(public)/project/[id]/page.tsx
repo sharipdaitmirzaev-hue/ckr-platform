@@ -54,6 +54,16 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
+  if (project.status === "published") {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "project_viewed",
+      userId: current?.user.id ?? null,
+      entityType: "project",
+      entityId: project.id,
+    });
+  }
+
   const matchingInvestors =
     project.status === "published"
       ? await listMatchingInvestmentOffersForProject(project)

@@ -89,6 +89,19 @@ export async function createProjectAction(
     return { error: error?.message ?? "Не удалось создать проект." };
   }
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "project_created",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+    metadata: {
+      category: parsed.data.category,
+      region: parsed.data.region,
+      status: parsed.data.status,
+    },
+  });
+
   revalidatePath("/projects");
   revalidatePath("/dashboard/projects");
   revalidatePath(`/project/${data.id}`);

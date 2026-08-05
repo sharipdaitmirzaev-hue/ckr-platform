@@ -120,6 +120,15 @@ export async function createProjectFromLiaDraftAction(
     return { error: error?.message ?? "Не удалось создать проект." };
   }
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "project_created",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+    metadata: { source: "lia", category: draft.category, region: draft.region },
+  });
+
   revalidatePath("/projects");
   revalidatePath("/dashboard/projects");
   revalidatePath(`/dashboard/projects/${data.id}/edit`);

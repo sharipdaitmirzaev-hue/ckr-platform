@@ -140,6 +140,15 @@ export async function createDealAction(
     metadata: { dealId: data.id, dealType, status },
   });
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "deal_created",
+    userId: user.id,
+    entityType: "deal",
+    entityId: data.id,
+    metadata: { projectId, dealType, status },
+  });
+
   revalidateWorkspace(projectId);
   return { success: "Сделка создана." };
 }
@@ -170,6 +179,17 @@ export async function updateDealStatusAction(
     body: status,
     metadata: { dealId, status },
   });
+
+  if (status === "completed") {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "deal_completed",
+      userId: user.id,
+      entityType: "deal",
+      entityId: dealId,
+      metadata: { projectId, status },
+    });
+  }
 
   revalidateWorkspace(projectId);
   return { success: "Статус сделки обновлён." };
