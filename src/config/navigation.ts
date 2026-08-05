@@ -36,9 +36,6 @@ export const dashboardNav: NavItem[] = [
   { label: "Настройки", href: "/dashboard/settings" },
 ];
 
-/** @deprecated Используйте dashboardNav */
-export const cabinetNav = dashboardNav;
-
 export const authNav = {
   login: { label: "Войти", href: "/login" },
   register: { label: "Регистрация", href: "/register" },
