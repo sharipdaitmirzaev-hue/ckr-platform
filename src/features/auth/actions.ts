@@ -172,6 +172,8 @@ export async function onboardingAction(
     linkedin: formData.get("linkedin") || undefined,
     vk: formData.get("vk") || undefined,
     roles,
+    isPublic: formData.get("isPublic") === "on",
+    showContact: formData.get("showContact") === "on",
   });
 
   if (!parsed.success) {
@@ -204,6 +206,8 @@ export async function onboardingAction(
       city: parsed.data.city || null,
       region: parsed.data.region || null,
       bio: parsed.data.bio || null,
+      is_public: parsed.data.isPublic !== false,
+      show_contact: Boolean(parsed.data.showContact),
     })
     .eq("id", user.id);
 

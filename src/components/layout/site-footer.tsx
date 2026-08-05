@@ -36,15 +36,31 @@ export function SiteFooter() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
-              Кабинет
+              Для участников
             </p>
             <ul className="mt-4 space-y-2.5">
               <li>
                 <Link
-                  href="/login"
+                  href="/entrepreneurs"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
-                  Войти
+                  Предпринимателям
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/investors"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Инвесторам
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/experts"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Экспертам
                 </Link>
               </li>
               <li>

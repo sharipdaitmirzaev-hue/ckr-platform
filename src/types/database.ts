@@ -201,6 +201,8 @@ export type ProfileRow = {
   social_links: Record<string, string> | null;
   verification_status: DbVerificationStatus;
   is_blocked?: boolean;
+  is_public?: boolean;
+  show_contact?: boolean;
   avatar_url: string | null;
   bio: string | null;
   phone: string | null;
@@ -398,6 +400,8 @@ export type Database = {
           social_links?: Record<string, string> | null;
           verification_status?: DbVerificationStatus;
           is_blocked?: boolean;
+          is_public?: boolean;
+          show_contact?: boolean;
           avatar_url?: string | null;
           bio?: string | null;
           phone?: string | null;

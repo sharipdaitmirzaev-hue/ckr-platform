@@ -1,14 +1,46 @@
 import { Logo } from "@/components/brand/logo";
-import { LiaWidget } from "@/components/lia/lia-widget";
+import { OpportunityCard } from "@/components/opportunities/opportunity-card";
+import { ProjectCard } from "@/components/projects/project-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { brand } from "@/config/brand";
+import { howCkrWorks, roleLandings } from "@/config/public-landing";
+import { siteConfig } from "@/config/site";
+import { listPublishedOpportunities } from "@/lib/opportunities/queries";
+import { listPublishedProjects } from "@/lib/projects/queries";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-export default function HomePage() {
+export const metadata: Metadata = {
+  title: siteConfig.title,
+  description: siteConfig.description,
+  openGraph: {
+    title: siteConfig.title,
+    description: siteConfig.description,
+    url: "/",
+    type: "website",
+    locale: siteConfig.ogLocale,
+    siteName: siteConfig.name,
+  },
+  alternates: { canonical: "/" },
+};
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [projects, opportunities] = await Promise.all([
+    listPublishedProjects(),
+    listPublishedOpportunities(),
+  ]);
+
+  const previewProjects = projects.slice(0, 3);
+  const previewOpportunities = opportunities.slice(0, 3);
+
   return (
     <>
+      {/* Hero: brand + one headline + support + CTAs */}
       <section className="relative overflow-hidden">
         <div
           aria-hidden
@@ -20,44 +52,46 @@ export default function HomePage() {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/80 to-transparent"
         />
 
         <Container className="relative flex min-h-[calc(100vh-4.25rem)] flex-col justify-center py-16 sm:py-20">
           <div className="max-w-3xl">
             <div className="animate-fade-in">
               <Logo size="lg" href="" />
-              <p className="mt-3 text-sm uppercase tracking-[0.28em] text-muted">
-                {brand.fullName}
-              </p>
+              <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.85rem] lg:leading-[1.12]">
+                {brand.name} — {brand.fullName}
+              </h1>
             </div>
 
             <div
               aria-hidden
-              className="animate-line-draw mt-8 h-px w-24 origin-left bg-accent"
+              className="animate-line-draw mt-8 h-px w-28 origin-left bg-accent"
             />
 
-            <h1 className="animate-fade-up mt-8 font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.35rem] lg:leading-[1.12]">
+            <p className="animate-fade-up mt-8 font-display text-xl font-semibold tracking-tight text-accent sm:text-2xl">
               {brand.tagline}
-            </h1>
+            </p>
 
             <p
-              className="animate-fade-up mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
+              className="animate-fade-up mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
               style={{ animationDelay: "120ms" }}
             >
-              Центр комплексных решений для бизнеса: от идеи до реализации —
-              анализ, ресурсы, партнёры и сопровождение в одной платформе.
+              {brand.promise}
             </p>
 
             <div
-              className="animate-fade-up mt-10 flex flex-col gap-3 sm:flex-row sm:items-center"
+              className="animate-fade-up mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               style={{ animationDelay: "220ms" }}
             >
-              <ButtonLink href="/projects" size="lg">
-                Найти возможности
+              <ButtonLink href="/lia" size="lg">
+                Создать проект с Лией
               </ButtonLink>
-              <ButtonLink href="/dashboard/projects/create" variant="outline" size="lg">
-                Разместить проект
+              <ButtonLink href="/projects" variant="outline" size="lg">
+                Найти проект
+              </ButtonLink>
+              <ButtonLink href="/investments" variant="outline" size="lg">
+                Найти инвестиции
               </ButtonLink>
             </div>
           </div>
@@ -67,23 +101,21 @@ export default function HomePage() {
       <section className="border-t border-border py-20 sm:py-24">
         <Container>
           <SectionHeading
-            eyebrow="Путь ЦКР"
-            title="Идея → анализ → решения → ресурсы → реализация"
-            description="Платформа ведёт бизнес от замысла к результату: помогает увидеть картину целиком и собрать нужные решения."
+            eyebrow="Как работает ЦКР"
+            title="Три шага к комплексному решению"
+            description={`${brand.journey.join(" → ")}.`}
           />
-
-          <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {brand.journey.map((step, index) => (
-              <li
-                key={step}
-                className="border-l border-accent/40 pl-4"
-                style={{ animationDelay: `${index * 80}ms` }}
-              >
+          <ol className="mt-12 grid gap-8 md:grid-cols-3">
+            {howCkrWorks.map((item) => (
+              <li key={item.step} className="border-l border-accent/40 pl-5">
                 <p className="text-xs uppercase tracking-[0.18em] text-muted">
-                  0{index + 1}
+                  {item.step}
                 </p>
-                <p className="mt-2 font-display text-lg font-medium text-foreground">
-                  {step}
+                <h3 className="mt-3 font-display text-xl text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {item.text}
                 </p>
               </li>
             ))}
@@ -92,77 +124,147 @@ export default function HomePage() {
       </section>
 
       <section className="border-t border-border py-20 sm:py-24">
-        <Container className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-          <div>
-            <SectionHeading
-              eyebrow="Модули платформы"
-              title="Всё необходимое для комплексного решения"
-              description="Каталоги и сервисы ЦКР закрывают разные стороны бизнес-задачи — от капитала и активов до экспертизы."
-            />
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-2">
-              {[
-                {
-                  title: "Проекты",
-                  text: "Идеи и бизнесы, которым нужны инвестиции, активы и партнёры.",
-                  href: "/projects",
-                },
-                {
-                  title: "Возможности",
-                  text: "Земля, помещения, оборудование, готовый бизнес и технологии.",
-                  href: "/opportunities",
-                },
-                {
-                  title: "Решения",
-                  text: "Комплексные предложения: инвестор, ресурсы, юристы, маркетинг.",
-                  href: "/solutions",
-                },
-                {
-                  title: "Кабинет",
-                  text: "Управление проектами, заявками и документами в одном месте.",
-                  href: "/dashboard",
-                },
-              ].map((item) => (
-                <a
-                  key={item.title}
-                  href={item.href}
-                  className="group block border-t border-border pt-4 transition-colors hover:border-accent/50"
+        <Container>
+          <SectionHeading
+            eyebrow="Для кого"
+            title="Предприниматели, инвесторы, эксперты"
+            description="Выберите свою роль — ЦКР закрывает разные стороны одной задачи."
+          />
+          <div className="mt-12 grid gap-10 lg:grid-cols-3">
+            {(
+              [
+                roleLandings.entrepreneurs,
+                roleLandings.investors,
+                roleLandings.experts,
+              ] as const
+            ).map((role) => (
+              <div key={role.slug} className="border-t border-border pt-6">
+                <Badge variant="soft">{role.eyebrow}</Badge>
+                <h3 className="mt-4 font-display text-xl text-foreground">
+                  {role.title}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  {role.solution}
+                </p>
+                <Link
+                  href={role.href}
+                  className="mt-5 inline-flex text-sm text-accent transition-colors hover:underline"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-display text-xl text-foreground group-hover:text-accent">
-                      {item.title}
-                    </h3>
-                    <span className="text-accent transition-transform duration-200 group-hover:translate-x-0.5">
-                      →
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">
-                    {item.text}
-                  </p>
-                </a>
+                  Подробнее →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="border-t border-border py-20 sm:py-24">
+        <Container>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Возможности"
+              title="Ресурсы для реализации"
+              description="Земля, помещения, оборудование и готовый бизнес."
+            />
+            <ButtonLink href="/opportunities" variant="outline">
+              Все возможности
+            </ButtonLink>
+          </div>
+          {previewOpportunities.length > 0 ? (
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {previewOpportunities.map((item) => (
+                <OpportunityCard
+                  key={item.id}
+                  opportunity={item}
+                  typeName={item.typeName}
+                  href={`/opportunity/${item.id}`}
+                />
               ))}
             </div>
-          </div>
+          ) : (
+            <p className="mt-10 text-sm text-muted">
+              Опубликованные возможности появятся здесь после модерации.
+            </p>
+          )}
+        </Container>
+      </section>
 
-          <LiaWidget embedded />
+      <section className="border-t border-border py-20 sm:py-24">
+        <Container>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Проекты"
+              title="Идеи, которым нужны ресурсы"
+              description="Центральная сущность ЦКР — проекты, вокруг которых собираются капитал и партнёры."
+            />
+            <ButtonLink href="/projects" variant="outline">
+              Все проекты
+            </ButtonLink>
+          </div>
+          {previewProjects.length > 0 ? (
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {previewProjects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  categoryName={project.categoryName}
+                  href={`/project/${project.id}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-10 text-sm text-muted">
+              Опубликованные проекты появятся здесь. Создайте первый с Лией.
+            </p>
+          )}
+        </Container>
+      </section>
+
+      <section className="border-t border-border py-20 sm:py-24">
+        <Container>
+          <SectionHeading
+            eyebrow="Преимущества ЦКР"
+            title="Инвестиционный уровень доверия"
+            description="Тёмно-синяя палитра, золотые акценты и прозрачные процессы — платформа для серьёзных решений."
+          />
+          <ul className="mt-12 grid gap-8 sm:grid-cols-2">
+            {brand.advantages.map((item, index) => (
+              <li key={item.title} className="border-l border-accent/40 pl-5">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted">
+                  0{index + 1}
+                </p>
+                <h3 className="mt-3 font-display text-xl text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {item.text}
+                </p>
+              </li>
+            ))}
+          </ul>
         </Container>
       </section>
 
       <section className="border-t border-border py-20 sm:py-24">
         <Container className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
           <div className="max-w-xl">
-            <Badge variant="accent">Старт платформы</Badge>
+            <Badge variant="accent">Первый шаг</Badge>
             <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Начните с регистрации
+              Начните с Лии или регистрации
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted">
-              Создайте профиль предпринимателя, инвестора, эксперта или компании
-              — и подключитесь к экосистеме ЦКР.
+              За 30 секунд выберите действие: оформить проект, найти капитал или
+              изучить каталоги ЦКР.
             </p>
           </div>
-          <ButtonLink href="/register" size="lg">
-            Создать аккаунт
-          </ButtonLink>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/lia" size="lg">
+              Создать проект с Лией
+            </ButtonLink>
+            <ButtonLink href="/register" variant="outline" size="lg">
+              Создать аккаунт
+            </ButtonLink>
+          </div>
         </Container>
       </section>
     </>

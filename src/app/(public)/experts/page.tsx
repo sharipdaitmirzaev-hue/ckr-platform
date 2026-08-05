@@ -1,21 +1,32 @@
 import { ExpertCard } from "@/components/experts/expert-card";
-import { ButtonLink } from "@/components/ui/button-link";
+import { RoleLanding } from "@/components/marketing/role-landing";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
   EXPERT_SPECIALIZATIONS,
   expertSpecializationLabels,
 } from "@/config/experts";
+import { roleLandings } from "@/config/public-landing";
+import { siteConfig } from "@/config/site";
 import { listPublishedExperts } from "@/lib/experts/queries";
 import { cn } from "@/lib/utils";
 import type { ExpertSpecialization } from "@/types";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const content = roleLandings.experts;
+
 export const metadata: Metadata = {
   title: "Эксперты",
-  description:
-    "Каталог экспертов ЦКР: юристы, бухгалтеры, маркетологи, инженеры и консультанты для реализации проектов.",
+  description: content.solution,
+  openGraph: {
+    title: `${content.eyebrow} · ${siteConfig.name}`,
+    description: content.solution,
+    url: "/experts",
+    type: "website",
+    locale: siteConfig.ogLocale,
+  },
+  alternates: { canonical: "/experts" },
 };
 
 export const dynamic = "force-dynamic";
@@ -34,71 +45,65 @@ export default async function ExpertsPage({ searchParams }: ExpertsPageProps) {
   const experts = await listPublishedExperts({ specialization });
 
   return (
-    <div className="py-14 sm:py-16">
-      <Container>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <RoleLanding content={content}>
+      <section id="catalog" className="py-16 sm:py-20">
+        <Container>
           <SectionHeading
             eyebrow="Каталог"
-            title="Эксперты"
-            description="Система доверия ЦКР: проверенные компетенции и опыт для сопровождения проектов — от права и учёта до инженерии и маркетинга."
+            title="Эксперты ЦКР"
+            description="Проверенные компетенции для сопровождения проектов."
           />
-          <ButtonLink href="/dashboard/expert/create" variant="outline">
-            Стать экспертом
-          </ButtonLink>
-        </div>
 
-        <div className="mt-10 border-t border-border pt-8">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">
-            Специализация
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href="/experts"
-              className={cn(
-                "rounded-sm border px-3 py-1.5 text-sm transition-colors",
-                !specialization
-                  ? "border-accent/50 bg-accent-muted text-accent"
-                  : "border-border text-muted hover:text-foreground",
-              )}
-            >
-              Все
-            </Link>
-            {EXPERT_SPECIALIZATIONS.map((item) => (
+          <div className="mt-10 border-t border-border pt-8">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted">
+              Специализация
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                key={item}
-                href={`/experts?specialization=${item}`}
+                href="/experts#catalog"
                 className={cn(
                   "rounded-sm border px-3 py-1.5 text-sm transition-colors",
-                  specialization === item
+                  !specialization
                     ? "border-accent/50 bg-accent-muted text-accent"
                     : "border-border text-muted hover:text-foreground",
                 )}
               >
-                {expertSpecializationLabels[item]}
+                Все
               </Link>
-            ))}
+              {EXPERT_SPECIALIZATIONS.map((item) => (
+                <Link
+                  key={item}
+                  href={`/experts?specialization=${item}#catalog`}
+                  className={cn(
+                    "rounded-sm border px-3 py-1.5 text-sm transition-colors",
+                    specialization === item
+                      ? "border-accent/50 bg-accent-muted text-accent"
+                      : "border-border text-muted hover:text-foreground",
+                  )}
+                >
+                  {expertSpecializationLabels[item]}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {experts.length === 0 ? (
-          <div className="mt-12 border-t border-border pt-8">
-            <p className="text-sm text-muted">
-              Опубликованных экспертов пока нет. Примените миграцию и создайте
-              профиль эксперта в кабинете.
+          {experts.length === 0 ? (
+            <p className="mt-12 text-sm text-muted">
+              Опубликованных экспертов пока нет. Создайте профиль в кабинете.
             </p>
-          </div>
-        ) : (
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {experts.map((expert) => (
-              <ExpertCard
-                key={expert.id}
-                expert={expert}
-                href={`/expert/${expert.id}`}
-              />
-            ))}
-          </div>
-        )}
-      </Container>
-    </div>
+          ) : (
+            <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {experts.map((expert) => (
+                <ExpertCard
+                  key={expert.id}
+                  expert={expert}
+                  href={`/expert/${expert.id}`}
+                />
+              ))}
+            </div>
+          )}
+        </Container>
+      </section>
+    </RoleLanding>
   );
 }

@@ -36,6 +36,8 @@ export const onboardingSchema = z.object({
   roles: z
     .array(z.enum(ASSIGNABLE_ROLES))
     .min(1, "Выберите хотя бы одну роль"),
+  isPublic: z.boolean().optional(),
+  showContact: z.boolean().optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

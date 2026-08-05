@@ -161,6 +161,33 @@ export function OnboardingForm({ profile, roles }: OnboardingFormProps) {
         />
       </div>
 
+      <fieldset className="space-y-3 rounded-sm border border-border px-3 py-3">
+        <legend className="px-1 text-sm text-muted">Приватность профиля</legend>
+        <label className="flex cursor-pointer gap-3">
+          <input
+            type="checkbox"
+            name="isPublic"
+            defaultChecked={profile.is_public !== false}
+            className="mt-1 accent-[var(--ckr-accent)]"
+          />
+          <span className="text-sm text-foreground">
+            Публичный профиль{" "}
+            <span className="text-muted">(/profile/… видимо другим)</span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer gap-3">
+          <input
+            type="checkbox"
+            name="showContact"
+            defaultChecked={Boolean(profile.show_contact)}
+            className="mt-1 accent-[var(--ckr-accent)]"
+          />
+          <span className="text-sm text-foreground">
+            Показывать телефон на публичном профиле
+          </span>
+        </label>
+      </fieldset>
+
       <fieldset className="space-y-3">
         <legend className="text-sm text-muted">
           Роли (можно выбрать несколько)

@@ -101,4 +101,29 @@
 - `ProjectDraft` + preview / wizard / create
 - Создание `projects` только после подтверждения → `/dashboard/projects/[id]/edit`
 
-## Этап 11 — API для мобильного приложения
+## Этап 11 — Лия: решения и поиск ✅ (код готов)
+
+Подробности: [lia-solutions.md](./lia-solutions.md)
+
+## Этап 12 — Внешний поиск ✅ (код готов)
+
+Подробности: [external-search.md](./external-search.md)
+
+## Этап 13 — Сделки и кабинет проекта ✅ (код готов)
+
+Подробности: [deals-and-workspace.md](./deals-and-workspace.md)
+
+## Этап 14 — Коммуникации и активность ✅ (код готов)
+
+Подробности: [notifications-and-communication.md](./notifications-and-communication.md)
+
+## Этап 15 — Публичная платформа ✅ (код готов)
+
+Подробности: [public-platform.md](./public-platform.md)
+
+- Главная `/` с hero, ролями, каталогами и преимуществами
+- `/entrepreneurs`, `/investors`, `/experts`
+- Публичные профили `/profile/[id]` + приватность
+- SEO: metadata, OpenGraph, sitemap, robots
+
+## Этап 16 — API для мобильного приложения
