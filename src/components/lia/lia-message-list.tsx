@@ -1,15 +1,15 @@
 import { LiaResults } from "@/components/lia/lia-results";
-import { ButtonLink } from "@/components/ui/button-link";
-import { projectDraftToSearchParams } from "@/lib/lia/project-draft";
+import { LiaProjectFlow } from "@/features/lia/components/lia-project-flow";
 import type { LiaMessage } from "@/types/lia";
+import type { CategoryRow } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 type LiaMessageListProps = {
   messages: LiaMessage[];
+  categories: CategoryRow[];
 };
 
 function renderContent(content: string) {
-  // Простой рендер markdown-ссылок [title](/path)
   const parts = content.split(/(\[[^\]]+\]\([^)]+\))/g);
   return parts.map((part, index) => {
     const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
@@ -32,12 +32,13 @@ function renderContent(content: string) {
   });
 }
 
-export function LiaMessageList({ messages }: LiaMessageListProps) {
+export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
   if (messages.length === 0) {
     return (
       <p className="text-sm text-muted">
-        Начните диалог или выберите быстрый сценарий. Лия подбирает объекты
-        только из открытых каталогов ЦКР.
+        Начните с сценария «Помоги создать бизнес-проект» — Лия соберёт
+        предварительный проект и предложит создать его после вашего
+        подтверждения.
       </p>
     );
   }
@@ -69,14 +70,7 @@ export function LiaMessageList({ messages }: LiaMessageListProps) {
               <LiaResults results={results} />
             ) : null}
             {!isUser && projectDraft ? (
-              <div className="mt-4">
-                <ButtonLink
-                  href={`/dashboard/projects/create?${projectDraftToSearchParams(projectDraft)}`}
-                  size="sm"
-                >
-                  Перейти к созданию проекта
-                </ButtonLink>
-              </div>
+              <LiaProjectFlow draft={projectDraft} categories={categories} />
             ) : null}
           </li>
         );

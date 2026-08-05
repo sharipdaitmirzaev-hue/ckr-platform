@@ -1,4 +1,8 @@
-import { BUSINESS_IDEA_STEPS, LIA_DISCLAIMER } from "@/config/lia";
+import {
+  BUSINESS_IDEA_STEPS,
+  LIA_DISCLAIMER,
+  PROJECT_FLOW_START_PATTERN,
+} from "@/config/lia";
 import {
   searchExperts,
   searchInvestments,
@@ -29,7 +33,10 @@ function detectScenario(
 ): LiaScenarioId | null {
   if (explicit) return explicit;
   const value = message.toLowerCase();
-  if (/бизнес-иде|оформить.*иде|создать проект|идею/.test(value)) {
+  if (
+    PROJECT_FLOW_START_PATTERN.test(value) ||
+    /бизнес-иде|оформить.*иде|создать проект|идею/.test(value)
+  ) {
     return "business_idea";
   }
   if (/инвест/.test(value)) return "find_investments";
@@ -89,6 +96,13 @@ function getBusinessIdeaState(history: LiaMessage[]) {
   return { step: 0, answers: {} as Record<string, string> };
 }
 
+function ensureMinLength(text: string, min: number, fallback: string) {
+  const value = text.trim();
+  if (value.length >= min) return value;
+  const padded = `${value}${value ? " " : ""}${fallback}`.trim();
+  return padded.length >= min ? padded : `${padded} ${".".repeat(min)}`.slice(0, min);
+}
+
 function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
   const title = answers.title?.trim() || "Новый проект";
   const region = answers.region?.trim() || "Россия";
@@ -99,15 +113,15 @@ function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
   const needs = answers.needs?.trim() || "";
   const description = answers.description?.trim() || "";
 
-  const summary = [
-    description.slice(0, 180) || `Проект «${title}» в регионе ${region}.`,
+  const summaryBase = [
+    description.slice(0, 160) || `Проект «${title}» в регионе ${region}.`,
     needs ? `Требуется: ${needs}` : null,
   ]
     .filter(Boolean)
     .join(" ");
 
   const fullDescription = [
-    description,
+    description || `Описание проекта «${title}».`,
     assets ? `\n\nЧто уже есть: ${assets}` : "",
     needs ? `\nЧто требуется: ${needs}` : "",
   ]
@@ -116,13 +130,21 @@ function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
 
   return {
     title,
-    summary,
-    description: fullDescription || summary,
+    summary: ensureMinLength(
+      summaryBase,
+      20,
+      "Предварительный черновик проекта ЦКР.",
+    ).slice(0, 400),
+    description: ensureMinLength(
+      fullDescription,
+      40,
+      "Черновик сформирован с помощью Лии. Дополните детали перед публикацией.",
+    ),
     category,
     region,
-    investmentRequired,
-    currency: "RUB",
+    investment_required: investmentRequired,
     stage,
+    currency: "RUB",
     assets,
     needs,
   };
@@ -136,9 +158,9 @@ async function handleBusinessIdea(
   const answers = { ...state.answers };
   let step = state.step;
 
-  // Если это старт сценария без ответа на первый вопрос
+  // Старт сценария — не записываем prompt как ответ на вопрос
   const isStart =
-    /помоги оформить бизнес-идею/i.test(userMessage) &&
+    PROJECT_FLOW_START_PATTERN.test(userMessage) &&
     Object.keys(answers).length === 0 &&
     step === 0 &&
     !history.some((m) => m.metadata?.scenario === "business_idea");
@@ -153,7 +175,14 @@ async function handleBusinessIdea(
     const next = BUSINESS_IDEA_STEPS[step];
     const progress = `Шаг ${step + 1} из ${BUSINESS_IDEA_STEPS.length}`;
     return {
-      content: `${progress}\n\n${next.question}\n\n_${LIA_DISCLAIMER}_`,
+      content: [
+        "Сценарий «От идеи до проекта».",
+        progress,
+        "",
+        next.question,
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
       metadata: {
         scenario: "business_idea",
         businessIdeaStep: step,
@@ -168,16 +197,11 @@ async function handleBusinessIdea(
 
   const projectDraft = buildProjectDraft(answers);
   const content = [
-    "Черновик проекта готов. Это предварительная сборка — данные можно отредактировать в форме создания.",
+    "Предварительный проект готов.",
     "",
-    `**Название:** ${projectDraft.title}`,
-    `**Отрасль (slug):** ${projectDraft.category}`,
-    `**Регион:** ${projectDraft.region}`,
-    `**Инвестиции:** ${new Intl.NumberFormat("ru-RU").format(projectDraft.investmentRequired)} ₽`,
-    `**Стадия:** ${projectDraft.stage}`,
-    `**Кратко:** ${projectDraft.summary}`,
+    "Проверьте данные ниже. Лия не создаёт запись в базе автоматически — проект появится только после вашего подтверждения.",
     "",
-    "Нажмите «Перейти к созданию проекта», чтобы заполнить форму этими данными.",
+    "Кнопки: «Редактировать» или «Создать проект».",
     "",
     `_${LIA_DISCLAIMER}_`,
   ].join("\n");

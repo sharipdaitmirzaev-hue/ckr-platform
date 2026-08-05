@@ -34,15 +34,17 @@ export type LiaResultLink = {
   href: string;
 };
 
+/** Черновик проекта из сценария Лии «От идеи до проекта». */
 export type ProjectDraft = {
   title: string;
   summary: string;
   description: string;
   category: string;
   region: string;
-  investmentRequired: number;
-  currency: string;
+  investment_required: number;
   stage: string;
+  /** Служебные поля для UI/БД (не обязательны в контракте сценария). */
+  currency?: string;
   assets?: string;
   needs?: string;
 };

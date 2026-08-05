@@ -50,6 +50,7 @@ supabase           # миграции и functions (далее)
 - [Документы и верификация](./docs/verification.md)
 - [Админ-панель](./docs/admin.md)
 - [Лия](./docs/lia.md)
+- [От идеи до проекта](./docs/project-flow.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 

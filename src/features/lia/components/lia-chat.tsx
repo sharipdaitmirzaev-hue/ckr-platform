@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LIA_DISCLAIMER, LIA_MAX_MESSAGE_LENGTH, LIA_SCENARIOS } from "@/config/lia";
 import type { LiaChatResponse, LiaMessage, LiaScenarioId, LiaSession } from "@/types/lia";
+import type { CategoryRow } from "@/types/database";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -13,6 +14,7 @@ type LiaChatProps = {
   activeSessionId: string | null;
   initialMessages: LiaMessage[];
   isAuthenticated: boolean;
+  categories: CategoryRow[];
 };
 
 export function LiaChat({
@@ -20,6 +22,7 @@ export function LiaChat({
   activeSessionId,
   initialMessages,
   isAuthenticated,
+  categories,
 }: LiaChatProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(activeSessionId);
@@ -182,7 +185,7 @@ export function LiaChat({
 
         <Card variant="surface" className="flex min-h-[420px] flex-col p-4 sm:p-5">
           <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-            <LiaMessageList messages={messages} />
+            <LiaMessageList messages={messages} categories={categories} />
             {pending ? (
               <p className="text-sm text-muted">Лия готовит рекомендацию…</p>
             ) : null}

@@ -15,9 +15,9 @@ export const LIA_SCENARIOS: {
 }[] = [
   {
     id: "business_idea",
-    label: "Помоги оформить бизнес-идею",
-    prompt: "Помоги оформить бизнес-идею",
-    description: "Пошаговые вопросы и черновик проекта",
+    label: "Помоги создать бизнес-проект",
+    prompt: "Помоги создать бизнес-проект",
+    description: "Сценарий «От идеи до проекта»",
   },
   {
     id: "find_investments",
@@ -45,6 +45,7 @@ export const LIA_SCENARIOS: {
   },
 ];
 
+/** Порядок вопросов сценария «От идеи до проекта». */
 export const BUSINESS_IDEA_STEPS = [
   {
     key: "title",
@@ -58,6 +59,10 @@ export const BUSINESS_IDEA_STEPS = [
   {
     key: "region",
     question: "В каком регионе планируете реализацию?",
+  },
+  {
+    key: "description",
+    question: "Кратко опишите суть проекта и желаемый результат.",
   },
   {
     key: "assets",
@@ -74,10 +79,9 @@ export const BUSINESS_IDEA_STEPS = [
   {
     key: "stage",
     question:
-      "На какой стадии проект: idea, startup, operating или expansion?",
-  },
-  {
-    key: "description",
-    question: "Кратко опишите суть проекта и желаемый результат.",
+      "На какой стадии проект: idea (идея), startup, operating или expansion?",
   },
 ] as const;
+
+export const PROJECT_FLOW_START_PATTERN =
+  /помоги создать бизнес-проект|помоги оформить бизнес-идею|создать бизнес-проект/i;

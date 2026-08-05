@@ -9,6 +9,7 @@ import {
   listLiaMessages,
   listLiaSessions,
 } from "@/lib/lia/queries";
+import { listCategories } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -25,7 +26,10 @@ type LiaPageProps = {
 
 export default async function LiaPage({ searchParams }: LiaPageProps) {
   const current = await getCurrentUser();
-  const sessions = current ? await listLiaSessions(current.user.id) : [];
+  const [sessions, categories] = await Promise.all([
+    current ? listLiaSessions(current.user.id) : Promise.resolve([]),
+    listCategories(),
+  ]);
 
   const requestedSessionId = searchParams?.session ?? null;
   const activeSession =
@@ -63,6 +67,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
             activeSessionId={activeSessionId}
             initialMessages={messages}
             isAuthenticated={Boolean(current)}
+            categories={categories}
           />
         </div>
       </Container>
