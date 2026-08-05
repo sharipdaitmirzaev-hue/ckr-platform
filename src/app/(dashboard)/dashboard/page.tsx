@@ -98,8 +98,9 @@ export default async function DashboardPage() {
             },
             {
               title: "Заявки",
-              text: "Появится вместе с модулями сделок.",
-              ready: false,
+              text: "Входящие и исходящие взаимодействия.",
+              href: "/dashboard/applications",
+              ready: true,
             },
             {
               title: "Документы",

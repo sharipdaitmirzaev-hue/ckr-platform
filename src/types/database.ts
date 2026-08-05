@@ -28,6 +28,19 @@ export type DbOpportunityType =
   | "service"
   | "partner";
 
+export type DbApplicationTargetType =
+  | "project"
+  | "opportunity"
+  | "investment"
+  | "expert";
+
+export type DbApplicationStatus =
+  | "new"
+  | "reviewing"
+  | "accepted"
+  | "rejected"
+  | "closed";
+
 export type ProfileRow = {
   id: string;
   full_name: string;
@@ -94,6 +107,29 @@ export type OpportunityRow = {
   status: DbOpportunityStatus;
   created_at: string;
   updated_at: string;
+};
+
+export type ApplicationRow = {
+  id: string;
+  from_user_id: string;
+  target_type: DbApplicationTargetType;
+  target_id: string;
+  message: string;
+  status: DbApplicationStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string;
+  link: string | null;
+  application_id: string | null;
+  read_at: string | null;
+  created_at: string;
 };
 
 export type Database = {
@@ -179,12 +215,42 @@ export type Database = {
         };
         Update: Partial<Omit<OpportunityRow, "id" | "owner_id" | "created_at">>;
       };
+      applications: {
+        Row: ApplicationRow;
+        Insert: {
+          id?: string;
+          from_user_id: string;
+          target_type: DbApplicationTargetType;
+          target_id: string;
+          message?: string;
+          status?: DbApplicationStatus;
+        };
+        Update: Partial<
+          Omit<ApplicationRow, "id" | "from_user_id" | "target_type" | "target_id" | "created_at">
+        >;
+      };
+      notifications: {
+        Row: NotificationRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body?: string;
+          link?: string | null;
+          application_id?: string | null;
+          read_at?: string | null;
+        };
+        Update: Partial<Omit<NotificationRow, "id" | "user_id" | "created_at">>;
+      };
     };
     Enums: {
       user_role: DbUserRole;
       project_status: DbProjectStatus;
       project_stage: DbProjectStage;
       opportunity_status: DbOpportunityStatus;
+      application_target_type: DbApplicationTargetType;
+      application_status: DbApplicationStatus;
     };
   };
 };

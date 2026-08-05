@@ -5,6 +5,7 @@ import {
   opportunityTypeLabels,
   opportunityVerificationLabels,
 } from "@/config/opportunities";
+import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getOpportunityById } from "@/lib/opportunities/queries";
 import type { Metadata } from "next";
@@ -108,22 +109,34 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
           </div>
         </section>
 
-        <div className="mt-12 flex flex-wrap gap-3 border-t border-border pt-8">
-          <ButtonLink href="/opportunities" variant="outline">
-            К каталогу
-          </ButtonLink>
-          {isOwner ? (
-            <ButtonLink
-              href={`/dashboard/opportunities/${opportunity.id}/edit`}
-              variant="primary"
-            >
-              Редактировать
+        <div className="mt-12 space-y-6 border-t border-border pt-8">
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href="/opportunities" variant="outline">
+              К каталогу
             </ButtonLink>
-          ) : (
-            <ButtonLink href="/projects" variant="primary">
-              Смотреть проекты
-            </ButtonLink>
-          )}
+            {isOwner ? (
+              <ButtonLink
+                href={`/dashboard/opportunities/${opportunity.id}/edit`}
+                variant="outline"
+              >
+                Редактировать
+              </ButtonLink>
+            ) : (
+              <ButtonLink href="/projects" variant="outline">
+                Смотреть проекты
+              </ButtonLink>
+            )}
+          </div>
+
+          {opportunity.status === "published" ? (
+            <ApplicationButton
+              targetType="opportunity"
+              targetId={opportunity.id}
+              label="Связаться с владельцем"
+              isAuthenticated={Boolean(current)}
+              isOwner={isOwner}
+            />
+          ) : null}
         </div>
       </Container>
     </div>

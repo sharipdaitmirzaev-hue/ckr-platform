@@ -48,6 +48,7 @@
 | `/dashboard/projects/create` | Создание проекта |
 | `/dashboard/opportunities` | Мои возможности |
 | `/dashboard/opportunities/create` | Создание возможности |
+| `/dashboard/applications` | Входящие / исходящие заявки |
 
 ## Модули
 

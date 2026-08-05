@@ -5,6 +5,7 @@ import {
   projectStageLabels,
   projectStatusLabels,
 } from "@/config/projects";
+import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getProjectById } from "@/lib/projects/queries";
 import type { Metadata } from "next";
@@ -110,22 +111,30 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </div>
         </section>
 
-        <div className="mt-12 flex flex-wrap gap-3 border-t border-border pt-8">
-          <ButtonLink href="/projects" variant="outline">
-            К каталогу
-          </ButtonLink>
-          {isOwner ? (
-            <ButtonLink
-              href={`/dashboard/projects/${project.id}/edit`}
-              variant="primary"
-            >
-              Редактировать
+        <div className="mt-12 space-y-6 border-t border-border pt-8">
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href="/projects" variant="outline">
+              К каталогу
             </ButtonLink>
-          ) : (
-            <ButtonLink href="/register" variant="primary">
-              Стать партнёром ЦКР
-            </ButtonLink>
-          )}
+            {isOwner ? (
+              <ButtonLink
+                href={`/dashboard/projects/${project.id}/edit`}
+                variant="outline"
+              >
+                Редактировать
+              </ButtonLink>
+            ) : null}
+          </div>
+
+          {project.status === "published" ? (
+            <ApplicationButton
+              targetType="project"
+              targetId={project.id}
+              label="Предложить сотрудничество"
+              isAuthenticated={Boolean(current)}
+              isOwner={isOwner}
+            />
+          ) : null}
         </div>
       </Container>
     </div>

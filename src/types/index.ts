@@ -31,12 +31,30 @@ export type SolutionType =
   | "legal_support"
   | "marketing";
 
+export type ApplicationTargetType =
+  | "project"
+  | "opportunity"
+  | "investment"
+  | "expert";
+
 export type ApplicationStatus =
   | "new"
-  | "in_review"
+  | "reviewing"
   | "accepted"
   | "rejected"
-  | "withdrawn";
+  | "closed";
+
+/** Универсальная заявка на взаимодействие. */
+export type Application = {
+  id: string;
+  fromUserId: string;
+  targetType: ApplicationTargetType;
+  targetId: string;
+  message: string;
+  status: ApplicationStatus;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type InvestmentOfferStatus = PublishStatus;
 
