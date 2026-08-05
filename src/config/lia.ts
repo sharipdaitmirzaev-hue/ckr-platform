@@ -73,6 +73,12 @@ export const LIA_SCENARIOS: {
     prompt: "Аудит бизнеса",
     description: "Диагностика действующего бизнеса → SWOT и следующие шаги",
   },
+  {
+    id: "develop_strategy",
+    label: "Разработать стратегию развития",
+    prompt: "Разработать стратегию развития",
+    description: "Цели, направления роста, ресурсы, риски, план действий",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -132,6 +138,9 @@ export const CHECK_RELIABILITY_PATTERN =
 export const BUSINESS_AUDIT_START_PATTERN =
   /аудит\s+бизнеса|проведи\s+аудит|business\s*audit|диагностик[аи]\s+бизнеса/i;
 
+export const DEVELOP_STRATEGY_START_PATTERN =
+  /разработать\s+стратегию|стратегия\s+развития|develop\s+strategy|построй\s+стратегию/i;
+
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [
   {
@@ -164,5 +173,31 @@ export const BUSINESS_AUDIT_STEPS = [
   {
     key: "goals",
     question: "Какие цели на ближайшие 6–12 месяцев?",
+  },
+] as const;
+
+/** Вопросы сценария «Разработать стратегию развития». */
+export const DEVELOP_STRATEGY_STEPS = [
+  {
+    key: "project",
+    question:
+      "Как называется проект или бизнес, для которого нужна стратегия?",
+  },
+  {
+    key: "audit",
+    question:
+      "Кратко: итог аудита — сильные стороны и главные проблемы (можно своими словами).",
+  },
+  {
+    key: "goals",
+    question: "Какие стратегические цели на 6–12 месяцев?",
+  },
+  {
+    key: "resources",
+    question: "Какие ресурсы уже есть и какие нужно найти?",
+  },
+  {
+    key: "constraints",
+    question: "Какие ограничения: бюджет, регион, команда, сроки?",
   },
 ] as const;

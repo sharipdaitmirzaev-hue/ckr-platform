@@ -10,7 +10,8 @@ export type LiaScenarioId =
   | "org_find_projects"
   | "org_offer_opportunities"
   | "check_reliability"
-  | "business_audit";
+  | "business_audit"
+  | "develop_strategy";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -23,6 +24,23 @@ export type BusinessAuditReport = {
   opportunities: string[];
   risks: string[];
   next_steps: string[];
+};
+
+/** Отчёт сценария «Разработать стратегию развития». */
+export type StrategyReport = {
+  projectTitle: string;
+  summary: string;
+  goals: string[];
+  growthDirections: string[];
+  resources: string[];
+  risks: string[];
+  actionPlan: string[];
+  methodologyStage: "strategy";
+  suggestedTemplate:
+    | "new_business"
+    | "business_development"
+    | "investment_project"
+    | "business_optimization";
 };
 
 export type LiaSession = {
@@ -190,6 +208,9 @@ export type LiaMessageMetadata = {
   businessAuditStep?: number;
   businessAuditAnswers?: Record<string, string>;
   businessAuditReport?: BusinessAuditReport | null;
+  strategyStep?: number;
+  strategyAnswers?: Record<string, string>;
+  strategyReport?: StrategyReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

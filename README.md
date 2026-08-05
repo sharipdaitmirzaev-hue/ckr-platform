@@ -6,7 +6,7 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.31.0-beta** (улучшения по пилоту ТИНДА). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [TINDA case study](./docs/tinda-case-study.md) · [Improvements](./docs/tinda-improvements.md).
+Текущая версия ядра: **0.32.0-beta** (методология ЦКР). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Методология](./docs/ckr-methodology.md) · [TINDA case study](./docs/tinda-case-study.md).
 
 ## Стек
 
@@ -56,6 +56,7 @@ supabase           # миграции
 - [Деплой](./docs/deployment.md) · [Backup](./docs/backup.md) · [Production checklist](./docs/production-checklist.md)
 - [Роли и права](./docs/roles-and-permissions.md)
 - [Потоки Лии](./docs/lia-flows.md)
+- [Методология ЦКР](./docs/ckr-methodology.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 - [Changelog](./docs/changelog.md)

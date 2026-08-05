@@ -1,5 +1,6 @@
 import { BusinessAuditReportCard } from "@/components/lia/business-audit-report";
 import { LiaResults } from "@/components/lia/lia-results";
+import { StrategyReportCard } from "@/components/lia/strategy-report";
 import { LiaProjectFlow } from "@/features/lia/components/lia-project-flow";
 import type { LiaMessage } from "@/types/lia";
 import type { CategoryRow } from "@/types/database";
@@ -51,6 +52,7 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const results = message.metadata?.results || [];
         const projectDraft = message.metadata?.projectDraft;
         const auditReport = message.metadata?.businessAuditReport;
+        const strategyReport = message.metadata?.strategyReport;
 
         return (
           <li
@@ -76,6 +78,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && auditReport ? (
               <BusinessAuditReportCard report={auditReport} />
+            ) : null}
+            {!isUser && strategyReport ? (
+              <StrategyReportCard report={strategyReport} />
             ) : null}
           </li>
         );

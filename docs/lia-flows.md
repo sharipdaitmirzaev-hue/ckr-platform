@@ -20,9 +20,11 @@
 | `org_offer_opportunities` | Какие возможности мы можем предложить | Рекомендации публикаций org |
 | `check_reliability` | Проверь надёжность участника | Факты/документы/история **без вердикта** |
 | `business_audit` | Аудит бизнеса | Вопросы → `BusinessAuditReport` (сильные/слабые/возможности/риски/шаги) |
+| `develop_strategy` | Разработать стратегию развития | Вход: проект / аудит / цели → `StrategyReport` |
 
 Конфиг: `src/config/lia.ts`  
-Движок: `src/lib/lia/engine.ts`
+Движок: `src/lib/lia/engine.ts`  
+Методология: [ckr-methodology.md](./ckr-methodology.md)
 
 ---
 
@@ -72,7 +74,9 @@ UI: `ProjectLiaActions` на edit/workspace/public project.
 
 ```text
 Действующий бизнес → business_audit → BusinessAuditReport
+                 → develop_strategy → StrategyReport
                  → шаблон business_development → CRM templates
+                 → методология ЦКР (поиск ресурсов → сделка → реализация)
 ```
 
 ```text

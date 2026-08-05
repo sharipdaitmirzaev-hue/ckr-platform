@@ -90,6 +90,23 @@ UI переходов: `ProjectLifecycle` (workspace / edit).
 
 ---
 
+## Шаблоны проектов (этап 32)
+
+Конфиг: `src/config/project-templates.ts`. UI: `/dashboard/projects/create?template=…`.
+
+| id | Назначение |
+|---|---|
+| `new_business` | Запуск с нуля |
+| `business_development` | Развитие действующего бизнеса (кейс ТИНДА) |
+| `investment_project` | Привлечение капитала |
+| `business_optimization` | Эффективность и KPI |
+
+Каждый шаблон содержит: **цели**, **этапы**, **необходимые данные**, **рекомендуемые действия**, плюс секции описания. Методология сопровождения: [ckr-methodology.md](./ckr-methodology.md).
+
+Структуры черновиков документов (без генерации файлов): `BusinessPlanDraft`, `RoadmapDraft`, `InvestmentProposalDraft` — `src/types/project-drafts.ts`.
+
+---
+
 ## RLS
 
 - **Владелец:** создаёт, читает, обновляет, удаляет свои проекты.  

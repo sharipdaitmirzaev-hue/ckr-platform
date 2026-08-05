@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { ckrMethodologyStageLabels } from "@/config/methodology";
 import {
   PROJECT_TEMPLATES,
   buildTemplateDescription,
@@ -108,11 +109,54 @@ export default async function CreateProjectPage({
       </div>
 
       {template ? (
-        <Card variant="surface" className="space-y-2 p-4">
+        <Card variant="surface" className="space-y-4 p-4">
           <p className="text-sm text-foreground">{template.description}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                Цели
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
+                {template.goals.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                Этапы
+              </p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-foreground">
+                {template.stages.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ol>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                Необходимые данные
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
+                {template.requiredData.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+                Рекомендуемые действия
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
+                {template.recommendedActions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
           <p className="text-xs text-muted">
-            Рекомендуемые этапы workspace:{" "}
-            {template.suggestedMilestones.join(" → ")}
+            Старт методологии ЦКР:{" "}
+            {ckrMethodologyStageLabels[template.methodologyStart]} · этапы
+            workspace: {template.stages.join(" → ")}
           </p>
         </Card>
       ) : null}

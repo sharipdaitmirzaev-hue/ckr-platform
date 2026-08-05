@@ -89,6 +89,12 @@ Seed: `npm run seed:tinda` · детали в [tinda-pilot.md](./tinda-pilot.md)
 - CRM-шаблоны сегментов: `customers` / `suppliers` / `partners`  
 - Документы case study + improvements  
 
+### Сделано в этапе 32
+
+- Методология ЦКР применена к пилоту: этап `resource_search`, стратегические цели, `RoadmapDraft`  
+- Лия: «Разработать стратегию развития» → `StrategyReport`  
+- Полный набор шаблонов проектов (4 типа)  
+
 ### Backlog (без крупных модулей сейчас)
 
 - `organization_id` на CRM contacts/leads  

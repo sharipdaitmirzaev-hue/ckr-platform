@@ -1,5 +1,7 @@
 import { LIA_DISCLAIMER } from "@/config/lia";
+import type { CkrMethodologyStage } from "@/config/methodology";
 import type { SolutionReport } from "@/types/lia";
+import type { RoadmapDraft } from "@/types/project-drafts";
 
 /**
  * Фиксированные UUID пилота ООО ТИНДА (идемпотентный seed).
@@ -61,6 +63,83 @@ export const tindaOrganization = {
   ].join("\n\n"),
 };
 
+/** Методология ЦКР, применённая к пилоту ТИНДА (этап 32). */
+export const tindaMethodology = {
+  templateId: "business_development" as const,
+  /** Текущий этап методологии: после диагностики и стратегии — поиск ресурсов. */
+  currentStage: "resource_search" as CkrMethodologyStage,
+  strategicGoals: [
+    "Усилить B2B-продажи и дисциплину воронки в текущем регионе",
+    "Расширить сеть поставщиков и стратегических партнёров",
+    "Подготовить оборотный капитал и экспертизу для масштабирования",
+    "Стандартизировать сопровождение сделок через ЦКР",
+  ],
+} as const;
+
+export const tindaRoadmap: RoadmapDraft = {
+  projectId: TINDA_PROJECT_ID,
+  title: "Roadmap развития оптовой платформы ТИНДА",
+  horizon: "6–12 месяцев",
+  currentStage: "resource_search",
+  notes:
+    "Структура RoadmapDraft без генерации файлов. Вехи согласованы с workspace milestones и методологией ЦКР.",
+  items: [
+    {
+      id: "tinda-roadmap-diagnosis",
+      title: "Диагностика и контур в ЦКР",
+      description:
+        "Профиль организации, проект, аудит ресурсов, CRM-сегменты.",
+      methodologyStage: "diagnosis",
+      status: "completed",
+      order: 1,
+    },
+    {
+      id: "tinda-roadmap-strategy",
+      title: "Стратегия развития",
+      description:
+        "Цели роста, направления, риски; сценарий Лии «Разработать стратегию развития».",
+      methodologyStage: "strategy",
+      status: "completed",
+      order: 2,
+    },
+    {
+      id: "tinda-roadmap-resources",
+      title: "Поиск ресурсов",
+      description:
+        "Партнёры, капитал, экспертиза; CRM + find_solutions; усиление продаж.",
+      methodologyStage: "resource_search",
+      status: "in_progress",
+      order: 3,
+    },
+    {
+      id: "tinda-roadmap-deal",
+      title: "Подготовка сделки",
+      description:
+        "Пилотная сделка negotiation, пакеты данных, InvestmentProposalDraft при необходимости.",
+      methodologyStage: "deal_preparation",
+      status: "planned",
+      order: 4,
+    },
+    {
+      id: "tinda-roadmap-realize",
+      title: "Реализация",
+      description:
+        "Исполнение этапов workspace: партнёры → масштабирование.",
+      methodologyStage: "realization",
+      status: "planned",
+      order: 5,
+    },
+    {
+      id: "tinda-roadmap-control",
+      title: "Контроль результата",
+      description: "KPI роста, reputation, выводы для следующего цикла.",
+      methodologyStage: "result_control",
+      status: "planned",
+      order: 6,
+    },
+  ],
+};
+
 export const tindaProject = {
   id: TINDA_PROJECT_ID,
   slug: "razvitie-optovoy-platformy-tinda",
@@ -77,6 +156,21 @@ export const tindaProject = {
     "## Описание",
     "Проект направлен на развитие оптовой цифровой платформы ООО ТИНДА: усиление продаж, подключение поставщиков и партнёров, стандартизация сопровождения сделок через ЦКР.",
     "",
+    "## Методология ЦКР",
+    `- Шаблон: \`${tindaMethodology.templateId}\``,
+    `- Текущий этап: **Поиск ресурсов** (\`${tindaMethodology.currentStage}\`)`,
+    "- Документ: docs/ckr-methodology.md",
+    "",
+    "## Стратегические цели",
+    ...tindaMethodology.strategicGoals.map((item) => `- ${item}`),
+    "",
+    "## Roadmap",
+    `- Горизонт: ${tindaRoadmap.horizon}`,
+    ...tindaRoadmap.items.map(
+      (item) =>
+        `- ${item.order}. ${item.title} — ${item.status} (${item.methodologyStage})`,
+    ),
+    "",
     "## Текущие ресурсы",
     "- Действующая оптовая модель и база клиентов в регионе",
     "- Команда закупок и продаж",
@@ -89,7 +183,7 @@ export const tindaProject = {
     "- Экспертиза по цифровым продажам B2B и CRM-процессам",
     "- Инвестиции / партнёрский капитал на масштабирование платформы",
     "",
-    "## Цели",
+    "## Цели проекта в ЦКР",
     "- Зафиксировать проектный контур ТИНДА в ЦКР",
     "- Получить анализ и рекомендации Лии по ресурсам и рискам",
     "- Выстроить workspace: подготовка → продажи → партнёры → масштабирование",

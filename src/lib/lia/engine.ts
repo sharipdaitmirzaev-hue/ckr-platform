@@ -3,6 +3,8 @@ import {
   BUSINESS_AUDIT_STEPS,
   BUSINESS_IDEA_STEPS,
   CHECK_RELIABILITY_PATTERN,
+  DEVELOP_STRATEGY_START_PATTERN,
+  DEVELOP_STRATEGY_STEPS,
   LIA_DISCLAIMER,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -24,6 +26,7 @@ import type {
   LiaScenarioId,
   ProjectDraft,
   SolutionDraft,
+  StrategyReport,
 } from "@/types/lia";
 
 export type LiaEngineResult = {
@@ -69,6 +72,9 @@ function detectScenario(
   }
   if (BUSINESS_AUDIT_START_PATTERN.test(value)) {
     return "business_audit";
+  }
+  if (DEVELOP_STRATEGY_START_PATTERN.test(value)) {
+    return "develop_strategy";
   }
   return null;
 }
@@ -441,6 +447,171 @@ async function handleBusinessAudit(
   };
 }
 
+function getStrategyState(history: LiaMessage[]) {
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const message = history[i];
+    if (
+      message.role === "assistant" &&
+      message.metadata?.scenario === "develop_strategy" &&
+      typeof message.metadata.strategyStep === "number"
+    ) {
+      return {
+        step: message.metadata.strategyStep,
+        answers: (message.metadata.strategyAnswers as Record<
+          string,
+          string
+        >) || {},
+      };
+    }
+  }
+  return { step: 0, answers: {} as Record<string, string> };
+}
+
+function buildStrategyReport(answers: Record<string, string>): StrategyReport {
+  const projectTitle = answers.project?.trim() || "Проект ЦКР";
+  const audit = answers.audit?.trim() || "";
+  const goalsRaw = answers.goals?.trim() || "";
+  const resourcesRaw = answers.resources?.trim() || "";
+  const constraints = answers.constraints?.trim() || "";
+
+  const goals = goalsRaw
+    ? goalsRaw
+        .split(/[;\n]+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 6)
+    : [
+        "Усилить продажи и управляемость",
+        "Закрыть дефицит ключевых ресурсов",
+        "Подготовить сделки и масштабирование",
+      ];
+
+  const growthDirections = [
+    "Рост в текущем регионе за счёт дисциплины CRM и воронки",
+    "Партнёрская сеть: поставщики и дистрибуция",
+    "Привлечение капитала / экспертизы под узкие места",
+    audit
+      ? `Опираться на выводы аудита: ${audit.slice(0, 140)}`
+      : "Уточнить аудит бизнеса перед крупными инвестициями",
+  ];
+
+  const resources = resourcesRaw
+    ? resourcesRaw
+        .split(/[;\n]+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 6)
+    : [
+        "Команда и текущая операционная база",
+        "Нужны партнёры, капитал и экспертиза под рост",
+      ];
+
+  const risks = [
+    constraints
+      ? `Ограничения: ${constraints.slice(0, 160)}`
+      : "Не заданы жёсткие ограничения — риск размытия фокуса",
+    "Недостаток ресурсов на пике роста",
+    "Затягивание перехода от стратегии к сделке",
+  ];
+
+  const actionPlan = [
+    "Этап методологии «Стратегия»: зафиксировать цели в карточке проекта",
+    "Перейти к поиску ресурсов (Лия find_solutions / CRM-сегменты)",
+    "Собрать RoadmapDraft по этапам workspace",
+    "Подготовить сделку (applications → deal)",
+    "Вести реализацию и контроль результата",
+  ];
+
+  return {
+    projectTitle,
+    summary: [
+      `Стратегия развития для «${projectTitle}».`,
+      goalsRaw ? `Фокус: ${goalsRaw.slice(0, 140)}.` : "",
+      "Следующий шаг методологии ЦКР — поиск ресурсов и подготовка сделки.",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    goals,
+    growthDirections,
+    resources,
+    risks,
+    actionPlan,
+    methodologyStage: "strategy",
+    suggestedTemplate: "business_development",
+  };
+}
+
+async function handleDevelopStrategy(
+  userMessage: string,
+  history: LiaMessage[],
+): Promise<LiaEngineResult> {
+  const state = getStrategyState(history);
+  const answers = { ...state.answers };
+  let step = state.step;
+
+  const isStart =
+    DEVELOP_STRATEGY_START_PATTERN.test(userMessage) &&
+    Object.keys(answers).length === 0 &&
+    step === 0 &&
+    !history.some((m) => m.metadata?.scenario === "develop_strategy");
+
+  if (!isStart && step < DEVELOP_STRATEGY_STEPS.length) {
+    const current = DEVELOP_STRATEGY_STEPS[step];
+    answers[current.key] = userMessage.trim();
+    step += 1;
+  }
+
+  if (step < DEVELOP_STRATEGY_STEPS.length) {
+    const next = DEVELOP_STRATEGY_STEPS[step];
+    const progress = `Шаг ${step + 1} из ${DEVELOP_STRATEGY_STEPS.length}`;
+    return {
+      content: [
+        "Сценарий «Разработать стратегию развития».",
+        progress,
+        "",
+        next.question,
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario: "develop_strategy",
+        strategyStep: step,
+        strategyAnswers: answers,
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const report = buildStrategyReport(answers);
+  return {
+    content: [
+      "Стратегия развития подготовлена.",
+      "",
+      report.summary,
+      "",
+      "Ниже — StrategyReport: цели, направления роста, ресурсы, риски и план действий.",
+      "Лия только рекомендует. Документы (BusinessPlanDraft / RoadmapDraft) — структуры данных без файлов.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "develop_strategy",
+      strategyStep: step,
+      strategyAnswers: answers,
+      strategyReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleSearchScenario(
   scenario: LiaScenarioId,
   query: string,
@@ -798,6 +969,10 @@ export async function runLiaEngine(input: {
 
   if (scenario === "business_audit") {
     return handleBusinessAudit(input.userMessage, input.history);
+  }
+
+  if (scenario === "develop_strategy") {
+    return handleDevelopStrategy(input.userMessage, input.history);
   }
 
   if (
