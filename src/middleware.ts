@@ -8,6 +8,7 @@ const protectedPrefixes = [
   "/admin",
   "/operator",
   "/partner",
+  "/messages",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -105,6 +106,8 @@ export const config = {
     "/operator/:path*",
     "/partner",
     "/partner/:path*",
+    "/messages",
+    "/messages/:path*",
     "/onboarding",
     "/login",
     "/register",

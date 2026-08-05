@@ -36,11 +36,11 @@ export const rolePaths: Record<AssignableRole, RolePath> = {
   },
   company: {
     role: "company",
-    title: "Разместить проект или возможность",
+    title: "Кабинет организации",
     description:
-      "Представьте компанию через проект или ресурс — земля, помещение, оборудование.",
-    ctaLabel: "Создать проект",
-    href: "/dashboard/projects/create",
+      "Создайте профиль организации, добавьте сотрудников и проекты в партнёрской сети ЦКР.",
+    ctaLabel: "Открыть /partner",
+    href: "/partner",
   },
 };
 

@@ -104,6 +104,7 @@
 | Репутация и доверие | Профили, отзывы, бейджи, история, Лия | Этап 24 |
 | Ядро / стабилизация | Lifecycle, dashboard, audit, роли, события | Этап 25 |
 | Production readiness | Security, system_logs, deploy/backup docs | Этап 26 |
+| Launch readiness | Аудит сценариев, отчёт перед 1.0 | Этап 27 |
 
 ## Слои
 
