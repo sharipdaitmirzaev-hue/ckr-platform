@@ -149,6 +149,33 @@ export type AnalyticsEventRow = {
   created_at: string;
 };
 
+export type DbProductTestKind = "scenario" | "task";
+
+export type DbProductTestStatus =
+  | "pending"
+  | "in_progress"
+  | "passed"
+  | "failed"
+  | "blocked";
+
+export type ProductTestRow = {
+  id: string;
+  kind: DbProductTestKind;
+  scenario_key: string | null;
+  title: string;
+  description: string;
+  status: DbProductTestStatus;
+  checklist: unknown;
+  result_notes: string;
+  issues: string;
+  recommendations: string;
+  created_by: string | null;
+  updated_by: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -783,6 +810,35 @@ export type Database = {
           metadata: Record<string, unknown>;
         }>;
       };
+      product_tests: {
+        Row: ProductTestRow;
+        Insert: {
+          id?: string;
+          kind?: DbProductTestKind;
+          scenario_key?: string | null;
+          title: string;
+          description?: string;
+          status?: DbProductTestStatus;
+          checklist?: unknown;
+          result_notes?: string;
+          issues?: string;
+          recommendations?: string;
+          created_by?: string | null;
+          updated_by?: string | null;
+          completed_at?: string | null;
+        };
+        Update: Partial<{
+          title: string;
+          description: string;
+          status: DbProductTestStatus;
+          checklist: unknown;
+          result_notes: string;
+          issues: string;
+          recommendations: string;
+          updated_by: string | null;
+          completed_at: string | null;
+        }>;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -934,6 +990,8 @@ export type Database = {
       service_status: DbServiceStatus;
       commission_type: DbCommissionType;
       commission_status: DbCommissionStatus;
+      product_test_kind: DbProductTestKind;
+      product_test_status: DbProductTestStatus;
     };
   };
 };

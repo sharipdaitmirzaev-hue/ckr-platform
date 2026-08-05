@@ -48,6 +48,7 @@ function revalidateAdmin() {
   revalidatePath("/admin/investments");
   revalidatePath("/admin/experts");
   revalidatePath("/admin/verifications");
+  revalidatePath("/admin/product-tests");
   revalidatePath("/projects");
   revalidatePath("/opportunities");
   revalidatePath("/investments");

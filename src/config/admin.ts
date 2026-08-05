@@ -16,6 +16,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Показатели и события ЦКР",
   },
   {
+    label: "Продуктовые тесты",
+    href: "/admin/product-tests",
+    description: "Сценарии и контроль качества",
+  },
+  {
     label: "Пользователи",
     href: "/admin/users",
     description: "Роли и блокировка",

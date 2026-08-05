@@ -412,3 +412,38 @@ export type ProjectActivity = {
   metadata?: Record<string, unknown>;
   createdAt?: string;
 };
+
+export type ProductTestKind = "scenario" | "task";
+
+export type ProductTestStatus =
+  | "pending"
+  | "in_progress"
+  | "passed"
+  | "failed"
+  | "blocked";
+
+export type ProductTestChecklistItem = {
+  id: string;
+  label: string;
+  done: boolean;
+  note?: string;
+};
+
+/** Прогон сценария или тестовая задача (Этап 19). */
+export type ProductTest = {
+  id: string;
+  kind: ProductTestKind;
+  scenarioKey: string | null;
+  title: string;
+  description: string;
+  status: ProductTestStatus;
+  checklist: ProductTestChecklistItem[];
+  resultNotes: string;
+  issues: string;
+  recommendations: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+  completedAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};

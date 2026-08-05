@@ -1,5 +1,6 @@
 import { StatsCard } from "@/components/admin/stats-card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { PRODUCT_TEST_SCENARIOS } from "@/config/product-testing";
 import { getAdminStats } from "@/lib/admin/queries";
 import type { Metadata } from "next";
 
@@ -51,6 +52,12 @@ export default async function AdminDashboardPage() {
           value={stats.documentsPending}
           href="/admin/verifications"
           hint={`Заявок на верификацию: ${stats.verificationsPending}`}
+        />
+        <StatsCard
+          label="Продуктовые тесты"
+          value={5}
+          href="/admin/product-tests"
+          hint="Сценарии качества ЦКР"
         />
       </div>
     </div>
