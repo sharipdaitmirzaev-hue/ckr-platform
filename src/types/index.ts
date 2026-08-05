@@ -632,6 +632,68 @@ export type OperatorActivityItem = {
   at?: string;
 };
 
+/** Партнёрская сеть — организация (Этап 23). */
+export type OrganizationType =
+  | "company"
+  | "bank"
+  | "fund"
+  | "supplier"
+  | "university"
+  | "association"
+  | "government"
+  | "other";
+
+export type OrganizationVerificationStatus =
+  | "unverified"
+  | "pending"
+  | "verified";
+
+export type OrganizationMemberRole = "owner" | "manager" | "employee";
+
+export type PartnershipType =
+  | "strategic"
+  | "supplier"
+  | "investment"
+  | "technology"
+  | "expert";
+
+export type PartnershipStatus = "pending" | "active" | "inactive";
+
+export type Organization = {
+  id: string;
+  name: string;
+  type: OrganizationType;
+  description: string;
+  website: string;
+  region: string;
+  city: string;
+  verificationStatus: OrganizationVerificationStatus;
+  createdBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type OrganizationMember = {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: OrganizationMemberRole;
+  createdAt?: string;
+  fullName?: string;
+  email?: string;
+};
+
+export type Partnership = {
+  id: string;
+  organizationId: string;
+  type: PartnershipType;
+  status: PartnershipStatus;
+  description: string;
+  createdBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 /** Прогон сценария или тестовая задача (Этап 19). */
 export type ProductTest = {
   id: string;

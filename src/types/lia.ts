@@ -6,7 +6,9 @@ export type LiaScenarioId =
   | "find_property"
   | "find_expert"
   | "solution"
-  | "realize_project";
+  | "realize_project"
+  | "org_find_projects"
+  | "org_offer_opportunities";
 
 export type LiaSession = {
   id: string;

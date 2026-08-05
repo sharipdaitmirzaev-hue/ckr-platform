@@ -36,6 +36,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Очередь, задачи, SLA, insights",
   },
   {
+    label: "Партнёры",
+    href: "/partner",
+    description: "Кабинет организаций партнёрской сети",
+  },
+  {
     label: "Пользователи",
     href: "/admin/users",
     description: "Роли и блокировка",

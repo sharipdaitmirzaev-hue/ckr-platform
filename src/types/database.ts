@@ -344,6 +344,65 @@ export type SlaRuleRow = {
   updated_at: string;
 };
 
+export type DbOrganizationType =
+  | "company"
+  | "bank"
+  | "fund"
+  | "supplier"
+  | "university"
+  | "association"
+  | "government"
+  | "other";
+
+export type DbOrganizationVerificationStatus =
+  | "unverified"
+  | "pending"
+  | "verified";
+
+export type DbOrganizationMemberRole = "owner" | "manager" | "employee";
+
+export type DbPartnershipType =
+  | "strategic"
+  | "supplier"
+  | "investment"
+  | "technology"
+  | "expert";
+
+export type DbPartnershipStatus = "pending" | "active" | "inactive";
+
+export type OrganizationRow = {
+  id: string;
+  name: string;
+  type: DbOrganizationType;
+  description: string;
+  website: string;
+  region: string;
+  city: string;
+  verification_status: DbOrganizationVerificationStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrganizationMemberRow = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: DbOrganizationMemberRole;
+  created_at: string;
+};
+
+export type PartnershipRow = {
+  id: string;
+  organization_id: string;
+  type: DbPartnershipType;
+  status: DbPartnershipStatus;
+  description: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -549,6 +608,7 @@ export type ProjectRow = {
   status: DbProjectStatus;
   verification_status: DbVerificationStatus;
   cover_url: string | null;
+  organization_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -572,6 +632,7 @@ export type OpportunityRow = {
   currency: string;
   status: DbOpportunityStatus;
   verification_status: DbVerificationStatus;
+  organization_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -650,6 +711,7 @@ export type InvestmentOfferRow = {
   investment_type: DbInvestmentType;
   status: DbInvestmentOfferStatus;
   verification_status: DbVerificationStatus;
+  organization_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -760,6 +822,7 @@ export type Database = {
           status?: DbProjectStatus;
           verification_status?: DbVerificationStatus;
           cover_url?: string | null;
+          organization_id?: string | null;
         };
         Update: Partial<Omit<ProjectRow, "id" | "owner_id" | "created_at">>;
       };
@@ -787,6 +850,7 @@ export type Database = {
           currency?: string;
           status?: DbOpportunityStatus;
           verification_status?: DbVerificationStatus;
+          organization_id?: string | null;
         };
         Update: Partial<Omit<OpportunityRow, "id" | "owner_id" | "created_at">>;
       };
@@ -885,6 +949,7 @@ export type Database = {
           investment_type?: DbInvestmentType;
           status?: DbInvestmentOfferStatus;
           verification_status?: DbVerificationStatus;
+          organization_id?: string | null;
         };
         Update: Partial<
           Omit<InvestmentOfferRow, "id" | "owner_id" | "created_at">
@@ -1151,6 +1216,49 @@ export type Database = {
         };
         Update: Partial<Omit<SlaRuleRow, "id" | "created_at">>;
       };
+      organizations: {
+        Row: OrganizationRow;
+        Insert: {
+          id?: string;
+          name: string;
+          type?: DbOrganizationType;
+          description?: string;
+          website?: string;
+          region?: string;
+          city?: string;
+          verification_status?: DbOrganizationVerificationStatus;
+          created_by?: string | null;
+        };
+        Update: Partial<
+          Omit<OrganizationRow, "id" | "created_at" | "created_by">
+        >;
+      };
+      organization_members: {
+        Row: OrganizationMemberRow;
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role?: DbOrganizationMemberRole;
+        };
+        Update: Partial<
+          Omit<OrganizationMemberRow, "id" | "created_at" | "organization_id" | "user_id">
+        >;
+      };
+      partnerships: {
+        Row: PartnershipRow;
+        Insert: {
+          id?: string;
+          organization_id: string;
+          type?: DbPartnershipType;
+          status?: DbPartnershipStatus;
+          description?: string;
+          created_by?: string | null;
+        };
+        Update: Partial<
+          Omit<PartnershipRow, "id" | "created_at" | "created_by" | "organization_id">
+        >;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -1315,6 +1423,11 @@ export type Database = {
       task_status: DbTaskStatus;
       task_priority: DbTaskPriority;
       task_related_type: DbTaskRelatedType;
+      organization_type: DbOrganizationType;
+      organization_verification_status: DbOrganizationVerificationStatus;
+      organization_member_role: DbOrganizationMemberRole;
+      partnership_type: DbPartnershipType;
+      partnership_status: DbPartnershipStatus;
     };
   };
 };

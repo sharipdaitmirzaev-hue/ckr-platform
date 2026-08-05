@@ -54,6 +54,7 @@ export const mainNav: NavItem[] = [
 
 export const dashboardNav: NavItem[] = [
   { label: "Обзор", href: "/dashboard" },
+  { label: "Организация", href: "/partner" },
   { label: "Мои проекты", href: "/dashboard/projects" },
   { label: "Мои возможности", href: "/dashboard/opportunities" },
   { label: "Мои инвестиции", href: "/dashboard/investments" },

@@ -4,6 +4,20 @@
 
 ---
 
+## 0.23.0-beta — 2026-03-25
+
+Партнёрская сеть ЦКР.
+
+### Изменения
+
+- `organizations`, `organization_members`, `partnerships` + RLS
+- Кабинет `/partner` (профиль, сотрудники, проекты, предложения, заявки)
+- `organization_id` на projects / opportunities / investment_offers
+- Сценарии Лии для организации
+- Документация `docs/partners.md`
+
+---
+
 ## 0.22.0-beta — 2026-03-25
 
 Операционный центр ЦКР.

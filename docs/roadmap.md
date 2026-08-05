@@ -188,4 +188,13 @@
 - Связи задач с lead / project / deal / document / verification
 - OperatorInsights: просрочки, зависшие проекты, рекомендации
 
-## Этап 23 — API для мобильного приложения
+## Этап 23 — Партнёрская сеть ЦКР ✅ (код готов)
+
+Подробности: [partners.md](./partners.md)
+
+- `organizations`, `organization_members`, `partnerships` + RLS
+- `/partner` — профиль, сотрудники, проекты, предложения, заявки
+- Связь сущностей через `organization_id`
+- Сценарии Лии для организации
+
+## Этап 24 — API для мобильного приложения

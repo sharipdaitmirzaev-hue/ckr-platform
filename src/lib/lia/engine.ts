@@ -50,6 +50,16 @@ function detectScenario(
   }
   if (/комплексн|решени|собери/.test(value)) return "solution";
   if (REALIZE_PROJECT_PATTERN.test(value)) return "realize_project";
+  if (
+    /подходящ.*проект|проект.*организац|для нашей организац/.test(value)
+  ) {
+    return "org_find_projects";
+  }
+  if (
+    /возможност.*предлож|мы можем предлож|предложит.*организац/.test(value)
+  ) {
+    return "org_offer_opportunities";
+  }
   return null;
 }
 
@@ -500,6 +510,66 @@ export async function runLiaEngine(input: {
       projectId: input.projectId,
       userId: input.userId,
     });
+  }
+
+  if (scenario === "org_find_projects") {
+    const results = await searchProjects(input.userMessage, 5);
+    const intro =
+      "Подходящие проекты для организации в каталоге ЦКР (рекомендация, не заявка):";
+    if (results.length === 0) {
+      return {
+        content: [
+          intro,
+          "",
+          "Точных совпадений пока нет. Уточните отрасль и регион или откройте /partner.",
+          "",
+          "Лия не создаёт заявки автоматически.",
+          "",
+          `_${LIA_DISCLAIMER}_`,
+        ].join("\n"),
+        metadata: { scenario, results: [], disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    const list = results
+      .map(
+        (item, index) =>
+          `${index + 1}. [${item.title}](${item.href}) — ${item.summary}`,
+      )
+      .join("\n");
+    return {
+      content: `${intro}\n\n${list}\n\nКабинет организации: /partner\n\n_${LIA_DISCLAIMER}_`,
+      metadata: { scenario, results, disclaimer: LIA_DISCLAIMER },
+      results,
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  if (scenario === "org_offer_opportunities") {
+    return {
+      content: [
+        "Какие возможности организация может предложить экосистеме ЦКР:",
+        "",
+        "1. Возможности: услуги, оборудование, помещения, партнёрство — раздел /partner/offers",
+        "2. Инвестиционные предложения — если организация готова вкладывать капитал",
+        "3. Участие в проектах — создайте или откликнитесь через кабинет организации",
+        "4. Оформите партнёрство (strategic / supplier / investment / technology / expert)",
+        "",
+        "Лия только рекомендует формат — публикация и заявки выполняются вручную.",
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: { scenario, disclaimer: LIA_DISCLAIMER },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
   }
 
   const [projects, opportunities, investments, experts] = await Promise.all([

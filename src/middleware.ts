@@ -2,7 +2,13 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
 const authRoutes = ["/login", "/register"];
-const protectedPrefixes = ["/dashboard", "/onboarding", "/admin", "/operator"];
+const protectedPrefixes = [
+  "/dashboard",
+  "/onboarding",
+  "/admin",
+  "/operator",
+  "/partner",
+];
 
 export async function middleware(request: NextRequest) {
   const { response, user, supabase } = await updateSession(request);
@@ -96,6 +102,8 @@ export const config = {
     "/admin/:path*",
     "/operator",
     "/operator/:path*",
+    "/partner",
+    "/partner/:path*",
     "/onboarding",
     "/login",
     "/register",
