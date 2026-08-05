@@ -1,3 +1,8 @@
+import {
+  getDemoOpportunities,
+  getDemoOpportunityById,
+} from "@/lib/demo/catalog";
+import { useDemoCatalogFallback } from "@/lib/demo/mode";
 import { mapOpportunityRow } from "@/lib/opportunities/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +43,9 @@ export async function listOpportunityCategories(): Promise<
 export async function listPublishedOpportunities(): Promise<
   OpportunityWithOwner[]
 > {
-  if (!hasSupabaseEnv()) return [];
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? getDemoOpportunities() : [];
+  }
 
   const supabase = createClient();
   const types = await typeNameMap(supabase);
@@ -49,7 +56,9 @@ export async function listPublishedOpportunities(): Promise<
     .eq("status", "published")
     .order("created_at", { ascending: false });
 
-  if (error || !data) return [];
+  if (error || !data || data.length === 0) {
+    return useDemoCatalogFallback() ? getDemoOpportunities() : [];
+  }
 
   return data.map((row) => {
     const opportunity = mapOpportunityRow(row as OpportunityRow);
@@ -81,7 +90,9 @@ export async function listMyOpportunities(
 export async function getOpportunityById(
   id: string,
 ): Promise<OpportunityWithOwner | null> {
-  if (!hasSupabaseEnv()) return null;
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? getDemoOpportunityById(id) : null;
+  }
 
   const supabase = createClient();
   const types = await typeNameMap(supabase);
@@ -92,7 +103,9 @@ export async function getOpportunityById(
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    return useDemoCatalogFallback() ? getDemoOpportunityById(id) : null;
+  }
 
   const opportunity = mapOpportunityRow(data as OpportunityRow);
   const profiles = data.profiles as { full_name: string | null } | null;

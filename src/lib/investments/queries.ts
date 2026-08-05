@@ -2,6 +2,11 @@ import {
   AMOUNT_FILTERS,
   type AmountFilterId,
 } from "@/config/investments";
+import {
+  getDemoInvestmentById,
+  getDemoInvestments,
+} from "@/lib/demo/catalog";
+import { useDemoCatalogFallback } from "@/lib/demo/mode";
 import { mapInvestmentOfferRow } from "@/lib/investments/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -33,7 +38,18 @@ function overlapsAmount(
 export async function listPublishedInvestmentOffers(
   filters: InvestmentCatalogFilters = {},
 ): Promise<InvestmentOfferWithOwner[]> {
-  if (!hasSupabaseEnv()) return [];
+  const fromDemo = () =>
+    getDemoInvestments()
+      .filter((offer) =>
+        filters.category
+          ? offer.categories.includes(filters.category)
+          : true,
+      )
+      .filter((offer) => overlapsAmount(offer, filters.amount));
+
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? fromDemo() : [];
+  }
 
   const supabase = createClient();
   let query = supabase
@@ -47,7 +63,9 @@ export async function listPublishedInvestmentOffers(
   }
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error || !data || data.length === 0) {
+    return useDemoCatalogFallback() ? fromDemo() : [];
+  }
 
   return data
     .map((row) => {
@@ -80,7 +98,9 @@ export async function listMyInvestmentOffers(
 export async function getInvestmentOfferById(
   id: string,
 ): Promise<InvestmentOfferWithOwner | null> {
-  if (!hasSupabaseEnv()) return null;
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? getDemoInvestmentById(id) : null;
+  }
 
   const supabase = createClient();
   const { data, error } = await supabase
@@ -89,7 +109,9 @@ export async function getInvestmentOfferById(
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    return useDemoCatalogFallback() ? getDemoInvestmentById(id) : null;
+  }
 
   const offer = mapInvestmentOfferRow(data as InvestmentOfferRow);
   const profiles = data.profiles as { full_name: string | null } | null;

@@ -25,11 +25,11 @@ export default async function OnboardingPage() {
   return (
     <Card as="div" variant="surface" className="p-6 sm:p-8">
       <h1 className="font-display text-2xl font-semibold text-foreground">
-        Настройка профиля
+        Добро пожаловать в ЦКР
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Дополните данные и при необходимости выберите несколько ролей — например,
-        предприниматель и инвестор.
+        Выберите роль — платформа покажет персональный первый шаг: создать
+        проект с Лией, найти проекты или оформить профиль эксперта.
       </p>
 
       <OnboardingForm profile={current.profile} roles={roles} />

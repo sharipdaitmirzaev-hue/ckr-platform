@@ -11,6 +11,7 @@ import {
 import { ApplicationButton } from "@/features/applications/components/application-button";
 import { ProjectLiaActions } from "@/features/lia/components/project-lia-actions";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { maskDisplayName } from "@/lib/demo/mode";
 import { listExpertsForProjectRegion } from "@/lib/experts/queries";
 import { listMatchingInvestmentOffersForProject } from "@/lib/investments/queries";
 import { listLiaAnalysesForProject } from "@/lib/lia/queries";
@@ -119,7 +120,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               Автор
             </dt>
             <dd className="mt-2 text-lg text-foreground">
-              {project.ownerName || "Участник ЦКР"}
+              {maskDisplayName(project.ownerName, {
+                isAuthenticated: Boolean(current),
+              })}
             </dd>
           </div>
           <div>
@@ -179,7 +182,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   <InvestmentCard
                     key={offer.id}
                     offer={offer}
-                    ownerName={offer.ownerName}
+                    ownerName={maskDisplayName(offer.ownerName, {
+                      isAuthenticated: Boolean(current),
+                    })}
                     href={`/investment/${offer.id}`}
                   />
                 ))}

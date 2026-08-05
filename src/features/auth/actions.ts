@@ -235,6 +235,9 @@ export async function onboardingAction(
     };
   }
 
+  const { pathForRoles } = await import("@/config/onboarding");
+  const nextPath = pathForRoles(parsed.data.roles).href;
+
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect(nextPath);
 }

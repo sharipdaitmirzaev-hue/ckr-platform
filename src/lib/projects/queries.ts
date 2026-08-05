@@ -1,3 +1,8 @@
+import {
+  getDemoProjectById,
+  getDemoProjects,
+} from "@/lib/demo/catalog";
+import { useDemoCatalogFallback } from "@/lib/demo/mode";
 import { mapProjectRow } from "@/lib/projects/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -32,7 +37,9 @@ export async function listCategories(): Promise<CategoryRow[]> {
 }
 
 export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
-  if (!hasSupabaseEnv()) return [];
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? getDemoProjects() : [];
+  }
 
   const supabase = createClient();
   const categories = await categoryNameMap(supabase);
@@ -43,7 +50,9 @@ export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
     .eq("status", "published")
     .order("created_at", { ascending: false });
 
-  if (error || !data) return [];
+  if (error || !data || data.length === 0) {
+    return useDemoCatalogFallback() ? getDemoProjects() : [];
+  }
 
   return data.map((row) => {
     const project = mapProjectRow(row as ProjectRow);
@@ -73,7 +82,9 @@ export async function listMyProjects(ownerId: string): Promise<Project[]> {
 export async function getProjectById(
   id: string,
 ): Promise<ProjectWithOwner | null> {
-  if (!hasSupabaseEnv()) return null;
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? getDemoProjectById(id) : null;
+  }
 
   const supabase = createClient();
   const categories = await categoryNameMap(supabase);
@@ -84,7 +95,9 @@ export async function getProjectById(
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    return useDemoCatalogFallback() ? getDemoProjectById(id) : null;
+  }
 
   const project = mapProjectRow(data as ProjectRow);
   const profiles = data.profiles as { full_name: string | null } | null;

@@ -1,3 +1,5 @@
+import { getDemoExpertById, getDemoExperts } from "@/lib/demo/catalog";
+import { useDemoCatalogFallback } from "@/lib/demo/mode";
 import { mapExpertProfileRow } from "@/lib/experts/mappers";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +16,26 @@ export async function listPublishedExperts(filters?: {
   specialization?: ExpertSpecialization | null;
   region?: string | null;
 }): Promise<ExpertWithUser[]> {
-  if (!hasSupabaseEnv()) return [];
+  const fromDemo = () =>
+    getDemoExperts().filter((expert) => {
+      if (
+        filters?.specialization &&
+        expert.specialization !== filters.specialization
+      ) {
+        return false;
+      }
+      if (
+        filters?.region &&
+        !expert.region.toLowerCase().includes(filters.region.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? fromDemo() : [];
+  }
 
   const supabase = createClient();
   let query = supabase
@@ -33,7 +54,9 @@ export async function listPublishedExperts(filters?: {
   }
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error || !data || data.length === 0) {
+    return useDemoCatalogFallback() ? fromDemo() : [];
+  }
 
   return data.map((row) => {
     const expert = mapExpertProfileRow(row as ExpertProfileRow);
@@ -55,7 +78,9 @@ export async function listPublishedExperts(filters?: {
 }
 
 export async function getExpertById(id: string): Promise<ExpertWithUser | null> {
-  if (!hasSupabaseEnv()) return null;
+  if (!hasSupabaseEnv()) {
+    return useDemoCatalogFallback() ? getDemoExpertById(id) : null;
+  }
 
   const supabase = createClient();
   const { data, error } = await supabase
@@ -66,7 +91,9 @@ export async function getExpertById(id: string): Promise<ExpertWithUser | null> 
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    return useDemoCatalogFallback() ? getDemoExpertById(id) : null;
+  }
 
   const expert = mapExpertProfileRow(data as ExpertProfileRow);
   const profiles = data.profiles as {

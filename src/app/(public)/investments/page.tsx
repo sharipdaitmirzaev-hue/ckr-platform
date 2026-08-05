@@ -1,12 +1,15 @@
 import { InvestmentCard } from "@/components/investments/investment-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
   AMOUNT_FILTERS,
   INVESTMENT_DIRECTIONS,
   type AmountFilterId,
 } from "@/config/investments";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { maskDisplayName } from "@/lib/demo/mode";
 import { listPublishedInvestmentOffers } from "@/lib/investments/queries";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -38,7 +41,10 @@ export default async function InvestmentsPage({
       ? searchParams?.category
       : null;
 
-  const offers = await listPublishedInvestmentOffers({ amount, category });
+  const [offers, current] = await Promise.all([
+    listPublishedInvestmentOffers({ amount, category }),
+    getCurrentUser(),
+  ]);
 
   function hrefFor(next: { amount?: string | null; category?: string | null }) {
     const params = new URLSearchParams();
@@ -134,19 +140,22 @@ export default async function InvestmentsPage({
         </div>
 
         {offers.length === 0 ? (
-          <div className="mt-12 border-t border-border pt-8">
-            <p className="text-sm text-muted">
-              По выбранным фильтрам предложений нет. Примените миграцию
-              investment_offers и опубликуйте первое предложение.
-            </p>
-          </div>
+          <EmptyState
+            className="mt-12"
+            title="Пока нет инвестиционных предложений"
+            description="Измените фильтры или откройте демо-каталог после seed."
+            actionHref="/demo"
+            actionLabel="О демонстрации"
+          />
         ) : (
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {offers.map((offer) => (
               <InvestmentCard
                 key={offer.id}
                 offer={offer}
-                ownerName={offer.ownerName}
+                ownerName={maskDisplayName(offer.ownerName, {
+                  isAuthenticated: Boolean(current),
+                })}
                 href={`/investment/${offer.id}`}
               />
             ))}

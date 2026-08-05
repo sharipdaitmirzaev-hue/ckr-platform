@@ -8,6 +8,7 @@ import {
 } from "@/config/opportunities";
 import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { maskDisplayName } from "@/lib/demo/mode";
 import { getOpportunityById } from "@/lib/opportunities/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -83,7 +84,9 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
               Владелец
             </dt>
             <dd className="mt-2 text-lg text-foreground">
-              {opportunity.ownerName || "Участник ЦКР"}
+              {maskDisplayName(opportunity.ownerName, {
+                isAuthenticated: Boolean(current),
+              })}
             </dd>
           </div>
           <div>

@@ -65,6 +65,14 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
+                  href="/demo"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Демо
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/pricing"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >

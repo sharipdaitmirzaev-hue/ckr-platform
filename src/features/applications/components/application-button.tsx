@@ -40,10 +40,10 @@ export function ApplicationButton({
   if (!isAuthenticated) {
     return (
       <ButtonLink
-        href={`/login?next=${encodeURIComponent(nextPath)}`}
+        href={`/register?next=${encodeURIComponent(nextPath)}`}
         variant="primary"
       >
-        {label}
+        Войти, чтобы откликнуться
       </ButtonLink>
     );
   }

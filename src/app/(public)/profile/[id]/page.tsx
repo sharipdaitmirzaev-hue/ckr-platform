@@ -9,6 +9,7 @@ import { expertSpecializationLabels } from "@/config/experts";
 import { roleLabels } from "@/config/roles";
 import { siteConfig } from "@/config/site";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { isDemoMode } from "@/lib/demo/mode";
 import { getPublicProfile } from "@/lib/profiles/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -122,7 +123,10 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
               </dd>
             </div>
           ) : null}
-          {profile.showContact && profile.phone ? (
+          {profile.showContact &&
+          profile.phone &&
+          current &&
+          !isDemoMode() ? (
             <div>
               <dt className="text-xs uppercase tracking-[0.14em] text-muted">
                 Телефон

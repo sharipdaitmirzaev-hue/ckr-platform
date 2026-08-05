@@ -8,6 +8,7 @@ import {
 } from "@/config/investments";
 import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { maskDisplayName } from "@/lib/demo/mode";
 import { getInvestmentOfferById } from "@/lib/investments/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -78,7 +79,9 @@ export default async function InvestmentPage({ params }: InvestmentPageProps) {
               Инвестор
             </dt>
             <dd className="mt-2 text-lg text-foreground">
-              {offer.ownerName || "Участник ЦКР"}
+              {maskDisplayName(offer.ownerName, {
+                isAuthenticated: Boolean(current),
+              })}
             </dd>
           </div>
           <div>
