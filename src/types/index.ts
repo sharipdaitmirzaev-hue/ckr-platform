@@ -127,7 +127,11 @@ export type ProjectActivityType =
   | "roadmap_created"
   | "roadmap_item_completed"
   | "metric_updated"
-  | "project_progress_checked";
+  | "project_progress_checked"
+  | "result_created"
+  | "financial_metric_updated"
+  | "project_completed"
+  | "outcome_generated";
 
 export type InvestmentOfferStatus =
   | "draft"

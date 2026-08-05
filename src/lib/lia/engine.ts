@@ -6,6 +6,7 @@ import {
   CHECK_RELIABILITY_PATTERN,
   DEVELOP_STRATEGY_START_PATTERN,
   DEVELOP_STRATEGY_STEPS,
+  EVALUATE_OUTCOME_START_PATTERN,
   LIA_DISCLAIMER,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -20,6 +21,7 @@ import {
   searchOpportunities,
   searchProjects,
 } from "@/lib/lia/search";
+import { getProjectOutcomeSummary } from "@/lib/outcomes/queries";
 import { getProjectById } from "@/lib/projects/queries";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -29,11 +31,16 @@ import type {
   LiaMessageMetadata,
   LiaResultLink,
   LiaScenarioId,
+  OutcomeReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
   StrategyReport,
 } from "@/types/lia";
+import {
+  financialMetricTypeLabels,
+  projectResultTypeLabels,
+} from "@/config/outcomes";
 
 export type LiaEngineResult = {
   content: string;
@@ -84,6 +91,9 @@ function detectScenario(
   }
   if (CHECK_PROGRESS_START_PATTERN.test(value)) {
     return "check_progress";
+  }
+  if (EVALUATE_OUTCOME_START_PATTERN.test(value)) {
+    return "evaluate_outcome";
   }
   return null;
 }
@@ -779,6 +789,214 @@ async function handleSolution(query: string): Promise<LiaEngineResult> {
   };
 }
 
+async function handleEvaluateOutcome(input: {
+  userMessage: string;
+  projectId?: string | null;
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const projectId =
+    input.projectId || extractProjectIdFromMessage(input.userMessage);
+
+  if (!projectId) {
+    return {
+      content: [
+        "Сценарий «Оцени результат проекта».",
+        "",
+        "Укажите проект: откройте workspace и нажмите «Оцени результат проекта»,",
+        "или пришлите UUID в формате `projectId: <uuid>`.",
+        "",
+        "Лия только анализирует — показатели не изменяет.",
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario: "evaluate_outcome",
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const [project, outcome, progress] = await Promise.all([
+    getProjectById(projectId),
+    getProjectOutcomeSummary(projectId),
+    getProjectProgressSummary(projectId),
+  ]);
+
+  if (!project || !outcome) {
+    return {
+      content: `Проект не найден или нет доступа.\n\n_${LIA_DISCLAIMER}_`,
+      metadata: { scenario: "evaluate_outcome", disclaimer: LIA_DISCLAIMER },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const achievements = [
+    ...outcome.results.map((item) => {
+      const value =
+        item.value !== null ? ` (${item.value} ${item.unit})`.trimEnd() : "";
+      return `${item.title}${value} · ${projectResultTypeLabels[item.resultType]}`;
+    }),
+    ...outcome.kpiRows
+      .filter(
+        (row) =>
+          row.attainmentPercent !== null && row.attainmentPercent >= 80,
+      )
+      .map(
+        (row) =>
+          `KPI «${row.metric.name}»: ${row.currentValue}/${row.targetValue} ${row.metric.unit}`,
+      ),
+    ...(outcome.roadmapPercent >= 50
+      ? [`Roadmap выполнен на ${outcome.roadmapPercent}%`]
+      : []),
+  ];
+
+  const missed_targets = outcome.kpiRows
+    .filter(
+      (row) =>
+        row.attainmentPercent !== null && row.attainmentPercent < 60,
+    )
+    .map(
+      (row) =>
+        `«${row.metric.name}»: цель ${row.targetValue}, сейчас ${row.currentValue}${
+          row.actualValue !== null ? `, факт ${row.actualValue}` : ""
+        } ${row.metric.unit}`,
+    );
+
+  if (progress.overdueTasks.length > 0) {
+    missed_targets.push(
+      `Просроченных задач: ${progress.overdueTasks.length}`,
+    );
+  }
+  if (outcome.results.length === 0) {
+    missed_targets.push("Фактические результаты ещё не зафиксированы");
+  }
+
+  const risks = [
+    ...(missed_targets.length > 2
+      ? ["Несколько KPI существенно отстают от цели"]
+      : []),
+    ...(outcome.financialMetrics.length === 0
+      ? ["Нет финансовых показателей — сложно оценить экономический эффект"]
+      : []),
+    ...(outcome.roadmapPercent < 40
+      ? ["Низкий процент выполнения roadmap"]
+      : []),
+    ...(progress.items.some((item) => item.status === "blocked")
+      ? ["Есть заблокированные этапы реализации"]
+      : []),
+  ];
+
+  const recommendations = [
+    achievements.length > 0
+      ? "Зафиксируйте ключевые достижения как project_results для отчётности ЦКР"
+      : "Добавьте первые фактические результаты в workspace",
+    missed_targets.length > 0
+      ? "Скорректируйте план по отстающим KPI или обновите текущие значения"
+      : "Поддерживайте ритм обновления KPI",
+    outcome.financialMetrics.length === 0
+      ? "Внесите revenue / investment / expenses в financial metrics"
+      : "Сверьте финансовые показатели с KPI роста",
+    "После корректировок повторите оценку результата",
+  ];
+
+  const next_steps = [
+    "Обновите KPI и зафиксируйте фактические результаты",
+    "Проверьте прогресс roadmap (сценарий «Проверь прогресс проекта»)",
+    "Откройте /admin/results для сравнения с портфелем ЦКР",
+  ];
+
+  const financeNote =
+    outcome.financialMetrics.length > 0
+      ? outcome.financialMetrics
+          .map(
+            (m) =>
+              `${financialMetricTypeLabels[m.metricType]}: ${m.value} ${m.currency}`,
+          )
+          .join("; ")
+      : "финпоказатели не заданы";
+
+  const report: OutcomeReport = {
+    projectTitle: project.title,
+    summary: [
+      `Оценка результата «${project.title}».`,
+      `Roadmap ${outcome.roadmapPercent}%, сделок ${outcome.dealsCount}, результатов ${outcome.results.length}.`,
+      financeNote,
+    ].join(" "),
+    achievements:
+      achievements.length > 0
+        ? achievements
+        : ["Пока нет подтверждённых достижений — зафиксируйте первые итоги"],
+    missed_targets:
+      missed_targets.length > 0
+        ? missed_targets
+        : ["Критических просадок по целям не видно"],
+    risks:
+      risks.length > 0
+        ? risks
+        : ["Существенных рисков по итогам не выявлено"],
+    recommendations,
+    next_steps,
+  };
+
+  try {
+    const supabase = createClient();
+    await supabase.from("project_activity").insert({
+      project_id: projectId,
+      actor_id: input.userId,
+      activity_type: "outcome_generated",
+      title: "Лия: оценка результата проекта",
+      body: report.summary,
+      metadata: { source: "lia", scenario: "evaluate_outcome" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  await trackAnalyticsEvent({
+    eventType: "outcome_generated",
+    userId: input.userId,
+    entityType: "project",
+    entityId: projectId,
+    metadata: { source: "lia", resultsCount: outcome.results.length },
+  });
+
+  return {
+    content: [
+      "Оценка результата проекта подготовлена.",
+      "",
+      report.summary,
+      "",
+      "Ниже — OutcomeReport. Лия не изменяет показатели — только анализирует и предлагает.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "evaluate_outcome",
+      outcomeReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [
+      {
+        type: "project",
+        id: project.id,
+        title: project.title,
+        summary: project.summary,
+        href: `/dashboard/projects/${project.id}/workspace`,
+      },
+    ],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleCheckProgress(input: {
   userMessage: string;
   projectId?: string | null;
@@ -1196,6 +1414,24 @@ export async function runLiaEngine(input: {
       };
     }
     return handleCheckProgress({
+      userMessage: input.userMessage,
+      projectId: input.projectId,
+      userId: input.userId,
+    });
+  }
+
+  if (scenario === "evaluate_outcome") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы оценить результат проекта.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "evaluate_outcome", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleEvaluateOutcome({
       userMessage: input.userMessage,
       projectId: input.projectId,
       userId: input.userId,

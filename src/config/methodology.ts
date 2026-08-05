@@ -119,8 +119,14 @@ export const CKR_METHODOLOGY: CkrMethodologyStageDef[] = [
       "Отзывы и reputation",
       "Feedback / pilot issues",
     ],
-    liaHints: ["check_progress", "check_reliability"],
-    outputs: ["ProgressReport", "completed project/deal", "уроки для следующего цикла"],
+    liaHints: ["check_progress", "evaluate_outcome", "check_reliability"],
+    outputs: [
+      "ProgressReport",
+      "OutcomeReport",
+      "project_results",
+      "completed project/deal",
+      "уроки для следующего цикла",
+    ],
   },
 ];
 

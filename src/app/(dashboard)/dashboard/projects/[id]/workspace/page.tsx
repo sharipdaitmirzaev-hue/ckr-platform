@@ -4,6 +4,7 @@ import { DealCard } from "@/components/deals/deal-card";
 import { MilestoneList } from "@/components/deals/milestone-list";
 import { DocumentList } from "@/components/documents/document-list";
 import { ProjectProgress } from "@/components/execution/project-progress";
+import { ProjectOutcomesPanel } from "@/components/outcomes/project-outcomes-panel";
 import { ProjectLifecycle } from "@/components/projects/project-lifecycle";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/deals/queries";
 import { listDocumentsForTarget } from "@/lib/documents/queries";
 import { getProjectProgressSummary } from "@/lib/execution/queries";
+import { getProjectOutcomeSummary } from "@/lib/outcomes/queries";
 import { getProjectById } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -66,6 +68,7 @@ export default async function ProjectWorkspacePage({
     documents,
     analytics,
     progress,
+    outcomes,
   ] = await Promise.all([
     listDealsForProject(project.id),
     listParticipantsForProject(project.id),
@@ -74,6 +77,7 @@ export default async function ProjectWorkspacePage({
     listDocumentsForTarget("project", project.id),
     getProjectAnalytics(project.id),
     getProjectProgressSummary(project.id),
+    getProjectOutcomeSummary(project.id),
   ]);
 
   // Unique participants by userId for display
@@ -141,6 +145,8 @@ export default async function ProjectWorkspacePage({
         canManage={isOwner}
         projectTitle={project.title}
       />
+
+      {outcomes ? <ProjectOutcomesPanel summary={outcomes} /> : null}
 
       <ProjectAnalytics data={analytics} />
 

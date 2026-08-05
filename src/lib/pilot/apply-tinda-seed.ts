@@ -15,9 +15,11 @@ import {
   tindaExecutionMetrics,
   tindaExecutionRoadmap,
   tindaExecutionTasks,
+  tindaFinancialMetrics,
   tindaMilestones,
   tindaOrganization,
   tindaProject,
+  tindaProjectResults,
   tindaSeedMeta,
 } from "@/lib/pilot/tinda-seed-data";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -237,6 +239,57 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         period: metric.period,
       });
       if (!error) metrics += 1;
+    }
+
+    let projectResults = 0;
+    for (const result of tindaProjectResults) {
+      const { error } = await admin.from("project_results").upsert({
+        id: result.id,
+        project_id: TINDA_PROJECT_ID,
+        result_type: result.resultType,
+        title: result.title,
+        description: result.description,
+        value: result.value,
+        unit: result.unit,
+        achieved_at: new Date().toISOString(),
+        metric_id: result.metricId,
+      });
+      if (!error) projectResults += 1;
+    }
+
+    let financialMetrics = 0;
+    for (const metric of tindaFinancialMetrics) {
+      const { error } = await admin.from("project_financial_metrics").upsert({
+        id: metric.id,
+        project_id: TINDA_PROJECT_ID,
+        metric_type: metric.metricType,
+        value: metric.value,
+        currency: metric.currency,
+        period: metric.period,
+      });
+      if (!error) financialMetrics += 1;
+    }
+
+    const { count: resultActivityCount } = await admin
+      .from("project_activity")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", TINDA_PROJECT_ID)
+      .eq("activity_type", "result_created")
+      .contains("metadata", { source: "tinda-pilot-seed" });
+
+    if (!resultActivityCount) {
+      await admin.from("project_activity").insert({
+        project_id: TINDA_PROJECT_ID,
+        actor_id: ownerId,
+        activity_type: "result_created",
+        title: "Подготовлены результаты пилота ТИНДА",
+        body: "Зафиксированы целевые кейсы: клиенты, договоры, партнёры.",
+        metadata: {
+          source: "tinda-pilot-seed",
+          version: tindaSeedMeta.version,
+          results: projectResults,
+        },
+      });
     }
 
     const { count: roadmapActivityCount } = await admin
@@ -474,6 +527,8 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         roadmapItems,
         roadmapTasks,
         metrics,
+        projectResults,
+        financialMetrics,
         contacts,
         deals: 1,
         liaAnalyses: 1,

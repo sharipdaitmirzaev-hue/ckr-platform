@@ -12,7 +12,8 @@ export type LiaScenarioId =
   | "check_reliability"
   | "business_audit"
   | "develop_strategy"
-  | "check_progress";
+  | "check_progress"
+  | "evaluate_outcome";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -55,6 +56,17 @@ export type ProgressReport = {
   next_steps: string[];
   percentComplete: number;
   currentStage: string | null;
+};
+
+/** Отчёт сценария «Оцени результат проекта». */
+export type OutcomeReport = {
+  projectTitle: string;
+  summary: string;
+  achievements: string[];
+  missed_targets: string[];
+  risks: string[];
+  recommendations: string[];
+  next_steps: string[];
 };
 
 export type LiaSession = {
@@ -226,6 +238,7 @@ export type LiaMessageMetadata = {
   strategyAnswers?: Record<string, string>;
   strategyReport?: StrategyReport | null;
   progressReport?: ProgressReport | null;
+  outcomeReport?: OutcomeReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

@@ -4,6 +4,23 @@
 
 ---
 
+## 0.34.0-beta — 2026-03-25
+
+Project Outcomes — результаты проектов и эффективность сопровождения ЦКР.
+
+### Изменения
+
+- Таблицы `project_results`, `project_financial_metrics`
+- Связь KPI → текущее → фактический результат
+- Расчёты эффективности ЦКР (время, roadmap %, успешность)
+- Панель `/admin/results` (ResultsCard, OutcomeChart, ProjectOutcomeTable)
+- Лия: «Оцени результат проекта» → `OutcomeReport`
+- Аналитика: `result_created`, `financial_metric_updated`, `project_completed`, `outcome_generated`
+- Пилот ТИНДА: подготовка результатов и финпоказателей
+- Документ `docs/project-outcomes.md`
+
+---
+
 ## 0.33.0-beta — 2026-03-25
 
 Project Execution — управление реализацией проектов (без новых крупных модулей).

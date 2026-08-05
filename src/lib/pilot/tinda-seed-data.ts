@@ -67,13 +67,27 @@ export const TINDA_METRIC_IDS = {
   contacts: "b000000e-0000-4000-8000-000000000002",
   partners: "b000000e-0000-4000-8000-000000000003",
   deals: "b000000e-0000-4000-8000-000000000004",
+  negotiations: "b000000e-0000-4000-8000-000000000005",
+  assortment: "b000000e-0000-4000-8000-000000000006",
+} as const;
+
+/** Project Outcomes (этап 34) */
+export const TINDA_RESULT_IDS = {
+  clients: "b000000f-0000-4000-8000-000000000001",
+  deals: "b000000f-0000-4000-8000-000000000002",
+  partners: "b000000f-0000-4000-8000-000000000003",
+} as const;
+
+export const TINDA_FINANCIAL_IDS = {
+  investment: "b0000010-0000-4000-8000-000000000001",
+  revenue: "b0000010-0000-4000-8000-000000000002",
 } as const;
 
 export const tindaSeedMeta = {
-  version: 2,
+  version: 3,
   organization: "ООО ТИНДА",
   projectTitle: "Развитие оптовой платформы ТИНДА",
-  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн сотрудников. Этап 33: roadmap + KPI.",
+  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн. Этап 34: outcomes + financial metrics.",
 } as const;
 
 export const tindaExecutionRoadmap = {
@@ -180,6 +194,15 @@ export const tindaExecutionTasks = [
 
 export const tindaExecutionMetrics = [
   {
+    id: TINDA_METRIC_IDS.contacts,
+    name: "Количество контактов",
+    description: "Контакты CRM по сегментам клиентов / поставщиков / партнёров",
+    targetValue: 50,
+    currentValue: 6,
+    unit: "шт",
+    period: "year",
+  },
+  {
     id: TINDA_METRIC_IDS.clients,
     name: "Количество клиентов",
     description: "Активные B2B-клиенты оптовой платформы",
@@ -189,11 +212,11 @@ export const tindaExecutionMetrics = [
     period: "year",
   },
   {
-    id: TINDA_METRIC_IDS.contacts,
-    name: "Количество контактов",
-    description: "Контакты CRM по сегментам клиентов / поставщиков / партнёров",
-    targetValue: 50,
-    currentValue: 6,
+    id: TINDA_METRIC_IDS.negotiations,
+    name: "Количество переговоров",
+    description: "Активные переговоры с клиентами и партнёрами",
+    targetValue: 30,
+    currentValue: 8,
     unit: "шт",
     period: "year",
   },
@@ -214,6 +237,63 @@ export const tindaExecutionMetrics = [
     currentValue: 1,
     unit: "шт",
     period: "year",
+  },
+  {
+    id: TINDA_METRIC_IDS.assortment,
+    name: "Рост ассортимента",
+    description: "Новые категории / SKU в оптовой платформе",
+    targetValue: 15,
+    currentValue: 3,
+    unit: "категорий",
+    period: "year",
+  },
+] as const;
+
+/** Подготовка результатов пилота (этап 34) — связь с KPI через metric_id. */
+export const tindaProjectResults = [
+  {
+    id: TINDA_RESULT_IDS.clients,
+    resultType: "growth" as const,
+    title: "Подключено 50 клиентов",
+    description: "Целевой кейс роста клиентской базы оптовой платформы.",
+    value: 50,
+    unit: "шт",
+    metricId: TINDA_METRIC_IDS.clients,
+  },
+  {
+    id: TINDA_RESULT_IDS.deals,
+    resultType: "partnership" as const,
+    title: "Заключено 10 договоров",
+    description: "Целевой кейс сделок / договоров в контуре ЦКР.",
+    value: 10,
+    unit: "шт",
+    metricId: TINDA_METRIC_IDS.deals,
+  },
+  {
+    id: TINDA_RESULT_IDS.partners,
+    resultType: "partnership" as const,
+    title: "Найдено 5 партнёров",
+    description: "Целевой кейс партнёрской сети ТИНДА.",
+    value: 5,
+    unit: "шт",
+    metricId: TINDA_METRIC_IDS.partners,
+  },
+] as const;
+
+export const tindaFinancialMetrics = [
+  {
+    id: TINDA_FINANCIAL_IDS.investment,
+    metricType: "investment" as const,
+    value: 25_000_000,
+    currency: "RUB",
+    period: "year",
+  },
+  {
+    id: TINDA_FINANCIAL_IDS.revenue,
+    metricType: "revenue" as const,
+    value: 4_500_000,
+    currency: "RUB",
+    period: "quarter",
   },
 ] as const;
 

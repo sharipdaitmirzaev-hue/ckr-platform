@@ -277,6 +277,25 @@ export async function advanceProjectStatusAction(
     });
   }
 
+  if (nextStatus === "completed") {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await supabase.from("project_activity").insert({
+      project_id: projectId,
+      actor_id: user.id,
+      activity_type: "project_completed",
+      title: "Проект завершён",
+      body: existing.title,
+      metadata: { from: current, to: nextStatus },
+    });
+    await trackAnalyticsEvent({
+      eventType: "project_completed",
+      userId: user.id,
+      entityType: "project",
+      entityId: projectId,
+      metadata: { from: current },
+    });
+  }
+
   revalidateProject(projectId);
   return {
     success: `Этап: ${projectStatusLabels[nextStatus]}`,

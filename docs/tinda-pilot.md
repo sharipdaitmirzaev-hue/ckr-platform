@@ -2,9 +2,10 @@
 
 Этап 30: первый пилотный проект на реальной организации.  
 Этап 32: применена методология ЦКР (текущий этап, стратегические цели, roadmap).  
-Этап 33: Project Execution — рабочая дорожная карта, задачи, KPI.
+Этап 33: Project Execution — рабочая дорожная карта, задачи, KPI.  
+Этап 34: Project Outcomes — результаты, финансы, панель эффективности.
 
-Версия: `0.33.0-beta` · Связано: [project-execution.md](./project-execution.md) · [ckr-methodology.md](./ckr-methodology.md) · [closed-pilot.md](./closed-pilot.md) · [crm.md](./crm.md)
+Версия: `0.34.0-beta` · Связано: [project-outcomes.md](./project-outcomes.md) · [project-execution.md](./project-execution.md) · [ckr-methodology.md](./ckr-methodology.md)
 
 Новые бизнес-модули **не добавлялись**. Использованы существующие контуры ЦКР.
 
@@ -84,9 +85,21 @@
 | Продажи | поиск клиентов, переговоры, первые сделки | in_progress |
 | Масштабирование | расширение клиентов, новые регионы, новые категории | planned |
 
-KPI seed: клиенты 25/100 · контакты 6/50 · партнёры 2/20 · сделки 1/10.
+KPI seed: контакты 6/50 · клиенты 25/100 · переговоры 8/30 · партнёры 2/20 · сделки 1/10 · ассортимент 3/15.
 
 Код: `tindaExecutionRoadmap`, `tindaExecutionItems`, `tindaExecutionTasks`, `tindaExecutionMetrics`.
+
+### Outcomes (этап 34)
+
+Целевые кейсы результатов (`project_results`):
+
+- подключено 50 клиентов;
+- заключено 10 договоров;
+- найдено 5 партнёров.
+
+Финансы: investment 25 000 000 ₽ · revenue 4 500 000 ₽ / quarter.
+
+Код: `tindaProjectResults`, `tindaFinancialMetrics`.
 
 Маршруты:
 

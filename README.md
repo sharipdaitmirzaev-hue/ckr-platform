@@ -6,7 +6,7 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.33.0-beta** (Project Execution). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Execution](./docs/project-execution.md) · [Методология](./docs/ckr-methodology.md).
+Текущая версия ядра: **0.34.0-beta** (Project Outcomes). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Outcomes](./docs/project-outcomes.md) · [Execution](./docs/project-execution.md).
 
 ## Стек
 
@@ -58,6 +58,7 @@ supabase           # миграции
 - [Потоки Лии](./docs/lia-flows.md)
 - [Методология ЦКР](./docs/ckr-methodology.md)
 - [Project Execution](./docs/project-execution.md)
+- [Project Outcomes](./docs/project-outcomes.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 - [Changelog](./docs/changelog.md)

@@ -408,6 +408,46 @@ export type ProjectMetricRow = {
   updated_at: string;
 };
 
+export type DbProjectResultType =
+  | "revenue"
+  | "investment"
+  | "partnership"
+  | "launch"
+  | "growth"
+  | "cost_reduction"
+  | "other";
+
+export type DbFinancialMetricType =
+  | "revenue"
+  | "investment"
+  | "expenses"
+  | "profit"
+  | "valuation";
+
+export type ProjectResultRow = {
+  id: string;
+  project_id: string;
+  result_type: DbProjectResultType;
+  title: string;
+  description: string;
+  value: number | string | null;
+  unit: string;
+  achieved_at: string | null;
+  metric_id: string | null;
+  created_at: string;
+};
+
+export type ProjectFinancialMetricRow = {
+  id: string;
+  project_id: string;
+  metric_type: DbFinancialMetricType;
+  value: number | string;
+  currency: string;
+  period: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type SlaRuleRow = {
   id: string;
   entity_type: string;
@@ -570,7 +610,11 @@ export type DbProjectActivityType =
   | "roadmap_created"
   | "roadmap_item_completed"
   | "metric_updated"
-  | "project_progress_checked";
+  | "project_progress_checked"
+  | "result_created"
+  | "financial_metric_updated"
+  | "project_completed"
+  | "outcome_generated";
 
 export type DealRow = {
   id: string;
@@ -1440,6 +1484,37 @@ export type Database = {
           Omit<ProjectMetricRow, "id" | "created_at" | "project_id">
         >;
       };
+      project_results: {
+        Row: ProjectResultRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          result_type?: DbProjectResultType;
+          title: string;
+          description?: string;
+          value?: number | null;
+          unit?: string;
+          achieved_at?: string | null;
+          metric_id?: string | null;
+        };
+        Update: Partial<
+          Omit<ProjectResultRow, "id" | "created_at" | "project_id">
+        >;
+      };
+      project_financial_metrics: {
+        Row: ProjectFinancialMetricRow;
+        Insert: {
+          id?: string;
+          project_id: string;
+          metric_type: DbFinancialMetricType;
+          value?: number;
+          currency?: string;
+          period?: string;
+        };
+        Update: Partial<
+          Omit<ProjectFinancialMetricRow, "id" | "created_at" | "project_id">
+        >;
+      };
       sla_rules: {
         Row: SlaRuleRow;
         Insert: {
@@ -1738,6 +1813,8 @@ export type Database = {
       task_related_type: DbTaskRelatedType;
       roadmap_status: DbRoadmapStatus;
       roadmap_item_status: DbRoadmapItemStatus;
+      project_result_type: DbProjectResultType;
+      project_financial_metric_type: DbFinancialMetricType;
       organization_type: DbOrganizationType;
       organization_verification_status: DbOrganizationVerificationStatus;
       organization_member_role: DbOrganizationMemberRole;

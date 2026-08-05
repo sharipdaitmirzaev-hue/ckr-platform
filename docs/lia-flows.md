@@ -22,10 +22,11 @@
 | `business_audit` | Аудит бизнеса | Вопросы → `BusinessAuditReport` (сильные/слабые/возможности/риски/шаги) |
 | `develop_strategy` | Разработать стратегию развития | Вход: проект / аудит / цели → `StrategyReport` |
 | `check_progress` | Проверь прогресс проекта | Roadmap / задачи / KPI / активность → `ProgressReport` (без изменений данных) |
+| `evaluate_outcome` | Оцени результат проекта | KPI / results / финансы / roadmap → `OutcomeReport` (только анализ) |
 
 Конфиг: `src/config/lia.ts`  
 Движок: `src/lib/lia/engine.ts`  
-Методология: [ckr-methodology.md](./ckr-methodology.md) · Execution: [project-execution.md](./project-execution.md)
+Методология: [ckr-methodology.md](./ckr-methodology.md) · Execution: [project-execution.md](./project-execution.md) · Outcomes: [project-outcomes.md](./project-outcomes.md)
 
 ---
 
@@ -78,7 +79,8 @@ UI: `ProjectLiaActions` на edit/workspace/public project.
                  → develop_strategy → StrategyReport
                  → шаблон business_development → CRM templates
                  → методология ЦКР (поиск ресурсов → сделка → реализация)
-                 → check_progress → ProgressReport (контроль результата)
+                 → check_progress → ProgressReport (контроль реализации)
+                 → evaluate_outcome → OutcomeReport (оценка итога)
 ```
 
 ```text

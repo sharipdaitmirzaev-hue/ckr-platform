@@ -84,6 +84,10 @@ export const projectActivityTypeLabels: Record<ProjectActivityType, string> = {
   roadmap_item_completed: "Этап roadmap завершён",
   metric_updated: "KPI обновлён",
   project_progress_checked: "Проверка прогресса",
+  result_created: "Результат зафиксирован",
+  financial_metric_updated: "Финансовый показатель обновлён",
+  project_completed: "Проект завершён",
+  outcome_generated: "Отчёт по результату",
 };
 
 /** Типовые этапы для кабинета проекта (пример: завод воды). */

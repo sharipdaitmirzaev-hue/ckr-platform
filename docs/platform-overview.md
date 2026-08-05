@@ -5,7 +5,7 @@
 
 Логика: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Версия ядра после Этапа 33: `0.33.0-beta` (Project Execution — roadmap, KPI, контроль прогресса, см. [project-execution.md](./project-execution.md)).
+Версия ядра после Этапа 34: `0.34.0-beta` (Project Outcomes — результаты и эффективность ЦКР, см. [project-outcomes.md](./project-outcomes.md)).
 
 ---
 
@@ -38,6 +38,7 @@
 | Лия | `/lia` | lia.md, lia-flows.md |
 | Сделки и workspace | `/dashboard/projects/[id]/workspace` | deals-and-workspace.md |
 | Project Execution | roadmap / KPI / прогресс в workspace | project-execution.md |
+| Project Outcomes | `/admin/results`, results / финансы | project-outcomes.md |
 | Публичная платформа | `/`, SEO | public-platform.md |
 | Монетизация | `/pricing`, billing | monetization.md |
 | Аналитика | admin analytics | analytics.md |

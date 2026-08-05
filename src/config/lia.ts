@@ -86,6 +86,13 @@ export const LIA_SCENARIOS: {
     description:
       "Анализ roadmap, задач, KPI и активности → ProgressReport (без изменений данных)",
   },
+  {
+    id: "evaluate_outcome",
+    label: "Оцени результат проекта",
+    prompt: "Оцени результат проекта",
+    description:
+      "KPI, roadmap, project_results, финансы → OutcomeReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -150,6 +157,9 @@ export const DEVELOP_STRATEGY_START_PATTERN =
 
 export const CHECK_PROGRESS_START_PATTERN =
   /проверь\s+прогресс|проверка\s+прогресса|прогресс\s+проекта|check\s+progress|как\s+ид[её]т\s+реализац/i;
+
+export const EVALUATE_OUTCOME_START_PATTERN =
+  /оцени\s+результат|оценка\s+результата|результат\s+проекта|evaluate\s+outcome|итог\s+проекта/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [
