@@ -6,7 +6,7 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.25.0-beta** (closed beta). Обзор: [docs/platform-overview.md](./docs/platform-overview.md).
+Текущая версия ядра: **0.26.0-beta** (closed beta, подготовка к production). Обзор: [docs/platform-overview.md](./docs/platform-overview.md).
 
 ## Стек
 
@@ -51,6 +51,8 @@ supabase           # миграции
 
 - [Обзор платформы](./docs/platform-overview.md)
 - [Аудит ядра](./docs/core-audit.md)
+- [Аудит безопасности](./docs/security-audit.md)
+- [Деплой](./docs/deployment.md) · [Backup](./docs/backup.md) · [Production checklist](./docs/production-checklist.md)
 - [Роли и права](./docs/roles-and-permissions.md)
 - [Потоки Лии](./docs/lia-flows.md)
 - [Архитектура](./docs/architecture.md)

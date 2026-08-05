@@ -1,30 +1,64 @@
+import { API_ERROR_MESSAGES, apiError, apiSuccess } from "@/lib/errors/api";
 import { applyDemoSeed } from "@/lib/demo/apply-seed";
-import { NextResponse } from "next/server";
+import { logApiError, logSystemEvent } from "@/lib/logging/system-log";
 
 /**
  * POST /api/demo/seed
  * Заголовок: x-demo-seed-secret: DEMO_SEED_SECRET
- * Записывает безопасные demo-данные в Supabase (service role).
+ * В production без секрета и при NODE_ENV=production + отсутствии явного разрешения — отказ.
  */
 export async function POST(request: Request) {
   const expected = process.env.DEMO_SEED_SECRET;
   const provided = request.headers.get("x-demo-seed-secret");
+  const allowInProduction = process.env.ALLOW_DEMO_SEED_IN_PRODUCTION === "true";
 
-  if (!expected || provided !== expected) {
-    return NextResponse.json(
-      { ok: false, message: "Unauthorized" },
-      { status: 401 },
-    );
+  if (process.env.NODE_ENV === "production" && !allowInProduction) {
+    await logApiError({
+      source: "api.demo.seed",
+      message: "Demo seed blocked in production",
+    });
+    return apiError(403, "Demo seed отключён в production.", {
+      code: "demo_seed_disabled",
+    });
   }
 
-  const result = await applyDemoSeed();
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  if (!expected || provided !== expected) {
+    return apiError(401, API_ERROR_MESSAGES.unauthorized, {
+      code: "unauthorized",
+    });
+  }
+
+  try {
+    const result = await applyDemoSeed();
+    if (!result.ok) {
+      await logApiError({
+        source: "api.demo.seed",
+        message: result.message ?? "Demo seed failed",
+      });
+      return apiError(400, result.message ?? "Не удалось выполнить seed.", {
+        code: "seed_failed",
+      });
+    }
+
+    await logSystemEvent({
+      source: "api.demo.seed",
+      message: "Demo seed applied",
+      level: "warning",
+    });
+
+    return apiSuccess({ message: result.message ?? "OK" });
+  } catch (error) {
+    await logApiError({
+      source: "api.demo.seed",
+      message: error instanceof Error ? error.message : "Unknown seed error",
+    });
+    return apiError(500, API_ERROR_MESSAGES.internal, { code: "internal" });
+  }
 }
 
 export async function GET() {
-  return NextResponse.json({
-    ok: true,
+  return apiSuccess({
     message:
-      "Demo seed API. POST with header x-demo-seed-secret. Без секрета запись недоступна. Каталоги могут использовать встроенный fallback.",
+      "Demo seed API. POST with header x-demo-seed-secret. В production отключён по умолчанию.",
   });
 }

@@ -215,4 +215,14 @@
 - Документация ролей и потоков Лии
 - Стабилизация перед 1.0 (без новых крупных функций)
 
-## Этап 26 — API для мобильного приложения
+## Этап 26 — Подготовка к production ✅ (код готов)
+
+Подробности: [security-audit.md](./security-audit.md), [deployment.md](./deployment.md), [production-checklist.md](./production-checklist.md)
+
+- Аудит RLS / API / actions / middleware
+- `system_logs`, единый формат ошибок, серверное логирование
+- Документация деплоя и backup
+- Performance: лимиты каталогов, индекс, dashboard counts
+- Без новых бизнес-модулей
+
+## Этап 27 — API для мобильного приложения

@@ -1,79 +1,52 @@
 import { LIA_DISCLAIMER } from "@/config/lia";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { API_ERROR_MESSAGES, apiError, apiSuccess } from "@/lib/errors/api";
 import { checkLiaRateLimit } from "@/lib/lia/rate-limit";
-import {
-  getWebSearchProviderInfo,
-  runExternalSearch,
-} from "@/lib/lia/search";
+import { runExternalSearch } from "@/lib/lia/search";
+import { logApiError, logSystemEvent } from "@/lib/logging/system-log";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { NextResponse } from "next/server";
 
 /**
  * Прямой внешний поиск для Лии.
  * Только рекомендации: не создаёт заявки и не меняет данные пользователя.
  */
 export async function GET() {
-  const info = getWebSearchProviderInfo();
-  return NextResponse.json({
-    ok: true,
-    provider: info,
+  // Без утечки конфигурации провайдера анонимам
+  return apiSuccess({
+    status: "ready",
     disclaimer: LIA_DISCLAIMER,
-    resultShape: [
-      "id",
-      "title",
-      "description",
-      "url",
-      "source",
-      "published_at",
-      "trust_score",
-      "trusted",
-    ],
   });
 }
 
 export async function POST(request: Request) {
   if (!hasSupabaseEnv()) {
-    return NextResponse.json(
-      { ok: false, error: "Supabase не настроен.", disclaimer: LIA_DISCLAIMER },
-      { status: 503 },
-    );
+    return apiError(503, API_ERROR_MESSAGES.supabaseMissing, {
+      code: "supabase_missing",
+      disclaimer: LIA_DISCLAIMER,
+    });
   }
 
   const current = await getCurrentUser();
   if (!current) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Требуется авторизация.",
-        disclaimer: LIA_DISCLAIMER,
-      },
-      { status: 401 },
-    );
+    return apiError(401, API_ERROR_MESSAGES.unauthorized, {
+      code: "unauthorized",
+      disclaimer: LIA_DISCLAIMER,
+    });
   }
 
   if (current.profile.is_blocked) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Аккаунт заблокирован.",
-        disclaimer: LIA_DISCLAIMER,
-      },
-      { status: 403 },
-    );
+    return apiError(403, API_ERROR_MESSAGES.blocked, {
+      code: "blocked",
+      disclaimer: LIA_DISCLAIMER,
+    });
   }
 
   const rate = checkLiaRateLimit(current.user.id);
   if (!rate.allowed) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: `Слишком много запросов. Повторите через ${rate.retryAfterSec} сек.`,
-        disclaimer: LIA_DISCLAIMER,
-      },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rate.retryAfterSec) },
-      },
+    return apiError(
+      429,
+      `Слишком много запросов. Повторите через ${rate.retryAfterSec} сек.`,
+      { code: "rate_limited", disclaimer: LIA_DISCLAIMER },
     );
   }
 
@@ -86,43 +59,60 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return NextResponse.json(
-      { ok: false, error: "Некорректный JSON.", disclaimer: LIA_DISCLAIMER },
-      { status: 400 },
-    );
+    return apiError(400, "Некорректный JSON.", {
+      code: "bad_json",
+      disclaimer: LIA_DISCLAIMER,
+    });
   }
 
   const query = String(body.query ?? "").trim();
   if (!query) {
-    return NextResponse.json(
-      { ok: false, error: "Укажите query.", disclaimer: LIA_DISCLAIMER },
-      { status: 400 },
-    );
+    return apiError(400, "Укажите query.", {
+      code: "missing_query",
+      disclaimer: LIA_DISCLAIMER,
+    });
   }
   if (query.length > 300) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Запрос слишком длинный (макс. 300 символов).",
-        disclaimer: LIA_DISCLAIMER,
-      },
-      { status: 400 },
-    );
+    return apiError(400, "Запрос слишком длинный (макс. 300 символов).", {
+      code: "query_too_long",
+      disclaimer: LIA_DISCLAIMER,
+    });
   }
 
-  const limit = Math.min(Math.max(Number(body.limit) || 5, 1), 10);
-  const { provider, results } = await runExternalSearch(query, {
-    limit,
-    region: body.region,
-    category: body.category,
-  });
+  try {
+    const limit = Math.min(Math.max(Number(body.limit) || 5, 1), 10);
+    const { provider, results } = await runExternalSearch(query, {
+      limit,
+      region: body.region,
+      category: body.category,
+    });
 
-  return NextResponse.json({
-    ok: true,
-    provider,
-    query,
-    results: results.map((item) => ({ ...item, trusted: false })),
-    disclaimer: LIA_DISCLAIMER,
-    note: "Внешние результаты неподтверждены. Лия не создаёт заявки автоматически.",
-  });
+    await logSystemEvent({
+      source: "api.lia.search.external",
+      message: "External search completed",
+      metadata: {
+        userId: current.user.id,
+        provider,
+        resultCount: results.length,
+      },
+    });
+
+    return apiSuccess({
+      provider,
+      query,
+      results: results.map((item) => ({ ...item, trusted: false })),
+      disclaimer: LIA_DISCLAIMER,
+      note: "Внешние результаты неподтверждены. Лия не создаёт заявки автоматически.",
+    });
+  } catch (error) {
+    await logApiError({
+      source: "api.lia.search.external",
+      message: error instanceof Error ? error.message : "Search failed",
+      metadata: { userId: current.user.id },
+    });
+    return apiError(500, API_ERROR_MESSAGES.internal, {
+      code: "internal",
+      disclaimer: LIA_DISCLAIMER,
+    });
+  }
 }

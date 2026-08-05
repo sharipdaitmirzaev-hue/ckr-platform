@@ -1,7 +1,9 @@
 "use server";
 
 import { DOCUMENTS_BUCKET } from "@/config/verification";
+import { assertDocumentRelatedAccess } from "@/lib/documents/assert-related-access";
 import { uploadDocumentSchema } from "@/lib/documents/validations";
+import { logApiError, logSystemEvent } from "@/lib/logging/system-log";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -52,6 +54,16 @@ export async function uploadDocumentAction(
     return { error: "Необходимо войти в аккаунт." };
   }
 
+  const access = await assertDocumentRelatedAccess(
+    supabase,
+    user.id,
+    parsed.data.relatedType,
+    parsed.data.relatedId,
+  );
+  if (!access.ok) {
+    return { error: access.error };
+  }
+
   const safeName = sanitizeFileName(file.name || "document");
   const storagePath = `${user.id}/${parsed.data.relatedType}/${parsed.data.relatedId}/${crypto.randomUUID()}-${safeName}`;
 
@@ -63,7 +75,12 @@ export async function uploadDocumentAction(
     });
 
   if (uploadError) {
-    return { error: uploadError.message };
+    await logApiError({
+      source: "documents.upload",
+      message: uploadError.message,
+      metadata: { userId: user.id, relatedType: parsed.data.relatedType },
+    });
+    return { error: "Не удалось загрузить файл. Попробуйте ещё раз." };
   }
 
   const status =
@@ -82,8 +99,23 @@ export async function uploadDocumentAction(
 
   if (insertError) {
     await supabase.storage.from(DOCUMENTS_BUCKET).remove([storagePath]);
-    return { error: insertError.message };
+    await logApiError({
+      source: "documents.upload",
+      message: insertError.message,
+      metadata: { userId: user.id },
+    });
+    return { error: "Не удалось сохранить документ." };
   }
+
+  await logSystemEvent({
+    source: "documents.upload",
+    message: "Document uploaded",
+    metadata: {
+      userId: user.id,
+      relatedType: parsed.data.relatedType,
+      relatedId: parsed.data.relatedId,
+    },
+  });
 
   if (parsed.data.relatedType === "project") {
     await supabase.from("project_activity").insert({

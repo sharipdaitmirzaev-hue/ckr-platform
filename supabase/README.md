@@ -20,6 +20,7 @@
 | `migrations/20260325330000_reputation.sql` | reputation_profiles, reviews, entity_history, trust_badges, RLS |
 | `migrations/20260325340000_project_lifecycle.sql` | project_status: active, completed |
 | `migrations/20260325341000_project_lifecycle_rls.sql` | RLS каталога published/active/completed |
+| `migrations/20260325350000_system_logs_and_security.sql` | system_logs, RPC hardening, catalog index |
 
 ## Как применить
 

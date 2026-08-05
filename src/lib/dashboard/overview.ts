@@ -35,19 +35,25 @@ export async function getDashboardOverview(
   try {
     const supabase = createClient();
 
+    // Все id проектов пользователя — для корректных счётчиков (не только top-5)
+    const { data: allProjectRows } = await supabase
+      .from("projects")
+      .select("id, title, status, updated_at")
+      .eq("owner_id", userId)
+      .order("updated_at", { ascending: false });
+
+    const allProjects = allProjectRows ?? [];
+    const projectIds = allProjects.map((item) => item.id);
+    const preview = allProjects.slice(0, 5);
+
     const [
-      projectsRes,
       outgoingApps,
       investmentsRes,
       dealsRes,
       unreadRes,
+      incomingApps,
+      openMilestonesRes,
     ] = await Promise.all([
-      supabase
-        .from("projects")
-        .select("id, title, status, updated_at")
-        .eq("owner_id", userId)
-        .order("updated_at", { ascending: false })
-        .limit(5),
       supabase
         .from("applications")
         .select("id", { count: "exact", head: true })
@@ -65,44 +71,35 @@ export async function getDashboardOverview(
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("is_read", false),
+      projectIds.length
+        ? supabase
+            .from("applications")
+            .select("id", { count: "exact", head: true })
+            .eq("target_type", "project")
+            .in("target_id", projectIds)
+            .in("status", ["new", "reviewing"])
+        : Promise.resolve({ count: 0 }),
+      projectIds.length
+        ? supabase
+            .from("project_milestones")
+            .select("id", { count: "exact", head: true })
+            .in("project_id", projectIds)
+            .neq("status", "completed")
+        : Promise.resolve({ count: 0 }),
     ]);
 
-    const projectIds = (projectsRes.data ?? []).map((item) => item.id);
-
-    // Входящие заявки на проекты пользователя
-    let applicationsIncoming = 0;
-    if (projectIds.length > 0) {
-      const { count } = await supabase
-        .from("applications")
-        .select("id", { count: "exact", head: true })
-        .eq("target_type", "project")
-        .in("target_id", projectIds)
-        .in("status", ["new", "reviewing"]);
-      applicationsIncoming = count ?? 0;
-    }
-
-    let openMilestones = 0;
-    if (projectIds.length > 0) {
-      const { count } = await supabase
-        .from("project_milestones")
-        .select("id", { count: "exact", head: true })
-        .in("project_id", projectIds)
-        .neq("status", "completed");
-      openMilestones = count ?? 0;
-    }
-
     return {
-      projects: (projectsRes.data ?? []).map((item) => ({
+      projects: preview.map((item) => ({
         id: item.id,
         title: item.title,
         status: item.status as ProjectStatus,
         updatedAt: item.updated_at,
       })),
-      applicationsIncoming,
+      applicationsIncoming: incomingApps.count ?? 0,
       applicationsOutgoing: outgoingApps.count ?? 0,
       investments: investmentsRes.count ?? 0,
       deals: dealsRes.count ?? 0,
-      openMilestones,
+      openMilestones: openMilestonesRes.count ?? 0,
       unreadNotifications: unreadRes.count ?? 0,
     };
   } catch {

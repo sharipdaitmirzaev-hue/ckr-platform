@@ -56,7 +56,8 @@ export async function listPublishedInvestmentOffers(
     .from("investment_offers")
     .select("*, profiles:owner_id ( full_name )")
     .eq("status", "published")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(48); // CATALOG_LIST_LIMIT
 
   if (filters.category) {
     query = query.contains("categories", [filters.category]);

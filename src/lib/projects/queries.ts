@@ -1,3 +1,4 @@
+import { CATALOG_LIST_LIMIT } from "@/config/catalog";
 import {
   getDemoProjectById,
   getDemoProjects,
@@ -48,7 +49,8 @@ export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
     .from("projects")
     .select("*, profiles:owner_id ( full_name )")
     .in("status", ["published", "active", "completed"])
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(CATALOG_LIST_LIMIT);
 
   if (error || !data || data.length === 0) {
     return isDemoCatalogFallbackEnabled() ? getDemoProjects() : [];

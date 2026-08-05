@@ -44,7 +44,8 @@ export async function listPublishedExperts(filters?: {
       "*, profiles:user_id ( full_name, company_name, verification_status )",
     )
     .eq("status", "published")
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .limit(48);
 
   if (filters?.specialization) {
     query = query.eq("specialization", filters.specialization);

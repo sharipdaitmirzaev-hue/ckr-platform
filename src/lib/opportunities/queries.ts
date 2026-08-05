@@ -1,3 +1,4 @@
+import { CATALOG_LIST_LIMIT } from "@/config/catalog";
 import {
   getDemoOpportunities,
   getDemoOpportunityById,
@@ -54,7 +55,8 @@ export async function listPublishedOpportunities(): Promise<
     .from("opportunities")
     .select("*, profiles:owner_id ( full_name )")
     .eq("status", "published")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(CATALOG_LIST_LIMIT);
 
   if (error || !data || data.length === 0) {
     return isDemoCatalogFallbackEnabled() ? getDemoOpportunities() : [];

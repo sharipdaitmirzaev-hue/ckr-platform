@@ -468,6 +468,17 @@ export type TrustBadgeRow = {
   created_at: string;
 };
 
+export type DbSystemLogLevel = "info" | "warning" | "error";
+
+export type SystemLogRow = {
+  id: string;
+  level: DbSystemLogLevel;
+  source: string;
+  message: string;
+  metadata: unknown;
+  created_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -1379,6 +1390,17 @@ export type Database = {
         };
         Update: Partial<Omit<TrustBadgeRow, "id" | "created_at">>;
       };
+      system_logs: {
+        Row: SystemLogRow;
+        Insert: {
+          id?: string;
+          level?: DbSystemLogLevel;
+          source?: string;
+          message?: string;
+          metadata?: unknown;
+        };
+        Update: Partial<Omit<SystemLogRow, "id" | "created_at">>;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -1553,6 +1575,7 @@ export type Database = {
       review_target_type: DbReviewTargetType;
       entity_history_kind: DbEntityHistoryKind;
       trust_badge_key: DbTrustBadgeKey;
+      system_log_level: DbSystemLogLevel;
     };
   };
 };
