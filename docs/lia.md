@@ -47,7 +47,7 @@ runLiaEngine()
 | `src/app/api/lia/route.ts` | Серверный endpoint |
 | `src/lib/lia/provider.ts` | Абстракция ИИ-провайдера |
 | `src/lib/lia/engine.ts` | Сценарии и сборка ответов |
-| `src/lib/lia/search.ts` | Поиск по каталогам ЦКР |
+| `src/lib/lia/search/` | InternalSearchProvider + WebSearchProvider ([external-search.md](./external-search.md)) |
 | `src/features/lia/components/lia-chat.tsx` | Клиентский чат |
 | `src/components/lia/lia-widget.tsx` | Плавающий / embedded виджет |
 

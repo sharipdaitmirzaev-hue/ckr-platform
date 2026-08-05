@@ -21,11 +21,20 @@ export type InternalSearchProvider = SearchProvider & {
   searchExperts: (query: string, limit?: number) => Promise<InternalMatch[]>;
 };
 
+export type WebSearchOptions = {
+  limit?: number;
+  region?: string;
+  category?: string;
+  /** Контекст проекта — не отправлять приватные документы. */
+  projectTitle?: string;
+};
+
+/** Внешний поиск через абстракцию (не привязан к одному сервису). */
 export type WebSearchProvider = SearchProvider & {
   kind: "external";
   search: (
     query: string,
-    options?: { limit?: number; region?: string; category?: string },
+    options?: WebSearchOptions,
   ) => Promise<ExternalSearchResult[]>;
 };
 
@@ -35,4 +44,10 @@ export type SearchBundle = {
   investments: InternalMatch[];
   experts: InternalMatch[];
   external: ExternalSearchResult[];
+  searchQueries: string[];
+  externalProvider: string;
 };
+
+export type WebSearchProviderName = "mock" | "web_api" | "custom";
+
+export type WebSearchEngine = "serper" | "brave" | "tavily" | "generic";

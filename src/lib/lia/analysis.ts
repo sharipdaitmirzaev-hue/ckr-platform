@@ -1,5 +1,8 @@
 import { LIA_DISCLAIMER } from "@/config/lia";
-import { searchSolutionsBundle } from "@/lib/lia/search";
+import {
+  buildExternalSearchQueries,
+  searchSolutionsBundle,
+} from "@/lib/lia/search";
 import type { Project } from "@/types";
 import type {
   ExternalSearchResult,
@@ -65,7 +68,10 @@ function extractAvailable(project: Project, extraExisting = ""): string[] {
   return Array.from(new Set(available)).slice(0, 10);
 }
 
-function extractMissing(project: Project, extraRequired = ""): string[] {
+export function extractMissingResources(
+  project: Project,
+  extraRequired = "",
+): string[] {
   const blob = `${project.description}\n${extraRequired}\nтребуется инвестиции ${project.investmentRequired}`;
   const fromText = splitResources(extraRequired);
   const detected = detectLabels(blob);
@@ -122,6 +128,11 @@ function buildRecommendations(
   }
   if (missing.some((m) => /специалист|эксперт|партн/i.test(m))) {
     steps.push("Подключить эксперта ЦКР для проверки рисков и документов.");
+  }
+  if (externalCount > 0) {
+    steps.push(
+      "Проверить внешние источники вручную: источник, дату и условия — данные неподтверждены.",
+    );
   }
   steps.push("Дополнить карточку проекта перед публикацией и модерацией.");
   return Array.from(new Set(steps)).slice(0, 6);
@@ -207,9 +218,12 @@ export async function buildSolutionReport(
     parseRequiredFromDescription(project.description);
 
   const available = extractAvailable(project, existing);
-  const missing = extractMissing(project, required);
+  const missing = extractMissingResources(project, required);
 
-  const query = [
+  // 1) недостающие ресурсы → 2) поисковые запросы → 3) внутренний + внешний поиск
+  const searchQueries = buildExternalSearchQueries(project, missing);
+
+  const internalQuery = [
     project.title,
     project.summary,
     project.category,
@@ -220,12 +234,14 @@ export async function buildSolutionReport(
     .filter(Boolean)
     .join(" ");
 
-  const bundle = await searchSolutionsBundle(query, {
+  const bundle = await searchSolutionsBundle(internalQuery, {
     region: project.region,
     category: project.category,
+    projectTitle: project.title,
     internalLimit: 3,
-    externalLimit: 5,
+    externalLimit: 8,
     includeExternal: options?.includeExternal !== false,
+    externalQueries: searchQueries,
   });
 
   const internalCount =
@@ -263,13 +279,15 @@ export async function buildSolutionReport(
     },
     available,
     missing,
+    searchQueries: bundle.searchQueries,
+    externalProvider: bundle.externalProvider,
     internal: {
       projects: bundle.projects,
       opportunities: bundle.opportunities,
       investments: bundle.investments,
       experts: bundle.experts,
     },
-    external: bundle.external,
+    external: bundle.external.map((item) => ({ ...item, trusted: false })),
     recommendations,
     risks,
     next_steps: nextSteps,
@@ -298,19 +316,22 @@ export function formatSolutionReportText(report: SolutionReport): string {
     "Нужно:",
     ...report.missing.map((item) => `- ${item}`),
     "",
-    "Найдено:",
-    "В ЦКР:",
+    report.searchQueries?.length
+      ? `Поисковые запросы:\n${report.searchQueries.map((q) => `- ${q}`).join("\n")}`
+      : "",
+    "",
+    "Найдено в ЦКР:",
     `- ${count(report.internal.investments)} инвестора(ов);`,
     `- ${count(report.internal.experts)} эксперт(а/ов);`,
     `- ${count(report.internal.opportunities)} возможностей;`,
     `- ${count(report.internal.projects)} похожих проектов.`,
     "",
-    "Во внешних источниках:",
+    "Найдено во внешних источниках:",
     ...report.external.map(
       (item) =>
-        `- [${item.title}](${item.url}) · ${item.source} · уверенность ${(item.confidence * 100).toFixed(0)}% (не проверено)`,
+        `- [${item.title}](${item.url}) · ${item.source} · trust ${(item.trust_score * 100).toFixed(0)}% · не подтверждено`,
     ),
-    report.external.length === 0 ? "- пока нет mock-результатов" : "",
+    report.external.length === 0 ? "- результатов нет" : "",
     "",
     "Рекомендации:",
     ...report.recommendations.map((item, i) => `${i + 1}. ${item}`),
@@ -319,7 +340,7 @@ export function formatSolutionReportText(report: SolutionReport): string {
     ...report.next_steps.map((item, i) => `${i + 1}. ${item}`),
     "",
     `_${report.disclaimer}_`,
-  ].filter((line) => line !== undefined);
+  ].filter((line) => line !== undefined && line !== "");
 
   return lines.join("\n");
 }

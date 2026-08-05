@@ -22,7 +22,7 @@ buildSolutionReport()      — анализ проекта
         ↓
 SearchProvider
   ├─ InternalSearchProvider  → projects / opportunities / investments / experts
-  └─ WebSearchProvider       → mock (готов к Web Search API)
+  └─ WebSearchProvider       → mock | web_api | custom (см. external-search.md)
         ↓
 lia_sessions / lia_messages / lia_analyses (Supabase RLS)
 ```
@@ -105,17 +105,13 @@ lia_sessions / lia_messages / lia_analyses (Supabase RLS)
 
 Контракт `SearchProvider` / `WebSearchProvider`.
 
-Сейчас: `MockWebSearchProvider` (без сетевых вызовов).
+Провайдеры: `mock` | `web_api` (serper/brave/tavily/generic) | `custom`.
 
-Подготовлено к подключению:
-
-- Web Search API;
-- внешних поисковых сервисов (`LIA_WEB_SEARCH_PROVIDER`, `LIA_WEB_SEARCH_API_KEY`);
-- специализированных API.
+Подробности, переменные окружения и безопасность: [external-search.md](./external-search.md).
 
 Внешний результат (`ExternalSearchResult`):
 
-- `source`, `url`, `date`, `description`, `confidence`
+- `id`, `title`, `description`, `url`, `source`, `published_at`, `trust_score`
 - всегда `trusted: false`
 
 **Внешним данным нельзя доверять автоматически.**

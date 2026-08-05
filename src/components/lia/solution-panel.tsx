@@ -1,4 +1,4 @@
-import { ExternalResultCard } from "@/components/lia/external-result-card";
+import { ExternalSearchResults } from "@/components/lia/external-search-results";
 import { MatchCard } from "@/components/lia/match-card";
 import { ProjectAnalysis } from "@/components/lia/project-analysis";
 import { Badge } from "@/components/ui/badge";
@@ -46,26 +46,11 @@ export function SolutionPanel({ report }: SolutionPanelProps) {
         )}
       </Card>
 
-      <Card variant="surface" className="space-y-4 p-4 sm:p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="soft">Внешние источники</Badge>
-          <Badge variant="default">Не доверять автоматически</Badge>
-        </div>
-        {report.external.length > 0 ? (
-          <div className="grid gap-3">
-            {report.external.map((item) => (
-              <ExternalResultCard
-                key={`${item.source}-${item.url}-${item.title}`}
-                result={item}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted">
-            Внешний поиск не выполнялся или результатов нет.
-          </p>
-        )}
-      </Card>
+      <ExternalSearchResults
+        results={report.external}
+        searchQueries={report.searchQueries}
+        providerId={report.externalProvider}
+      />
 
       <Card variant="surface" className="space-y-4 p-4 sm:p-5">
         <p className="text-xs uppercase tracking-[0.14em] text-muted">

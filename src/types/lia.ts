@@ -92,15 +92,23 @@ export type InternalMatch = {
 
 /** Результат внешнего поиска (не доверять автоматически). */
 export type ExternalSearchResult = {
+  id: string;
   title: string;
-  source: string;
-  url: string;
-  date: string;
   description: string;
-  /** Уровень уверенности 0–1. */
-  confidence: number;
-  /** Внешние данные всегда помечаются как непроверенные. */
+  url: string;
+  source: string;
+  /** ISO-дата или YYYY-MM-DD; пустая строка, если неизвестна. */
+  published_at: string;
+  /** Оценка доверия 0–1 (эвристика провайдера, не верификация ЦКР). */
+  trust_score: number;
+  /** Внешние данные всегда непроверенные. */
   trusted: false;
+  /** Запрос, по которому получен результат. */
+  query?: string;
+  /** @deprecated используйте trust_score */
+  confidence?: number;
+  /** @deprecated используйте published_at */
+  date?: string;
 };
 
 /** Комплексный отчёт: проект + ЦКР + внешние источники. */
@@ -116,6 +124,9 @@ export type SolutionReport = {
   };
   available: string[];
   missing: string[];
+  /** Поисковые запросы, сформированные Лией для внешнего поиска. */
+  searchQueries: string[];
+  externalProvider: string;
   internal: {
     projects: InternalMatch[];
     opportunities: InternalMatch[];
