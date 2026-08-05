@@ -1,16 +1,23 @@
 import { OpportunityCard } from "@/components/opportunities/opportunity-card";
 import { ProjectCard } from "@/components/projects/project-card";
+import { EntityHistoryList } from "@/components/reputation/entity-history";
+import { ReputationScore } from "@/components/reputation/reputation-score";
+import { ReviewsList } from "@/components/reputation/reviews-list";
+import { TrustBadgesRow } from "@/components/reputation/trust-badge";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { VerificationBadge } from "@/components/verification/verification-badge";
 import { expertSpecializationLabels } from "@/config/experts";
+import type { ReviewTargetType } from "@/config/reputation";
 import { roleLabels } from "@/config/roles";
 import { siteConfig } from "@/config/site";
+import { CreateReviewForm } from "@/features/reputation/components/create-review-form";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { isDemoMode } from "@/lib/demo/mode";
 import { getPublicProfile } from "@/lib/profiles/queries";
+import { getUserReputationBundle } from "@/lib/reputation/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -46,12 +53,17 @@ export async function generateMetadata({
   };
 }
 
+function defaultReviewType(roles: string[]): ReviewTargetType {
+  if (roles.includes("expert")) return "expert";
+  if (roles.includes("investor")) return "investor";
+  return "service";
+}
+
 export default async function PublicProfilePage({ params }: ProfilePageProps) {
   const current = await getCurrentUser();
   const bundle = await getPublicProfile(params.id);
 
   if (!bundle) {
-    // Владелец может видеть свой закрытый профиль
     if (current?.user.id === params.id) {
       return (
         <div className="py-16">
@@ -74,6 +86,16 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
 
   const { profile, projects, opportunities, expert } = bundle;
   const location = [profile.city, profile.region].filter(Boolean).join(", ");
+  const reputation = await getUserReputationBundle(profile.id);
+  const canReview =
+    Boolean(current) &&
+    current?.user.id !== profile.id &&
+    !isDemoMode();
+
+  const reviewTypes: ReviewTargetType[] = [];
+  if (profile.roles.includes("expert") || expert) reviewTypes.push("expert");
+  if (profile.roles.includes("investor")) reviewTypes.push("investor");
+  if (reviewTypes.length === 0) reviewTypes.push("service");
 
   return (
     <div className="py-14 sm:py-16">
@@ -86,6 +108,13 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
           ))}
           <VerificationBadge status={profile.verificationStatus} />
         </div>
+
+        {reputation?.badges.length ? (
+          <TrustBadgesRow
+            className="mt-3"
+            badges={reputation.badges.map((item) => item.badge)}
+          />
+        ) : null}
 
         <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           {profile.fullName}
@@ -136,6 +165,29 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
           ) : null}
         </dl>
 
+        {reputation ? (
+          <section className="mt-14 border-t border-border pt-10">
+            <SectionHeading
+              eyebrow="Репутация"
+              title="Доверие в экосистеме ЦКР"
+              description="Рейтинг, уровень проверки и факты участия — ориентир, не вердикт."
+            />
+            <div className="mt-8">
+              <ReputationScore profile={reputation.profile} />
+            </div>
+            <div className="mt-6">
+              <ButtonLink
+                href={`/lia?scenario=check_reliability&message=${encodeURIComponent(
+                  `Проверь надёжность участника id: ${profile.id}`,
+                )}`}
+                variant="outline"
+              >
+                Проверить надёжность с Лией
+              </ButtonLink>
+            </div>
+          </section>
+        ) : null}
+
         {expert ? (
           <section className="mt-14 border-t border-border pt-10">
             <SectionHeading
@@ -164,6 +216,38 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
             </div>
           </section>
         ) : null}
+
+        <section className="mt-14 border-t border-border pt-10">
+          <SectionHeading
+            eyebrow="Отзывы"
+            title="Отзывы участников"
+            description="Оценки по завершённому опыту сотрудничества."
+          />
+          <div className="mt-8">
+            <ReviewsList reviews={reputation?.reviews ?? []} />
+          </div>
+          {canReview ? (
+            <div className="mt-8 max-w-xl border-t border-border pt-6">
+              <p className="mb-4 text-sm text-muted">Оставить отзыв</p>
+              <CreateReviewForm
+                targetId={profile.id}
+                defaultTargetType={defaultReviewType(profile.roles)}
+                allowedTypes={reviewTypes}
+              />
+            </div>
+          ) : null}
+        </section>
+
+        <section className="mt-14 border-t border-border pt-10">
+          <SectionHeading
+            eyebrow="История"
+            title="Участие в экосистеме"
+            description="Проекты, сделки, партнёрства и завершённые задачи."
+          />
+          <div className="mt-8">
+            <EntityHistoryList items={reputation?.history ?? []} />
+          </div>
+        </section>
 
         <section className="mt-14 border-t border-border pt-10">
           <SectionHeading

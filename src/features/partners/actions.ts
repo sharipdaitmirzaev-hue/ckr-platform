@@ -195,15 +195,43 @@ export async function createPartnershipAction(
   }
 
   const supabase = createClient();
-  const { error } = await supabase.from("partnerships").insert({
-    organization_id: session.primary.organization.id,
-    type,
-    status,
-    description,
-    created_by: session.user.id,
-  });
+  const { data, error } = await supabase
+    .from("partnerships")
+    .insert({
+      organization_id: session.primary.organization.id,
+      type,
+      status,
+      description,
+      created_by: session.user.id,
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
+
+  const { recordEntityHistory } = await import(
+    "@/lib/reputation/ensure-profile"
+  );
+  const org = session.primary.organization;
+  await recordEntityHistory({
+    entityType: "organization",
+    entityId: org.id,
+    kind: "partnership",
+    title: `Партнёрство (${type}): ${org.name}`,
+    relatedType: "partnership",
+    relatedId: data?.id ?? null,
+    meta: { status, description },
+  });
+  await recordEntityHistory({
+    entityType: "user",
+    entityId: session.user.id,
+    kind: "partnership",
+    title: `Партнёрство организации «${org.name}» (${type})`,
+    relatedType: "partnership",
+    relatedId: data?.id ?? null,
+    meta: { organizationId: org.id, status },
+  });
+
   revalidatePartner();
   return { success: "Партнёрство создано." };
 }

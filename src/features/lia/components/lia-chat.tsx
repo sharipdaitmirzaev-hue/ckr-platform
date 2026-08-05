@@ -17,6 +17,9 @@ type LiaChatProps = {
   categories: CategoryRow[];
   projectId?: string | null;
   autoStartRealize?: boolean;
+  /** Автозапуск сценария из query (например check_reliability). */
+  autoStartScenario?: LiaScenarioId | null;
+  autoStartMessage?: string | null;
 };
 
 export function LiaChat({
@@ -27,6 +30,8 @@ export function LiaChat({
   categories,
   projectId = null,
   autoStartRealize = false,
+  autoStartScenario = null,
+  autoStartMessage = null,
 }: LiaChatProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(activeSessionId);
@@ -60,6 +65,21 @@ export function LiaChat({
     void sendMessage("Помоги реализовать проект", "realize_project");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStartRealize, projectId, isAuthenticated]);
+
+  useEffect(() => {
+    if (
+      !autoStartScenario ||
+      !autoStartMessage ||
+      !isAuthenticated ||
+      autoStartedRef.current ||
+      initialMessages.length > 0
+    ) {
+      return;
+    }
+    autoStartedRef.current = true;
+    void sendMessage(autoStartMessage, autoStartScenario);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartScenario, autoStartMessage, isAuthenticated]);
 
   async function sendMessage(message: string, scenario?: LiaScenarioId | null) {
     if (!isAuthenticated) {

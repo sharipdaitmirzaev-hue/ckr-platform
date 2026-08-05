@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
-import { LIA_DISCLAIMER } from "@/config/lia";
+import { LIA_DISCLAIMER, LIA_SCENARIOS } from "@/config/lia";
 import { LiaChat } from "@/features/lia/components/lia-chat";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/lib/lia/queries";
 import { buildLiaRecommendations } from "@/lib/lia/recommendations";
 import { listCategories } from "@/lib/projects/queries";
+import type { LiaScenarioId } from "@/types/lia";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -26,8 +27,15 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 type LiaPageProps = {
-  searchParams?: { session?: string; project?: string };
+  searchParams?: {
+    session?: string;
+    project?: string;
+    scenario?: string;
+    message?: string;
+  };
 };
+
+const SCENARIO_IDS = new Set(LIA_SCENARIOS.map((item) => item.id));
 
 export default async function LiaPage({ searchParams }: LiaPageProps) {
   const current = await getCurrentUser();
@@ -42,6 +50,20 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
 
   const requestedSessionId = searchParams?.session ?? null;
   const projectId = searchParams?.project ?? null;
+  const scenarioParam = searchParams?.scenario ?? null;
+  const messageParam = searchParams?.message ?? null;
+  const autoStartScenario =
+    scenarioParam && SCENARIO_IDS.has(scenarioParam as LiaScenarioId)
+      ? (scenarioParam as LiaScenarioId)
+      : null;
+  const autoStartMessage =
+    autoStartScenario && messageParam
+      ? messageParam.slice(0, 2000)
+      : autoStartScenario
+        ? (LIA_SCENARIOS.find((item) => item.id === autoStartScenario)?.prompt ??
+          null)
+        : null;
+
   const activeSession =
     current && requestedSessionId
       ? await getLiaSession(requestedSessionId, current.user.id)
@@ -80,7 +102,13 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
               isAuthenticated={Boolean(current)}
               categories={categories}
               projectId={projectId}
-              autoStartRealize={Boolean(projectId && !activeSessionId)}
+              autoStartRealize={Boolean(
+                projectId && !activeSessionId && !autoStartScenario,
+              )}
+              autoStartScenario={
+                !activeSessionId ? autoStartScenario : null
+              }
+              autoStartMessage={!activeSessionId ? autoStartMessage : null}
             />
           </div>
 

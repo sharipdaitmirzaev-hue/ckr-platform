@@ -694,6 +694,71 @@ export type Partnership = {
   updatedAt?: string;
 };
 
+/** Репутация и доверие (Этап 24). */
+export type ReputationEntityType = "user" | "organization";
+
+export type ReputationVerificationLevel = "basic" | "verified" | "trusted";
+
+export type ReviewTargetType =
+  | "project"
+  | "organization"
+  | "expert"
+  | "investor"
+  | "service";
+
+export type EntityHistoryKind = "project" | "deal" | "partnership" | "task";
+
+export type TrustBadgeKey =
+  | "verified"
+  | "trusted_partner"
+  | "experienced_investor"
+  | "ckr_expert";
+
+export type ReputationProfile = {
+  id: string;
+  entityType: ReputationEntityType;
+  entityId: string;
+  score: number;
+  verificationLevel: ReputationVerificationLevel;
+  completedProjects: number;
+  completedDeals: number;
+  reviewsCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type Review = {
+  id: string;
+  authorId: string;
+  targetType: ReviewTargetType;
+  targetId: string;
+  dealId: string | null;
+  rating: number;
+  comment: string;
+  createdAt?: string;
+  authorName?: string;
+};
+
+export type EntityHistoryItem = {
+  id: string;
+  entityType: ReputationEntityType;
+  entityId: string;
+  kind: EntityHistoryKind;
+  title: string;
+  relatedType: string | null;
+  relatedId: string | null;
+  meta: Record<string, unknown>;
+  createdAt?: string;
+};
+
+export type TrustBadgeAward = {
+  id: string;
+  entityType: ReputationEntityType;
+  entityId: string;
+  badge: TrustBadgeKey;
+  createdAt?: string;
+};
+
 /** Прогон сценария или тестовая задача (Этап 19). */
 export type ProductTest = {
   id: string;

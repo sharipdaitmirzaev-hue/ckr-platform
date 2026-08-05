@@ -61,6 +61,12 @@ export const LIA_SCENARIOS: {
     prompt: "Какие возможности мы можем предложить",
     description: "Партнёрская сеть: идеи предложений организации",
   },
+  {
+    id: "check_reliability",
+    label: "Проверь надёжность участника",
+    prompt: "Проверь надёжность участника",
+    description: "Факты, документы и история — без окончательного вердикта",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -113,3 +119,6 @@ export const PROJECT_FLOW_START_PATTERN =
 
 export const REALIZE_PROJECT_PATTERN =
   /помоги реализовать проект|сопровождени|реализац(ия|ии) проекта|следующий шаг проекта/i;
+
+export const CHECK_RELIABILITY_PATTERN =
+  /провер(ь|ить|ьте)?\s+над[её]жност|над[её]жност(ь|и)\s+участник|check.?reliab/i;

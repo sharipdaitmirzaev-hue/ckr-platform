@@ -403,6 +403,69 @@ export type PartnershipRow = {
   updated_at: string;
 };
 
+export type DbReputationEntityType = "user" | "organization";
+
+export type DbReputationVerificationLevel = "basic" | "verified" | "trusted";
+
+export type DbReviewTargetType =
+  | "project"
+  | "organization"
+  | "expert"
+  | "investor"
+  | "service";
+
+export type DbEntityHistoryKind = "project" | "deal" | "partnership" | "task";
+
+export type DbTrustBadgeKey =
+  | "verified"
+  | "trusted_partner"
+  | "experienced_investor"
+  | "ckr_expert";
+
+export type ReputationProfileRow = {
+  id: string;
+  entity_type: DbReputationEntityType;
+  entity_id: string;
+  score: number | string;
+  verification_level: DbReputationVerificationLevel;
+  completed_projects: number;
+  completed_deals: number;
+  reviews_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ReviewRow = {
+  id: string;
+  author_id: string;
+  target_type: DbReviewTargetType;
+  target_id: string;
+  deal_id: string | null;
+  rating: number;
+  comment: string;
+  created_at: string;
+};
+
+export type EntityHistoryRow = {
+  id: string;
+  entity_type: DbReputationEntityType;
+  entity_id: string;
+  kind: DbEntityHistoryKind;
+  title: string;
+  related_type: string | null;
+  related_id: string | null;
+  meta: unknown;
+  created_at: string;
+};
+
+export type TrustBadgeRow = {
+  id: string;
+  entity_type: DbReputationEntityType;
+  entity_id: string;
+  badge: DbTrustBadgeKey;
+  created_at: string;
+};
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -1259,6 +1322,61 @@ export type Database = {
           Omit<PartnershipRow, "id" | "created_at" | "created_by" | "organization_id">
         >;
       };
+      reputation_profiles: {
+        Row: ReputationProfileRow;
+        Insert: {
+          id?: string;
+          entity_type: DbReputationEntityType;
+          entity_id: string;
+          score?: number;
+          verification_level?: DbReputationVerificationLevel;
+          completed_projects?: number;
+          completed_deals?: number;
+          reviews_count?: number;
+        };
+        Update: Partial<
+          Omit<ReputationProfileRow, "id" | "created_at" | "entity_type" | "entity_id">
+        >;
+      };
+      reviews: {
+        Row: ReviewRow;
+        Insert: {
+          id?: string;
+          author_id: string;
+          target_type: DbReviewTargetType;
+          target_id: string;
+          deal_id?: string | null;
+          rating: number;
+          comment?: string;
+        };
+        Update: Partial<
+          Omit<ReviewRow, "id" | "created_at" | "author_id">
+        >;
+      };
+      entity_history: {
+        Row: EntityHistoryRow;
+        Insert: {
+          id?: string;
+          entity_type: DbReputationEntityType;
+          entity_id: string;
+          kind: DbEntityHistoryKind;
+          title?: string;
+          related_type?: string | null;
+          related_id?: string | null;
+          meta?: unknown;
+        };
+        Update: Partial<Omit<EntityHistoryRow, "id" | "created_at">>;
+      };
+      trust_badges: {
+        Row: TrustBadgeRow;
+        Insert: {
+          id?: string;
+          entity_type: DbReputationEntityType;
+          entity_id: string;
+          badge: DbTrustBadgeKey;
+        };
+        Update: Partial<Omit<TrustBadgeRow, "id" | "created_at">>;
+      };
       subscription_plans: {
         Row: SubscriptionPlanRow;
         Insert: {
@@ -1428,6 +1546,11 @@ export type Database = {
       organization_member_role: DbOrganizationMemberRole;
       partnership_type: DbPartnershipType;
       partnership_status: DbPartnershipStatus;
+      reputation_entity_type: DbReputationEntityType;
+      reputation_verification_level: DbReputationVerificationLevel;
+      review_target_type: DbReviewTargetType;
+      entity_history_kind: DbEntityHistoryKind;
+      trust_badge_key: DbTrustBadgeKey;
     };
   };
 };

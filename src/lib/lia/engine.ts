@@ -1,5 +1,6 @@
 import {
   BUSINESS_IDEA_STEPS,
+  CHECK_RELIABILITY_PATTERN,
   LIA_DISCLAIMER,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -60,6 +61,9 @@ function detectScenario(
   ) {
     return "org_offer_opportunities";
   }
+  if (CHECK_RELIABILITY_PATTERN.test(value)) {
+    return "check_reliability";
+  }
   return null;
 }
 
@@ -68,6 +72,17 @@ function extractProjectIdFromMessage(message: string) {
     /(?:projectId|project|проект)[:\s]+([0-9a-f-]{36})/i,
   );
   return match?.[1] || null;
+}
+
+function extractEntityIdFromMessage(message: string) {
+  const labeled = message.match(
+    /(?:userId|profileId|участник|профиль|id)[:\s]+([0-9a-f-]{36})/i,
+  );
+  if (labeled?.[1]) return labeled[1];
+  const bare = message.match(
+    /\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i,
+  );
+  return bare?.[1] || null;
 }
 
 function mapCategorySlug(raw: string) {
@@ -469,6 +484,127 @@ async function handleRealizeProject(input: {
   };
 }
 
+async function handleCheckReliability(
+  userMessage: string,
+): Promise<LiaEngineResult> {
+  const {
+    buildReliabilityReport,
+    LIA_RELIABILITY_DISCLAIMER,
+  } = await import("@/lib/reputation/check-reliability");
+  const { getUserReputationBundle } = await import(
+    "@/lib/reputation/queries"
+  );
+  const { hasSupabaseEnv } = await import("@/lib/supabase/env");
+  const { createClient } = await import("@/lib/supabase/server");
+
+  const entityId = extractEntityIdFromMessage(userMessage);
+  if (!entityId) {
+    return {
+      content: [
+        "Чтобы проверить надёжность участника, укажите UUID профиля.",
+        "",
+        "Пример: «Проверь надёжность участника id: <uuid>»",
+        "Или откройте публичный профиль `/profile/[id]` и скопируйте id из адреса.",
+        "",
+        "Лия покажет факты, документы и историю — без окончательного вердикта.",
+        "",
+        `_${LIA_RELIABILITY_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario: "check_reliability",
+        disclaimer: LIA_RELIABILITY_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  let displayName = "Участник";
+  let platformVerified = false;
+  let documentsVerified = 0;
+  let documentsPending = 0;
+
+  if (hasSupabaseEnv()) {
+    try {
+      const supabase = createClient();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, verification_status")
+        .eq("id", entityId)
+        .maybeSingle();
+      if (profile) {
+        displayName = profile.full_name || displayName;
+        platformVerified = profile.verification_status === "verified";
+      }
+      const [{ count: verifiedCount }, { count: pendingCount }] =
+        await Promise.all([
+          supabase
+            .from("documents")
+            .select("id", { count: "exact", head: true })
+            .eq("owner_id", entityId)
+            .eq("status", "verified"),
+          supabase
+            .from("documents")
+            .select("id", { count: "exact", head: true })
+            .eq("owner_id", entityId)
+            .eq("status", "pending"),
+        ]);
+      documentsVerified = verifiedCount ?? 0;
+      documentsPending = pendingCount ?? 0;
+    } catch {
+      // факты без документов
+    }
+  }
+
+  const bundle = await getUserReputationBundle(entityId);
+  const report = buildReliabilityReport({
+    displayName,
+    reputation: bundle?.profile ?? null,
+    reviews: bundle?.reviews ?? [],
+    history: bundle?.history ?? [],
+    badges: bundle?.badges ?? [],
+    platformVerified,
+    documentsVerified,
+    documentsPending,
+  });
+
+  const content = [
+    report.summary,
+    "",
+    "**Факты**",
+    ...report.facts.map((fact) => `• ${fact}`),
+    "",
+    "**Документы**",
+    report.documentsNote,
+    "",
+    "**История**",
+    report.historyNote,
+    "",
+    "**Ориентир (не вердикт)**",
+    report.recommendation,
+    "",
+    `Публичный профиль: [/profile/${entityId}](/profile/${entityId})`,
+    "",
+    `_${report.disclaimer}_`,
+  ].join("\n");
+
+  return {
+    content,
+    metadata: {
+      scenario: "check_reliability",
+      disclaimer: report.disclaimer,
+      entityId,
+      profileHref: `/profile/${entityId}`,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 export async function runLiaEngine(input: {
   userMessage: string;
   scenario?: LiaScenarioId | null;
@@ -570,6 +706,10 @@ export async function runLiaEngine(input: {
       solutionDraft: null,
       catalogDraft: null,
     };
+  }
+
+  if (scenario === "check_reliability") {
+    return handleCheckReliability(input.userMessage);
   }
 
   const [projects, opportunities, investments, experts] = await Promise.all([

@@ -8,7 +8,8 @@ export type LiaScenarioId =
   | "solution"
   | "realize_project"
   | "org_find_projects"
-  | "org_offer_opportunities";
+  | "org_offer_opportunities"
+  | "check_reliability";
 
 export type LiaSession = {
   id: string;

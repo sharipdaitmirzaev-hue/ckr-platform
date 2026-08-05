@@ -189,6 +189,35 @@ export async function updateDealStatusAction(
       entityId: dealId,
       metadata: { projectId, status },
     });
+
+    const { data: deal } = await supabase
+      .from("deals")
+      .select("id, initiator_id, partner_id, deal_type")
+      .eq("id", dealId)
+      .maybeSingle();
+
+    if (deal) {
+      const {
+        ensureReputationProfile,
+        recordEntityHistory,
+      } = await import("@/lib/reputation/ensure-profile");
+      const title = `Завершена сделка (${deal.deal_type ?? "deal"})`;
+      const participants = [deal.initiator_id, deal.partner_id].filter(
+        (id): id is string => Boolean(id),
+      );
+      for (const participantId of participants) {
+        await recordEntityHistory({
+          entityType: "user",
+          entityId: participantId,
+          kind: "deal",
+          title,
+          relatedType: "deal",
+          relatedId: dealId,
+          meta: { projectId, status },
+        });
+        await ensureReputationProfile("user", participantId);
+      }
+    }
   }
 
   revalidateWorkspace(projectId);
@@ -362,6 +391,23 @@ export async function updateMilestoneStatusAction(
     body: milestone?.title || status,
     metadata: { milestoneId, status },
   });
+
+  if (status === "completed") {
+    const { recordEntityHistory } = await import(
+      "@/lib/reputation/ensure-profile"
+    );
+    await recordEntityHistory({
+      entityType: "user",
+      entityId: user.id,
+      kind: "task",
+      title: milestone?.title
+        ? `Завершён этап: ${milestone.title}`
+        : "Завершён этап проекта",
+      relatedType: "milestone",
+      relatedId: milestoneId,
+      meta: { projectId, status },
+    });
+  }
 
   revalidateWorkspace(projectId);
   return { success: "Статус этапа обновлён." };
