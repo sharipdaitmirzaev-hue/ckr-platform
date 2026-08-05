@@ -34,6 +34,15 @@ async function getTargetOwnerId(
     return data;
   }
 
+  if (targetType === "investment") {
+    const { data } = await supabase
+      .from("investment_offers")
+      .select("owner_id, status, title")
+      .eq("id", targetId)
+      .maybeSingle();
+    return data;
+  }
+
   return null;
 }
 
@@ -70,7 +79,7 @@ export async function createApplicationAction(
   if (!target) {
     return {
       error:
-        "Объект заявки не найден. Для investment/expert модули появятся позже.",
+        "Объект заявки не найден. Для expert модуль появится позже.",
     };
   }
 
@@ -97,6 +106,7 @@ export async function createApplicationAction(
   revalidatePath("/dashboard/applications");
   revalidatePath(`/project/${parsed.data.targetId}`);
   revalidatePath(`/opportunity/${parsed.data.targetId}`);
+  revalidatePath(`/investment/${parsed.data.targetId}`);
 
   return { success: "Заявка отправлена. Владелец получит уведомление." };
 }

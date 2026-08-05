@@ -97,15 +97,16 @@ export default async function DashboardPage() {
               ready: true,
             },
             {
+              title: "Мои инвестиции",
+              text: "Инвестиционные предложения и интересы капитала.",
+              href: "/dashboard/investments",
+              ready: true,
+            },
+            {
               title: "Заявки",
               text: "Входящие и исходящие взаимодействия.",
               href: "/dashboard/applications",
               ready: true,
-            },
-            {
-              title: "Документы",
-              text: "Supabase Storage — позже.",
-              ready: false,
             },
           ] as const
         ).map((block) => (

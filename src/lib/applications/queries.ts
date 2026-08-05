@@ -33,6 +33,15 @@ async function resolveTargetTitle(
     return data?.title ?? null;
   }
 
+  if (targetType === "investment") {
+    const { data } = await supabase
+      .from("investment_offers")
+      .select("title")
+      .eq("id", targetId)
+      .maybeSingle();
+    return data?.title ?? null;
+  }
+
   return null;
 }
 

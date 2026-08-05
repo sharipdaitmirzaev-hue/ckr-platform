@@ -44,6 +44,14 @@ export type ApplicationStatus =
   | "rejected"
   | "closed";
 
+export type InvestmentType = "equity" | "loan" | "partnership" | "purchase";
+
+export type InvestmentOfferStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "closed";
+
 /** Универсальная заявка на взаимодействие. */
 export type Application = {
   id: string;
@@ -55,8 +63,6 @@ export type Application = {
   createdAt: string;
   updatedAt: string;
 };
-
-export type InvestmentOfferStatus = PublishStatus;
 
 /** Профиль пользователя платформы (расширяет auth.users). */
 export type User = {
@@ -132,19 +138,18 @@ export type Solution = {
   updatedAt?: string;
 };
 
-/** Инвестиционное предложение или интерес к проекту. */
-export type Investment = {
+/** Инвестиционное предложение. */
+export type InvestmentOffer = {
   id: string;
-  investorId: string;
+  ownerId: string;
   title: string;
-  summary: string;
-  description?: string;
-  ticketMin: number;
-  ticketMax: number;
+  description: string;
+  amountMin: number;
+  amountMax: number;
   currency: string;
-  sectors?: string[];
-  regions?: string[];
-  projectId?: string | null;
+  regions: string[];
+  categories: string[];
+  investmentType: InvestmentType;
   status: InvestmentOfferStatus;
   createdAt?: string;
   updatedAt?: string;

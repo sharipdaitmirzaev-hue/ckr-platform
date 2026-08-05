@@ -41,6 +41,14 @@ export type DbApplicationStatus =
   | "rejected"
   | "closed";
 
+export type DbInvestmentType = "equity" | "loan" | "partnership" | "purchase";
+
+export type DbInvestmentOfferStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "closed";
+
 export type ProfileRow = {
   id: string;
   full_name: string;
@@ -130,6 +138,22 @@ export type NotificationRow = {
   application_id: string | null;
   read_at: string | null;
   created_at: string;
+};
+
+export type InvestmentOfferRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  description: string;
+  amount_min: number | string;
+  amount_max: number | string;
+  currency: string;
+  regions: string[];
+  categories: string[];
+  investment_type: DbInvestmentType;
+  status: DbInvestmentOfferStatus;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Database = {
@@ -243,6 +267,25 @@ export type Database = {
         };
         Update: Partial<Omit<NotificationRow, "id" | "user_id" | "created_at">>;
       };
+      investment_offers: {
+        Row: InvestmentOfferRow;
+        Insert: {
+          id?: string;
+          owner_id: string;
+          title: string;
+          description?: string;
+          amount_min?: number;
+          amount_max?: number;
+          currency?: string;
+          regions?: string[];
+          categories?: string[];
+          investment_type?: DbInvestmentType;
+          status?: DbInvestmentOfferStatus;
+        };
+        Update: Partial<
+          Omit<InvestmentOfferRow, "id" | "owner_id" | "created_at">
+        >;
+      };
     };
     Enums: {
       user_role: DbUserRole;
@@ -251,6 +294,8 @@ export type Database = {
       opportunity_status: DbOpportunityStatus;
       application_target_type: DbApplicationTargetType;
       application_status: DbApplicationStatus;
+      investment_type: DbInvestmentType;
+      investment_offer_status: DbInvestmentOfferStatus;
     };
   };
 };

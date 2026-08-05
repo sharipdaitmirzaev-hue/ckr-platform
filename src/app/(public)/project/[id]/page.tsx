@@ -1,3 +1,4 @@
+import { InvestmentCard } from "@/components/investments/investment-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -7,6 +8,7 @@ import {
 } from "@/config/projects";
 import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { listMatchingInvestmentOffersForProject } from "@/lib/investments/queries";
 import { getProjectById } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -46,6 +48,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   if (project.status !== "published" && !isOwner) {
     notFound();
   }
+
+  const matchingInvestors =
+    project.status === "published"
+      ? await listMatchingInvestmentOffersForProject(project)
+      : [];
 
   return (
     <div className="py-14 sm:py-16">
@@ -110,6 +117,52 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             {project.description}
           </div>
         </section>
+
+        {project.status === "published" ? (
+          <section className="mt-12 border-t border-border pt-10">
+            <h2 className="font-display text-xl text-foreground">
+              Подходит инвесторам
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Инвестиционные предложения, близкие по сумме, отрасли и региону.
+              Инвестор может отправить заявку на проект через платформу.
+            </p>
+
+            {matchingInvestors.length > 0 ? (
+              <div className="mt-6 grid gap-6 md:grid-cols-2">
+                {matchingInvestors.map((offer) => (
+                  <InvestmentCard
+                    key={offer.id}
+                    offer={offer}
+                    ownerName={offer.ownerName}
+                    href={`/investment/${offer.id}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Пока нет точных совпадений. Смотрите полный каталог инвестиций
+                или отправьте предложение напрямую.
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink href="/investments" variant="outline">
+                Каталог инвестиций
+              </ButtonLink>
+            </div>
+
+            <div className="mt-6">
+              <ApplicationButton
+                targetType="project"
+                targetId={project.id}
+                label="Предложить инвестицию"
+                isAuthenticated={Boolean(current)}
+                isOwner={isOwner}
+              />
+            </div>
+          </section>
+        ) : null}
 
         <div className="mt-12 space-y-6 border-t border-border pt-8">
           <div className="flex flex-wrap gap-3">

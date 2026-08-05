@@ -31,7 +31,9 @@ export function ApplicationButton({
   const nextPath =
     targetType === "project"
       ? `/project/${targetId}`
-      : `/opportunity/${targetId}`;
+      : targetType === "opportunity"
+        ? `/opportunity/${targetId}`
+        : `/investment/${targetId}`;
 
   if (!isAuthenticated) {
     return (

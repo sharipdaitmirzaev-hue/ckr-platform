@@ -49,6 +49,9 @@
 | `/dashboard/opportunities` | Мои возможности |
 | `/dashboard/opportunities/create` | Создание возможности |
 | `/dashboard/applications` | Входящие / исходящие заявки |
+| `/investments` | Каталог инвестиционных предложений |
+| `/investment/[id]` | Карточка инвестиции |
+| `/dashboard/investments` | Мои инвестиционные предложения |
 
 ## Модули
 
@@ -59,6 +62,7 @@
 | Решения | Комплексные предложения | Каркас + mock + SolutionCard |
 | Auth / Dashboard | Регистрация, роли, ЛК | Этап 1: Supabase Auth |
 | Заявки | Взаимодействия участников | Этап 4: applications + notifications |
+| Инвестиции | Предложения капитала | Этап 5: investment_offers |
 | Лия | ИИ-навигатор | Виджет + API placeholder |
 
 ## Слои

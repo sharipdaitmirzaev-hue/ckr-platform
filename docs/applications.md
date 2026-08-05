@@ -25,8 +25,9 @@
 | `investment` | Инвестиционное предложение |
 | `expert` | Экспертная услуга |
 
-На Этапе 4 полностью работают `project` и `opportunity`.  
-`investment` и `expert` заложены в схему.
+На Этапе 4 работают `project` и `opportunity`.  
+На Этапе 5 подключён `investment` (`investment_offers`).  
+`expert` — следующий модуль.
 
 ---
 

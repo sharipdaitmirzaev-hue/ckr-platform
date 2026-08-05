@@ -16,6 +16,11 @@ export const mainNav: NavItem[] = [
     description: "Земля, помещения, оборудование, готовый бизнес",
   },
   {
+    label: "Инвестиции",
+    href: "/investments",
+    description: "Инвестиционные предложения и интересы капитала",
+  },
+  {
     label: "Решения",
     href: "/solutions",
     description: "Комплексные предложения для реализации проектов",
@@ -31,6 +36,7 @@ export const dashboardNav: NavItem[] = [
   { label: "Обзор", href: "/dashboard" },
   { label: "Мои проекты", href: "/dashboard/projects" },
   { label: "Мои возможности", href: "/dashboard/opportunities" },
+  { label: "Мои инвестиции", href: "/dashboard/investments" },
   { label: "Заявки", href: "/dashboard/applications" },
   { label: "Избранное", href: "/dashboard/favorites" },
   { label: "Документы", href: "/dashboard/documents" },
