@@ -50,6 +50,11 @@ export const mainNav: NavItem[] = [
     href: "/about",
     description: "Миссия и подход ЦКР",
   },
+  {
+    label: "Функции",
+    href: "/features",
+    description: "Лия, проекты, инвестиции, сделки и сопровождение",
+  },
 ];
 
 export const dashboardNav: NavItem[] = [

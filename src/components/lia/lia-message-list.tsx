@@ -39,11 +39,16 @@ function renderContent(content: string) {
 export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
   if (messages.length === 0) {
     return (
-      <p className="text-sm text-muted">
-        Начните с «Помоги создать бизнес-проект», «Аудит бизнеса» или соберите
-        комплексное решение. После создания проекта откройте карточку и нажмите
-        «Анализ Лией».
-      </p>
+      <div className="space-y-2 text-sm text-muted">
+        <p>
+          Начните со сценария ниже: создать проект, аудит, стратегия, поиск
+          решений или оценка прогресса.
+        </p>
+        <p>
+          После создания проекта откройте workspace и нажмите «Анализ Лией» —
+          Лия только рекомендует и не действует без вашего подтверждения.
+        </p>
+      </div>
     );
   }
 

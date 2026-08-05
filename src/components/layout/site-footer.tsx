@@ -65,6 +65,22 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
+                  href="/about"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  О платформе
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/features"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Функции
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/demo"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >

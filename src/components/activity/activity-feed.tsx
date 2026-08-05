@@ -10,10 +10,19 @@ type ActivityFeedProps = {
 export function ActivityFeed({ items }: ActivityFeedProps) {
   if (items.length === 0) {
     return (
-      <p className="text-sm text-muted">
-        Лента активности пуста. События появятся при работе с проектами,
-        сделками и документами.
-      </p>
+      <div className="space-y-2 text-sm text-muted">
+        <p>Лента активности пуста.</p>
+        <p>
+          События появятся при работе с{" "}
+          <Link
+            href="/dashboard/projects"
+            className="text-accent hover:underline"
+          >
+            проектами
+          </Link>
+          , сделками и документами.
+        </p>
+      </div>
     );
   }
 

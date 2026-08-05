@@ -6,7 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.34.0-beta** (Project Outcomes). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Outcomes](./docs/project-outcomes.md) · [Execution](./docs/project-execution.md).
+Текущая версия ядра: **0.35.0-beta** (упаковка ЦКР 1.0 для закрытого пилота).  
+Обзор: [docs/ckr-1.0-overview.md](./docs/ckr-1.0-overview.md) · [User flows](./docs/user-flows.md) · [Demo script](./docs/demo-script.md) · страницы `/about` и `/features`
 
 ## Стек
 
@@ -47,21 +48,27 @@ supabase           # миграции
 
 ## Документация
 
+### 1.0 / пилот
+
+- [Обзор ЦКР 1.0](./docs/ckr-1.0-overview.md)
+- [Пользовательские пути](./docs/user-flows.md)
+- [Demo-сценарий](./docs/demo-script.md)
+- [Roadmap после 1.0](./docs/roadmap-after-1.0.md)
+- [Пилот ТИНДА](./docs/tinda-pilot.md)
+- [Closed pilot](./docs/closed-pilot.md)
+
 ### Ядро
 
 - [Обзор платформы](./docs/platform-overview.md)
-- [Аудит ядра](./docs/core-audit.md)
-- [Аудит безопасности](./docs/security-audit.md)
-- [Launch readiness 1.0](./docs/launch-readiness.md)
-- [Деплой](./docs/deployment.md) · [Backup](./docs/backup.md) · [Production checklist](./docs/production-checklist.md)
-- [Роли и права](./docs/roles-and-permissions.md)
-- [Потоки Лии](./docs/lia-flows.md)
 - [Методология ЦКР](./docs/ckr-methodology.md)
 - [Project Execution](./docs/project-execution.md)
 - [Project Outcomes](./docs/project-outcomes.md)
+- [Потоки Лии](./docs/lia-flows.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 - [Changelog](./docs/changelog.md)
+- [Launch readiness](./docs/launch-readiness.md)
+- [Деплой](./docs/deployment.md) · [Backup](./docs/backup.md) · [Production checklist](./docs/production-checklist.md)
 
 ### Модули
 
@@ -69,10 +76,8 @@ supabase           # миграции
 - [Возможности](./docs/opportunities.md) · [Заявки](./docs/applications.md) · [Инвестиции](./docs/investments.md)
 - [Эксперты](./docs/experts.md) · [Верификация](./docs/verification.md) · [Админ](./docs/admin.md)
 - [Лия](./docs/lia.md) · [Сделки и workspace](./docs/deals-and-workspace.md)
-- [Коммуникации](./docs/notifications-and-communication.md) · [Публичная платформа](./docs/public-platform.md)
-- [Монетизация](./docs/monetization.md) · [Аналитика](./docs/analytics.md)
-- [Demo](./docs/demo-launch.md) · [Beta](./docs/beta-launch.md) · [CRM](./docs/crm.md)
-- [Операторский центр](./docs/operator-center.md) · [Партнёры](./docs/partners.md) · [Репутация](./docs/reputation.md)
+- [CRM](./docs/crm.md) · [Операторский центр](./docs/operator-center.md) · [Партнёры](./docs/partners.md)
+- [Репутация](./docs/reputation.md) · [Публичная платформа](./docs/public-platform.md)
 
 ## Фирменный стиль
 
@@ -82,5 +87,6 @@ supabase           # миграции
 | Светлый | `#F2F2F2` |
 | Вторичный | `#BFC4CA` |
 | Акцент | `#C9A227` |
+| Surface | `#0C1E2E` |
 
-Цвета в UI — через CSS-переменные `--ckr-*` и Tailwind-токены (`background`, `foreground`, `muted`, `accent`, `surface`, `border`).
+Шрифты: Manrope (UI), Onest (display).

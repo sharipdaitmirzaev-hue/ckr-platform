@@ -30,7 +30,16 @@ export function LiaRecommendations({ items }: LiaRecommendationsProps) {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted">Рекомендаций пока нет.</p>
+        <div className="space-y-2 text-sm text-muted">
+          <p>Рекомендаций пока нет.</p>
+          <p>
+            Создайте проект или откройте{" "}
+            <Link href="/lia" className="text-accent hover:underline">
+              Лию
+            </Link>
+            , чтобы получить следующий шаг.
+          </p>
+        </div>
       ) : (
         <ul className="space-y-3">
           {items.map((item) => (

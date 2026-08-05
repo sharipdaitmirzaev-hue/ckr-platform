@@ -5,7 +5,7 @@
 
 Логика: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Версия ядра после Этапа 34: `0.34.0-beta` (Project Outcomes — результаты и эффективность ЦКР, см. [project-outcomes.md](./project-outcomes.md)).
+Версия ядра после Этапа 35: `0.35.0-beta` (упаковка ЦКР 1.0, см. [ckr-1.0-overview.md](./ckr-1.0-overview.md)).
 
 ---
 
@@ -39,6 +39,7 @@
 | Сделки и workspace | `/dashboard/projects/[id]/workspace` | deals-and-workspace.md |
 | Project Execution | roadmap / KPI / прогресс в workspace | project-execution.md |
 | Project Outcomes | `/admin/results`, results / финансы | project-outcomes.md |
+| Презентация 1.0 | `/about`, `/features` | ckr-1.0-overview.md, user-flows.md |
 | Публичная платформа | `/`, SEO | public-platform.md |
 | Монетизация | `/pricing`, billing | monetization.md |
 | Аналитика | admin analytics | analytics.md |

@@ -1,6 +1,7 @@
 import { ExpertCard } from "@/components/experts/expert-card";
 import { RoleLanding } from "@/components/marketing/role-landing";
 import { Container } from "@/components/ui/container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
   EXPERT_SPECIALIZATIONS,
@@ -88,9 +89,13 @@ export default async function ExpertsPage({ searchParams }: ExpertsPageProps) {
           </div>
 
           {experts.length === 0 ? (
-            <p className="mt-12 text-sm text-muted">
-              Опубликованных экспертов пока нет. Создайте профиль в кабинете.
-            </p>
+            <EmptyState
+              className="mt-12"
+              title="Опубликованных экспертов пока нет"
+              description="Создайте профиль эксперта в кабинете и отправьте на модерацию — после публикации он появится в каталоге."
+              actionHref="/dashboard/expert"
+              actionLabel="Создать профиль эксперта"
+            />
           ) : (
             <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {experts.map((expert) => (

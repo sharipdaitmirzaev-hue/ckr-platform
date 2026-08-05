@@ -4,6 +4,7 @@ import { ProjectCard } from "@/components/projects/project-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { brand } from "@/config/brand";
 import { howCkrWorks, roleLandings } from "@/config/public-landing";
@@ -182,9 +183,13 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="mt-10 text-sm text-muted">
-              Опубликованные возможности появятся здесь после модерации.
-            </p>
+            <EmptyState
+              className="mt-10"
+              title="Возможности появятся после публикации"
+              description="Разместите ресурс или откройте демо-каталог, чтобы увидеть примеры."
+              actionHref="/opportunities"
+              actionLabel="К каталогу возможностей"
+            />
           )}
         </Container>
       </section>
@@ -213,9 +218,13 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="mt-10 text-sm text-muted">
-              Опубликованные проекты появятся здесь. Создайте первый с Лией.
-            </p>
+            <EmptyState
+              className="mt-10"
+              title="Опубликованных проектов пока нет"
+              description="Создайте первый проект с Лией — от идеи до поиска ресурсов."
+              actionHref="/lia"
+              actionLabel="Создать проект с Лией"
+            />
           )}
         </Container>
       </section>
@@ -257,12 +266,15 @@ export default async function HomePage() {
               изучить каталоги ЦКР.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <ButtonLink href="/lia" size="lg">
               Создать проект с Лией
             </ButtonLink>
             <ButtonLink href="/register" variant="outline" size="lg">
               Создать аккаунт
+            </ButtonLink>
+            <ButtonLink href="/about" variant="outline" size="lg">
+              О платформе
             </ButtonLink>
           </div>
         </Container>
