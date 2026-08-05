@@ -93,6 +93,22 @@ export type DbDocumentStatus =
 
 export type DbVerificationRequestStatus = "pending" | "approved" | "rejected";
 
+export type LiaAnalysisRow = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  summary: string;
+  available_resources: unknown;
+  missing_resources: unknown;
+  recommendations: unknown;
+  risks: unknown;
+  next_steps: unknown;
+  internal_matches: unknown;
+  external_results: unknown;
+  report: unknown;
+  created_at: string;
+};
+
 export type ProfileRow = {
   id: string;
   full_name: string;
@@ -472,6 +488,34 @@ export type Database = {
         Update: Partial<{
           content: string;
           metadata: Record<string, unknown>;
+        }>;
+      };
+      lia_analyses: {
+        Row: LiaAnalysisRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          project_id: string;
+          summary?: string;
+          available_resources?: unknown;
+          missing_resources?: unknown;
+          recommendations?: unknown;
+          risks?: unknown;
+          next_steps?: unknown;
+          internal_matches?: unknown;
+          external_results?: unknown;
+          report?: unknown;
+        };
+        Update: Partial<{
+          summary: string;
+          available_resources: unknown;
+          missing_resources: unknown;
+          recommendations: unknown;
+          risks: unknown;
+          next_steps: unknown;
+          internal_matches: unknown;
+          external_results: unknown;
+          report: unknown;
         }>;
       };
     };

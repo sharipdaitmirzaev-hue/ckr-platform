@@ -1,5 +1,6 @@
 import { LIA_DISCLAIMER } from "@/config/lia";
 import type {
+  LiaCatalogDraft,
   LiaMessage,
   LiaMessageMetadata,
   LiaResultLink,
@@ -20,6 +21,7 @@ export type LiaProviderOutput = {
   results: LiaResultLink[];
   projectDraft: ProjectDraft | null;
   solutionDraft: SolutionDraft | null;
+  catalogDraft: LiaCatalogDraft | null;
   provider: string;
 };
 
@@ -31,7 +33,7 @@ export type LiaProvider = {
 /**
  * Абстракция провайдера ИИ.
  * Сейчас: mock (без ключа) или openai-compatible stub (если задан LIA_API_KEY).
- * Позже: OpenAI / внешняя / локальная модель через тот же контракт.
+ * Приватные документы пользователей во внешние модели не отправляются.
  */
 export function getLiaProvider(): LiaProvider {
   const apiKey = process.env.LIA_API_KEY?.trim();
@@ -41,8 +43,6 @@ export function getLiaProvider(): LiaProvider {
     return mockLiaProvider;
   }
 
-  // Ключ задан — пока безопасный stub: не уводим сырые данные во внешний API
-  // до явной настройки LIA_PROVIDER=openai и серверной интеграции.
   if (providerName === "openai") {
     return createOpenAiCompatibleProvider(apiKey);
   }
@@ -54,8 +54,6 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
   return {
     id: "openai-compatible",
     async generate(input) {
-      // На Этапе 9 не делаем сетевой вызов по умолчанию без явного base URL.
-      // Если base не задан — безопасный fallback на mock-логику.
       const baseUrl = process.env.LIA_API_BASE_URL?.trim();
       if (!baseUrl) {
         const mock = await mockLiaProvider.generate(input);
@@ -70,12 +68,12 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
         };
       }
 
-      // Минимальный совместимый вызов; в историю не передаём приватные документы.
+      // В историю не передаём приватные документы и вложения.
       const messages = [
         {
           role: "system",
           content:
-            "Ты Лия — ИИ-навигатор платформы ЦКР. Давай предварительные рекомендации. Не давай юридических/финансовых гарантий. Отвечай по-русски кратко.",
+            "Ты Лия — ИИ-навигатор платформы ЦКР. Давай предварительные рекомендации. Не создавай заявки и не меняй данные. Не давай юридических/финансовых гарантий. Отвечай по-русски кратко.",
         },
         ...input.history
           .filter((item) => item.role === "user" || item.role === "assistant")
@@ -88,18 +86,21 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
       ];
 
       try {
-        const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
+        const response = await fetch(
+          `${baseUrl.replace(/\/$/, "")}/chat/completions`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: process.env.LIA_MODEL || "gpt-4o-mini",
+              messages,
+              temperature: 0.3,
+            }),
           },
-          body: JSON.stringify({
-            model: process.env.LIA_MODEL || "gpt-4o-mini",
-            messages,
-            temperature: 0.3,
-          }),
-        });
+        );
 
         if (!response.ok) {
           const mock = await mockLiaProvider.generate(input);
@@ -129,6 +130,7 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
           results: [],
           projectDraft: null,
           solutionDraft: null,
+          catalogDraft: null,
           provider: "openai-compatible",
         };
       } catch {
@@ -142,13 +144,12 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
   };
 }
 
-/** Экспортируем mock для движка сценариев (поиск/черновики собираются снаружи). */
 export const mockLiaProvider: LiaProvider = {
   id: "mock",
   async generate(input) {
     return {
       content:
-        "Я Лия, навигатор ЦКР. Уточните задачу или выберите быстрый сценарий — подберу объекты платформы и следующие шаги.",
+        "Я Лия, навигатор ЦКР. Уточните задачу или выберите быстрый сценарий — подберу объекты платформы и следующие шаги. Для анализа проекта откройте карточку и нажмите «Анализ Лией».",
       metadata: {
         disclaimer: LIA_DISCLAIMER,
         scenario: input.scenario,
@@ -156,6 +157,7 @@ export const mockLiaProvider: LiaProvider = {
       results: [],
       projectDraft: null,
       solutionDraft: null,
+      catalogDraft: null,
       provider: "mock",
     };
   },

@@ -16,6 +16,14 @@ export function projectDraftToSearchParams(draft: ProjectDraft): string {
   );
   params.set("currency", draft.currency || "RUB");
   params.set("stage", draft.stage || "idea");
+  params.set(
+    "existingResources",
+    (draft.existing_resources || draft.assets || "").slice(0, 500),
+  );
+  params.set(
+    "requiredResources",
+    (draft.required_resources || draft.needs || "").slice(0, 500),
+  );
   return params.toString();
 }
 
@@ -39,11 +47,23 @@ export function projectDraftFromSearchParams(
   if (!title) return null;
 
   const investment = Number(read("investmentRequired") || "0");
+  const existing = read("existingResources").trim();
+  const required = read("requiredResources").trim();
+  let description = read("description").slice(0, 4000);
+  if (existing || required) {
+    const extras = [
+      existing ? `\n\nЧто уже есть: ${existing}` : "",
+      required ? `\nЧто требуется: ${required}` : "",
+    ].join("");
+    if (!description.includes("Что уже есть") && extras) {
+      description = `${description}${extras}`.trim();
+    }
+  }
 
   return {
     title: title.slice(0, 160),
     summary: read("summary").slice(0, 400),
-    description: read("description").slice(0, 4000),
+    description,
     category: read("category").slice(0, 80) || "production",
     region: read("region").slice(0, 120),
     investmentRequired: Number.isFinite(investment) ? investment : 0,
@@ -54,6 +74,11 @@ export function projectDraftFromSearchParams(
 }
 
 export function normalizeProjectDraft(draft: ProjectDraft): ProjectDraft {
+  const existing =
+    draft.existing_resources?.trim() || draft.assets?.trim() || "";
+  const required =
+    draft.required_resources?.trim() || draft.needs?.trim() || "";
+
   return {
     title: draft.title.trim().slice(0, 160),
     summary: draft.summary.trim().slice(0, 400),
@@ -63,7 +88,9 @@ export function normalizeProjectDraft(draft: ProjectDraft): ProjectDraft {
     investment_required: Math.max(0, Number(draft.investment_required) || 0),
     stage: draft.stage || "idea",
     currency: draft.currency || "RUB",
-    assets: draft.assets,
-    needs: draft.needs,
+    existing_resources: existing,
+    required_resources: required,
+    assets: existing,
+    needs: required,
   };
 }

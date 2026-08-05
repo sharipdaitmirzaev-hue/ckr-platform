@@ -139,6 +139,43 @@ export function ProjectCreationWizard({
         </div>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label
+            className="text-sm text-muted"
+            htmlFor="lia-draft-existing"
+          >
+            Что уже есть
+          </label>
+          <textarea
+            id="lia-draft-existing"
+            rows={3}
+            value={form.existing_resources || ""}
+            onChange={(event) =>
+              update("existing_resources", event.target.value)
+            }
+            className="flex w-full rounded-sm border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
+          />
+        </div>
+        <div className="space-y-2">
+          <label
+            className="text-sm text-muted"
+            htmlFor="lia-draft-required"
+          >
+            Что требуется
+          </label>
+          <textarea
+            id="lia-draft-required"
+            rows={3}
+            value={form.required_resources || ""}
+            onChange={(event) =>
+              update("required_resources", event.target.value)
+            }
+            className="flex w-full rounded-sm border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
+          />
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
         <Button type="button" onClick={() => onSave(form)}>
           Сохранить изменения

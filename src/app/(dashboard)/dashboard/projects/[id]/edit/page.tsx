@@ -1,7 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { ProjectLiaActions } from "@/features/lia/components/project-lia-actions";
 import { ProjectForm } from "@/features/projects/components/project-form";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { listLiaAnalysesForProject } from "@/lib/lia/queries";
 import { getProjectById, listCategories } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -16,9 +18,10 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
   const current = await getCurrentUser();
   if (!current) redirect("/login");
 
-  const [project, categories] = await Promise.all([
+  const [project, categories, analyses] = await Promise.all([
     getProjectById(params.id),
     listCategories(),
+    listLiaAnalysesForProject(params.id, current.user.id, 1),
   ]);
 
   if (!project) notFound();
@@ -37,6 +40,20 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
           mode="edit"
           categories={categories}
           project={project}
+        />
+      </Card>
+
+      <Card variant="surface" className="space-y-4 p-5 sm:p-6">
+        <h2 className="font-display text-xl text-foreground">
+          Анализ Лией
+        </h2>
+        <p className="text-sm text-muted">
+          После создания черновика запустите анализ и поиск решений внутри ЦКР
+          и во внешних источниках (mock).
+        </p>
+        <ProjectLiaActions
+          projectId={project.id}
+          initialReport={analyses[0]?.report ?? null}
         />
       </Card>
     </div>

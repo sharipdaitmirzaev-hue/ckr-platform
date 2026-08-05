@@ -11,6 +11,7 @@ import {
 } from "@/lib/lia/search";
 import { getLiaProvider } from "@/lib/lia/provider";
 import type {
+  LiaCatalogDraft,
   LiaMessage,
   LiaMessageMetadata,
   LiaResultLink,
@@ -25,6 +26,7 @@ export type LiaEngineResult = {
   results: LiaResultLink[];
   projectDraft: ProjectDraft | null;
   solutionDraft: SolutionDraft | null;
+  catalogDraft: LiaCatalogDraft | null;
 };
 
 function detectScenario(
@@ -100,7 +102,9 @@ function ensureMinLength(text: string, min: number, fallback: string) {
   const value = text.trim();
   if (value.length >= min) return value;
   const padded = `${value}${value ? " " : ""}${fallback}`.trim();
-  return padded.length >= min ? padded : `${padded} ${".".repeat(min)}`.slice(0, min);
+  return padded.length >= min
+    ? padded
+    : `${padded} ${".".repeat(min)}`.slice(0, min);
 }
 
 function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
@@ -109,21 +113,21 @@ function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
   const category = mapCategorySlug(answers.category || "production");
   const investmentRequired = parseInvestment(answers.investment || "0");
   const stage = mapStage(answers.stage || "idea");
-  const assets = answers.assets?.trim() || "";
-  const needs = answers.needs?.trim() || "";
+  const existingResources = answers.assets?.trim() || "";
+  const requiredResources = answers.needs?.trim() || "";
   const description = answers.description?.trim() || "";
 
   const summaryBase = [
     description.slice(0, 160) || `Проект «${title}» в регионе ${region}.`,
-    needs ? `Требуется: ${needs}` : null,
+    requiredResources ? `Требуется: ${requiredResources}` : null,
   ]
     .filter(Boolean)
     .join(" ");
 
   const fullDescription = [
     description || `Описание проекта «${title}».`,
-    assets ? `\n\nЧто уже есть: ${assets}` : "",
-    needs ? `\nЧто требуется: ${needs}` : "",
+    existingResources ? `\n\nЧто уже есть: ${existingResources}` : "",
+    requiredResources ? `\nЧто требуется: ${requiredResources}` : "",
   ]
     .join("")
     .trim();
@@ -145,8 +149,10 @@ function buildProjectDraft(answers: Record<string, string>): ProjectDraft {
     investment_required: investmentRequired,
     stage,
     currency: "RUB",
-    assets,
-    needs,
+    existing_resources: existingResources,
+    required_resources: requiredResources,
+    assets: existingResources,
+    needs: requiredResources,
   };
 }
 
@@ -158,7 +164,6 @@ async function handleBusinessIdea(
   const answers = { ...state.answers };
   let step = state.step;
 
-  // Старт сценария — не записываем prompt как ответ на вопрос
   const isStart =
     PROJECT_FLOW_START_PATTERN.test(userMessage) &&
     Object.keys(answers).length === 0 &&
@@ -192,6 +197,7 @@ async function handleBusinessIdea(
       results: [],
       projectDraft: null,
       solutionDraft: null,
+      catalogDraft: null,
     };
   }
 
@@ -218,6 +224,7 @@ async function handleBusinessIdea(
     results: [],
     projectDraft,
     solutionDraft: null,
+    catalogDraft: null,
   };
 }
 
@@ -229,22 +236,25 @@ async function handleSearchScenario(
   let intro = "";
 
   if (scenario === "find_investments") {
-    results = await searchInvestments(query || "инвестиции");
-    intro = "Подобрала инвестиционные предложения из каталога ЦКР.";
+    results = await searchInvestments(query, 5);
+    intro = "Подходящие инвестиционные предложения в каталоге ЦКР:";
   } else if (scenario === "find_property") {
-    results = await searchOpportunities(query || "земля помещение");
-    intro = "Подобрала возможности по земле и помещениям.";
+    results = await searchOpportunities(
+      `${query} земля помещение недвижимость`,
+      5,
+    );
+    intro = "Земля и помещения в каталоге возможностей:";
   } else if (scenario === "find_expert") {
-    results = await searchExperts(query || "эксперт");
-    intro = "Подобрала экспертов из каталога ЦКР.";
+    results = await searchExperts(query, 5);
+    intro = "Эксперты ЦКР по запросу:";
   }
 
   if (results.length === 0) {
     return {
       content: [
-        intro,
+        intro || "Поиск по каталогам ЦКР",
         "",
-        "Пока точных совпадений нет. Уточните регион, отрасль или сумму — или откройте каталог вручную.",
+        "Точных совпадений пока нет. Уточните отрасль, регион или сумму.",
         "",
         `_${LIA_DISCLAIMER}_`,
       ].join("\n"),
@@ -256,11 +266,15 @@ async function handleSearchScenario(
       results: [],
       projectDraft: null,
       solutionDraft: null,
+      catalogDraft: null,
     };
   }
 
   const list = results
-    .map((item, index) => `${index + 1}. [${item.title}](${item.href}) — ${item.summary}`)
+    .map(
+      (item, index) =>
+        `${index + 1}. [${item.title}](${item.href}) — ${item.summary}`,
+    )
     .join("\n");
 
   return {
@@ -273,6 +287,7 @@ async function handleSearchScenario(
     results,
     projectDraft: null,
     solutionDraft: null,
+    catalogDraft: null,
   };
 }
 
@@ -296,7 +311,7 @@ async function handleSolution(query: string): Promise<LiaEngineResult> {
     missingData.push("Отрасль / направление");
   }
 
-  const solutionDraft: SolutionDraft = {
+  const catalogDraft: LiaCatalogDraft = {
     task,
     projects,
     opportunities,
@@ -335,14 +350,16 @@ async function handleSolution(query: string): Promise<LiaEngineResult> {
     section("Эксперты", experts),
     "",
     "**Следующие шаги:**",
-    ...solutionDraft.nextSteps.map((step, i) => `${i + 1}. ${step}`),
+    ...catalogDraft.nextSteps.map((step, i) => `${i + 1}. ${step}`),
     "",
     "**Риски:**",
-    ...solutionDraft.risks.map((risk) => `- ${risk}`),
+    ...catalogDraft.risks.map((risk) => `- ${risk}`),
     "",
     missingData.length
       ? `**Недостающие данные:** ${missingData.join("; ")}`
       : "**Недостающие данные:** критичных пробелов не видно",
+    "",
+    "Для анализа конкретного проекта откройте карточку проекта и нажмите «Анализ Лией».",
     "",
     `_${LIA_DISCLAIMER}_`,
   ].join("\n");
@@ -359,12 +376,13 @@ async function handleSolution(query: string): Promise<LiaEngineResult> {
     metadata: {
       scenario: "solution",
       results,
-      solutionDraft,
+      catalogDraft,
       disclaimer: LIA_DISCLAIMER,
     },
     results,
     projectDraft: null,
-    solutionDraft,
+    solutionDraft: null,
+    catalogDraft,
   };
 }
 
@@ -391,7 +409,6 @@ export async function runLiaEngine(input: {
     return handleSolution(input.userMessage);
   }
 
-  // Общий запрос: лёгкий подбор + текст провайдера
   const [projects, opportunities, investments, experts] = await Promise.all([
     searchProjects(input.userMessage, 2),
     searchOpportunities(input.userMessage, 2),
@@ -430,5 +447,6 @@ export async function runLiaEngine(input: {
     results,
     projectDraft: null,
     solutionDraft: null,
+    catalogDraft: null,
   };
 }

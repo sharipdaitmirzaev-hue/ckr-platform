@@ -1,16 +1,29 @@
 "use server";
 
 import { PROJECT_STAGES } from "@/config/projects";
+import {
+  buildSolutionReport,
+  formatSolutionReportText,
+} from "@/lib/lia/analysis";
 import { normalizeProjectDraft } from "@/lib/lia/project-draft";
+import { insertLiaAnalysis } from "@/lib/lia/queries";
 import { slugifyTitle, withSlugSuffix } from "@/lib/projects/slug";
+import { getProjectById } from "@/lib/projects/queries";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectDraft } from "@/types/lia";
+import type { ProjectDraft, SolutionReport } from "@/types/lia";
 import type { ProjectStage } from "@/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type LiaProjectActionState = {
   error?: string;
+};
+
+export type LiaAnalyzeActionState = {
+  error?: string;
+  analysisId?: string;
+  report?: SolutionReport;
+  reportText?: string;
 };
 
 async function ensureUniqueSlug(
@@ -71,6 +84,20 @@ export async function createProjectFromLiaDraftAction(
 
   const slug = await ensureUniqueSlug(supabase, draft.title);
 
+  const descriptionParts = [
+    draft.description,
+    draft.existing_resources &&
+    !draft.description.includes("Что уже есть")
+      ? `\n\nЧто уже есть: ${draft.existing_resources}`
+      : "",
+    draft.required_resources &&
+    !draft.description.includes("Что требуется")
+      ? `\nЧто требуется: ${draft.required_resources}`
+      : "",
+  ]
+    .join("")
+    .trim();
+
   const { data, error } = await supabase
     .from("projects")
     .insert({
@@ -78,7 +105,7 @@ export async function createProjectFromLiaDraftAction(
       title: draft.title,
       slug,
       summary: draft.summary,
-      description: draft.description,
+      description: descriptionParts,
       category: draft.category,
       region: draft.region,
       investment_required: draft.investment_required,
@@ -97,5 +124,63 @@ export async function createProjectFromLiaDraftAction(
   revalidatePath("/dashboard/projects");
   revalidatePath(`/dashboard/projects/${data.id}/edit`);
   revalidatePath(`/project/${data.id}`);
+  revalidatePath("/lia");
   redirect(`/dashboard/projects/${data.id}/edit`);
+}
+
+/**
+ * Анализ проекта Лией + поиск решений.
+ * Только рекомендации: не создаёт заявки и не меняет проект.
+ */
+export async function analyzeProjectWithLiaAction(
+  projectId: string,
+  mode: "analyze" | "find_solutions" = "find_solutions",
+): Promise<LiaAnalyzeActionState> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { error: "Войдите в аккаунт, чтобы запустить анализ Лией." };
+  }
+
+  const project = await getProjectById(projectId);
+  if (!project) {
+    return { error: "Проект не найден." };
+  }
+
+  if (project.ownerId !== user.id) {
+    return { error: "Анализ доступен владельцу проекта." };
+  }
+
+  try {
+    const report = await buildSolutionReport(project, {
+      includeExternal: mode === "find_solutions",
+    });
+
+    const saved = await insertLiaAnalysis({
+      userId: user.id,
+      projectId: project.id,
+      report,
+    });
+
+    revalidatePath("/lia");
+    revalidatePath(`/project/${project.id}`);
+    revalidatePath(`/dashboard/projects/${project.id}/edit`);
+
+    return {
+      analysisId: saved?.id,
+      report,
+      reportText: formatSolutionReportText(report),
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Не удалось выполнить анализ. Примените миграцию lia_analyses.",
+    };
+  }
 }

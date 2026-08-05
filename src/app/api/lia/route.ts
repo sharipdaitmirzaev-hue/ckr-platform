@@ -28,6 +28,10 @@ export async function GET() {
       "opportunity_search",
       "expert_search",
       "solution_draft",
+      "project_analysis",
+      "internal_search",
+      "external_search_mock",
+      "solution_report",
       "dialog_sessions",
     ],
     disclaimer: LIA_DISCLAIMER,
@@ -168,6 +172,7 @@ export async function POST(request: Request) {
     results: engine.results,
     projectDraft: engine.projectDraft,
     solutionDraft: engine.solutionDraft,
+    catalogDraft: engine.catalogDraft,
     disclaimer: LIA_DISCLAIMER,
   });
 }

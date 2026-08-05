@@ -9,9 +9,11 @@ import {
   projectStatusLabels,
 } from "@/config/projects";
 import { ApplicationButton } from "@/features/applications/components/application-button";
+import { ProjectLiaActions } from "@/features/lia/components/project-lia-actions";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { listExpertsForProjectRegion } from "@/lib/experts/queries";
 import { listMatchingInvestmentOffersForProject } from "@/lib/investments/queries";
+import { listLiaAnalysesForProject } from "@/lib/lia/queries";
 import { getProjectById } from "@/lib/projects/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -61,6 +63,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     project.status === "published"
       ? await listExpertsForProjectRegion(project.region)
       : [];
+
+  const recentAnalyses =
+    isOwner && current
+      ? await listLiaAnalysesForProject(project.id, current.user.id, 1)
+      : [];
+  const latestReport = recentAnalyses[0]?.report ?? null;
 
   return (
     <div className="py-14 sm:py-16">
@@ -126,6 +134,24 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             {project.description}
           </div>
         </section>
+
+        {isOwner ? (
+          <section className="mt-12 border-t border-border pt-10">
+            <h2 className="font-display text-xl text-foreground">
+              Лия — анализ и поиск решений
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              Определите, что уже есть и чего не хватает, найдите объекты ЦКР и
+              ориентиры во внешних источниках. Лия только рекомендует.
+            </p>
+            <div className="mt-6">
+              <ProjectLiaActions
+                projectId={project.id}
+                initialReport={latestReport}
+              />
+            </div>
+          </section>
+        ) : null}
 
         {project.status === "published" ? (
           <section className="mt-12 border-t border-border pt-10">

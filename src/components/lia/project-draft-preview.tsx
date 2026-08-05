@@ -76,6 +76,31 @@ export function ProjectDraftPreview({
           {draft.description}
         </p>
       </div>
+
+      {(draft.existing_resources || draft.required_resources) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {draft.existing_resources ? (
+            <div>
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                Что уже есть
+              </p>
+              <p className="mt-2 text-sm text-foreground">
+                {draft.existing_resources}
+              </p>
+            </div>
+          ) : null}
+          {draft.required_resources ? (
+            <div>
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                Что требуется
+              </p>
+              <p className="mt-2 text-sm text-foreground">
+                {draft.required_resources}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      )}
     </Card>
   );
 }
