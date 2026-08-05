@@ -115,6 +115,30 @@ export type DbDealParticipantRole =
   | "partner"
   | "expert";
 
+export type DbSubscriptionPlanType =
+  | "investor"
+  | "company"
+  | "expert"
+  | "enterprise";
+
+export type DbSubscriptionPlanStatus = "active" | "inactive";
+
+export type DbSubscriptionStatus = "active" | "expired" | "cancelled";
+
+export type DbServiceCategory =
+  | "business_plan"
+  | "legal"
+  | "marketing"
+  | "consulting"
+  | "investment_search"
+  | "project_support";
+
+export type DbServiceStatus = "active" | "inactive";
+
+export type DbCommissionType = "fixed" | "percent";
+
+export type DbCommissionStatus = "pending" | "paid" | "cancelled";
+
 export type DbMilestoneStatus =
   | "planned"
   | "in_progress"
@@ -142,6 +166,44 @@ export type DealRow = {
   currency: string;
   status: DbDealStatus;
   description: string;
+  commission_type?: DbCommissionType | null;
+  commission_amount?: number | string | null;
+  commission_status?: DbCommissionStatus | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SubscriptionPlanRow = {
+  id: string;
+  name: string;
+  type: DbSubscriptionPlanType;
+  description: string;
+  price: number | string;
+  period: string;
+  features: unknown;
+  status: DbSubscriptionPlanStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SubscriptionRow = {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: DbSubscriptionStatus;
+  started_at: string;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ServiceRow = {
+  id: string;
+  title: string;
+  description: string;
+  category: DbServiceCategory;
+  price: number | string;
+  status: DbServiceStatus;
   created_at: string;
   updated_at: string;
 };
@@ -696,6 +758,50 @@ export type Database = {
           report: unknown;
         }>;
       };
+      subscription_plans: {
+        Row: SubscriptionPlanRow;
+        Insert: {
+          id?: string;
+          name: string;
+          type: DbSubscriptionPlanType;
+          description?: string;
+          price?: number;
+          period?: string;
+          features?: unknown;
+          status?: DbSubscriptionPlanStatus;
+        };
+        Update: Partial<
+          Omit<SubscriptionPlanRow, "id" | "created_at">
+        >;
+      };
+      subscriptions: {
+        Row: SubscriptionRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          plan_id: string;
+          status?: DbSubscriptionStatus;
+          started_at?: string;
+          expires_at?: string | null;
+        };
+        Update: Partial<{
+          status: DbSubscriptionStatus;
+          expires_at: string | null;
+          plan_id: string;
+        }>;
+      };
+      services: {
+        Row: ServiceRow;
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string;
+          category: DbServiceCategory;
+          price?: number;
+          status?: DbServiceStatus;
+        };
+        Update: Partial<Omit<ServiceRow, "id" | "created_at">>;
+      };
       deals: {
         Row: DealRow;
         Insert: {
@@ -708,6 +814,9 @@ export type Database = {
           currency?: string;
           status?: DbDealStatus;
           description?: string;
+          commission_type?: DbCommissionType | null;
+          commission_amount?: number | null;
+          commission_status?: DbCommissionStatus | null;
         };
         Update: Partial<{
           partner_id: string | null;
@@ -716,6 +825,9 @@ export type Database = {
           currency: string;
           status: DbDealStatus;
           description: string;
+          commission_type: DbCommissionType | null;
+          commission_amount: number | null;
+          commission_status: DbCommissionStatus | null;
         }>;
       };
       deal_participants: {
@@ -790,6 +902,13 @@ export type Database = {
       deal_participant_role: DbDealParticipantRole;
       milestone_status: DbMilestoneStatus;
       project_activity_type: DbProjectActivityType;
+      subscription_plan_type: DbSubscriptionPlanType;
+      subscription_plan_status: DbSubscriptionPlanStatus;
+      subscription_status: DbSubscriptionStatus;
+      service_category: DbServiceCategory;
+      service_status: DbServiceStatus;
+      commission_type: DbCommissionType;
+      commission_status: DbCommissionStatus;
     };
   };
 };

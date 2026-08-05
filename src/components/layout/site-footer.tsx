@@ -65,6 +65,22 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
+                  href="/pricing"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Тарифы
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/services"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Услуги ЦКР
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/register"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >

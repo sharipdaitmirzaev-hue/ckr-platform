@@ -7,6 +7,10 @@ import {
   dealStatusLabels,
   dealTypeLabels,
 } from "@/config/deals";
+import {
+  commissionStatusLabels,
+  commissionTypeLabels,
+} from "@/config/monetization";
 import { updateDealStatusAction } from "@/features/deals/actions";
 import type { DealWithNames } from "@/lib/deals/queries";
 import type { DealStatus } from "@/types";
@@ -33,6 +37,18 @@ export function DealCard({ deal, canManage }: DealCardProps) {
         <Badge variant="soft">{dealStatusLabels[deal.status]}</Badge>
       </div>
       <p className="text-sm text-foreground">{formatAmount()}</p>
+      {deal.commissionType && deal.commissionAmount !== null ? (
+        <p className="text-xs text-muted">
+          Комиссия ЦКР:{" "}
+          {commissionTypeLabels[deal.commissionType]}{" "}
+          {deal.commissionType === "percent"
+            ? `${deal.commissionAmount}%`
+            : `${new Intl.NumberFormat("ru-RU").format(deal.commissionAmount)} ${deal.currency === "RUB" ? "₽" : deal.currency}`}
+          {deal.commissionStatus
+            ? ` · ${commissionStatusLabels[deal.commissionStatus]}`
+            : ""}
+        </p>
+      ) : null}
       {deal.description ? (
         <p className="text-sm text-muted">{deal.description}</p>
       ) : null}

@@ -64,6 +64,30 @@ export type DealStatus =
 
 export type DealParticipantRole = "owner" | "investor" | "partner" | "expert";
 
+export type SubscriptionPlanType =
+  | "investor"
+  | "company"
+  | "expert"
+  | "enterprise";
+
+export type SubscriptionPlanStatus = "active" | "inactive";
+
+export type SubscriptionStatus = "active" | "expired" | "cancelled";
+
+export type ServiceCategory =
+  | "business_plan"
+  | "legal"
+  | "marketing"
+  | "consulting"
+  | "investment_search"
+  | "project_support";
+
+export type ServiceStatus = "active" | "inactive";
+
+export type CommissionType = "fixed" | "percent";
+
+export type CommissionStatus = "pending" | "paid" | "cancelled";
+
 export type MilestoneStatus =
   | "planned"
   | "in_progress"
@@ -301,6 +325,47 @@ export type Deal = {
   currency: string;
   status: DealStatus;
   description: string;
+  commissionType: CommissionType | null;
+  commissionAmount: number | null;
+  commissionStatus: CommissionStatus | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Тариф подписки ЦКР. */
+export type SubscriptionPlan = {
+  id: string;
+  name: string;
+  type: SubscriptionPlanType;
+  description: string;
+  price: number;
+  period: string;
+  features: string[];
+  status: SubscriptionPlanStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Подписка пользователя. */
+export type Subscription = {
+  id: string;
+  userId: string;
+  planId: string;
+  status: SubscriptionStatus;
+  startedAt: string;
+  expiresAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Платная услуга ЦКР. */
+export type Service = {
+  id: string;
+  title: string;
+  description: string;
+  category: ServiceCategory;
+  price: number;
+  status: ServiceStatus;
   createdAt?: string;
   updatedAt?: string;
 };

@@ -31,6 +31,16 @@ export const mainNav: NavItem[] = [
     description: "Комплексные предложения для реализации проектов",
   },
   {
+    label: "Тарифы",
+    href: "/pricing",
+    description: "Подписки ЦКР: доступ к возможностям и сопровождению",
+  },
+  {
+    label: "Услуги",
+    href: "/services",
+    description: "Профессиональные услуги ЦКР для реализации проектов",
+  },
+  {
     label: "Лия",
     href: "/lia",
     description: "ИИ-навигатор: идея → ресурсы → решение",
@@ -52,6 +62,7 @@ export const dashboardNav: NavItem[] = [
   { label: "Уведомления", href: "/dashboard/notifications" },
   { label: "Сообщения", href: "/messages" },
   { label: "Активность", href: "/dashboard/activity" },
+  { label: "Оплата", href: "/dashboard/billing" },
   { label: "Избранное", href: "/dashboard/favorites" },
   { label: "Документы", href: "/dashboard/documents" },
   { label: "Настройки", href: "/dashboard/settings" },

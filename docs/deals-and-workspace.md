@@ -36,6 +36,9 @@
 | `amount` / `currency` | Сумма |
 | `status` | Статус |
 | `description` | Описание |
+| `commission_type` | `fixed` · `percent` (Этап 16) |
+| `commission_amount` | Сумма или процент комиссии |
+| `commission_status` | `pending` · `paid` · `cancelled` |
 
 **Типы:** `investment` · `partnership` · `service` · `purchase` · `lease` · `other`
 

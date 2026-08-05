@@ -11,9 +11,14 @@ export default function DashboardSettingsPage() {
         title="Настройки"
         description="Основные данные профиля и роли редактируются в онбординге."
       />
-      <ButtonLink href="/onboarding" variant="outline">
-        Открыть профиль и роли
-      </ButtonLink>
+      <div className="flex flex-wrap gap-3">
+        <ButtonLink href="/onboarding" variant="outline">
+          Открыть профиль и роли
+        </ButtonLink>
+        <ButtonLink href="/dashboard/billing" variant="outline">
+          Оплата и подписка
+        </ButtonLink>
+      </div>
     </div>
   );
 }

@@ -126,4 +126,13 @@
 - Публичные профили `/profile/[id]` + приватность
 - SEO: metadata, OpenGraph, sitemap, robots
 
-## Этап 16 — API для мобильного приложения
+## Этап 16 — Монетизация ЦКР ✅ (код готов)
+
+Подробности: [monetization.md](./monetization.md)
+
+- `subscription_plans`, `subscriptions`, `services`
+- Комиссия в `deals` (fixed / percent)
+- `/pricing`, `/services`, `/dashboard/billing`
+- `PaymentProvider` (mock: карта, СБП, другие)
+
+## Этап 17 — API для мобильного приложения

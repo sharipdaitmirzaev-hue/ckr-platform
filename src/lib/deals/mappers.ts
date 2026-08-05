@@ -24,6 +24,12 @@ export function mapDealRow(row: DealRow): Deal {
     currency: row.currency,
     status: row.status,
     description: row.description,
+    commissionType: row.commission_type ?? null,
+    commissionAmount:
+      row.commission_amount === null || row.commission_amount === undefined
+        ? null
+        : Number(row.commission_amount),
+    commissionStatus: row.commission_status ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
