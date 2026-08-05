@@ -36,6 +36,34 @@ export default async function AdminPilotPage() {
         description="Участники, активность, метрики и проблемы закрытого пилота ЦКР. Без новых бизнес-модулей — только наблюдение."
       />
 
+      <Card variant="surface" className="space-y-2 p-5">
+        <h2 className="font-display text-lg text-foreground">
+          Пилот ООО ТИНДА
+        </h2>
+        <p className="text-sm text-muted">
+          Первый организационный пилот: оптовая платформа, анализ Лии, workspace,
+          CRM-сегменты. Документация и seed — этап 30.
+        </p>
+        <div className="flex flex-wrap gap-3 text-sm">
+          <Link href="/partner" className="text-accent hover:underline">
+            Кабинет организации
+          </Link>
+          <Link
+            href="/dashboard/projects/b0000003-0000-4000-8000-000000000001/workspace"
+            className="text-accent hover:underline"
+          >
+            Workspace проекта
+          </Link>
+          <Link href="/admin/crm" className="text-accent hover:underline">
+            CRM
+          </Link>
+        </div>
+        <p className="text-xs text-muted">
+          Seed: <code className="text-foreground">npm run seed:tinda</code> ·
+          отчёт: <code className="text-foreground">docs/tinda-pilot.md</code>
+        </p>
+      </Card>
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatsCard
           label="Участники"

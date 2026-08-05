@@ -1,7 +1,7 @@
 # Closed Pilot ЦКР
 
 Этап 29: инструменты наблюдения за закрытым пилотом.  
-Версия: `0.29.0-beta` · Связано: [launch-readiness.md](./launch-readiness.md) · [beta-launch.md](./beta-launch.md)
+Версия: `0.30.0-beta` · Связано: [launch-readiness.md](./launch-readiness.md) · [tinda-pilot.md](./tinda-pilot.md) · [beta-launch.md](./beta-launch.md)
 
 ---
 

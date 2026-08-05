@@ -6,7 +6,7 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.29.0-beta** (closed pilot tools). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Closed pilot](./docs/closed-pilot.md) · [Launch readiness](./docs/launch-readiness.md).
+Текущая версия ядра: **0.30.0-beta** (пилот ТИНДА). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [TINDA pilot](./docs/tinda-pilot.md) · [Closed pilot](./docs/closed-pilot.md).
 
 ## Стек
 
