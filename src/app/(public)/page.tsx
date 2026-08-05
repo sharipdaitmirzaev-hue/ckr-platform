@@ -68,7 +68,7 @@ export default function HomePage() {
         <Container>
           <SectionHeading
             eyebrow="Путь ЦКР"
-            title="Идея → анализ → ресурсы → партнёры → реализация"
+            title="Идея → анализ → решения → ресурсы → реализация"
             description="Платформа ведёт бизнес от замысла к результату: помогает увидеть картину целиком и собрать нужные решения."
           />
 
@@ -120,7 +120,7 @@ export default function HomePage() {
                 {
                   title: "Кабинет",
                   text: "Управление проектами, заявками и документами в одном месте.",
-                  href: "/cabinet",
+                  href: "/dashboard",
                 },
               ].map((item) => (
                 <a

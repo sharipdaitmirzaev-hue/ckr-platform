@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type LiaWidgetProps = {
@@ -12,12 +13,10 @@ type LiaWidgetProps = {
  */
 export function LiaWidget({ className, compact = false }: LiaWidgetProps) {
   return (
-    <aside
-      className={cn(
-        "rounded-sm border border-border bg-surface/80",
-        compact ? "p-4" : "p-5 sm:p-6",
-        className,
-      )}
+    <Card
+      as="aside"
+      variant="surface"
+      className={cn(compact ? "p-4" : "p-5 sm:p-6", className)}
       aria-label="ИИ-навигатор Лия"
     >
       <div className="flex items-center justify-between gap-3">
@@ -44,6 +43,6 @@ export function LiaWidget({ className, compact = false }: LiaWidgetProps) {
           </li>
         </ul>
       ) : null}
-    </aside>
+    </Card>
   );
 }

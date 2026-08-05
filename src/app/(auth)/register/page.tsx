@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,7 +17,7 @@ const roles = [
 
 export default function RegisterPage() {
   return (
-    <div className="border border-border bg-surface/80 p-6 sm:p-8">
+    <Card as="div" variant="surface" className="p-6 sm:p-8">
       <h1 className="font-display text-2xl font-semibold text-foreground">
         Регистрация
       </h1>
@@ -89,6 +90,6 @@ export default function RegisterPage() {
           Войти
         </Link>
       </p>
-    </div>
+    </Card>
   );
 }

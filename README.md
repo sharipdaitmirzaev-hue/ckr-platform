@@ -27,7 +27,7 @@ npm run dev
 ## Структура
 
 ```text
-src/app            # маршруты (public, auth, cabinet, api)
+src/app            # маршруты (public, auth, dashboard, api)
 src/components     # ui, layout, brand, lia
 src/config         # бренд, навигация, site
 src/lib            # utils, supabase stubs
@@ -38,6 +38,7 @@ supabase           # миграции и functions (далее)
 
 ## Документация
 
+- [Продукт](./docs/product.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 

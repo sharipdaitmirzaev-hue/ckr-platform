@@ -3,14 +3,21 @@
 @tailwind utilities;
 
 :root {
+  /* Фирменные токены ЦКР — единственный источник hex/rgba в UI */
   --ckr-bg: #071522;
   --ckr-fg: #f2f2f2;
   --ckr-muted: #bfc4ca;
   --ckr-accent: #c9a227;
   --ckr-accent-muted: rgba(201, 162, 39, 0.14);
+  --ckr-accent-soft: rgba(201, 162, 39, 0.07);
+  --ckr-accent-selection: rgba(201, 162, 39, 0.35);
+  --ckr-accent-glow: rgba(201, 162, 39, 0.08);
   --ckr-surface: #0c1e2e;
   --ckr-surface-elevated: #122839;
+  --ckr-surface-deep: rgba(18, 40, 57, 0.9);
   --ckr-border: rgba(191, 196, 202, 0.18);
+  --ckr-grid-line: rgba(191, 196, 202, 0.06);
+  --ckr-body-wash: rgba(18, 40, 57, 0.8);
 }
 
 @layer base {
@@ -25,15 +32,15 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
     background-image:
-      radial-gradient(ellipse 80% 50% at 100% -10%, rgba(201, 162, 39, 0.07), transparent 45%),
-      radial-gradient(ellipse 60% 40% at -10% 30%, rgba(18, 40, 57, 0.8), transparent 50%);
+      radial-gradient(ellipse 80% 50% at 100% -10%, var(--ckr-accent-soft), transparent 45%),
+      radial-gradient(ellipse 60% 40% at -10% 30%, var(--ckr-body-wash), transparent 50%);
     background-attachment: fixed;
     min-height: 100%;
   }
 
   ::selection {
-    background: rgba(201, 162, 39, 0.35);
-    color: #f2f2f2;
+    background: var(--ckr-accent-selection);
+    color: var(--ckr-fg);
   }
 }
 

@@ -1,11 +1,11 @@
 "use client";
 
-import { cabinetNav } from "@/config/navigation";
+import { dashboardNav } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function CabinetSidebar() {
+export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (
@@ -14,10 +14,10 @@ export function CabinetSidebar() {
         Личный кабинет
       </p>
       <nav className="flex flex-col gap-1" aria-label="Навигация кабинета">
-        {cabinetNav.map((item) => {
+        {dashboardNav.map((item) => {
           const active =
-            item.href === "/cabinet"
-              ? pathname === "/cabinet"
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
               : pathname.startsWith(item.href);
 
           return (

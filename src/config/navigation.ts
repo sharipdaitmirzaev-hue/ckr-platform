@@ -27,17 +27,20 @@ export const mainNav: NavItem[] = [
   },
 ];
 
-export const cabinetNav: NavItem[] = [
-  { label: "Обзор", href: "/cabinet" },
-  { label: "Мои проекты", href: "/cabinet/projects" },
-  { label: "Заявки", href: "/cabinet/applications" },
-  { label: "Избранное", href: "/cabinet/favorites" },
-  { label: "Документы", href: "/cabinet/documents" },
-  { label: "Настройки", href: "/cabinet/settings" },
+export const dashboardNav: NavItem[] = [
+  { label: "Обзор", href: "/dashboard" },
+  { label: "Мои проекты", href: "/dashboard/projects" },
+  { label: "Заявки", href: "/dashboard/applications" },
+  { label: "Избранное", href: "/dashboard/favorites" },
+  { label: "Документы", href: "/dashboard/documents" },
+  { label: "Настройки", href: "/dashboard/settings" },
 ];
+
+/** @deprecated Используйте dashboardNav */
+export const cabinetNav = dashboardNav;
 
 export const authNav = {
   login: { label: "Войти", href: "/login" },
   register: { label: "Регистрация", href: "/register" },
-  cabinet: { label: "Кабинет", href: "/cabinet" },
+  dashboard: { label: "Кабинет", href: "/dashboard" },
 } as const;

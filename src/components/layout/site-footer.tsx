@@ -57,7 +57,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/cabinet"
+                  href="/dashboard"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
                   Личный кабинет

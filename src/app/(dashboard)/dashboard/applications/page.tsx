@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Заявки" };
 
-export default function CabinetApplicationsPage() {
+export default function DashboardApplicationsPage() {
   return (
     <SectionHeading
       title="Заявки"

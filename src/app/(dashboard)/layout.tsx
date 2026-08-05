@@ -1,9 +1,9 @@
 import { Logo } from "@/components/brand/logo";
-import { CabinetSidebar } from "@/components/layout/cabinet-sidebar";
+import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { Container } from "@/components/ui/container";
 import Link from "next/link";
 
-export default function CabinetLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -23,7 +23,7 @@ export default function CabinetLayout({
       </header>
 
       <Container className="grid gap-6 py-8 md:grid-cols-[240px_1fr] lg:gap-8">
-        <CabinetSidebar />
+        <DashboardSidebar />
         <div>{children}</div>
       </Container>
     </div>

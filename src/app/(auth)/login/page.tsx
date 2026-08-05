@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="border border-border bg-surface/80 p-6 sm:p-8">
+    <Card as="div" variant="surface" className="p-6 sm:p-8">
       <h1 className="font-display text-2xl font-semibold text-foreground">
         Вход в ЦКР
       </h1>
@@ -55,6 +56,6 @@ export default function LoginPage() {
           Регистрация
         </Link>
       </p>
-    </div>
+    </Card>
   );
 }

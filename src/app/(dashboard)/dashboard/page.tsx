@@ -1,5 +1,6 @@
 import { LiaWidget } from "@/components/lia/lia-widget";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import type { Metadata } from "next";
 
@@ -14,7 +15,7 @@ const blocks = [
   { title: "Документы", text: "Файлы и материалы по проектам." },
 ];
 
-export default function CabinetPage() {
+export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <SectionHeading
@@ -25,10 +26,7 @@ export default function CabinetPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {blocks.map((block) => (
-          <div
-            key={block.title}
-            className="border border-border bg-surface/60 p-5"
-          >
+          <Card key={block.title} variant="surface">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-lg text-foreground">
                 {block.title}
@@ -36,7 +34,7 @@ export default function CabinetPage() {
               <Badge variant="soft">Скоро</Badge>
             </div>
             <p className="mt-2 text-sm text-muted">{block.text}</p>
-          </div>
+          </Card>
         ))}
       </div>
 

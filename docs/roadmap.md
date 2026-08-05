@@ -5,14 +5,58 @@
 - Next.js + TypeScript + Tailwind
 - Дизайн-система и фирменный стиль
 - Структура папок и маршрутов MVP
-- Главная, каталоги-заготовки, auth/cabinet shells, Лия placeholder
+- Компоненты: Header, Footer, Logo, карточки каталогов, LiaWidget
+- Типы: User, Project, Opportunity, Solution, Investment
+- Главная, каталоги, auth shells, `/dashboard`, Лия placeholder
 
-## Этап 1 — Auth и профили
+## Этап 1 — Supabase Auth + Profiles + Roles
 
-- Supabase Auth
-- `profiles` + `user_roles`
-- Onboarding ролей
-- Рабочий каркас ЛК
+### Цель
+Рабочая аутентификация и профили с ролями — фундамент для ЛК и всех модулей.
+
+### Состав работ
+
+1. **Инфраструктура Supabase**
+   - Подключить `@supabase/supabase-js` и `@supabase/ssr`
+   - Реализовать `lib/supabase/client.ts` и `lib/supabase/server.ts`
+   - Middleware для сессии (`src/middleware.ts`)
+   - Env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+2. **Схема БД (миграции)**
+   - `profiles` — профиль пользователя (`id` = `auth.users.id`)
+   - `user_roles` — роли: entrepreneur / investor / expert / company / admin
+   - Trigger: создание `profiles` при регистрации
+   - RLS: пользователь читает/обновляет свой профиль; роли — по политике
+
+3. **Auth UI**
+   - Рабочие формы `/login` и `/register` (email + password)
+   - Onboarding: выбор одной или нескольких ролей
+   - Выход из аккаунта
+   - Защита `/dashboard/*` (редирект неавторизованных на `/login`)
+
+4. **Dashboard**
+   - Показ данных профиля
+   - Отображение ролей
+   - Настройки: имя, компания, регион, телефон
+
+5. **Типы и контракты**
+   - Согласовать `User` / роли с таблицами Supabase
+   - Database types (сгенерированные или ручные) в `src/types`
+
+### Критерии готовности Этапа 1
+
+- [ ] Регистрация создаёт пользователя в Auth и запись в `profiles`
+- [ ] Роли сохраняются в `user_roles`
+- [ ] Вход / выход работают
+- [ ] `/dashboard` доступен только авторизованным
+- [ ] RLS не позволяет читать чужие приватные данные профиля
+
+### Вне скоупа Этапа 1
+
+- CRUD проектов и каталоги из БД
+- Storage документов
+- Лия API
+- OAuth-провайдеры (можно добавить позже)
 
 ## Этап 2 — Проекты
 

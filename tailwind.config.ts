@@ -27,13 +27,13 @@ const config: Config = {
         display: ["var(--font-onest)", "var(--font-manrope)", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 0 80px rgba(201, 162, 39, 0.08)",
+        glow: "0 0 80px var(--ckr-accent-glow)",
       },
       backgroundImage: {
         "hero-grid":
-          "linear-gradient(to right, rgba(191,196,202,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(191,196,202,0.06) 1px, transparent 1px)",
+          "linear-gradient(to right, var(--ckr-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--ckr-grid-line) 1px, transparent 1px)",
         "hero-radial":
-          "radial-gradient(ellipse 70% 55% at 70% 20%, rgba(201,162,39,0.14), transparent 55%), radial-gradient(ellipse 50% 40% at 15% 80%, rgba(18,40,57,0.9), transparent 60%)",
+          "radial-gradient(ellipse 70% 55% at 70% 20%, var(--ckr-accent-muted), transparent 55%), radial-gradient(ellipse 50% 40% at 15% 80%, var(--ckr-surface-deep), transparent 60%)",
       },
       keyframes: {
         "fade-up": {
