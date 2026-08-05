@@ -12,6 +12,7 @@
 Публичная карточка /project/[id]
         ≠
 Кабинет проекта /dashboard/projects/[id]/workspace
+   ├─ прогресс реализации (ProjectProgress / roadmap / KPI)
    ├─ участники
    ├─ сделки (deals + deal_participants)
    ├─ задачи / этапы (project_milestones)
@@ -19,10 +20,11 @@
    ├─ аналитика проекта (ProjectAnalytics)
    └─ история (project_activity)
         ↑
-Лия: сценарий «Помоги реализовать проект»
+Лия: «Помоги реализовать проект» · «Проверь прогресс проекта»
 ```
 
-Миграция: `supabase/migrations/20260325230000_deals_milestones_workspace.sql`.
+Миграции: `20260325230000_deals_milestones_workspace.sql`, `20260325380000_project_execution.sql`.  
+Подробнее про roadmap/KPI: [project-execution.md](./project-execution.md).
 
 ---
 
