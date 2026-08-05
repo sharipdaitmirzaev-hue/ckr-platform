@@ -33,7 +33,9 @@ export function ApplicationButton({
       ? `/project/${targetId}`
       : targetType === "opportunity"
         ? `/opportunity/${targetId}`
-        : `/investment/${targetId}`;
+        : targetType === "investment"
+          ? `/investment/${targetId}`
+          : `/expert/${targetId}`;
 
   if (!isAuthenticated) {
     return (

@@ -24,6 +24,9 @@ function targetHref(application: ApplicationListItem) {
   if (application.targetType === "investment") {
     return `/investment/${application.targetId}`;
   }
+  if (application.targetType === "expert") {
+    return `/expert/${application.targetId}`;
+  }
   return null;
 }
 

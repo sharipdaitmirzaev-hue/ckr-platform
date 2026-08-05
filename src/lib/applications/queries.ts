@@ -42,6 +42,15 @@ async function resolveTargetTitle(
     return data?.title ?? null;
   }
 
+  if (targetType === "expert") {
+    const { data } = await supabase
+      .from("expert_profiles")
+      .select("headline")
+      .eq("id", targetId)
+      .maybeSingle();
+    return data?.headline ?? null;
+  }
+
   return null;
 }
 

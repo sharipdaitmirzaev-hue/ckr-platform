@@ -60,6 +60,19 @@ export function OnboardingForm({ profile, roles }: OnboardingFormProps) {
         />
       </div>
 
+      <div className="space-y-2">
+        <label htmlFor="website" className="text-sm text-muted">
+          Сайт
+        </label>
+        <Input
+          id="website"
+          name="website"
+          type="url"
+          defaultValue={profile.website ?? ""}
+          placeholder="https://..."
+        />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <label htmlFor="city" className="text-sm text-muted">
@@ -96,6 +109,42 @@ export function OnboardingForm({ profile, roles }: OnboardingFormProps) {
           defaultValue={profile.phone ?? ""}
           placeholder="+7 ..."
         />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <label htmlFor="telegram" className="text-sm text-muted">
+            Telegram
+          </label>
+          <Input
+            id="telegram"
+            name="telegram"
+            defaultValue={profile.social_links?.telegram ?? ""}
+            placeholder="@username"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="linkedin" className="text-sm text-muted">
+            LinkedIn
+          </label>
+          <Input
+            id="linkedin"
+            name="linkedin"
+            defaultValue={profile.social_links?.linkedin ?? ""}
+            placeholder="https://linkedin.com/in/..."
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="vk" className="text-sm text-muted">
+            VK
+          </label>
+          <Input
+            id="vk"
+            name="vk"
+            defaultValue={profile.social_links?.vk ?? ""}
+            placeholder="https://vk.com/..."
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

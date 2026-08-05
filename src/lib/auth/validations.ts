@@ -18,10 +18,21 @@ export const loginSchema = z.object({
 export const onboardingSchema = z.object({
   fullName: z.string().trim().min(2, "Укажите имя"),
   companyName: z.string().trim().optional(),
+  website: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (value) => !value || /^https?:\/\//i.test(value),
+      "Укажите ссылку с https://",
+    ),
   phone: z.string().trim().optional(),
   city: z.string().trim().optional(),
   region: z.string().trim().optional(),
   bio: z.string().trim().optional(),
+  telegram: z.string().trim().optional(),
+  linkedin: z.string().trim().optional(),
+  vk: z.string().trim().optional(),
   roles: z
     .array(z.enum(ASSIGNABLE_ROLES))
     .min(1, "Выберите хотя бы одну роль"),

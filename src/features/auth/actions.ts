@@ -163,10 +163,14 @@ export async function onboardingAction(
   const parsed = onboardingSchema.safeParse({
     fullName: formData.get("fullName"),
     companyName: formData.get("companyName") || undefined,
+    website: formData.get("website") || undefined,
     phone: formData.get("phone") || undefined,
     city: formData.get("city") || undefined,
     region: formData.get("region") || undefined,
     bio: formData.get("bio") || undefined,
+    telegram: formData.get("telegram") || undefined,
+    linkedin: formData.get("linkedin") || undefined,
+    vk: formData.get("vk") || undefined,
     roles,
   });
 
@@ -184,11 +188,18 @@ export async function onboardingAction(
     return { error: "Необходимо войти в аккаунт." };
   }
 
+  const socialLinks: Record<string, string> = {};
+  if (parsed.data.telegram) socialLinks.telegram = parsed.data.telegram;
+  if (parsed.data.linkedin) socialLinks.linkedin = parsed.data.linkedin;
+  if (parsed.data.vk) socialLinks.vk = parsed.data.vk;
+
   const { error: profileError } = await supabase
     .from("profiles")
     .update({
       full_name: parsed.data.fullName,
       company_name: parsed.data.companyName || null,
+      website: parsed.data.website || null,
+      social_links: socialLinks,
       phone: parsed.data.phone || null,
       city: parsed.data.city || null,
       region: parsed.data.region || null,

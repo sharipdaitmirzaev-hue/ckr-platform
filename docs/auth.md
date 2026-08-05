@@ -61,7 +61,7 @@ Supabase Auth (email/password)
 
 Позволяет:
 
-- дополнить профиль (компания, город, регион, телефон, bio);
+- дополнить профиль (компания, сайт, соцсети, город, регион, телефон, bio);
 - выбрать **несколько** ролей.
 
 После сохранения — редирект в `/dashboard`.
@@ -75,6 +75,9 @@ Supabase Auth (email/password)
 | `id` | uuid PK | = `auth.users.id` |
 | `full_name` | text | Имя |
 | `company_name` | text | Компания |
+| `website` | text | Сайт (Этап 6) |
+| `social_links` | jsonb | Соцсети (Этап 6) |
+| `verification_status` | enum | Проверка: unverified / pending / verified (Этап 6) |
 | `avatar_url` | text | Аватар (позже Storage) |
 | `bio` | text | О себе |
 | `phone` | text | Телефон |

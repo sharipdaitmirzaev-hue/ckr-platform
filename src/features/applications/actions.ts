@@ -43,6 +43,20 @@ async function getTargetOwnerId(
     return data;
   }
 
+  if (targetType === "expert") {
+    const { data } = await supabase
+      .from("expert_profiles")
+      .select("user_id, status, headline")
+      .eq("id", targetId)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      owner_id: data.user_id,
+      status: data.status,
+      title: data.headline,
+    };
+  }
+
   return null;
 }
 
@@ -77,10 +91,7 @@ export async function createApplicationAction(
   );
 
   if (!target) {
-    return {
-      error:
-        "Объект заявки не найден. Для expert модуль появится позже.",
-    };
+    return { error: "Объект заявки не найден." };
   }
 
   if (target.owner_id === user.id) {
@@ -107,6 +118,7 @@ export async function createApplicationAction(
   revalidatePath(`/project/${parsed.data.targetId}`);
   revalidatePath(`/opportunity/${parsed.data.targetId}`);
   revalidatePath(`/investment/${parsed.data.targetId}`);
+  revalidatePath(`/expert/${parsed.data.targetId}`);
 
   return { success: "Заявка отправлена. Владелец получит уведомление." };
 }

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { verificationStatusLabels } from "@/config/experts";
 import { roleLabels } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import type { Metadata } from "next";
@@ -26,7 +27,7 @@ export default async function DashboardPage() {
       <SectionHeading
         eyebrow="Кабинет"
         title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
-        description="Профиль, проекты и возможности уже доступны. Следующие модули — решения, заявки и инвестиции."
+        description="Профиль, проекты, возможности, инвестиции и эксперты — в одном кабинете ЦКР."
       />
 
       <Card variant="surface">
@@ -44,6 +45,12 @@ export default async function DashboardPage() {
                   <dd className="text-foreground">{profile.company_name}</dd>
                 </div>
               ) : null}
+              {profile.website ? (
+                <div className="flex gap-2">
+                  <dt className="text-muted">Сайт:</dt>
+                  <dd className="text-foreground">{profile.website}</dd>
+                </div>
+              ) : null}
               {profile.city || profile.region ? (
                 <div className="flex gap-2">
                   <dt className="text-muted">Локация:</dt>
@@ -58,6 +65,18 @@ export default async function DashboardPage() {
                   <dd className="text-foreground">{profile.phone}</dd>
                 </div>
               ) : null}
+              <div className="flex flex-wrap items-center gap-2">
+                <dt className="text-muted">Проверка:</dt>
+                <dd>
+                  <Badge variant="soft">
+                    {
+                      verificationStatusLabels[
+                        profile.verification_status ?? "unverified"
+                      ]
+                    }
+                  </Badge>
+                </dd>
+              </div>
             </dl>
           </div>
           <ButtonLink href="/onboarding" variant="outline" size="sm">
@@ -100,6 +119,12 @@ export default async function DashboardPage() {
               title: "Мои инвестиции",
               text: "Инвестиционные предложения и интересы капитала.",
               href: "/dashboard/investments",
+              ready: true,
+            },
+            {
+              title: "Профиль эксперта",
+              text: "Компетенции, опыт и публикация в каталоге доверия.",
+              href: "/dashboard/expert",
               ready: true,
             },
             {

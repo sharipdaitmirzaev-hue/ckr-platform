@@ -52,6 +52,30 @@ export type InvestmentOfferStatus =
   | "published"
   | "closed";
 
+export type ExpertSpecialization =
+  | "lawyer"
+  | "accountant"
+  | "marketer"
+  | "engineer"
+  | "builder"
+  | "consultant"
+  | "other";
+
+export type ExpertProfileStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "archived";
+
+export type VerificationStatus = "unverified" | "pending" | "verified";
+
+export type SocialLinks = {
+  telegram?: string;
+  linkedin?: string;
+  vk?: string;
+  other?: string;
+};
+
 /** Универсальная заявка на взаимодействие. */
 export type Application = {
   id: string;
@@ -70,6 +94,9 @@ export type User = {
   email: string;
   fullName: string;
   companyName?: string | null;
+  website?: string | null;
+  socialLinks?: SocialLinks | null;
+  verificationStatus?: VerificationStatus;
   avatarUrl?: string | null;
   bio?: string | null;
   phone?: string | null;
@@ -78,6 +105,21 @@ export type User = {
   roles: UserRole[];
   createdAt: string;
   updatedAt: string;
+};
+
+/** Профиль эксперта. */
+export type ExpertProfile = {
+  id: string;
+  userId: string;
+  specialization: ExpertSpecialization;
+  headline: string;
+  description: string;
+  experienceYears: number;
+  services: string;
+  region: string;
+  status: ExpertProfileStatus;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 /** Отраслевая категория проекта. */

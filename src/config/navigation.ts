@@ -21,6 +21,11 @@ export const mainNav: NavItem[] = [
     description: "Инвестиционные предложения и интересы капитала",
   },
   {
+    label: "Эксперты",
+    href: "/experts",
+    description: "Проверенные компетенции для сопровождения проектов",
+  },
+  {
     label: "Решения",
     href: "/solutions",
     description: "Комплексные предложения для реализации проектов",
@@ -37,6 +42,7 @@ export const dashboardNav: NavItem[] = [
   { label: "Мои проекты", href: "/dashboard/projects" },
   { label: "Мои возможности", href: "/dashboard/opportunities" },
   { label: "Мои инвестиции", href: "/dashboard/investments" },
+  { label: "Профиль эксперта", href: "/dashboard/expert" },
   { label: "Заявки", href: "/dashboard/applications" },
   { label: "Избранное", href: "/dashboard/favorites" },
   { label: "Документы", href: "/dashboard/documents" },

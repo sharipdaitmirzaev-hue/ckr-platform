@@ -49,15 +49,49 @@ export type DbInvestmentOfferStatus =
   | "published"
   | "closed";
 
+export type DbVerificationStatus = "unverified" | "pending" | "verified";
+
+export type DbExpertSpecialization =
+  | "lawyer"
+  | "accountant"
+  | "marketer"
+  | "engineer"
+  | "builder"
+  | "consultant"
+  | "other";
+
+export type DbExpertProfileStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "archived";
+
 export type ProfileRow = {
   id: string;
   full_name: string;
   company_name: string | null;
+  website: string | null;
+  social_links: Record<string, string> | null;
+  verification_status: DbVerificationStatus;
   avatar_url: string | null;
   bio: string | null;
   phone: string | null;
   city: string | null;
   region: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExpertProfileRow = {
+  id: string;
+  user_id: string;
+  specialization: DbExpertSpecialization;
+  headline: string;
+  description: string;
+  experience_years: number;
+  services: string;
+  region: string;
+  status: DbExpertProfileStatus;
   created_at: string;
   updated_at: string;
 };
@@ -165,6 +199,9 @@ export type Database = {
           id: string;
           full_name?: string;
           company_name?: string | null;
+          website?: string | null;
+          social_links?: Record<string, string> | null;
+          verification_status?: DbVerificationStatus;
           avatar_url?: string | null;
           bio?: string | null;
           phone?: string | null;
@@ -172,6 +209,21 @@ export type Database = {
           region?: string | null;
         };
         Update: Partial<Omit<ProfileRow, "id" | "created_at">>;
+      };
+      expert_profiles: {
+        Row: ExpertProfileRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          specialization?: DbExpertSpecialization;
+          headline?: string;
+          description?: string;
+          experience_years?: number;
+          services?: string;
+          region?: string;
+          status?: DbExpertProfileStatus;
+        };
+        Update: Partial<Omit<ExpertProfileRow, "id" | "user_id" | "created_at">>;
       };
       user_roles: {
         Row: UserRoleRow;
@@ -296,6 +348,9 @@ export type Database = {
       application_status: DbApplicationStatus;
       investment_type: DbInvestmentType;
       investment_offer_status: DbInvestmentOfferStatus;
+      verification_status: DbVerificationStatus;
+      expert_specialization: DbExpertSpecialization;
+      expert_profile_status: DbExpertProfileStatus;
     };
   };
 };

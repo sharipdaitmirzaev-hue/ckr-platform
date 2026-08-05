@@ -1,3 +1,4 @@
+import { ExpertCard } from "@/components/experts/expert-card";
 import { InvestmentCard } from "@/components/investments/investment-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -8,6 +9,7 @@ import {
 } from "@/config/projects";
 import { ApplicationButton } from "@/features/applications/components/application-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { listExpertsForProjectRegion } from "@/lib/experts/queries";
 import { listMatchingInvestmentOffersForProject } from "@/lib/investments/queries";
 import { getProjectById } from "@/lib/projects/queries";
 import type { Metadata } from "next";
@@ -52,6 +54,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const matchingInvestors =
     project.status === "published"
       ? await listMatchingInvestmentOffersForProject(project)
+      : [];
+
+  const matchingExperts =
+    project.status === "published"
+      ? await listExpertsForProjectRegion(project.region)
       : [];
 
   return (
@@ -157,6 +164,51 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 targetType="project"
                 targetId={project.id}
                 label="Предложить инвестицию"
+                isAuthenticated={Boolean(current)}
+                isOwner={isOwner}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {project.status === "published" ? (
+          <section className="mt-12 border-t border-border pt-10">
+            <h2 className="font-display text-xl text-foreground">
+              Нужен эксперт
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Подключите специалиста ЦКР к проекту или предложите экспертизу
+              через заявку. Связь идёт через модуль applications.
+            </p>
+
+            {matchingExperts.length > 0 ? (
+              <div className="mt-6 grid gap-6 md:grid-cols-2">
+                {matchingExperts.map((expert) => (
+                  <ExpertCard
+                    key={expert.id}
+                    expert={expert}
+                    href={`/expert/${expert.id}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Пока нет экспертов в этом регионе. Откройте полный каталог или
+                отправьте запрос на экспертизу по проекту.
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink href="/experts" variant="outline">
+                Каталог экспертов
+              </ButtonLink>
+            </div>
+
+            <div className="mt-6">
+              <ApplicationButton
+                targetType="project"
+                targetId={project.id}
+                label="Нужен эксперт"
                 isAuthenticated={Boolean(current)}
                 isOwner={isOwner}
               />
