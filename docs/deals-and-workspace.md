@@ -16,6 +16,7 @@
    ├─ сделки (deals + deal_participants)
    ├─ задачи / этапы (project_milestones)
    ├─ документы (documents related_type=project)
+   ├─ аналитика проекта (ProjectAnalytics)
    └─ история (project_activity)
         ↑
 Лия: сценарий «Помоги реализовать проект»
