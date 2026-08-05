@@ -1,3 +1,4 @@
+import { BusinessAuditReportCard } from "@/components/lia/business-audit-report";
 import { LiaResults } from "@/components/lia/lia-results";
 import { LiaProjectFlow } from "@/features/lia/components/lia-project-flow";
 import type { LiaMessage } from "@/types/lia";
@@ -36,9 +37,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
   if (messages.length === 0) {
     return (
       <p className="text-sm text-muted">
-        Начните с «Помоги создать бизнес-проект» или соберите комплексное
-        решение. После создания проекта откройте карточку и нажмите «Анализ
-        Лией».
+        Начните с «Помоги создать бизнес-проект», «Аудит бизнеса» или соберите
+        комплексное решение. После создания проекта откройте карточку и нажмите
+        «Анализ Лией».
       </p>
     );
   }
@@ -49,6 +50,7 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const isUser = message.role === "user";
         const results = message.metadata?.results || [];
         const projectDraft = message.metadata?.projectDraft;
+        const auditReport = message.metadata?.businessAuditReport;
 
         return (
           <li
@@ -71,6 +73,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && projectDraft ? (
               <LiaProjectFlow draft={projectDraft} categories={categories} />
+            ) : null}
+            {!isUser && auditReport ? (
+              <BusinessAuditReportCard report={auditReport} />
             ) : null}
           </li>
         );

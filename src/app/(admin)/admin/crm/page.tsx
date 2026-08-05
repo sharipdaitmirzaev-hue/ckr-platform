@@ -28,6 +28,7 @@ import {
 import { CreateActivityForm } from "@/features/crm/components/create-activity-form";
 import { CreateContactForm } from "@/features/crm/components/create-contact-form";
 import { CreateLeadForm } from "@/features/crm/components/create-lead-form";
+import { CrmSegmentTemplates } from "@/features/crm/components/crm-segment-templates";
 import { CrmTabs } from "@/features/crm/components/crm-tabs";
 import {
   LIA_CRM_OPERATOR_SCENARIOS,
@@ -304,18 +305,23 @@ export default async function AdminCrmPage({
 
       {tab === "contacts" ? (
         <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <Card variant="surface" className="space-y-4 p-5">
-            <h2 className="font-display text-xl text-foreground">
-              Новый контакт
-            </h2>
-            <CreateContactForm />
-          </Card>
+          <div className="space-y-6">
+            <Card variant="surface" className="space-y-4 p-5">
+              <h2 className="font-display text-xl text-foreground">
+                Новый контакт
+              </h2>
+              <CreateContactForm />
+            </Card>
+            <Card variant="surface" className="p-5">
+              <CrmSegmentTemplates />
+            </Card>
+          </div>
           <div className="space-y-4">
             <h2 className="font-display text-xl text-foreground">Контакты</h2>
             {contacts.length === 0 ? (
               <EmptyState
                 title="Контактов пока нет"
-                description="Создайте первый контакт слева."
+                description="Создайте контакт или примените шаблон сегмента."
               />
             ) : (
               <AdminTable

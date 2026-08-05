@@ -8,6 +8,7 @@ import {
   isCrmConversionTarget,
   isCrmLeadStage,
 } from "@/config/crm";
+import { getCrmSegmentTemplate } from "@/config/crm-templates";
 import { generateInviteCode } from "@/config/beta";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { slugifyTitle, withSlugSuffix } from "@/lib/projects/slug";
@@ -90,6 +91,46 @@ export async function createCrmContactAction(
   if (error) return { error: error.message };
   revalidateCrm();
   return { success: "Контакт создан." };
+}
+
+/**
+ * Применить шаблон сегмента CRM (customers / suppliers / partners).
+ * Требует явного confirm=on.
+ */
+export async function applyCrmSegmentTemplateAction(
+  formData: FormData,
+): Promise<void> {
+  const staff = await requireStaff("/admin/crm");
+  const templateId = String(formData.get("templateId") ?? "").trim();
+  const confirmed = formData.get("confirm") === "on";
+  const organizationLabel = String(formData.get("organizationLabel") ?? "")
+    .trim()
+    .slice(0, 120);
+
+  if (!confirmed) return;
+
+  const template = getCrmSegmentTemplate(templateId);
+  if (!template) return;
+
+  const supabase = createClient();
+  const companyName = organizationLabel
+    ? `${organizationLabel} — ${template.label.toLowerCase()}`
+    : template.companyName;
+
+  await supabase.from("crm_contacts").insert({
+    name: template.name,
+    company_name: companyName,
+    phone: "",
+    email: "",
+    type: template.contactType,
+    source: template.source,
+    status: "new",
+    notes: template.notes,
+    assigned_to: staff.user.id,
+    created_by: staff.user.id,
+  });
+
+  revalidateCrm(["/admin/crm"]);
 }
 
 export async function updateCrmContactStatusAction(

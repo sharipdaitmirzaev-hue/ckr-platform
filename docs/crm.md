@@ -108,12 +108,24 @@ RLS: полный доступ только `is_admin`.
 
 ---
 
-## 8. Миграция и маршруты
+## 8. Шаблоны сегментов (этап 31)
+
+По итогам пилота ТИНДА: `customers` · `suppliers` · `partners`.
+
+- Конфиг: `src/config/crm-templates.ts`
+- UI: `/admin/crm` (вкладка контакты) — применение с confirm
+- Action: `applyCrmSegmentTemplateAction`
+
+Шаблоны создают контакт-сегмент без реальных ПДн; дальше оператор наполняет аккаунты вручную.
+
+---
+
+## 9. Миграция и маршруты
 
 | Артефакт | Путь |
 |---|---|
 | Миграция | `supabase/migrations/20260325300000_crm.sql` |
-| Конфиг | `src/config/crm.ts` |
+| Конфиг | `src/config/crm.ts`, `src/config/crm-templates.ts` |
 | Queries | `src/lib/crm/queries.ts` |
 | Actions | `src/features/crm/actions.ts` |
 | UI | `/admin/crm`, `/admin/crm/leads/[id]` |

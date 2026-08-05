@@ -67,6 +67,12 @@ export const LIA_SCENARIOS: {
     prompt: "Проверь надёжность участника",
     description: "Факты, документы и история — без окончательного вердикта",
   },
+  {
+    id: "business_audit",
+    label: "Аудит бизнеса",
+    prompt: "Аудит бизнеса",
+    description: "Диагностика действующего бизнеса → SWOT и следующие шаги",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -122,3 +128,41 @@ export const REALIZE_PROJECT_PATTERN =
 
 export const CHECK_RELIABILITY_PATTERN =
   /провер(ь|ить|ьте)?\s+над[её]жност|над[её]жност(ь|и)\s+участник|check.?reliab/i;
+
+export const BUSINESS_AUDIT_START_PATTERN =
+  /аудит\s+бизнеса|проведи\s+аудит|business\s*audit|диагностик[аи]\s+бизнеса/i;
+
+/** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
+export const BUSINESS_AUDIT_STEPS = [
+  {
+    key: "industry",
+    question:
+      "В какой отрасли работает бизнес? Например: торговля, производство, IT, услуги.",
+  },
+  {
+    key: "region",
+    question: "В каком регионе сейчас работаете?",
+  },
+  {
+    key: "stage",
+    question:
+      "Какая текущая стадия: idea, startup, operating или expansion?",
+  },
+  {
+    key: "resources",
+    question:
+      "Какие ресурсы уже есть: клиенты, команда, склад, продукт, капитал?",
+  },
+  {
+    key: "team",
+    question: "Как устроена команда? Кто отвечает за продажи, закупки, операции?",
+  },
+  {
+    key: "problems",
+    question: "Какие главные проблемы и ограничения роста?",
+  },
+  {
+    key: "goals",
+    question: "Какие цели на ближайшие 6–12 месяцев?",
+  },
+] as const;

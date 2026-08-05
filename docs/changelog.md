@@ -4,6 +4,20 @@
 
 ---
 
+## 0.31.0-beta — 2026-03-25
+
+Улучшения ЦКР по итогам пилота ООО ТИНДА (без крупных модулей).
+
+### Изменения
+
+- Case study: `docs/tinda-case-study.md`
+- Шаблон проекта `business_development`
+- Лия: сценарий «Аудит бизнеса» → `BusinessAuditReport`
+- CRM-шаблоны сегментов: customers / suppliers / partners
+- Матрица улучшений: `docs/tinda-improvements.md`
+
+---
+
 ## 0.30.0-beta — 2026-03-25
 
 Первый пилот на организации ООО ТИНДА (без новых бизнес-модулей).

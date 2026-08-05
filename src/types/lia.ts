@@ -9,7 +9,21 @@ export type LiaScenarioId =
   | "realize_project"
   | "org_find_projects"
   | "org_offer_opportunities"
-  | "check_reliability";
+  | "check_reliability"
+  | "business_audit";
+
+/** Отчёт сценария «Аудит бизнеса». */
+export type BusinessAuditReport = {
+  industry: string;
+  region: string;
+  stage: string;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  risks: string[];
+  next_steps: string[];
+};
 
 export type LiaSession = {
   id: string;
@@ -173,6 +187,9 @@ export type LiaMessageMetadata = {
   solutionReport?: SolutionReport | null;
   businessIdeaStep?: number;
   businessIdeaAnswers?: Record<string, string>;
+  businessAuditStep?: number;
+  businessAuditAnswers?: Record<string, string>;
+  businessAuditReport?: BusinessAuditReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

@@ -263,4 +263,14 @@
 - Seed `npm run seed:tinda` + отчёт пилота
 - Без новых бизнес-модулей
 
-## Этап 31 — API для мобильного приложения
+## Этап 31 — Улучшения по пилоту ТИНДА ✅ (код готов)
+
+Подробности: [tinda-case-study.md](./tinda-case-study.md), [tinda-improvements.md](./tinda-improvements.md)
+
+- Case study пилота
+- Шаблон `business_development`
+- Лия: «Аудит бизнеса» + `BusinessAuditReport`
+- CRM-шаблоны customers / suppliers / partners
+- Без новых крупных модулей
+
+## Этап 32 — API для мобильного приложения

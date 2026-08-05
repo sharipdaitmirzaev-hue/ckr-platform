@@ -19,6 +19,7 @@
 | `org_find_projects` | Найди проекты для организации | Подбор для `/partner` |
 | `org_offer_opportunities` | Какие возможности мы можем предложить | Рекомендации публикаций org |
 | `check_reliability` | Проверь надёжность участника | Факты/документы/история **без вердикта** |
+| `business_audit` | Аудит бизнеса | Вопросы → `BusinessAuditReport` (сильные/слабые/возможности/риски/шаги) |
 
 Конфиг: `src/config/lia.ts`  
 Движок: `src/lib/lia/engine.ts`
@@ -67,6 +68,11 @@ UI: `ProjectLiaActions` на edit/workspace/public project.
 
 ```text
 Организация → org_find_projects / org_offer_opportunities → /partner
+```
+
+```text
+Действующий бизнес → business_audit → BusinessAuditReport
+                 → шаблон business_development → CRM templates
 ```
 
 ```text

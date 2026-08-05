@@ -1,4 +1,6 @@
 import {
+  BUSINESS_AUDIT_START_PATTERN,
+  BUSINESS_AUDIT_STEPS,
   BUSINESS_IDEA_STEPS,
   CHECK_RELIABILITY_PATTERN,
   LIA_DISCLAIMER,
@@ -14,6 +16,7 @@ import {
   searchProjects,
 } from "@/lib/lia/search";
 import type {
+  BusinessAuditReport,
   LiaCatalogDraft,
   LiaMessage,
   LiaMessageMetadata,
@@ -63,6 +66,9 @@ function detectScenario(
   }
   if (CHECK_RELIABILITY_PATTERN.test(value)) {
     return "check_reliability";
+  }
+  if (BUSINESS_AUDIT_START_PATTERN.test(value)) {
+    return "business_audit";
   }
   return null;
 }
@@ -258,6 +264,178 @@ async function handleBusinessIdea(
     },
     results: [],
     projectDraft,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+function getBusinessAuditState(history: LiaMessage[]) {
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const message = history[i];
+    if (
+      message.role === "assistant" &&
+      message.metadata?.scenario === "business_audit" &&
+      typeof message.metadata.businessAuditStep === "number"
+    ) {
+      return {
+        step: message.metadata.businessAuditStep,
+        answers: (message.metadata.businessAuditAnswers as Record<
+          string,
+          string
+        >) || {},
+      };
+    }
+  }
+  return { step: 0, answers: {} as Record<string, string> };
+}
+
+function buildBusinessAuditReport(
+  answers: Record<string, string>,
+): BusinessAuditReport {
+  const industry = answers.industry?.trim() || "не указана";
+  const region = answers.region?.trim() || "не указан";
+  const stage = mapStage(answers.stage || "operating");
+  const resources = answers.resources?.trim() || "";
+  const team = answers.team?.trim() || "";
+  const problems = answers.problems?.trim() || "";
+  const goals = answers.goals?.trim() || "";
+
+  const strengths = [
+    resources
+      ? `Есть ресурсная база: ${resources.slice(0, 160)}`
+      : "Есть действующий бизнес-контур для анализа",
+    team
+      ? `Команда обозначена: ${team.slice(0, 160)}`
+      : "Готовность пройти структурированный аудит",
+    `Стадия «${stage}» позволяет планировать ближайшие шаги`,
+  ];
+
+  const weaknesses = [
+    problems
+      ? `Заявленные ограничения: ${problems.slice(0, 180)}`
+      : "Проблемы роста сформулированы недостаточно конкретно",
+    !resources
+      ? "Ресурсы описаны кратко — сложно приоритизировать поддержку"
+      : "Часть ресурсов может быть узким местом при масштабировании",
+    !team
+      ? "Роли команды не детализированы"
+      : "Нужно проверить загрузку ключевых ролей",
+  ];
+
+  const opportunities = [
+    goals
+      ? `Цели на горизонте: ${goals.slice(0, 180)}`
+      : "Можно зафиксировать цели на 6–12 месяцев в проекте ЦКР",
+    "Использовать шаблон business_development для проекта развития",
+    "Сегментировать CRM: customers / suppliers / partners",
+    `Подобрать решения ЦКР под отрасль «${industry}» и регион «${region}»`,
+  ];
+
+  const risks = [
+    problems
+      ? `Риск усиления текущих проблем без фокуса: ${problems.slice(0, 120)}`
+      : "Риск распыления усилий без приоритизации",
+    "Недостаток оборотного капитала или партнёров при росте",
+    "Концентрация продаж / поставок в узком контуре",
+  ];
+
+  const next_steps = [
+    "Создать проект по шаблону «Развитие бизнеса» и заполнить разделы",
+    "Применить CRM-шаблоны: клиенты, поставщики, партнёры",
+    "Запустить анализ Лии / find_solutions по проекту",
+    "Собрать этапы workspace: подготовка → продажи → партнёры → масштаб",
+    "Зафиксировать 1–2 пилотные сделки в negotiation",
+  ];
+
+  return {
+    industry,
+    region,
+    stage,
+    summary: [
+      `Предварительный аудит бизнеса в отрасли «${industry}» (${region}).`,
+      `Стадия: ${stage}.`,
+      goals ? `Фокус целей: ${goals.slice(0, 120)}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    strengths,
+    weaknesses,
+    opportunities,
+    risks,
+    next_steps,
+  };
+}
+
+async function handleBusinessAudit(
+  userMessage: string,
+  history: LiaMessage[],
+): Promise<LiaEngineResult> {
+  const state = getBusinessAuditState(history);
+  const answers = { ...state.answers };
+  let step = state.step;
+
+  const isStart =
+    BUSINESS_AUDIT_START_PATTERN.test(userMessage) &&
+    Object.keys(answers).length === 0 &&
+    step === 0 &&
+    !history.some((m) => m.metadata?.scenario === "business_audit");
+
+  if (!isStart && step < BUSINESS_AUDIT_STEPS.length) {
+    const current = BUSINESS_AUDIT_STEPS[step];
+    answers[current.key] = userMessage.trim();
+    step += 1;
+  }
+
+  if (step < BUSINESS_AUDIT_STEPS.length) {
+    const next = BUSINESS_AUDIT_STEPS[step];
+    const progress = `Шаг ${step + 1} из ${BUSINESS_AUDIT_STEPS.length}`;
+    return {
+      content: [
+        "Сценарий «Аудит бизнеса».",
+        progress,
+        "",
+        next.question,
+        "",
+        `_${LIA_DISCLAIMER}_`,
+      ].join("\n"),
+      metadata: {
+        scenario: "business_audit",
+        businessAuditStep: step,
+        businessAuditAnswers: answers,
+        disclaimer: LIA_DISCLAIMER,
+      },
+      results: [],
+      projectDraft: null,
+      solutionDraft: null,
+      catalogDraft: null,
+    };
+  }
+
+  const report = buildBusinessAuditReport(answers);
+  const content = [
+    "Аудит бизнеса подготовлен.",
+    "",
+    report.summary,
+    "",
+    "Ниже — сильные/слабые стороны, возможности, риски и следующие шаги.",
+    "Лия только рекомендует: создайте проект и CRM-сегменты вручную.",
+    "",
+    "Рекомендуемый шаблон проекта: business_development.",
+    "",
+    `_${LIA_DISCLAIMER}_`,
+  ].join("\n");
+
+  return {
+    content,
+    metadata: {
+      scenario: "business_audit",
+      businessAuditStep: step,
+      businessAuditAnswers: answers,
+      businessAuditReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
     solutionDraft: null,
     catalogDraft: null,
   };
@@ -616,6 +794,10 @@ export async function runLiaEngine(input: {
 
   if (scenario === "business_idea") {
     return handleBusinessIdea(input.userMessage, input.history);
+  }
+
+  if (scenario === "business_audit") {
+    return handleBusinessAudit(input.userMessage, input.history);
   }
 
   if (
