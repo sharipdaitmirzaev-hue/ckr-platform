@@ -6,7 +6,7 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.28.0-beta** (closed pilot). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Launch readiness](./docs/launch-readiness.md).
+Текущая версия ядра: **0.29.0-beta** (closed pilot tools). Обзор: [docs/platform-overview.md](./docs/platform-overview.md) · [Closed pilot](./docs/closed-pilot.md) · [Launch readiness](./docs/launch-readiness.md).
 
 ## Стек
 

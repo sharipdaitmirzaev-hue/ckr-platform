@@ -164,6 +164,15 @@ export async function POST(request: Request) {
       },
     });
 
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: current.user.id,
+      entityType: "lia_session",
+      entityId: sessionId,
+      metadata: { scenario, projectId },
+    });
+
     return apiSuccess({
       sessionId,
       assistantMessage,

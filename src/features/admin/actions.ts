@@ -113,7 +113,7 @@ export async function adminSetUserBlockedAction(formData: FormData) {
 }
 
 export async function adminUpdateProjectModerationAction(formData: FormData) {
-  await requireStaff();
+  const staff = await requireStaff();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as ProjectStatus;
   const verificationStatus = String(
@@ -125,6 +125,12 @@ export async function adminUpdateProjectModerationAction(formData: FormData) {
   if (!VERIFICATION_STATUSES.includes(verificationStatus)) return;
 
   const supabase = createClient();
+  const { data: before } = await supabase
+    .from("projects")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle();
+
   await supabase
     .from("projects")
     .update({
@@ -132,6 +138,17 @@ export async function adminUpdateProjectModerationAction(formData: FormData) {
       verification_status: verificationStatus,
     })
     .eq("id", id);
+
+  if (status === "published" && before?.status !== "published") {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "project_published",
+      userId: staff.user.id,
+      entityType: "project",
+      entityId: id,
+      metadata: { from: before?.status ?? null, source: "moderation" },
+    });
+  }
 
   revalidateAdmin();
   revalidatePath(`/project/${id}`);

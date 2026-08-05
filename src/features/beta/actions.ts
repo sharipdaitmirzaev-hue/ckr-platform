@@ -101,10 +101,14 @@ export async function submitFeedbackAction(input: {
   message: string;
   rating?: number | null;
   page?: string;
+  relatedType?: string | null;
+  relatedId?: string | null;
 }): Promise<BetaClientResult> {
   const type = input.type;
   const message = input.message.trim();
   const page = (input.page ?? "").trim();
+  const relatedType = (input.relatedType ?? "").trim() || null;
+  const relatedId = (input.relatedId ?? "").trim() || null;
   const rating =
     input.rating === undefined || input.rating === null
       ? null
@@ -134,9 +138,13 @@ export async function submitFeedbackAction(input: {
     message,
     rating,
     page: page || "/",
+    related_type: relatedType,
+    related_id: relatedId,
   });
 
   if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/pilot");
   return { ok: true };
 }
 

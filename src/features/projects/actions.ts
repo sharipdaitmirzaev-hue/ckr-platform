@@ -266,6 +266,17 @@ export async function advanceProjectStatusAction(
     p_related_id: projectId,
   });
 
+  if (nextStatus === "published") {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "project_published",
+      userId: user.id,
+      entityType: "project",
+      entityId: projectId,
+      metadata: { from: current },
+    });
+  }
+
   revalidateProject(projectId);
   return {
     success: `Этап: ${projectStatusLabels[nextStatus]}`,

@@ -5,7 +5,8 @@
 
 **Дата аудита:** 2026-03-25  
 **Обновление closed pilot:** 2026-03-25 (этап 28)  
-**Версия кода:** `0.28.0-beta` (closed pilot)  
+**Версия кода:** `0.29.0-beta` (closed pilot + tools)  
+**Инструменты пилота:** [closed-pilot.md](./closed-pilot.md) · `/admin/pilot`  
 
 Связанные материалы: [platform-overview.md](./platform-overview.md) · [security-audit.md](./security-audit.md) · [production-checklist.md](./production-checklist.md) · [core-audit.md](./core-audit.md)
 

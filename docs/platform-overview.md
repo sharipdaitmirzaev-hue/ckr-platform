@@ -5,7 +5,7 @@
 
 Логика: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Версия ядра после Этапа 28: `0.28.0-beta` (closed pilot, см. [launch-readiness.md](./launch-readiness.md)).
+Версия ядра после Этапа 29: `0.29.0-beta` (инструменты closed pilot, см. [closed-pilot.md](./closed-pilot.md)).
 
 ---
 

@@ -473,7 +473,21 @@ export type Feedback = {
   message: string;
   rating: number | null;
   page: string;
+  relatedType: string | null;
+  relatedId: string | null;
   createdAt?: string;
+};
+
+/** Проблема closed pilot (этап 29). */
+export type PilotIssue = {
+  id: string;
+  title: string;
+  description: string;
+  severity: "critical" | "high" | "medium" | "low";
+  status: "open" | "in_progress" | "resolved" | "closed";
+  createdBy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type UserFeedbackEvent = {

@@ -4,6 +4,20 @@
 
 ---
 
+## 0.29.0-beta — 2026-03-25
+
+Инструменты проведения closed pilot (без новых бизнес-модулей).
+
+### Изменения
+
+- `/admin/pilot` — Pilot Dashboard (участники, проекты, заявки, сделки, Лия, метрики)
+- Метрики: `registration_completed`, `profile_completed`, `project_created`, `project_published`, `application_sent`, `deal_created`, `lia_used`
+- Feedback: связь с пользователем, страницей и объектом (`related_type` / `related_id`)
+- `pilot_issues` (severity + status) в dashboard
+- Документ: `docs/closed-pilot.md`
+
+---
+
 ## 0.28.0-beta — 2026-03-25
 
 Closed pilot: закрыты критические ограничения launch-readiness.

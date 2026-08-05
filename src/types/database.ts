@@ -201,7 +201,27 @@ export type FeedbackRow = {
   message: string;
   rating: number | null;
   page: string;
+  related_type: string | null;
+  related_id: string | null;
   created_at: string;
+};
+
+export type DbPilotIssueSeverity = "critical" | "high" | "medium" | "low";
+export type DbPilotIssueStatus =
+  | "open"
+  | "in_progress"
+  | "resolved"
+  | "closed";
+
+export type PilotIssueRow = {
+  id: string;
+  title: string;
+  description: string;
+  severity: DbPilotIssueSeverity;
+  status: DbPilotIssueStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type UserFeedbackEventRow = {
@@ -1189,10 +1209,32 @@ export type Database = {
           message: string;
           rating?: number | null;
           page?: string;
+          related_type?: string | null;
+          related_id?: string | null;
         };
         Update: Partial<{
           message: string;
           rating: number | null;
+          related_type: string | null;
+          related_id: string | null;
+        }>;
+      };
+      pilot_issues: {
+        Row: PilotIssueRow;
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string;
+          severity?: DbPilotIssueSeverity;
+          status?: DbPilotIssueStatus;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          title: string;
+          description: string;
+          severity: DbPilotIssueSeverity;
+          status: DbPilotIssueStatus;
+          updated_at: string;
         }>;
       };
       user_feedback_events: {
@@ -1603,6 +1645,8 @@ export type Database = {
       trust_badge_key: DbTrustBadgeKey;
       system_log_level: DbSystemLogLevel;
       investor_interest_target_type: DbInvestorInterestTargetType;
+      pilot_issue_severity: DbPilotIssueSeverity;
+      pilot_issue_status: DbPilotIssueStatus;
     };
   };
 };

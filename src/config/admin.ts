@@ -26,6 +26,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Closed beta: коды доступа",
   },
   {
+    label: "Closed Pilot",
+    href: "/admin/pilot",
+    description: "Метрики, участники и проблемы пилота",
+  },
+  {
     label: "CRM",
     href: "/admin/crm",
     description: "Контакты, лиды, задачи команды ЦКР",

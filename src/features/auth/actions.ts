@@ -142,6 +142,15 @@ export async function registerAction(
     metadata: { role, inviteId },
   });
 
+  const { trackPilotMetric } = await import("@/lib/pilot/track");
+  await trackPilotMetric({
+    eventType: "registration_completed",
+    userId: data.user.id,
+    entityType: "user",
+    entityId: data.user.id,
+    metadata: { role, inviteId },
+  });
+
   if (inviteId) {
     await supabase
       .from("beta_invites")
@@ -282,6 +291,15 @@ export async function onboardingAction(
           : "Не удалось сохранить роли.",
     };
   }
+
+  const { trackPilotMetric } = await import("@/lib/pilot/track");
+  await trackPilotMetric({
+    eventType: "profile_completed",
+    userId: user.id,
+    entityType: "user",
+    entityId: user.id,
+    metadata: { roles: parsed.data.roles },
+  });
 
   const { pathForRoles } = await import("@/config/onboarding");
   const nextPath = pathForRoles(parsed.data.roles).href;

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname } from "next/navigation";
 import { submitFeedbackAction } from "@/features/beta/actions";
 import { FEEDBACK_TYPES, feedbackTypeLabels, type FeedbackType } from "@/config/beta";
+import { relatedFromPathname } from "@/config/pilot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function FeedbackButton() {
   const pathname = usePathname();
+  const related = useMemo(() => relatedFromPathname(pathname), [pathname]);
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FeedbackType>("idea");
   const [message, setMessage] = useState("");
@@ -33,6 +35,8 @@ export function FeedbackButton() {
         message,
         rating: Number(rating),
         page: pathname,
+        relatedType: related.relatedType,
+        relatedId: related.relatedId,
       });
       if (!result.ok) {
         setError(result.error);
@@ -135,7 +139,16 @@ export function FeedbackButton() {
                     onChange={(e) => setRating(e.target.value)}
                   />
                 </div>
-                <p className="text-xs text-muted">Страница: {pathname}</p>
+                <p className="text-xs text-muted">
+                  Страница: {pathname}
+                  {related.relatedType
+                    ? ` · объект: ${related.relatedType}${
+                        related.relatedId
+                          ? ` (${related.relatedId.slice(0, 8)}…)`
+                          : ""
+                      }`
+                    : ""}
+                </p>
                 <Button type="submit" className="w-full" disabled={pending}>
                   {pending ? "Отправка…" : "Отправить"}
                 </Button>
