@@ -35,8 +35,7 @@ function detectLabels(text: string, fallback: string[] = []): string[] {
   const found = RESOURCE_PATTERNS.filter((item) => item.pattern.test(text)).map(
     (item) => item.label,
   );
-  const merged = [...new Set([...found, ...fallback])];
-  return merged;
+  return Array.from(new Set([...found, ...fallback]));
 }
 
 function extractAvailable(project: Project, extraExisting = ""): string[] {
@@ -63,7 +62,7 @@ function extractAvailable(project: Project, extraExisting = ""): string[] {
     }
   }
 
-  return [...new Set(available)].slice(0, 10);
+  return Array.from(new Set(available)).slice(0, 10);
 }
 
 function extractMissing(project: Project, extraRequired = ""): string[] {
@@ -95,7 +94,7 @@ function extractMissing(project: Project, extraRequired = ""): string[] {
     missing.push("инвестиции", "оборудование", "помещение");
   }
 
-  return [...new Set(missing)].slice(0, 10);
+  return Array.from(new Set(missing)).slice(0, 10);
 }
 
 function buildRecommendations(
@@ -125,7 +124,7 @@ function buildRecommendations(
     steps.push("Подключить эксперта ЦКР для проверки рисков и документов.");
   }
   steps.push("Дополнить карточку проекта перед публикацией и модерацией.");
-  return [...new Set(steps)].slice(0, 6);
+  return Array.from(new Set(steps)).slice(0, 6);
 }
 
 function buildRisks(external: ExternalSearchResult[]): string[] {
