@@ -1,29 +1,61 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import type { Opportunity, OpportunityType } from "@/types";
+import {
+  opportunityStatusLabels,
+  opportunityTypeLabels,
+} from "@/config/opportunities";
+import type { Opportunity } from "@/types";
 import Link from "next/link";
-
-const typeLabels: Record<OpportunityType, string> = {
-  land: "Земля",
-  premises: "Помещения",
-  equipment: "Оборудование",
-  ready_business: "Готовый бизнес",
-  technology: "Технологии",
-};
 
 type OpportunityCardProps = {
   opportunity: Opportunity;
   href?: string;
+  typeName?: string | null;
+  showStatus?: boolean;
 };
 
-export function OpportunityCard({ opportunity, href }: OpportunityCardProps) {
+function formatPrice(opportunity: Opportunity) {
+  if (opportunity.price === null || opportunity.price === undefined) {
+    return "По запросу";
+  }
+  const symbol =
+    opportunity.currency === "RUB" ? "₽" : opportunity.currency || "";
+  return `${new Intl.NumberFormat("ru-RU").format(opportunity.price)} ${symbol}`.trim();
+}
+
+function excerpt(text: string, max = 160) {
+  const clean = text.trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max).trimEnd()}…`;
+}
+
+export function OpportunityCard({
+  opportunity,
+  href,
+  typeName,
+  showStatus = false,
+}: OpportunityCardProps) {
+  const location = [opportunity.city, opportunity.region]
+    .filter(Boolean)
+    .join(", ");
+
   const content = (
     <>
-      <Badge variant="accent">{typeLabels[opportunity.type]}</Badge>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="accent">
+          {typeName ?? opportunityTypeLabels[opportunity.type]}
+        </Badge>
+        <Badge variant="default">{formatPrice(opportunity)}</Badge>
+        {showStatus ? (
+          <Badge variant="soft">
+            {opportunityStatusLabels[opportunity.status]}
+          </Badge>
+        ) : null}
+      </div>
       <CardTitle className="mt-4">{opportunity.title}</CardTitle>
-      <CardDescription>{opportunity.summary}</CardDescription>
+      <CardDescription>{excerpt(opportunity.description)}</CardDescription>
       <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted">
-        {opportunity.region}
+        {location || opportunity.region}
       </p>
     </>
   );

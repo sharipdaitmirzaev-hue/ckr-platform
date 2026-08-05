@@ -30,6 +30,7 @@ export const mainNav: NavItem[] = [
 export const dashboardNav: NavItem[] = [
   { label: "Обзор", href: "/dashboard" },
   { label: "Мои проекты", href: "/dashboard/projects" },
+  { label: "Мои возможности", href: "/dashboard/opportunities" },
   { label: "Заявки", href: "/dashboard/applications" },
   { label: "Избранное", href: "/dashboard/favorites" },
   { label: "Документы", href: "/dashboard/documents" },

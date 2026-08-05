@@ -22,9 +22,14 @@
 - CRUD владельца: `/dashboard/projects`, create, edit
 - `ProjectCard` в стиле ЦКР
 
-## Этап 3 — Возможности
+## Этап 3 — Возможности ✅ (код готов)
 
-- Типы активов, каталог, создание
+Подробности: [opportunities.md](./opportunities.md)
+
+- Таблицы `opportunity_categories` + `opportunities`
+- RLS, публичный каталог, страница `/opportunity/[id]`
+- CRUD владельца в dashboard
+- `OpportunityCard` в стиле ЦКР
 
 ## Этап 4 — Решения + заявки
 

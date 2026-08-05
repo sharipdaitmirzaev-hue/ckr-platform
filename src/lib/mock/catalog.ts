@@ -1,6 +1,6 @@
 import type { Opportunity, Project, Solution } from "@/types";
 
-/** Плейсхолдеры для модулей без БД (возможности/решения). */
+/** Плейсхолдеры для модулей без БД / демо. */
 export const mockProjects: Project[] = [
   {
     id: "proj-1",
@@ -17,36 +17,6 @@ export const mockProjects: Project[] = [
     stage: "operating",
     status: "published",
   },
-  {
-    id: "proj-2",
-    ownerId: "user-demo",
-    title: "Цифровой сервис для B2B",
-    slug: "cifrovoy-servis-b2b",
-    summary: "Продукт на стадии стартапа, требуется капитал на выход в новые отрасли.",
-    description:
-      "B2B-сервис с работающим MVP. Команда ищет инвестора для масштабирования продаж.",
-    category: "it",
-    region: "Москва",
-    investmentRequired: 8_000_000,
-    currency: "RUB",
-    stage: "startup",
-    status: "published",
-  },
-  {
-    id: "proj-3",
-    ownerId: "user-demo",
-    title: "Агропроект с переработкой",
-    slug: "agroproekt-pererabotka",
-    summary: "Поиск земли, оборудования и отраслевых партнёров.",
-    description:
-      "Идея агропроекта с переработкой сырья. Нужны земельный участок и технологическое оборудование.",
-    category: "agriculture",
-    region: "Южный ФО",
-    investmentRequired: 40_000_000,
-    currency: "RUB",
-    stage: "idea",
-    status: "published",
-  },
 ];
 
 export const mockOpportunities: Opportunity[] = [
@@ -55,8 +25,12 @@ export const mockOpportunities: Opportunity[] = [
     ownerId: "user-demo",
     type: "land",
     title: "Участок под производство",
-    summary: "Площадка с инженерной подготовкой для промышленного объекта.",
-    region: "МО",
+    description:
+      "Площадка с инженерной подготовкой для промышленного объекта. Подходит проектам на стадии запуска и расширения.",
+    region: "Московская область",
+    city: "Подольск",
+    price: 45_000_000,
+    currency: "RUB",
     status: "published",
   },
   {
@@ -64,17 +38,25 @@ export const mockOpportunities: Opportunity[] = [
     ownerId: "user-demo",
     type: "equipment",
     title: "Линия фасовки и упаковки",
-    summary: "Готовое оборудование для запуска или расширения производства.",
-    region: "Казань",
+    description:
+      "Готовое оборудование для запуска или расширения производства пищевой продукции.",
+    region: "Республика Татарстан",
+    city: "Казань",
+    price: null,
+    currency: "RUB",
     status: "published",
   },
   {
     id: "opp-3",
     ownerId: "user-demo",
-    type: "ready_business",
-    title: "Сервисный бизнес с клиентской базой",
-    summary: "Действующий бизнес, открытый к партнёрству или передаче.",
+    type: "partner",
+    title: "Отраслевой партнёр по дистрибуции",
+    description:
+      "Компания готова выступить партнёром по выводу продукта в розничные сети региона.",
     region: "Санкт-Петербург",
+    city: "Санкт-Петербург",
+    price: null,
+    currency: "RUB",
     status: "published",
   },
 ];
@@ -102,30 +84,6 @@ export const mockSolutions: Solution[] = [
     title: "Команда и продвижение проекта",
     summary: "Поиск специалистов и маркетинговое сопровождение выхода.",
     types: ["find_specialists", "marketing"],
-    status: "published",
-  },
-  {
-    id: "sol-4",
-    ownerId: "user-demo",
-    title: "Юридическое сопровождение",
-    summary: "Структурирование партнёрств, договоров и сделок.",
-    types: ["legal_support"],
-    status: "published",
-  },
-  {
-    id: "sol-5",
-    ownerId: "user-demo",
-    title: "Поиск оборудования",
-    summary: "Подбор техники и линий под задачу проекта.",
-    types: ["find_equipment"],
-    status: "published",
-  },
-  {
-    id: "sol-6",
-    ownerId: "user-demo",
-    title: "Маркетинг проекта",
-    summary: "Позиционирование, упаковка предложения и выход к аудитории.",
-    types: ["marketing"],
     status: "published",
   },
 ];

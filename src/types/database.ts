@@ -13,6 +13,21 @@ export type DbProjectStatus =
 
 export type DbProjectStage = "idea" | "startup" | "operating" | "expansion";
 
+export type DbOpportunityStatus =
+  | "draft"
+  | "moderation"
+  | "published"
+  | "archived";
+
+export type DbOpportunityType =
+  | "land"
+  | "premises"
+  | "equipment"
+  | "ready_business"
+  | "technology"
+  | "service"
+  | "partner";
+
 export type ProfileRow = {
   id: string;
   full_name: string;
@@ -55,6 +70,28 @@ export type ProjectRow = {
   stage: DbProjectStage;
   status: DbProjectStatus;
   cover_url: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OpportunityCategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+};
+
+export type OpportunityRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  description: string;
+  type: DbOpportunityType;
+  region: string;
+  city: string;
+  price: number | string | null;
+  currency: string;
+  status: DbOpportunityStatus;
   created_at: string;
   updated_at: string;
 };
@@ -116,11 +153,38 @@ export type Database = {
         };
         Update: Partial<Omit<ProjectRow, "id" | "owner_id" | "created_at">>;
       };
+      opportunity_categories: {
+        Row: OpportunityCategoryRow;
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<OpportunityCategoryRow, "id" | "created_at">>;
+      };
+      opportunities: {
+        Row: OpportunityRow;
+        Insert: {
+          id?: string;
+          owner_id: string;
+          title: string;
+          description?: string;
+          type: DbOpportunityType;
+          region?: string;
+          city?: string;
+          price?: number | null;
+          currency?: string;
+          status?: DbOpportunityStatus;
+        };
+        Update: Partial<Omit<OpportunityRow, "id" | "owner_id" | "created_at">>;
+      };
     };
     Enums: {
       user_role: DbUserRole;
       project_status: DbProjectStatus;
       project_stage: DbProjectStage;
+      opportunity_status: DbOpportunityStatus;
     };
   };
 };

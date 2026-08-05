@@ -19,7 +19,9 @@ export type OpportunityType =
   | "premises"
   | "equipment"
   | "ready_business"
-  | "technology";
+  | "technology"
+  | "service"
+  | "partner";
 
 export type SolutionType =
   | "find_investor"
@@ -81,18 +83,17 @@ export type Project = {
   updatedAt?: string;
 };
 
-/** Возможность: актив / ресурс. */
+/** Возможность: ресурс для реализации проектов. */
 export type Opportunity = {
   id: string;
   ownerId: string;
   title: string;
-  summary: string;
-  description?: string;
+  description: string;
   type: OpportunityType;
   region: string;
+  city: string;
   price?: number | null;
-  currency?: string;
-  dealType?: string | null;
+  currency: string;
   status: PublishStatus;
   createdAt?: string;
   updatedAt?: string;

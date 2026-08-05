@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       <SectionHeading
         eyebrow="Кабинет"
         title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
-        description="Фундамент пользователя подключён. Проекты и инвестиции появятся на следующих этапах."
+        description="Профиль, проекты и возможности уже доступны. Следующие модули — решения, заявки и инвестиции."
       />
 
       <Card variant="surface">
@@ -82,20 +82,47 @@ export default async function DashboardPage() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          { title: "Мои проекты", text: "Появится на Этапе 2." },
-          { title: "Заявки", text: "Появится вместе с модулями сделок." },
-          { title: "Избранное", text: "Сохранение карточек — позже." },
-          { title: "Документы", text: "Supabase Storage — позже." },
-        ].map((block) => (
+        {(
+          [
+            {
+              title: "Мои проекты",
+              text: "Управление проектами — ядром платформы.",
+              href: "/dashboard/projects",
+              ready: true,
+            },
+            {
+              title: "Мои возможности",
+              text: "Ресурсы для реализации проектов.",
+              href: "/dashboard/opportunities",
+              ready: true,
+            },
+            {
+              title: "Заявки",
+              text: "Появится вместе с модулями сделок.",
+              ready: false,
+            },
+            {
+              title: "Документы",
+              text: "Supabase Storage — позже.",
+              ready: false,
+            },
+          ] as const
+        ).map((block) => (
           <Card key={block.title} variant="surface">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-lg text-foreground">
                 {block.title}
               </h2>
-              <Badge variant="soft">Скоро</Badge>
+              {block.ready ? null : <Badge variant="soft">Скоро</Badge>}
             </div>
             <p className="mt-2 text-sm text-muted">{block.text}</p>
+            {"href" in block ? (
+              <div className="mt-4">
+                <ButtonLink href={block.href} variant="outline" size="sm">
+                  Открыть
+                </ButtonLink>
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>
