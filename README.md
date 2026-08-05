@@ -22,7 +22,9 @@ npm run dev
 
 Откройте [http://localhost:3000](http://localhost:3000).
 
-Скопируйте `.env.example` в `.env.local` при подключении Supabase.
+Скопируйте `.env.example` в `.env.local` и укажите ключи Supabase.
+
+Примените миграцию из `supabase/migrations/` (см. [docs/auth.md](./docs/auth.md)).
 
 ## Структура
 
@@ -39,6 +41,7 @@ supabase           # миграции и functions (далее)
 ## Документация
 
 - [Продукт](./docs/product.md)
+- [Auth](./docs/auth.md)
 - [Архитектура](./docs/architecture.md)
 - [Roadmap](./docs/roadmap.md)
 

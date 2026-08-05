@@ -18,6 +18,8 @@
   --ckr-border: rgba(191, 196, 202, 0.18);
   --ckr-grid-line: rgba(191, 196, 202, 0.06);
   --ckr-body-wash: rgba(18, 40, 57, 0.8);
+  --ckr-danger: #c45c5c;
+  --ckr-danger-muted: rgba(196, 92, 92, 0.12);
 }
 
 @layer base {

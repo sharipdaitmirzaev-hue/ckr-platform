@@ -9,7 +9,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  isAuthenticated?: boolean;
+};
+
+export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -18,7 +22,10 @@ export function SiteHeader() {
       <Container className="flex h-16 items-center justify-between gap-4 lg:h-[4.25rem]">
         <Logo size="md" />
 
-        <nav className="hidden items-center gap-7 md:flex" aria-label="Основная навигация">
+        <nav
+          className="hidden items-center gap-7 md:flex"
+          aria-label="Основная навигация"
+        >
           {mainNav.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -28,9 +35,7 @@ export function SiteHeader() {
                 href={item.href}
                 className={cn(
                   "text-sm tracking-wide transition-colors duration-200",
-                  active
-                    ? "text-accent"
-                    : "text-muted hover:text-foreground",
+                  active ? "text-accent" : "text-muted hover:text-foreground",
                 )}
               >
                 {item.label}
@@ -40,12 +45,28 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <ButtonLink href={authNav.login.href} variant="ghost" size="sm">
-            {authNav.login.label}
-          </ButtonLink>
-          <ButtonLink href={authNav.register.href} variant="primary" size="sm">
-            {authNav.register.label}
-          </ButtonLink>
+          {isAuthenticated ? (
+            <ButtonLink
+              href={authNav.dashboard.href}
+              variant="primary"
+              size="sm"
+            >
+              {authNav.dashboard.label}
+            </ButtonLink>
+          ) : (
+            <>
+              <ButtonLink href={authNav.login.href} variant="ghost" size="sm">
+                {authNav.login.label}
+              </ButtonLink>
+              <ButtonLink
+                href={authNav.register.href}
+                variant="primary"
+                size="sm"
+              >
+                {authNav.register.label}
+              </ButtonLink>
+            </>
+          )}
         </div>
 
         <button
@@ -99,12 +120,20 @@ export function SiteHeader() {
             </Link>
           ))}
           <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
-            <ButtonLink href={authNav.login.href} variant="ghost">
-              {authNav.login.label}
-            </ButtonLink>
-            <ButtonLink href={authNav.register.href} variant="primary">
-              {authNav.register.label}
-            </ButtonLink>
+            {isAuthenticated ? (
+              <ButtonLink href={authNav.dashboard.href} variant="primary">
+                {authNav.dashboard.label}
+              </ButtonLink>
+            ) : (
+              <>
+                <ButtonLink href={authNav.login.href} variant="ghost">
+                  {authNav.login.label}
+                </ButtonLink>
+                <ButtonLink href={authNav.register.href} variant="primary">
+                  {authNav.register.label}
+                </ButtonLink>
+              </>
+            )}
           </div>
         </Container>
       </div>

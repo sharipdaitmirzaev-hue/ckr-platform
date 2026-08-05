@@ -46,8 +46,9 @@ export type User = {
   companyName?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
-  region?: string | null;
   phone?: string | null;
+  city?: string | null;
+  region?: string | null;
   roles: UserRole[];
   createdAt: string;
   updatedAt: string;

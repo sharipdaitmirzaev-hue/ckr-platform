@@ -21,6 +21,10 @@ const config: Config = {
           elevated: "var(--ckr-surface-elevated)",
         },
         border: "var(--ckr-border)",
+        danger: {
+          DEFAULT: "var(--ckr-danger)",
+          muted: "var(--ckr-danger-muted)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-manrope)", "sans-serif"],

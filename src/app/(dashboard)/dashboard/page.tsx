@@ -1,31 +1,93 @@
 import { LiaWidget } from "@/components/lia/lia-widget";
 import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { roleLabels } from "@/config/roles";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Личный кабинет",
 };
 
-const blocks = [
-  { title: "Мои проекты", text: "Черновики и опубликованные проекты." },
-  { title: "Заявки", text: "Входящие и исходящие обращения." },
-  { title: "Избранное", text: "Сохранённые проекты и возможности." },
-  { title: "Документы", text: "Файлы и материалы по проектам." },
-];
+export default async function DashboardPage() {
+  const current = await getCurrentUser();
 
-export default function DashboardPage() {
+  if (!current) {
+    redirect("/login");
+  }
+
+  const { user, profile } = current;
+
   return (
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Кабинет"
-        title="Обзор"
-        description="Базовый каркас личного кабинета. Данные и Auth появятся на Этапе 1."
+        title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
+        description="Фундамент пользователя подключён. Проекты и инвестиции появятся на следующих этапах."
       />
 
+      <Card variant="surface">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-display text-lg text-foreground">Профиль</h2>
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex gap-2">
+                <dt className="text-muted">Email:</dt>
+                <dd className="text-foreground">{user.email}</dd>
+              </div>
+              {profile.company_name ? (
+                <div className="flex gap-2">
+                  <dt className="text-muted">Компания:</dt>
+                  <dd className="text-foreground">{profile.company_name}</dd>
+                </div>
+              ) : null}
+              {profile.city || profile.region ? (
+                <div className="flex gap-2">
+                  <dt className="text-muted">Локация:</dt>
+                  <dd className="text-foreground">
+                    {[profile.city, profile.region].filter(Boolean).join(", ")}
+                  </dd>
+                </div>
+              ) : null}
+              {profile.phone ? (
+                <div className="flex gap-2">
+                  <dt className="text-muted">Телефон:</dt>
+                  <dd className="text-foreground">{profile.phone}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </div>
+          <ButtonLink href="/onboarding" variant="outline" size="sm">
+            Редактировать
+          </ButtonLink>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">Роли</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {user.roles.length > 0 ? (
+              user.roles.map((role) => (
+                <Badge key={role} variant="accent">
+                  {roleLabels[role]}
+                </Badge>
+              ))
+            ) : (
+              <Badge variant="soft">Роль не выбрана</Badge>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-2">
-        {blocks.map((block) => (
+        {[
+          { title: "Мои проекты", text: "Появится на Этапе 2." },
+          { title: "Заявки", text: "Появится вместе с модулями сделок." },
+          { title: "Избранное", text: "Сохранение карточек — позже." },
+          { title: "Документы", text: "Supabase Storage — позже." },
+        ].map((block) => (
           <Card key={block.title} variant="surface">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-lg text-foreground">

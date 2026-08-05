@@ -1,9 +1,7 @@
-/**
- * Browser Supabase client — заготовка для Этапа 1 (Auth).
- * Подключение: @supabase/ssr + NEXT_PUBLIC_SUPABASE_URL / ANON_KEY.
- */
+import { getSupabaseEnv } from "@/lib/supabase/env";
+import { createBrowserClient } from "@supabase/ssr";
+
 export function createClient() {
-  throw new Error(
-    "Supabase client ещё не подключён. Этап 1: Auth и профили.",
-  );
+  const { url, anonKey } = getSupabaseEnv();
+  return createBrowserClient(url, anonKey);
 }
