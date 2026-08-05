@@ -55,7 +55,7 @@ export default async function AdminDashboardPage() {
         />
         <StatsCard
           label="Продуктовые тесты"
-          value={5}
+          value={PRODUCT_TEST_SCENARIOS.length}
           href="/admin/product-tests"
           hint="Сценарии качества ЦКР"
         />
