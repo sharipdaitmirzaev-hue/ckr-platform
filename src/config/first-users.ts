@@ -98,34 +98,41 @@ export const FIRST_INTENT_PROMPTS = [
   },
 ] as const;
 
-/** Первый путь пользователя по ролям. */
+/** Первый путь пользователя по ролям (Product Fix Sprint). */
 export const FIRST_USER_PATHS = {
   entrepreneur: {
     label: "Предприниматель",
-    action: "Создать проект",
-    href: "/lia?scenario=business_idea",
+    action: "Идея → Проект",
+    chain: "Идея → Проект",
+    href:
+      "/lia?scenario=business_idea&message=" +
+      encodeURIComponent("У меня есть идея"),
   },
   investor: {
     label: "Инвестор",
-    action: "Найти проект",
+    action: "Проекты → Интерес",
+    chain: "Проекты → Интерес",
     href: "/projects",
   },
   expert: {
     label: "Эксперт",
-    action: "Создать профиль",
+    action: "Профиль → Доверие → Запросы",
+    chain: "Профиль → Доверие → Запросы",
     href: "/dashboard/expert",
   },
   organization: {
     label: "Организация",
-    action: "Создать профиль",
+    action: "Потребность → Партнёры",
+    chain: "Потребность → Партнёры",
     href: "/partner",
   },
 } as const;
 
 export const FIRST_USER_JOURNEY = [
   "Главная",
+  "Лия",
   "Регистрация",
-  "Выбор роли",
+  "Роль",
   "Онбординг",
   "Первое действие",
 ] as const;

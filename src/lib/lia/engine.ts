@@ -23,6 +23,7 @@ import {
   FIRST_USERS_START_PATTERN,
   FIRST_USERS_REVIEW_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
+  PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
 } from "@/config/lia";
@@ -56,6 +57,7 @@ import type {
   LaunchReadinessReport,
   LaunchStatusReport,
   ProductImprovementReport,
+  ProductFixImprovementReport,
   WaveReviewReport,
   LaunchDecisionAIReport,
   EcosystemReport,
@@ -127,6 +129,9 @@ function detectScenario(
   }
   if (PILOT_INSIGHT_START_PATTERN.test(value)) {
     return "pilot_insight";
+  }
+  if (PRODUCT_FIX_REVIEW_START_PATTERN.test(value)) {
+    return "product_fix_review";
   }
   if (PRODUCT_IMPROVEMENT_START_PATTERN.test(value)) {
     return "product_improvement";
@@ -1945,6 +1950,49 @@ async function handleProductImprovement(input: {
   };
 }
 
+async function handleProductFixReview(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildProductFixImprovementReportAsync } = await import(
+    "@/lib/product/fix-sprint"
+  );
+  const report: ProductFixImprovementReport =
+    await buildProductFixImprovementReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "product",
+      metadata: { source: "lia", scenario: "product_fix_review" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Что улучшилось после исправлений?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — ProductFixImprovementReport. Лия только анализирует Product Fix Sprint.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "product_fix_review",
+      productFixImprovementReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handlePilotInsight(input: {
   userMessage: string;
   projectId?: string | null;
@@ -2633,6 +2681,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handleProductImprovement({ userId: input.userId });
+  }
+
+  if (scenario === "product_fix_review") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить ProductFixImprovementReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "product_fix_review",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleProductFixReview({ userId: input.userId });
   }
 
   if (scenario === "beta_analysis") {

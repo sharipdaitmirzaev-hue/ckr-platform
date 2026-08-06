@@ -166,6 +166,16 @@ export async function createProjectFromLiaDraftAction(
     },
   });
 
+  const { trackActivationAfterFix } = await import(
+    "@/lib/product/track-activation-after-fix"
+  );
+  await trackActivationAfterFix({
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+    source: "lia_project_created",
+  });
+
   revalidatePath("/projects");
   revalidatePath("/dashboard/projects");
   revalidatePath(`/dashboard/projects/${data.id}/edit`);

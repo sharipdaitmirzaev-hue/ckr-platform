@@ -72,7 +72,11 @@ export const PUBLIC_LIA_PROMPTS = [
   },
   {
     label: "Я хочу стать экспертом",
-    href: "/lia?scenario=launch_guide&message=" + encodeURIComponent("Я хочу стать экспертом"),
+    href:
+      "/lia?scenario=launch_guide&message=" +
+      encodeURIComponent(
+        "Я хочу стать экспертом: профиль → доверие → запросы",
+      ),
   },
 ] as const;
 

@@ -90,6 +90,16 @@ export async function createExpertProfileAction(
     metadata: { channel: "first_users_wave", object: "expert_profile" },
   });
 
+  const { trackActivationAfterFix } = await import(
+    "@/lib/product/track-activation-after-fix"
+  );
+  await trackActivationAfterFix({
+    userId: user.id,
+    entityType: "expert",
+    entityId: user.id,
+    source: "expert_profile_created",
+  });
+
   revalidatePath("/experts");
   revalidatePath("/dashboard/expert");
   redirect("/dashboard/expert");

@@ -149,6 +149,16 @@ export async function createProjectAction(
     metadata: { channel: "first_users_launch", object: "project" },
   });
 
+  const { trackActivationAfterFix } = await import(
+    "@/lib/product/track-activation-after-fix"
+  );
+  await trackActivationAfterFix({
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+    source: "project_created",
+  });
+
   revalidateProject(data.id);
   redirect("/dashboard/projects?feedback=project_created");
 }

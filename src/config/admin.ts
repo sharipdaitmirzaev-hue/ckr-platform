@@ -81,6 +81,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Анализ первой когорты и решение по следующей волне",
   },
   {
+    label: "Product Fix Sprint",
+    href: "/admin/product-sprint",
+    description: "Исправления Critical/High по First Users Review",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

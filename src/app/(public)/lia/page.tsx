@@ -1,4 +1,5 @@
 import { AnalysisHistory } from "@/components/lia/analysis-history";
+import { LiaImprovementNotes } from "@/components/lia/lia-improvement-notes";
 import { LiaRecommendations } from "@/components/lia/lia-recommendations";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -82,7 +83,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
           <SectionHeading
             eyebrow="ИИ-навигатор ЦКР"
             title="Лия — создание проектов и поиск решений"
-            description="Идея → Анализ → Проект → Поиск ресурсов → Комплексное решение → Реализация. Лия рекомендует и не действует без вашего подтверждения."
+            description="Спросите, что хотите сделать. Первый ответ Лии назовёт 1–2 шага и даст переход к действию. Лия рекомендует и не действует без вашего подтверждения."
           />
           {!current ? (
             <ButtonLink href="/login?next=/lia" variant="outline">
@@ -121,13 +122,15 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
                   Как работает Лия
                 </p>
                 <ol className="space-y-2 text-sm text-muted">
-                  <li>1. Создайте бизнес-проект через сценарий.</li>
-                  <li>2. Подтвердите создание — статус draft.</li>
-                  <li>3. Запустите анализ и поиск решений.</li>
-                  <li>4. Сопровождайте реализацию в кабинете проекта.</li>
+                  <li>1. Скажите, что хотите сделать (идея, ресурс, роль).</li>
+                  <li>2. Получите короткий ответ с 1–2 шагами.</li>
+                  <li>3. Подтвердите действие — проект, профиль или интерес.</li>
+                  <li>4. Продолжайте в кабинете по пути вашей роли.</li>
                 </ol>
               </Card>
             )}
+
+            <LiaImprovementNotes compact />
 
             <div>
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-muted">

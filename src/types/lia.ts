@@ -16,6 +16,7 @@ export type LiaScenarioId =
   | "evaluate_outcome"
   | "pilot_insight"
   | "product_improvement"
+  | "product_fix_review"
   | "beta_analysis"
   | "beta_review"
   | "launch_readiness"
@@ -100,6 +101,28 @@ export type ProductImprovementReport = {
   patterns: string[];
   recommendations: string[];
   priority_actions: string[];
+};
+
+/** Отчёт Product Fix Sprint (этап 52). */
+export type ProductFixSprintReport = {
+  summary: string;
+  fixed_issues: string[];
+  remaining_issues: string[];
+  activation_changes: string[];
+  lia_changes: string[];
+  recommendations: string[];
+};
+
+/**
+ * Сценарий «Что улучшилось после исправлений?» (этап 52).
+ * Не путать с ProductImprovementReport («Что улучшить в ЦКР?»).
+ */
+export type ProductFixImprovementReport = {
+  summary: string;
+  completed: string[];
+  improved: string[];
+  remaining_problems: string[];
+  next_steps: string[];
 };
 
 /** Отчёт сценария «Как проходит запуск ЦКР?» (только анализ). */
@@ -408,6 +431,8 @@ export type LiaMessageMetadata = {
   outcomeReport?: OutcomeReport | null;
   pilotInsightReport?: PilotInsightReport | null;
   productImprovementReport?: ProductImprovementReport | null;
+  productFixSprintReport?: ProductFixSprintReport | null;
+  productFixImprovementReport?: ProductFixImprovementReport | null;
   betaAnalysisReport?: BetaAnalysisReport | null;
   betaReviewReport?: BetaReviewReport | null;
   launchReadinessReport?: LaunchReadinessReport | null;

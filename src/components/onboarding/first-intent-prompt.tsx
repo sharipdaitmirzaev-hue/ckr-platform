@@ -52,7 +52,7 @@ export function FirstIntentPrompt({
         </h2>
         <p className="mt-2 text-sm text-muted">
           Путь: {FIRST_USER_JOURNEY.join(" → ")}. Для роли «{rolePath.label}»
-          рекомендуем: {rolePath.action}.
+          короткий сценарий: {rolePath.chain}.
         </p>
       </div>
 

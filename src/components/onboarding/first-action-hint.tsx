@@ -1,5 +1,6 @@
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
+import { FIRST_USER_JOURNEY } from "@/config/first-users";
 import { pathForRoles } from "@/config/onboarding";
 import type { AssignableRole } from "@/config/roles";
 
@@ -8,6 +9,8 @@ type FirstActionHintProps = {
   hasProject: boolean;
   hasLia: boolean;
   hasInterest: boolean;
+  hasExpertProfile?: boolean;
+  hasOrganization?: boolean;
 };
 
 /**
@@ -19,13 +22,15 @@ export function FirstActionHint({
   hasProject,
   hasLia,
   hasInterest,
+  hasExpertProfile = false,
+  hasOrganization = false,
 }: FirstActionHintProps) {
   const path = pathForRoles(roles.length ? roles : ["entrepreneur"]);
   const done =
     (roles.includes("entrepreneur") && hasProject && hasLia) ||
     (roles.includes("investor") && hasInterest) ||
-    (roles.includes("expert") && hasProject) ||
-    (roles.includes("company") && hasProject);
+    (roles.includes("expert") && hasExpertProfile) ||
+    (roles.includes("company") && hasOrganization);
 
   if (done) return null;
 
@@ -39,8 +44,8 @@ export function FirstActionHint({
       </p>
       <h2 className="font-display text-xl text-foreground">{path.title}</h2>
       <p className="text-sm text-muted">
-        {path.description} Большинство пользователей теряются именно после
-        профиля — сделайте первый шаг сейчас.
+        {path.description} Путь: {FIRST_USER_JOURNEY.join(" → ")}. После
+        профиля чаще всего останавливаются — сделайте первое действие сейчас.
       </p>
       <div className="flex flex-wrap gap-3">
         <ButtonLink href={path.href}>{path.ctaLabel}</ButtonLink>

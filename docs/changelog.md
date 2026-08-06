@@ -4,6 +4,22 @@
 
 ---
 
+## 0.52.0-beta — 2026-08-06
+
+Product Fix Sprint — исправления Critical/High по First Users Review (без новых крупных модулей).
+
+### Изменения
+
+- Дашборд `/admin/product-sprint`: проблемы Critical→Low, Impact Score, до/после активации
+- `ProductFixSprintReport` + `ProductFixImprovementReport`
+- Первый путь: Главная → Лия → Регистрация → Роль → Онбординг → Действие
+- Пути ролей и empty states; Lia Improvement Notes (без смены логики движка)
+- Аналитика: `product_fix_started`, `product_fix_completed`, `activation_after_fix`
+- Лия: «Что улучшилось после исправлений?»
+- Документация: `product-fix-sprint.md`
+
+---
+
 ## 0.51.0-beta — 2026-08-06
 
 First Users Review — анализ первой когорты и решение по следующей волне (без новых крупных модулей).

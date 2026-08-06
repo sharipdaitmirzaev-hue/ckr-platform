@@ -86,6 +86,16 @@ export async function toggleInterestAction(
     });
   }
 
+  const { trackActivationAfterFix } = await import(
+    "@/lib/product/track-activation-after-fix"
+  );
+  await trackActivationAfterFix({
+    userId: user.id,
+    entityType: targetType,
+    entityId: targetId,
+    source: "investment_interest_created",
+  });
+
   revalidatePath("/dashboard/interests");
   revalidatePath("/dashboard");
   return { success: "Добавлено в интересы.", interested: true };

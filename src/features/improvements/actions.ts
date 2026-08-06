@@ -20,6 +20,7 @@ export type ImprovementActionState = {
 function revalidateImprovements() {
   revalidatePath("/admin/improvements");
   revalidatePath("/admin/pilot");
+  revalidatePath("/admin/product-sprint");
 }
 
 export async function createProductImprovementAction(
@@ -66,7 +67,7 @@ export async function createProductImprovementAction(
 export async function updateProductImprovementStatusAction(
   formData: FormData,
 ): Promise<void> {
-  await requireStaff("/admin/improvements");
+  const staff = await requireStaff("/admin/improvements");
   const id = String(formData.get("id") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
   if (!id || !isProductImprovementStatus(status)) return;
@@ -76,6 +77,30 @@ export async function updateProductImprovementStatusAction(
     .from("product_improvements")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id);
+
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    if (status === "in_progress") {
+      await trackAnalyticsEvent({
+        eventType: "product_fix_started",
+        userId: staff.user.id,
+        entityType: "product_improvement",
+        entityId: id,
+        metadata: { status, sprint: "product_fix" },
+      });
+    }
+    if (status === "released") {
+      await trackAnalyticsEvent({
+        eventType: "product_fix_completed",
+        userId: staff.user.id,
+        entityType: "product_improvement",
+        entityId: id,
+        metadata: { status, sprint: "product_fix" },
+      });
+    }
+  } catch {
+    // мягкий сбой аналитики
+  }
 
   revalidateImprovements();
 }

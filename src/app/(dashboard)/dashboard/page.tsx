@@ -96,6 +96,8 @@ export default async function DashboardPage() {
         hasProject={overview.projects.length > 0}
         hasLia={hasLia}
         hasInterest={hasInterest}
+        hasExpertProfile={hasExpertProfile}
+        hasOrganization={hasOrganization}
       />
 
       {firstActionDone ? <FirstUsersFeedbackPrompt /> : null}
@@ -186,9 +188,36 @@ export default async function DashboardPage() {
         {overview.projects.length === 0 ? (
           <EmptyState
             title="Проектов пока нет"
-            description="Создайте проект или начните сценарий с Лией «Помоги создать бизнес-проект»."
-            actionHref="/dashboard/projects/create"
-            actionLabel="Создать проект"
+            description={
+              roles.includes("entrepreneur")
+                ? "Путь предпринимателя: Идея → Проект. Начните с Лии или создайте проект вручную."
+                : roles.includes("investor")
+                  ? "Путь инвестора: Проекты → Интерес. Откройте каталог и отметьте интерес."
+                  : roles.includes("expert")
+                    ? "Путь эксперта: Профиль → Доверие → Запросы. Сначала заполните профиль эксперта."
+                    : roles.includes("company")
+                      ? "Путь организации: Потребность → Партнёры. Оформите профиль на /partner."
+                      : "Создайте проект или начните сценарий с Лией «У меня есть идея»."
+            }
+            actionHref={
+              roles.includes("investor")
+                ? "/projects"
+                : roles.includes("expert")
+                  ? "/dashboard/expert"
+                  : roles.includes("company")
+                    ? "/partner"
+                    : "/lia?scenario=business_idea&message=" +
+                      encodeURIComponent("У меня есть идея")
+            }
+            actionLabel={
+              roles.includes("investor")
+                ? "Каталог проектов"
+                : roles.includes("expert")
+                  ? "Профиль эксперта"
+                  : roles.includes("company")
+                    ? "Кабинет организации"
+                    : "Начать с идеи"
+            }
           />
         ) : (
           <ul className="space-y-2">

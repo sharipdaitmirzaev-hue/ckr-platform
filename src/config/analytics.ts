@@ -47,6 +47,9 @@ export const ANALYTICS_EVENT_TYPES = [
   "expert_profile_created",
   "investment_interest_created",
   "feedback_sent",
+  "product_fix_started",
+  "product_fix_completed",
+  "activation_after_fix",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -100,6 +103,9 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   expert_profile_created: "Профиль эксперта создан",
   investment_interest_created: "Интерес к инвестиции/проекту",
   feedback_sent: "Обратная связь отправлена",
+  product_fix_started: "Исправление продукта начато",
+  product_fix_completed: "Исправление продукта завершено",
+  activation_after_fix: "Активация после исправления",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

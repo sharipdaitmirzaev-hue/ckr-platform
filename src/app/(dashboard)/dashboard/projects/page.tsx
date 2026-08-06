@@ -37,9 +37,12 @@ export default async function DashboardProjectsPage() {
       {projects.length === 0 ? (
         <EmptyState
           title="У вас пока нет проектов"
-          description="Создайте первый — опишите идею, стадию бизнеса и потребность в ресурсах. Жизненный цикл начнётся с черновика."
-          actionHref="/dashboard/projects/create"
-          actionLabel="Создать проект"
+          description="Путь: Идея → Проект. Опишите идею Лие или создайте проект вручную — жизненный цикл начнётся с черновика."
+          actionHref={
+            "/lia?scenario=business_idea&message=" +
+            encodeURIComponent("У меня есть идея")
+          }
+          actionLabel="Начать с идеи"
         />
       ) : (
         <div className="space-y-8">

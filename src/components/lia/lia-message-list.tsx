@@ -16,6 +16,7 @@ import { WaveReviewReportCard } from "@/components/lia/wave-review-report";
 import { LiaResults } from "@/components/lia/lia-results";
 import { OutcomeReportCard } from "@/components/lia/outcome-report";
 import { PilotInsightReportCard } from "@/components/lia/pilot-insight-report";
+import { ProductFixImprovementReportCard } from "@/components/lia/product-fix-improvement-report";
 import { ProductImprovementReportCard } from "@/components/lia/product-improvement-report";
 import { ProgressReportCard } from "@/components/lia/progress-report";
 import { StrategyReportCard } from "@/components/lia/strategy-report";
@@ -96,6 +97,8 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const firstUsersReport = message.metadata?.firstUsersReport;
         const firstUsersLiaReport = message.metadata?.firstUsersLiaReport;
         const firstUsersReviewReport = message.metadata?.firstUsersReviewReport;
+        const productFixImprovementReport =
+          message.metadata?.productFixImprovementReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -188,6 +191,11 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && firstUsersLiaReport ? (
               <FirstUsersLiaReportCard report={firstUsersLiaReport} />
+            ) : null}
+            {!isUser && productFixImprovementReport ? (
+              <ProductFixImprovementReportCard
+                report={productFixImprovementReport}
+              />
             ) : null}
           </li>
         );

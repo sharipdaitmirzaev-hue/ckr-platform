@@ -25,8 +25,9 @@ export function PublicLiaEntry({ compact = false }: Props) {
             Расскажите, что вы хотите сделать
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-            До регистрации — консультация. После входа Лия помогает создавать
-            проекты и искать ресурсы. Лия только рекомендует.
+            Первый путь: Главная → Лия → Регистрация → Роль → Онбординг →
+            Действие. До входа — консультация; после — явный следующий шаг.
+            Лия только рекомендует.
           </p>
         </div>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

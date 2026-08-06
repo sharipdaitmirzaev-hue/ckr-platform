@@ -108,6 +108,13 @@ export const LIA_SCENARIOS: {
       "Feedback, issues, метрики пилота → ProductImprovementReport (только анализ)",
   },
   {
+    id: "product_fix_review",
+    label: "Что улучшилось после исправлений?",
+    prompt: "Что улучшилось после исправлений?",
+    description:
+      "Product Fix Sprint: completed / improved / remaining → ProductFixImprovementReport (только анализ)",
+  },
+  {
     id: "beta_analysis",
     label: "Как проходит запуск ЦКР?",
     prompt: "Как проходит запуск ЦКР?",
@@ -271,6 +278,9 @@ export const PILOT_INSIGHT_START_PATTERN =
 
 export const PRODUCT_IMPROVEMENT_START_PATTERN =
   /что\s+улучшить\s+в\s+цкр|улучш(ить|ения)\s+(в\s+)?цкр|product\s*improvement|цикл\s+улучшен/i;
+
+export const PRODUCT_FIX_REVIEW_START_PATTERN =
+  /что\s+улучшилось\s+после\s+исправлен|улучшилось\s+после\s+исправлен|product\s*fix(\s*sprint)?|после\s+исправлений/i;
 
 export const BETA_ANALYSIS_START_PATTERN =
   /как\s+проходит\s+запуск\s+цкр|запуск\s+цкр|beta\s*analysis|controlled\s*beta|как\s+ид[её]т\s+beta/i;

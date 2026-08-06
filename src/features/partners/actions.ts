@@ -92,6 +92,16 @@ export async function createOrganizationAction(
     metadata: { channel: "first_users_launch", object: "organization" },
   });
 
+  const { trackActivationAfterFix } = await import(
+    "@/lib/product/track-activation-after-fix"
+  );
+  await trackActivationAfterFix({
+    userId: session.user.id,
+    entityType: "organization",
+    entityId: data.id,
+    source: "organization_created",
+  });
+
   revalidatePartner();
   redirect("/partner/profile");
 }
