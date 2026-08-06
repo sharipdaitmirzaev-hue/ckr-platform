@@ -272,6 +272,22 @@ export type LaunchDecisionRow = {
   created_by: string | null;
   created_at: string;
 };
+
+/** Этап 57: решение перед Public Launch. */
+export type DbPublicLaunchDecisionKind =
+  | "public_launch"
+  | "continue_beta"
+  | "improve_product";
+
+export type PublicLaunchDecisionRow = {
+  id: string;
+  wave_id: string | null;
+  decision: DbPublicLaunchDecisionKind;
+  notes: string;
+  created_by: string | null;
+  created_at: string;
+};
+
 export type DbLaunchWaveParticipantStatus =
   | "invited"
   | "joined"
@@ -1579,6 +1595,22 @@ export type Database = {
           created_by: string | null;
         }>;
       };
+      public_launch_decisions: {
+        Row: PublicLaunchDecisionRow;
+        Insert: {
+          id?: string;
+          wave_id?: string | null;
+          decision: DbPublicLaunchDecisionKind;
+          notes?: string;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          wave_id: string | null;
+          decision: DbPublicLaunchDecisionKind;
+          notes: string;
+          created_by: string | null;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -2139,6 +2171,7 @@ export type Database = {
       launch_goal_status: DbLaunchGoalStatus;
       launch_goal_metric_type: DbLaunchGoalMetricType;
       launch_decision_kind: DbLaunchDecisionKind;
+      public_launch_decision_kind: DbPublicLaunchDecisionKind;
     };
   };
 };

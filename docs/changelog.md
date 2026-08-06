@@ -4,6 +4,20 @@
 
 ---
 
+## 0.57.0-beta — 2026-08-06
+
+Public Launch Decision Gate — управленческое решение о выходе ЦКР из beta (без новых крупных бизнес-модулей).
+
+### Изменения
+
+- Дашборд `/admin/public-launch-decision`: Product / User / Ecosystem / Business / Risks
+- `BusinessLaunchReadiness`, `LaunchRiskReview`, `PublicLaunchDecision`
+- Фиксация решения в `public_launch_decisions` (решение, комментарий, ответственный, дата)
+- Лия: «Готов ли ЦКР к публичному запуску?» → `PublicLaunchDecisionReport`
+- Документация: `public-launch-decision.md`, `public-beta-launch-plan.md`
+
+---
+
 ## 0.56.0-beta — 2026-08-06
 
 Open Beta Growth — анализ роста и удержания после Open Beta (без новых крупных бизнес-модулей).

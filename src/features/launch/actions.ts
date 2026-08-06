@@ -10,6 +10,7 @@ import {
   isLaunchWaveStatus,
   isLaunchWaveType,
 } from "@/config/launch-waves";
+import { isPublicLaunchDecision } from "@/config/public-launch-decision";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { emitLaunchGoalEvent } from "@/lib/launch/events";
 import { evaluateWaveCompletion } from "@/lib/launch/goals";
@@ -26,6 +27,7 @@ function revalidateLaunch() {
   revalidatePath("/admin/launch");
   revalidatePath("/admin/launch-decision");
   revalidatePath("/admin/wave-review");
+  revalidatePath("/admin/public-launch-decision");
 }
 
 export async function createLaunchWaveAction(
@@ -293,4 +295,44 @@ export async function recordLaunchDecisionAction(
 
   revalidateLaunch();
   return { success: "Решение Decision Gate зафиксировано." };
+}
+
+export async function recordPublicLaunchDecisionAction(
+  _prev: LaunchActionState,
+  formData: FormData,
+): Promise<LaunchActionState> {
+  const staff = await requireStaff("/admin/public-launch-decision");
+  const decision = String(formData.get("decision") ?? "").trim();
+  const waveId = String(formData.get("waveId") ?? "").trim() || null;
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  if (!isPublicLaunchDecision(decision)) {
+    return { error: "Некорректное решение Public Launch Decision Gate." };
+  }
+  if (notes.length < 3) {
+    return { error: "Укажите комментарий к решению (от 3 символов)." };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.from("public_launch_decisions").insert({
+    wave_id: waveId,
+    decision,
+    notes,
+    created_by: staff.user.id,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.message.includes("public_launch_decisions") ||
+        error.code === "42P01"
+          ? "Примените миграцию 20260325520000_public_launch_decision.sql"
+          : error.message,
+    };
+  }
+
+  revalidateLaunch();
+  return {
+    success: "Решение Public Launch Decision Gate зафиксировано.",
+  };
 }

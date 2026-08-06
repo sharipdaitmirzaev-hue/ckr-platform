@@ -520,6 +520,15 @@
 - Лия: «Почему пользователи возвращаются в ЦКР?»
 - Без новых крупных бизнес-модулей
 
-## Этап 57+ — backlog
+## Этап 57 — Public Launch Decision Gate ✅ (код готов)
+
+Подробности: [public-launch-decision.md](./public-launch-decision.md) · [public-beta-launch-plan.md](./public-beta-launch-plan.md)
+
+- `/admin/public-launch-decision`: Product / User / Ecosystem / Business / Risks
+- PublicLaunchDecision + PublicLaunchDecisionReport
+- Лия: «Готов ли ЦКР к публичному запуску?»
+- Без новых крупных бизнес-модулей
+
+## Этап 58+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

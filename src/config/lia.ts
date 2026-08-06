@@ -233,6 +233,13 @@ export const LIA_SCENARIOS: {
     description:
       "Open Beta Growth: удержание, ценные действия, роли → RetentionReport (только анализ)",
   },
+  {
+    id: "public_launch_decision",
+    label: "Готов ли ЦКР к публичному запуску?",
+    prompt: "Готов ли ЦКР к публичному запуску?",
+    description:
+      "Public Launch Decision Gate: product / users / ecosystem / business / risks → PublicLaunchDecisionReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -357,6 +364,9 @@ export const OPEN_BETA_READINESS_START_PATTERN =
 
 export const OPEN_BETA_GROWTH_START_PATTERN =
   /почему\s+пользователи\s+возвращаются(\s+в\s+цкр)?|удержание\s+(пользователей\s+)?open\s*beta|open\s*beta\s*growth|retention\s*report|возврат\s+пользователей/i;
+
+export const PUBLIC_LAUNCH_DECISION_START_PATTERN =
+  /готов\s+ли\s+цкр\s+к\s+публичному\s+запуску|публичному\s+запуску|public\s*launch\s*decision|public\s*launch\s*readiness|decision\s*gate\s*public/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

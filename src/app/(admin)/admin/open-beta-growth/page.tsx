@@ -57,6 +57,12 @@ export default async function AdminOpenBetaGrowthPage() {
           Open Beta
         </Link>
         <Link
+          href="/admin/public-launch-decision"
+          className="text-accent hover:underline"
+        >
+          Public Launch Decision
+        </Link>
+        <Link
           href="/admin/open-beta-review"
           className="text-accent hover:underline"
         >

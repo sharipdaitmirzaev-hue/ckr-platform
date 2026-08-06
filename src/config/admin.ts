@@ -106,6 +106,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Удержание, рост ролей, ценность действий после Open Beta",
   },
   {
+    label: "Public Launch Decision",
+    href: "/admin/public-launch-decision",
+    description: "Decision Gate: готовность к полноценному публичному запуску",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

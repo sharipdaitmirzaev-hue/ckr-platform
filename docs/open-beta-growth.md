@@ -3,7 +3,7 @@
 Этап 56 · Версия `0.56.0-beta`  
 UI: `/admin/open-beta-growth` · Лия: «Почему пользователи возвращаются в ЦКР?»
 
-Связано: [open-beta-launch-control.md](./open-beta-launch-control.md) · [open-beta-first-30-days.md](./open-beta-first-30-days.md) · [open-beta-readiness.md](./open-beta-readiness.md)
+Связано: [public-launch-decision.md](./public-launch-decision.md) · [open-beta-launch-control.md](./open-beta-launch-control.md) · [open-beta-first-30-days.md](./open-beta-first-30-days.md) · [open-beta-readiness.md](./open-beta-readiness.md)
 
 ---
 
