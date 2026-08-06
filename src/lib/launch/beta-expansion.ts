@@ -17,16 +17,13 @@ import {
   type BetaExpansionRoleKey,
 } from "@/config/beta-expansion";
 import {
+  goalProgressPercent,
   launchGoalMetricLabels,
   type LaunchGoalMetricType,
 } from "@/config/launch-goals";
 import { getImprovementsDashboard } from "@/lib/improvements/queries";
 import { getFirstUsersDashboard } from "@/lib/launch/first-users";
-import {
-  goalProgressPercent,
-  listLaunchGoals,
-  type LaunchGoalView,
-} from "@/lib/launch/goals";
+import { listLaunchGoals, type LaunchGoalView } from "@/lib/launch/goals";
 import { listLaunchWaves } from "@/lib/launch/waves";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
