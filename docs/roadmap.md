@@ -529,6 +529,16 @@
 - Лия: «Готов ли ЦКР к публичному запуску?»
 - Без новых крупных бизнес-модулей
 
-## Этап 58+ — backlog
+## Этап 58 — Public Launch Execution ✅ (код готов)
+
+Подробности: [public-launch-execution.md](./public-launch-execution.md) · [public-beta-launch-plan.md](./public-beta-launch-plan.md)
+
+- Public Launch Wave 1 (`planned` → `active` только при Decision = public_launch)
+- `/admin/public-launch` + `/admin/public-launch-kpi`
+- PublicLaunch90Days · LaunchChannels · PublicLaunchReport
+- Лия: «Как проходит публичный запуск ЦКР?»
+- Без новых крупных бизнес-модулей
+
+## Этап 59+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

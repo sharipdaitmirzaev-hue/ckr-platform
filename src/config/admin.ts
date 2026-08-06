@@ -111,6 +111,16 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Decision Gate: готовность к полноценному публичному запуску",
   },
   {
+    label: "Public Launch",
+    href: "/admin/public-launch",
+    description: "Управление Public Launch Wave 1: статус, 90 дней, каналы",
+  },
+  {
+    label: "Public Launch KPI",
+    href: "/admin/public-launch-kpi",
+    description: "Product / Ecosystem / Business KPI публичного запуска",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

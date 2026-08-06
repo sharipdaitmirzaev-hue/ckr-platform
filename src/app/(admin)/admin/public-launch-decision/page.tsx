@@ -68,6 +68,9 @@ export default async function AdminPublicLaunchDecisionPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
+        <Link href="/admin/public-launch" className="text-accent hover:underline">
+          Public Launch
+        </Link>
         <Link href="/admin/open-beta" className="text-accent hover:underline">
           Open Beta
         </Link>

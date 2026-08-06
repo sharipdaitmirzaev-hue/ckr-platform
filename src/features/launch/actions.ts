@@ -11,6 +11,11 @@ import {
   isLaunchWaveType,
 } from "@/config/launch-waves";
 import { isPublicLaunchDecision } from "@/config/public-launch-decision";
+import {
+  PUBLIC_LAUNCH_WAVE_ID,
+  PUBLIC_LAUNCH_WAVE_NAME,
+} from "@/config/public-launch";
+import { LAUNCH_WAVE_IDS } from "@/config/launch-waves";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { emitLaunchGoalEvent } from "@/lib/launch/events";
 import { evaluateWaveCompletion } from "@/lib/launch/goals";
@@ -28,6 +33,9 @@ function revalidateLaunch() {
   revalidatePath("/admin/launch-decision");
   revalidatePath("/admin/wave-review");
   revalidatePath("/admin/public-launch-decision");
+  revalidatePath("/admin/public-launch");
+  revalidatePath("/admin/public-launch-kpi");
+  revalidatePath("/admin/open-beta");
 }
 
 export async function createLaunchWaveAction(
@@ -334,5 +342,129 @@ export async function recordPublicLaunchDecisionAction(
   revalidateLaunch();
   return {
     success: "Решение Public Launch Decision Gate зафиксировано.",
+  };
+}
+
+/**
+ * Активирует Public Launch Wave 1 только если последнее решение = public_launch.
+ * planned → active; Open Beta Wave → completed.
+ */
+export async function activatePublicLaunchWaveAction(
+  _prev: LaunchActionState,
+  _formData: FormData,
+): Promise<LaunchActionState> {
+  const staff = await requireStaff("/admin/public-launch");
+  const supabase = createClient();
+
+  const { data: decisionRow, error: decisionError } = await supabase
+    .from("public_launch_decisions")
+    .select("decision, id")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (decisionError) {
+    return {
+      error:
+        decisionError.message.includes("public_launch_decisions") ||
+        decisionError.code === "42P01"
+          ? "Примените миграцию public_launch_decisions."
+          : decisionError.message,
+    };
+  }
+
+  if (!decisionRow || decisionRow.decision !== "public_launch") {
+    if (!decisionRow) {
+      return {
+        error:
+          "Нет зафиксированного решения. Сначала Decision Gate → public_launch.",
+      };
+    }
+    if (decisionRow.decision === "continue_beta") {
+      return {
+        error:
+          "Решение continue_beta — продолжайте beta-сценарий, запуск не активируется.",
+      };
+    }
+    return {
+      error:
+        "Решение improve_product — остановите запуск и работайте над улучшениями.",
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Завершить Open Beta Wave, если активна
+  await supabase
+    .from("launch_waves")
+    .update({
+      status: "completed",
+      end_date: today,
+    })
+    .eq("id", LAUNCH_WAVE_IDS.openBeta)
+    .eq("status", "active");
+
+  // Любые другие active → planned
+  await supabase
+    .from("launch_waves")
+    .update({ status: "planned" })
+    .eq("status", "active")
+    .neq("id", PUBLIC_LAUNCH_WAVE_ID);
+
+  const { data: wave, error: waveError } = await supabase
+    .from("launch_waves")
+    .update({
+      status: "active",
+      start_date: today,
+      wave_type: "public",
+      name: PUBLIC_LAUNCH_WAVE_NAME,
+    })
+    .eq("id", PUBLIC_LAUNCH_WAVE_ID)
+    .select("*")
+    .maybeSingle();
+
+  if (waveError) {
+    return {
+      error:
+        waveError.message.includes("launch_waves") || waveError.code === "42P01"
+          ? "Примените миграцию 20260325530000_public_launch_wave.sql"
+          : waveError.message,
+    };
+  }
+
+  if (!wave) {
+    return {
+      error:
+        "Волна Public Launch Wave 1 не найдена. Примените миграцию public_launch_wave.",
+    };
+  }
+
+  // Привязать последнее решение к волне
+  await supabase
+    .from("public_launch_decisions")
+    .update({ wave_id: PUBLIC_LAUNCH_WAVE_ID })
+    .eq("id", decisionRow.id);
+
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "launch_goal_created",
+      userId: staff.user.id,
+      entityType: "launch_wave",
+      entityId: PUBLIC_LAUNCH_WAVE_ID,
+      metadata: {
+        wave: PUBLIC_LAUNCH_WAVE_NAME,
+        decision: "public_launch",
+        source: "public_launch_activation",
+        channel: "public_launch",
+      },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  revalidateLaunch();
+  return {
+    success: `${PUBLIC_LAUNCH_WAVE_NAME} активирована (planned → active).`,
   };
 }

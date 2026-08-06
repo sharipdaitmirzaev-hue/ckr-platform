@@ -4,6 +4,20 @@
 
 ---
 
+## 0.58.0-beta — 2026-08-06
+
+Public Launch Execution — управление публичным запуском после Decision Gate (без новых крупных бизнес-модулей).
+
+### Изменения
+
+- Launch Wave «Public Launch Wave 1» (`public`, `planned` → `active` только при `public_launch`)
+- Дашборды `/admin/public-launch` и `/admin/public-launch-kpi`
+- `PublicLaunch90Days`, `LaunchChannels`, feedback категория `public_launch`
+- Лия: «Как проходит публичный запуск ЦКР?» → `PublicLaunchReport`
+- Документация: `public-launch-execution.md`
+
+---
+
 ## 0.57.0-beta — 2026-08-06
 
 Public Launch Decision Gate — управленческое решение о выходе ЦКР из beta (без новых крупных бизнес-модулей).

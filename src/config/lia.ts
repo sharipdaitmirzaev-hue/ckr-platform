@@ -240,6 +240,13 @@ export const LIA_SCENARIOS: {
     description:
       "Public Launch Decision Gate: product / users / ecosystem / business / risks → PublicLaunchDecisionReport (только анализ)",
   },
+  {
+    id: "public_launch",
+    label: "Как проходит публичный запуск ЦКР?",
+    prompt: "Как проходит публичный запуск ЦКР?",
+    description:
+      "Public Launch Wave 1: пользователи, активация, экосистема, бизнес → PublicLaunchReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -366,7 +373,10 @@ export const OPEN_BETA_GROWTH_START_PATTERN =
   /почему\s+пользователи\s+возвращаются(\s+в\s+цкр)?|удержание\s+(пользователей\s+)?open\s*beta|open\s*beta\s*growth|retention\s*report|возврат\s+пользователей/i;
 
 export const PUBLIC_LAUNCH_DECISION_START_PATTERN =
-  /готов\s+ли\s+цкр\s+к\s+публичному\s+запуску|публичному\s+запуску|public\s*launch\s*decision|public\s*launch\s*readiness|decision\s*gate\s*public/i;
+  /готов\s+ли\s+цкр\s+к\s+публичному\s+запуску|публичному\s+запуску(?!\s+цкр)|public\s*launch\s*decision|public\s*launch\s*readiness|decision\s*gate\s*public/i;
+
+export const PUBLIC_LAUNCH_START_PATTERN =
+  /как\s+проходит\s+публичный\s+запуск\s+цкр|публичный\s+запуск\s+цкр|public\s*launch(\s*wave)?(\s*report)?(?!\s*decision)/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

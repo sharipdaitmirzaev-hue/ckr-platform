@@ -17,6 +17,8 @@ export const INVITE_CHANNELS = [
   "partner",
   "referral",
   "social",
+  "events",
+  "content",
   "website",
   "internal",
   "other",
@@ -25,10 +27,12 @@ export const INVITE_CHANNELS = [
 export type InviteChannel = (typeof INVITE_CHANNELS)[number];
 
 export const inviteChannelLabels: Record<InviteChannel, string> = {
-  email: "Email",
-  partner: "Партнёр",
-  referral: "Реферал",
-  social: "Соцсети",
+  email: "Прямые приглашения",
+  partner: "Партнёры",
+  referral: "Рекомендации",
+  social: "Социальные сети",
+  events: "Мероприятия",
+  content: "Контент",
   website: "Сайт",
   internal: "Внутренний",
   other: "Другое",

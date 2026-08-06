@@ -64,7 +64,7 @@ UI: `/admin/public-launch-decision` · Лия: «Готов ли ЦКР к пу�
 
 | Решение | Действия |
 |---|---|
-| `public_launch` | Следовать [public-beta-launch-plan.md](./public-beta-launch-plan.md): переход beta → public, контроль 90 дней |
+| `public_launch` | Активировать волну на [public-launch-execution.md](./public-launch-execution.md) · `/admin/public-launch` |
 | `continue_beta` | Донабор Open Beta Wave, усиление retention и связей |
 | `improve_product` | Закрыть blocked / Critical, повторить Decision Gate |
 

@@ -126,6 +126,17 @@ export const OPEN_BETA_GOAL_IDS = {
   feedback: "c000000a-0000-4000-8000-000000000009",
 } as const;
 
+/** Seed UUID целей Public Launch Wave 1 (этап 58). */
+export const PUBLIC_LAUNCH_GOAL_IDS = {
+  registered: "c000000b-0000-4000-8000-000000000001",
+  activated: "c000000b-0000-4000-8000-000000000002",
+  projects: "c000000b-0000-4000-8000-000000000003",
+  applications: "c000000b-0000-4000-8000-000000000004",
+  deals: "c000000b-0000-4000-8000-000000000005",
+  liaPct: "c000000b-0000-4000-8000-000000000006",
+  feedback: "c000000b-0000-4000-8000-000000000007",
+} as const;
+
 export function isLaunchGoalStatus(value: string): value is LaunchGoalStatus {
   return (LAUNCH_GOAL_STATUSES as readonly string[]).includes(value);
 }

@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.57.0-beta** (Public Launch Decision Gate).  
-Обзор: [Public Launch Decision](./docs/public-launch-decision.md) · [Public Beta Launch Plan](./docs/public-beta-launch-plan.md) · [Open Beta Growth](./docs/open-beta-growth.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.58.0-beta** (Public Launch Execution).  
+Обзор: [Public Launch Execution](./docs/public-launch-execution.md) · [Public Launch Decision](./docs/public-launch-decision.md) · [Public Beta Launch Plan](./docs/public-beta-launch-plan.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 

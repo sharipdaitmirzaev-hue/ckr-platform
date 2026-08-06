@@ -40,6 +40,8 @@ function revalidateInvites() {
   revalidatePath("/admin/open-beta");
   revalidatePath("/admin/open-beta-growth");
   revalidatePath("/admin/open-beta-review");
+  revalidatePath("/admin/public-launch");
+  revalidatePath("/admin/public-launch-kpi");
 }
 
 export async function createBetaInviteAction(
