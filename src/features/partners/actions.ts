@@ -83,6 +83,15 @@ export async function createOrganizationAction(
     );
   }
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_object_created",
+    userId: session.user.id,
+    entityType: "organization",
+    entityId: data.id,
+    metadata: { channel: "first_users_launch", object: "organization" },
+  });
+
   revalidatePartner();
   redirect("/partner/profile");
 }

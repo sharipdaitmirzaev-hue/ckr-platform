@@ -1,3 +1,4 @@
+import { DemoBadge } from "@/components/demo/demo-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { VerificationBadge } from "@/components/verification/verification-badge";
@@ -30,6 +31,7 @@ export function ExpertCard({
           {expert.experienceYears === 1 ? "год" : "лет"}
         </Badge>
         <VerificationBadge status={expert.verificationStatus} />
+        <DemoBadge entityId={expert.id} />
         {showStatus ? (
           <Badge variant="soft">{expertStatusLabels[expert.status]}</Badge>
         ) : null}

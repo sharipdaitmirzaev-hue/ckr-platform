@@ -72,6 +72,24 @@ export async function createExpertProfileAction(
     return { error: error.message };
   }
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "profile_completed",
+    userId: user.id,
+    entityType: "expert",
+    entityId: user.id,
+    metadata: { object: "expert_profile", channel: "first_users_launch" },
+  });
+
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_object_created",
+    userId: user.id,
+    entityType: "expert",
+    entityId: user.id,
+    metadata: { channel: "first_users_launch", object: "expert_profile" },
+  });
+
   revalidatePath("/experts");
   revalidatePath("/dashboard/expert");
   redirect("/dashboard/expert");

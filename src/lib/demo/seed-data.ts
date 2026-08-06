@@ -7,8 +7,8 @@
 export const DEMO_OWNER_ID = "a0000001-0000-4000-8000-000000000001";
 
 export const demoSeedMeta = {
-  version: 2,
-  note: "Демонстрационные и beta-данные ЦКР. Не содержат реальных ПДн.",
+  version: 3,
+  note: "Демонстрационные данные ЦКР для первых пользователей. Помечены как demo (префиксы a1000001/a2000001/a3000001/a4000001). Без реальных ПДн.",
   categories: {
     projects: [
       "production",

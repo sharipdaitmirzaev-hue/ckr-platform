@@ -81,6 +81,15 @@ export async function createOpportunityAction(
     entityId: data.id,
   });
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_object_created",
+    userId: user.id,
+    entityType: "opportunity",
+    entityId: data.id,
+    metadata: { channel: "first_users_launch", object: "opportunity" },
+  });
+
   revalidatePath("/opportunities");
   revalidatePath("/dashboard/opportunities");
   redirect("/dashboard/opportunities?feedback=opportunity_created");

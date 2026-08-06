@@ -108,6 +108,15 @@ export async function createInvestmentOfferAction(
     entityId: data.id,
   });
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_object_created",
+    userId: user.id,
+    entityType: "investment",
+    entityId: data.id,
+    metadata: { channel: "first_users_launch", object: "investment" },
+  });
+
   revalidatePath("/investments");
   revalidatePath("/dashboard/investments");
   redirect("/dashboard/investments?feedback=investment_created");

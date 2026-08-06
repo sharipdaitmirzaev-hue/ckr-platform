@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/about",
     "/how-it-works",
     "/cases",
+    "/trust",
     "/features",
     "/projects",
     "/opportunities",
@@ -43,7 +44,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
             path === roleLandings.organizations.href ||
             path === "/experts" ||
             path === "/how-it-works" ||
-            path === "/cases"
+            path === "/cases" ||
+            path === "/trust"
           ? 0.9
           : 0.7,
   }));

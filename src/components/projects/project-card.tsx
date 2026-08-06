@@ -1,3 +1,4 @@
+import { DemoBadge } from "@/components/demo/demo-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { VerificationBadge } from "@/components/verification/verification-badge";
@@ -46,6 +47,7 @@ export function ProjectCard({
         <Badge variant="soft">{project.region}</Badge>
         <Badge variant="default">{formatNeed(project)}</Badge>
         <VerificationBadge status={project.verificationStatus} />
+        <DemoBadge entityId={project.id} />
         {showStatus ? (
           <Badge variant="soft">{projectStatusLabels[project.status]}</Badge>
         ) : null}

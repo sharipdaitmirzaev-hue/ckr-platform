@@ -2,6 +2,7 @@ import { ActivityFeed } from "@/components/activity/activity-feed";
 import { LiaRecommendations } from "@/components/lia/lia-recommendations";
 import { LiaWidget } from "@/components/lia/lia-widget";
 import { FirstActionHint } from "@/components/onboarding/first-action-hint";
+import { FirstIntentPrompt } from "@/components/onboarding/first-intent-prompt";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -44,22 +45,40 @@ export default async function DashboardPage() {
 
   let hasLia = false;
   let hasInterest = false;
+  let hasExpertProfile = false;
+  let hasOrganization = false;
   if (hasSupabaseEnv()) {
     const supabase = createClient();
-    const [liaRes, interestRes] = await Promise.all([
+    const [liaRes, interestRes, expertRes, orgRes] = await Promise.all([
       supabase
         .from("analytics_events")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
-        .in("event_type", ["first_lia_use", "lia_used"]),
+        .in("event_type", ["first_lia_use", "lia_used", "lia_started"]),
       supabase
         .from("investor_interests")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("expert_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("organization_members")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id),
     ]);
     hasLia = (liaRes.count ?? 0) > 0;
     hasInterest = (interestRes.count ?? 0) > 0;
+    hasExpertProfile = (expertRes.count ?? 0) > 0;
+    hasOrganization = (orgRes.count ?? 0) > 0;
   }
+
+  const firstActionDone =
+    (roles.includes("entrepreneur") && overview.projects.length > 0) ||
+    (roles.includes("investor") && hasInterest) ||
+    (roles.includes("expert") && hasExpertProfile) ||
+    (roles.includes("company") && hasOrganization);
 
   return (
     <div className="space-y-8">
@@ -68,6 +87,8 @@ export default async function DashboardPage() {
         title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
         description="Единый обзор: проекты, заявки, инвестиции, сделки, уведомления и рекомендации Лии."
       />
+
+      <FirstIntentPrompt roles={roles} firstActionDone={firstActionDone} />
 
       <FirstActionHint
         roles={roles}

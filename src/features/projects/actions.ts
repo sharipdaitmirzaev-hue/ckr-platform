@@ -141,6 +141,13 @@ export async function createProjectAction(
     entityId: data.id,
     metadata: { channel: "public_launch" },
   });
+  await trackBetaMilestone({
+    eventType: "first_object_created",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+    metadata: { channel: "first_users_launch", object: "project" },
+  });
 
   revalidateProject(data.id);
   redirect("/dashboard/projects?feedback=project_created");

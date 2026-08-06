@@ -1,3 +1,4 @@
+import { RegistrationStartedTracker } from "@/components/analytics/registration-started-tracker";
 import { Card } from "@/components/ui/card";
 import { RegisterForm } from "@/features/auth/components/register-form";
 import type { Metadata } from "next";
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <Card as="div" variant="surface" className="p-6 sm:p-8">
+      <RegistrationStartedTracker />
       <h1 className="font-display text-2xl font-semibold text-foreground">
         Регистрация
       </h1>

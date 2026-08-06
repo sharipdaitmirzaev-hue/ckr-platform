@@ -40,7 +40,17 @@
 - `deal_completed`
 - `document_verified`
 
-Запись: `trackAnalyticsEvent()` в `src/lib/analytics/track.ts` (не ломает основной сценарий при ошибке).
+Воронка первых пользователей (этап 49):
+
+- `public_page_view`
+- `registration_started`
+- `registration_completed`
+- `role_selected`
+- `lia_started`
+- `first_object_created`
+
+Запись: `trackAnalyticsEvent()` в `src/lib/analytics/track.ts` (не ломает основной сценарий при ошибке).  
+Клиентские точки: `PublicPageViewTracker`, `RegistrationStartedTracker` → `trackLaunchFunnelEventAction`.
 
 ### RLS
 

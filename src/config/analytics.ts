@@ -35,6 +35,11 @@ export const ANALYTICS_EVENT_TYPES = [
   "launch_goal_achieved",
   "launch_goal_failed",
   "launch_wave_completed",
+  "public_page_view",
+  "registration_started",
+  "registration_completed",
+  "lia_started",
+  "first_object_created",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -76,6 +81,11 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   launch_goal_achieved: "Цель запуска достигнута",
   launch_goal_failed: "Цель запуска не достигнута",
   launch_wave_completed: "Волна запуска завершена",
+  public_page_view: "Просмотр публичной страницы",
+  registration_started: "Регистрация начата",
+  registration_completed: "Регистрация завершена",
+  lia_started: "Старт сценария с Лией",
+  first_object_created: "Первый объект создан",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

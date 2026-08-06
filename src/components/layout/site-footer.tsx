@@ -89,6 +89,14 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
+                  href="/trust"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Доверие
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/about"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >

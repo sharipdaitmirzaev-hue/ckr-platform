@@ -152,6 +152,13 @@ export async function registerAction(
     entityId: data.user.id,
     metadata: { role, inviteId, channel: "public_launch" },
   });
+  await trackAnalyticsEvent({
+    eventType: "registration_completed",
+    userId: data.user.id,
+    entityType: "user",
+    entityId: data.user.id,
+    metadata: { role, inviteId, channel: "first_users_launch" },
+  });
 
   const { trackPilotMetric } = await import("@/lib/pilot/track");
   await trackPilotMetric({

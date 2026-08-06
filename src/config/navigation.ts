@@ -36,6 +36,11 @@ export const mainNav: NavItem[] = [
     description: "ТИНДА и публичные результаты на платформе",
   },
   {
+    label: "Доверие",
+    href: "/trust",
+    description: "Что такое ЦКР, как работает и принципы доверия",
+  },
+  {
     label: "Лия",
     href: "/lia",
     description: "ИИ-навигатор: идея → ресурсы → решение",

@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.48.0-beta** (Public Marketplace).  
-Обзор: [Public Marketplace](./docs/public-marketplace.md) · [Ecosystem Value](./docs/ecosystem-value.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.49.0-beta** (First Users Launch).  
+Обзор: [First users](./docs/first-users-launch.md) · [Public Marketplace](./docs/public-marketplace.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 
