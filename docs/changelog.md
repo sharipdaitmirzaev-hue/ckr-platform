@@ -4,6 +4,20 @@
 
 ---
 
+## 0.61.0-beta — 2026-08-06
+
+Project Acquisition Engine — поток бизнес-проектов от поиска до развития (без нового каталога).
+
+### Изменения
+
+- Дашборд `/admin/project-acquisition`: воронка, источники, качество, путь development
+- `ProjectAcquisitionPipeline` (CRM leads ↔ stages) · `ProjectSources` · `ProjectQualityScore`
+- Лия: «Аудит моего бизнеса» предлагает проект после подтверждения; «Как развивается поток проектов ЦКР?» → `ProjectAcquisitionReport`
+- Analytics: `project_lead_created`, `project_contacted`, `project_interest_confirmed`, `project_draft_created`, `project_published_from_acquisition`
+- Документация: `project-acquisition-engine.md`, `tinda-project-acquisition-case.md`
+
+---
+
 ## 0.60.0-beta — 2026-08-06
 
 Growth Engine — управляемый рост после Public Launch (без новых крупных бизнес-модулей).

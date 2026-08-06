@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.60.0-beta** (Growth Engine).  
-Обзор: [Growth Engine](./docs/growth-engine.md) · [Public Launch Operations](./docs/public-launch-operations.md) · [Public Launch Execution](./docs/public-launch-execution.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.61.0-beta** (Project Acquisition Engine).  
+Обзор: [Project Acquisition](./docs/project-acquisition-engine.md) · [Growth Engine](./docs/growth-engine.md) · [Public Launch Operations](./docs/public-launch-operations.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 

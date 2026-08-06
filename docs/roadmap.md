@@ -558,7 +558,16 @@
 - GrowthTasks + Лия «Как растёт ЦКР?» → GrowthReport
 - Без новых крупных бизнес-модулей / каталогов / ролей
 
-## Этап 61+ — backlog
+## Этап 61 — Project Acquisition Engine ✅ (код готов)
+
+Подробности: [project-acquisition-engine.md](./project-acquisition-engine.md) · [tinda-project-acquisition-case.md](./tinda-project-acquisition-case.md)
+
+- `/admin/project-acquisition`: воронка, источники, ProjectQualityScore
+- ProjectAcquisitionPipeline (CRM) · публичный аудит Лии → проект после подтверждения
+- ProjectAcquisitionReport + analytics acquisition events
+- Без нового каталога проектов
+
+## Этап 62+ — backlog
 
 Сделки, монетизация, масштаб партнёрств — см. roadmap-after-1.0.
 
