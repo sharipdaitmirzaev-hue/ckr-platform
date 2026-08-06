@@ -7,6 +7,10 @@ import {
   INVITE_SOURCES,
   inviteSourceLabels,
 } from "@/config/first-users-wave";
+import {
+  INVITE_CHANNELS,
+  inviteChannelLabels,
+} from "@/config/open-beta";
 import { roleLabels } from "@/config/roles";
 import {
   createBetaInviteAction,
@@ -66,12 +70,29 @@ export function CreateInviteForm() {
         <select
           id="invite-source"
           name="source"
-          defaultValue="beta_expansion_wave"
+          defaultValue="open_beta_wave"
           className="h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
         >
           {INVITE_SOURCES.map((source) => (
             <option key={source} value={source}>
               {inviteSourceLabels[source]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="invite-channel" className="text-sm text-muted">
+          Канал привлечения
+        </label>
+        <select
+          id="invite-channel"
+          name="channel"
+          defaultValue="email"
+          className="h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+        >
+          {INVITE_CHANNELS.map((channel) => (
+            <option key={channel} value={channel}>
+              {inviteChannelLabels[channel]}
             </option>
           ))}
         </select>

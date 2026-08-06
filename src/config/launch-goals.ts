@@ -113,6 +113,19 @@ export const BETA_EXPANSION_GOAL_IDS = {
   deals: "c0000009-0000-4000-8000-00000000000d",
 } as const;
 
+/** Seed UUID целей Open Beta Wave 1 (этап 55). */
+export const OPEN_BETA_GOAL_IDS = {
+  invited: "c000000a-0000-4000-8000-000000000001",
+  registered: "c000000a-0000-4000-8000-000000000002",
+  activated: "c000000a-0000-4000-8000-000000000003",
+  active: "c000000a-0000-4000-8000-000000000004",
+  projects: "c000000a-0000-4000-8000-000000000005",
+  applications: "c000000a-0000-4000-8000-000000000006",
+  interests: "c000000a-0000-4000-8000-000000000007",
+  liaPct: "c000000a-0000-4000-8000-000000000008",
+  feedback: "c000000a-0000-4000-8000-000000000009",
+} as const;
+
 export function isLaunchGoalStatus(value: string): value is LaunchGoalStatus {
   return (LAUNCH_GOAL_STATUSES as readonly string[]).includes(value);
 }

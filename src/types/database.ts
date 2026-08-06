@@ -180,9 +180,11 @@ export type ProductTestRow = {
 
 export type DbBetaInviteStatus =
   | "invited"
+  | "registered"
   | "activated"
   | "active"
   | "completed"
+  | "inactive"
   | "disabled"
   | "created"
   | "sent"
@@ -196,6 +198,7 @@ export type BetaInviteRow = {
   role: string;
   status: DbBetaInviteStatus;
   source: string;
+  channel: string;
   created_at: string;
   used_at: string | null;
   created_by: string | null;
@@ -223,6 +226,7 @@ export type FeedbackRow = {
   related_type: string | null;
   related_id: string | null;
   priority: DbFeedbackPriority;
+  category: string | null;
   created_at: string;
 };
 
@@ -1450,6 +1454,7 @@ export type Database = {
           role?: string;
           status?: DbBetaInviteStatus;
           source?: string;
+          channel?: string;
           created_by?: string | null;
           used_by?: string | null;
           used_at?: string | null;
@@ -1457,6 +1462,7 @@ export type Database = {
         Update: Partial<{
           status: DbBetaInviteStatus;
           source: string;
+          channel: string;
           used_at: string | null;
           used_by: string | null;
         }>;
@@ -1473,6 +1479,7 @@ export type Database = {
           related_type?: string | null;
           related_id?: string | null;
           priority?: DbFeedbackPriority;
+          category?: string | null;
         };
         Update: Partial<{
           message: string;
@@ -1481,6 +1488,7 @@ export type Database = {
           related_id: string | null;
           priority: DbFeedbackPriority;
           type: DbFeedbackType;
+          category: string | null;
         }>;
       };
       pilot_participants: {

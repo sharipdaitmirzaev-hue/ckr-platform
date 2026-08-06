@@ -45,6 +45,9 @@ export default async function AdminOpenBetaReviewPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
+        <Link href="/admin/open-beta" className="text-accent hover:underline">
+          Open Beta
+        </Link>
         <Link
           href="/admin/beta-expansion"
           className="text-accent hover:underline"

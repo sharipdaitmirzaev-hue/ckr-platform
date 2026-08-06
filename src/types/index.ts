@@ -460,9 +460,11 @@ export type ProductTestChecklistItem = {
 
 export type BetaInviteStatus =
   | "invited"
+  | "registered"
   | "activated"
   | "active"
   | "completed"
+  | "inactive"
   | "disabled"
   | "created"
   | "sent"
@@ -476,6 +478,7 @@ export type BetaInvite = {
   role: string;
   status: BetaInviteStatus;
   source?: string | null;
+  channel?: string | null;
   createdAt?: string;
   usedAt: string | null;
   createdBy: string | null;
@@ -503,6 +506,7 @@ export type Feedback = {
   relatedType: string | null;
   relatedId: string | null;
   priority: FeedbackPriority;
+  category?: string | null;
   createdAt?: string;
 };
 

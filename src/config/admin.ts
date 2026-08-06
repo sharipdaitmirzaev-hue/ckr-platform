@@ -96,6 +96,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Готовность ЦКР к открытому запуску",
   },
   {
+    label: "Open Beta",
+    href: "/admin/open-beta",
+    description: "Контроль Open Beta Wave 1: доступ, метрики, health",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

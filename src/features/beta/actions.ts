@@ -37,6 +37,8 @@ function revalidateInvites() {
   revalidatePath("/admin/beta-report");
   revalidatePath("/admin/first-users");
   revalidatePath("/admin/beta-expansion");
+  revalidatePath("/admin/open-beta");
+  revalidatePath("/admin/open-beta-review");
 }
 
 export async function createBetaInviteAction(
@@ -48,7 +50,8 @@ export async function createBetaInviteAction(
     .trim()
     .toLowerCase();
   const roleRaw = String(formData.get("role") ?? "entrepreneur");
-  const sourceRaw = String(formData.get("source") ?? "beta_expansion_wave");
+  const sourceRaw = String(formData.get("source") ?? "open_beta_wave");
+  const channelRaw = String(formData.get("channel") ?? "email");
   const markSent = formData.get("markSent") === "on";
 
   if (!email || !email.includes("@")) {
@@ -59,7 +62,10 @@ export async function createBetaInviteAction(
   }
   const source: InviteSource = isInviteSource(sourceRaw)
     ? sourceRaw
-    : "beta_expansion_wave";
+    : "open_beta_wave";
+
+  const { isInviteChannel } = await import("@/config/open-beta");
+  const channel = isInviteChannel(channelRaw) ? channelRaw : "email";
 
   const code = generateInviteCode();
   const supabase = createClient();
@@ -70,6 +76,7 @@ export async function createBetaInviteAction(
       code,
       role: roleRaw,
       source,
+      channel,
       status: "invited",
       created_by: admin.user.id,
     })
@@ -88,7 +95,7 @@ export async function createBetaInviteAction(
       email,
       role: roleRaw,
       source,
-      channel: "first_users_wave",
+      channel,
       markSent,
     },
   });
@@ -191,6 +198,7 @@ export async function submitFeedbackAction(input: {
   relatedType?: string | null;
   relatedId?: string | null;
   priority?: FeedbackPriority;
+  category?: string | null;
 }): Promise<BetaClientResult> {
   const type = input.type;
   const message = input.message.trim();
@@ -198,6 +206,7 @@ export async function submitFeedbackAction(input: {
   const relatedType = (input.relatedType ?? "").trim() || null;
   const relatedId = (input.relatedId ?? "").trim() || null;
   const priority = input.priority ?? "medium";
+  const category = (input.category ?? "").trim() || null;
   const rating =
     input.rating === undefined || input.rating === null
       ? null
@@ -233,6 +242,7 @@ export async function submitFeedbackAction(input: {
     related_type: relatedType,
     related_id: relatedId,
     priority,
+    category,
   });
 
   if (error) return { ok: false, error: error.message };
@@ -246,7 +256,8 @@ export async function submitFeedbackAction(input: {
       type,
       priority,
       page: page || "/",
-      channel: "first_users_wave",
+      category,
+      channel: "open_beta_wave",
     },
   });
 
@@ -254,6 +265,7 @@ export async function submitFeedbackAction(input: {
   revalidatePath("/admin/pilot/report");
   revalidatePath("/admin/first-users");
   revalidatePath("/admin/improvements");
+  revalidatePath("/admin/open-beta");
   return { ok: true };
 }
 

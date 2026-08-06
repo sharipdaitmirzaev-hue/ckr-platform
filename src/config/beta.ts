@@ -1,11 +1,13 @@
 import { ASSIGNABLE_ROLES, type AssignableRole } from "@/config/roles";
 
-/** Статусы участия controlled beta (+ legacy для совместимости). */
+/** Статусы участия beta / Open Beta (+ legacy для совместимости). */
 export const BETA_INVITE_STATUSES = [
   "invited",
+  "registered",
   "activated",
   "active",
   "completed",
+  "inactive",
   "disabled",
   "created",
   "sent",
@@ -15,21 +17,24 @@ export const BETA_INVITE_STATUSES = [
 
 export type BetaInviteStatus = (typeof BETA_INVITE_STATUSES)[number];
 
-/** Канонические статусы First Users / controlled beta. */
+/** Канонические статусы Open Beta / controlled beta. */
 export const BETA_INVITE_CANONICAL_STATUSES = [
   "invited",
+  "registered",
   "activated",
   "active",
   "completed",
-  "disabled",
+  "inactive",
 ] as const;
 
 export const betaInviteStatusLabels: Record<BetaInviteStatus, string> = {
   invited: "Приглашён",
+  registered: "Зарегистрирован",
   activated: "Активирован",
   active: "Активен",
   completed: "Завершил сценарий",
-  disabled: "Отключён",
+  inactive: "Неактивен",
+  disabled: "Отключён (legacy)",
   created: "Создано (legacy)",
   sent: "Отправлено (legacy)",
   used: "Использовано (legacy)",

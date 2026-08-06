@@ -24,6 +24,7 @@ import {
   FIRST_USERS_REVIEW_START_PATTERN,
   BETA_EXPANSION_START_PATTERN,
   OPEN_BETA_READINESS_START_PATTERN,
+  OPEN_BETA_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -68,6 +69,7 @@ import type {
   FirstUsersReviewReport,
   BetaExpansionReport,
   OpenBetaReadinessReport,
+  OpenBetaReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -181,6 +183,9 @@ function detectScenario(
   }
   if (OPEN_BETA_READINESS_START_PATTERN.test(value)) {
     return "open_beta_readiness";
+  }
+  if (OPEN_BETA_START_PATTERN.test(value)) {
+    return "open_beta";
   }
   if (LAUNCH_READINESS_START_PATTERN.test(value)) {
     return "launch_readiness";
@@ -1454,6 +1459,46 @@ async function handleOpenBetaReadinessAnalysis(input: {
     metadata: {
       scenario: "open_beta_readiness",
       openBetaReadinessReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleOpenBetaAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildOpenBetaReportAsync } = await import("@/lib/launch/open-beta");
+  const report: OpenBetaReport = await buildOpenBetaReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "open_beta" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как проходит открытый запуск ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — OpenBetaReport. Лия только анализирует Open Beta Wave 1.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "open_beta",
+      openBetaReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -3012,6 +3057,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleOpenBetaReadinessAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "open_beta") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить OpenBetaReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "open_beta", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleOpenBetaAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

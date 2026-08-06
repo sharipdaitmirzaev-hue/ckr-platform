@@ -13,6 +13,7 @@ export function mapBetaInviteRow(row: BetaInviteRow): BetaInvite {
     role: row.role,
     status: row.status,
     source: row.source ?? "manual",
+    channel: row.channel ?? "email",
     createdAt: row.created_at,
     usedAt: row.used_at,
     createdBy: row.created_by,
@@ -31,6 +32,7 @@ export function mapFeedbackRow(row: FeedbackRow): Feedback {
     relatedType: row.related_type ?? null,
     relatedId: row.related_id ?? null,
     priority: row.priority ?? "medium",
+    category: row.category ?? null,
     createdAt: row.created_at,
   };
 }

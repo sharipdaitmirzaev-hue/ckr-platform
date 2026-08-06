@@ -4,6 +4,21 @@
 
 ---
 
+## 0.55.0-beta — 2026-08-06
+
+Open Beta Wave 1 — контролируемый публичный запуск с мониторингом (без новых бизнес-направлений).
+
+### Изменения
+
+- Launch Wave «Open Beta Wave 1» (`public`, `active`) + цели
+- `beta_invites`: канал привлечения, статусы registered/inactive
+- Дашборд `/admin/open-beta`: пользователи, роли, воронка, OpenBetaMetrics, HealthCheck
+- Feedback категории: UX / Lia / Project / Expert / Investment / Other
+- Лия: «Как проходит открытый запуск ЦКР?» → `OpenBetaReport`
+- Документация: `open-beta-launch-control.md`, `open-beta-first-30-days.md`
+
+---
+
 ## 0.54.0-beta — 2026-08-06
 
 Open Beta Readiness — проверка готовности ЦКР к открытому запуску (без новых крупных модулей).

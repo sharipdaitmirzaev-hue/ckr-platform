@@ -500,6 +500,16 @@
 - Лия: «Готов ли ЦКР к открытому запуску?»
 - Без новых крупных бизнес-модулей
 
-## Этап 55+ — backlog
+## Этап 55 — Open Beta Launch Control ✅ (код готов)
+
+Подробности: [open-beta-launch-control.md](./open-beta-launch-control.md) · [open-beta-first-30-days.md](./open-beta-first-30-days.md)
+
+- Launch Wave «Open Beta Wave 1» (`public`, `active`)
+- `/admin/open-beta`: доступ, воронка, метрики, health, feedback categories
+- OpenBetaReport + OpenBetaHealthCheck
+- Лия: «Как проходит открытый запуск ЦКР?»
+- Без новых бизнес-направлений
+
+## Этап 56+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.
