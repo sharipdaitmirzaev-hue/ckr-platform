@@ -124,7 +124,7 @@ export default async function ExpertPage({ params }: ExpertPageProps) {
             <ApplicationButton
               targetType="expert"
               targetId={expert.id}
-              label="Отправить заявку эксперту"
+              label="Связаться"
               isAuthenticated={Boolean(current)}
               isOwner={isOwner}
             />

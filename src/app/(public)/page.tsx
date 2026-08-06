@@ -1,4 +1,7 @@
 import { Logo } from "@/components/brand/logo";
+import { ExpertCard } from "@/components/experts/expert-card";
+import { InvestmentCard } from "@/components/investments/investment-card";
+import { PublicLiaEntry } from "@/components/marketing/public-lia-entry";
 import { OpportunityCard } from "@/components/opportunities/opportunity-card";
 import { ProjectCard } from "@/components/projects/project-card";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +10,17 @@ import { Container } from "@/components/ui/container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { brand } from "@/config/brand";
-import { howCkrWorks, roleLandings } from "@/config/public-landing";
+import {
+  HOW_IT_WORKS_STEPS,
+  MARKETPLACE_HERO,
+  MARKETPLACE_JOURNEY,
+  MARKETPLACE_ROLE_CARDS,
+  TINDA_PUBLIC_CASE,
+} from "@/config/marketplace";
 import { siteConfig } from "@/config/site";
+import { maskDisplayName } from "@/lib/demo/mode";
+import { listPublishedExperts } from "@/lib/experts/queries";
+import { listPublishedInvestmentOffers } from "@/lib/investments/queries";
 import { listPublishedOpportunities } from "@/lib/opportunities/queries";
 import { listPublishedProjects } from "@/lib/projects/queries";
 import type { Metadata } from "next";
@@ -16,10 +28,10 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: siteConfig.title,
-  description: siteConfig.description,
+  description: MARKETPLACE_HERO.description,
   openGraph: {
-    title: siteConfig.title,
-    description: siteConfig.description,
+    title: MARKETPLACE_HERO.title,
+    description: MARKETPLACE_HERO.description,
     url: "/",
     type: "website",
     locale: siteConfig.ogLocale,
@@ -31,17 +43,20 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [projects, opportunities] = await Promise.all([
+  const [projects, opportunities, experts, investments] = await Promise.all([
     listPublishedProjects(),
     listPublishedOpportunities(),
+    listPublishedExperts(),
+    listPublishedInvestmentOffers(),
   ]);
 
   const previewProjects = projects.slice(0, 3);
   const previewOpportunities = opportunities.slice(0, 3);
+  const previewExperts = experts.slice(0, 3);
+  const previewInvestments = investments.slice(0, 3);
 
   return (
     <>
-      {/* Hero: brand + one headline + support + CTAs */}
       <section className="relative overflow-hidden">
         <div
           aria-hidden
@@ -60,8 +75,11 @@ export default async function HomePage() {
           <div className="max-w-3xl">
             <div className="animate-fade-in">
               <Logo size="lg" href="" />
-              <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.85rem] lg:leading-[1.12]">
-                {brand.name} — {brand.fullName}
+              <p className="mt-4 text-sm uppercase tracking-[0.18em] text-muted">
+                {brand.name} · {brand.fullName}
+              </p>
+              <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
+                {MARKETPLACE_HERO.title}
               </h1>
             </div>
 
@@ -70,30 +88,27 @@ export default async function HomePage() {
               className="animate-line-draw mt-8 h-px w-28 origin-left bg-accent"
             />
 
-            <p className="animate-fade-up mt-8 font-display text-xl font-semibold tracking-tight text-accent sm:text-2xl">
-              {brand.tagline}
-            </p>
-
             <p
-              className="animate-fade-up mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
+              className="animate-fade-up mt-8 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
               style={{ animationDelay: "120ms" }}
             >
-              {brand.promise}
+              {MARKETPLACE_HERO.description}
             </p>
 
             <div
               className="animate-fade-up mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               style={{ animationDelay: "220ms" }}
             >
-              <ButtonLink href="/lia" size="lg">
-                Создать проект с Лией
-              </ButtonLink>
-              <ButtonLink href="/projects" variant="outline" size="lg">
-                Найти проект
-              </ButtonLink>
-              <ButtonLink href="/investments" variant="outline" size="lg">
-                Найти инвестиции
-              </ButtonLink>
+              {MARKETPLACE_HERO.ctas.map((cta, index) => (
+                <ButtonLink
+                  key={cta.href}
+                  href={cta.href}
+                  size="lg"
+                  variant={index === 0 ? "primary" : "outline"}
+                >
+                  {cta.label}
+                </ButtonLink>
+              ))}
             </div>
           </div>
         </Container>
@@ -103,11 +118,11 @@ export default async function HomePage() {
         <Container>
           <SectionHeading
             eyebrow="Как работает ЦКР"
-            title="Три шага к комплексному решению"
-            description={`${brand.journey.join(" → ")}.`}
+            title="От идеи до реализации"
+            description={MARKETPLACE_JOURNEY.join(" → ")}
           />
-          <ol className="mt-12 grid gap-8 md:grid-cols-3">
-            {howCkrWorks.map((item) => (
+          <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {HOW_IT_WORKS_STEPS.map((item) => (
               <li key={item.step} className="border-l border-accent/40 pl-5">
                 <p className="text-xs uppercase tracking-[0.18em] text-muted">
                   {item.step}
@@ -121,31 +136,29 @@ export default async function HomePage() {
               </li>
             ))}
           </ol>
+          <div className="mt-10">
+            <ButtonLink href="/how-it-works" variant="outline">
+              Подробнее о работе платформы
+            </ButtonLink>
+          </div>
         </Container>
       </section>
 
       <section className="border-t border-border py-20 sm:py-24">
         <Container>
           <SectionHeading
-            eyebrow="Для кого"
-            title="Предприниматели, инвесторы, эксперты"
-            description="Выберите свою роль — ЦКР закрывает разные стороны одной задачи."
+            eyebrow="Роли"
+            title="Для кого ЦКР"
+            description="Одна экосистема — четыре стороны одной задачи."
           />
-          <div className="mt-12 grid gap-10 lg:grid-cols-3">
-            {(
-              [
-                roleLandings.entrepreneurs,
-                roleLandings.investors,
-                roleLandings.experts,
-              ] as const
-            ).map((role) => (
-              <div key={role.slug} className="border-t border-border pt-6">
-                <Badge variant="soft">{role.eyebrow}</Badge>
-                <h3 className="mt-4 font-display text-xl text-foreground">
-                  {role.title}
+          <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            {MARKETPLACE_ROLE_CARDS.map((role) => (
+              <div key={role.key} className="border-t border-border pt-6">
+                <h3 className="font-display text-xl text-foreground">
+                  {role.label}
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted">
-                  {role.solution}
+                  {role.text}
                 </p>
                 <Link
                   href={role.href}
@@ -163,44 +176,9 @@ export default async function HomePage() {
         <Container>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <SectionHeading
-              eyebrow="Возможности"
-              title="Ресурсы для реализации"
-              description="Земля, помещения, оборудование и готовый бизнес."
-            />
-            <ButtonLink href="/opportunities" variant="outline">
-              Все возможности
-            </ButtonLink>
-          </div>
-          {previewOpportunities.length > 0 ? (
-            <div className="mt-10 grid gap-6 md:grid-cols-3">
-              {previewOpportunities.map((item) => (
-                <OpportunityCard
-                  key={item.id}
-                  opportunity={item}
-                  typeName={item.typeName}
-                  href={`/opportunity/${item.id}`}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              className="mt-10"
-              title="Возможности появятся после публикации"
-              description="Разместите ресурс или откройте демо-каталог, чтобы увидеть примеры."
-              actionHref="/opportunities"
-              actionLabel="К каталогу возможностей"
-            />
-          )}
-        </Container>
-      </section>
-
-      <section className="border-t border-border py-20 sm:py-24">
-        <Container>
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <SectionHeading
               eyebrow="Проекты"
-              title="Идеи, которым нужны ресурсы"
-              description="Центральная сущность ЦКР — проекты, вокруг которых собираются капитал и партнёры."
+              title="Идеи и бизнес в каталоге"
+              description="Центральная сущность ЦКР — проекты, вокруг которых собираются ресурсы."
             />
             <ButtonLink href="/projects" variant="outline">
               Все проекты
@@ -221,9 +199,9 @@ export default async function HomePage() {
             <EmptyState
               className="mt-10"
               title="Опубликованных проектов пока нет"
-              description="Создайте первый проект с Лией — от идеи до поиска ресурсов."
+              description="Создайте первый проект с Лией."
               actionHref="/lia"
-              actionLabel="Создать проект с Лией"
+              actionLabel="Создать проект"
             />
           )}
         </Container>
@@ -231,54 +209,135 @@ export default async function HomePage() {
 
       <section className="border-t border-border py-20 sm:py-24">
         <Container>
-          <SectionHeading
-            eyebrow="Преимущества ЦКР"
-            title="Инвестиционный уровень доверия"
-            description="Тёмно-синяя палитра, золотые акценты и прозрачные процессы — платформа для серьёзных решений."
-          />
-          <ul className="mt-12 grid gap-8 sm:grid-cols-2">
-            {brand.advantages.map((item, index) => (
-              <li key={item.title} className="border-l border-accent/40 pl-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted">
-                  0{index + 1}
-                </p>
-                <h3 className="mt-3 font-display text-xl text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {item.text}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Возможности"
+              title="Ресурсы и партнёрства"
+              description="Земля, помещения, оборудование, услуги и предложения партнёров."
+            />
+            <ButtonLink href="/opportunities" variant="outline">
+              Все возможности
+            </ButtonLink>
+          </div>
+          {previewOpportunities.length > 0 ? (
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {previewOpportunities.map((item) => (
+                <OpportunityCard
+                  key={item.id}
+                  opportunity={item}
+                  typeName={item.typeName}
+                  href={`/opportunity/${item.id}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              className="mt-10"
+              title="Возможности появятся после публикации"
+              actionHref="/opportunities"
+              actionLabel="К каталогу"
+            />
+          )}
         </Container>
       </section>
 
       <section className="border-t border-border py-20 sm:py-24">
-        <Container className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
-          <div className="max-w-xl">
-            <Badge variant="accent">Первый шаг</Badge>
-            <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Начните с Лии или регистрации
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted">
-              За 30 секунд выберите действие: оформить проект, найти капитал или
-              изучить каталоги ЦКР.
-            </p>
+        <Container>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Эксперты"
+              title="Компетенции рядом с проектами"
+              description="Проверенные специалисты для сопровождения реализации."
+            />
+            <ButtonLink href="/experts" variant="outline">
+              Все эксперты
+            </ButtonLink>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <ButtonLink href="/lia" size="lg">
-              Создать проект с Лией
+          {previewExperts.length > 0 ? (
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {previewExperts.map((expert) => (
+                <ExpertCard
+                  key={expert.id}
+                  expert={expert}
+                  href={`/expert/${expert.id}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              className="mt-10"
+              title="Эксперты появятся после публикации"
+              actionHref="/experts"
+              actionLabel="К каталогу"
+            />
+          )}
+        </Container>
+      </section>
+
+      <section className="border-t border-border py-20 sm:py-24">
+        <Container>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Инвестиции"
+              title="Капитал для проектов"
+              description="Инвестиционные предложения и форматы участия."
+            />
+            <ButtonLink href="/investments" variant="outline">
+              Все инвестиции
             </ButtonLink>
-            <ButtonLink href="/register" variant="outline" size="lg">
-              Создать аккаунт
-            </ButtonLink>
-            <ButtonLink href="/about" variant="outline" size="lg">
-              О платформе
+          </div>
+          {previewInvestments.length > 0 ? (
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {previewInvestments.map((offer) => (
+                <InvestmentCard
+                  key={offer.id}
+                  offer={offer}
+                  ownerName={maskDisplayName(offer.ownerName, {
+                    isAuthenticated: false,
+                  })}
+                  href={`/investment/${offer.id}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              className="mt-10"
+              title="Инвестиции появятся после публикации"
+              actionHref="/investments"
+              actionLabel="К каталогу"
+            />
+          )}
+        </Container>
+      </section>
+
+      <section className="border-t border-border py-20 sm:py-24">
+        <Container>
+          <Badge variant="accent">Первый кейс</Badge>
+          <h2 className="mt-4 max-w-2xl font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            {TINDA_PUBLIC_CASE.title}
+          </h2>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted">
+            {TINDA_PUBLIC_CASE.summary}
+          </p>
+          <ol className="mt-10 flex flex-wrap items-center gap-3 text-sm text-foreground">
+            {TINDA_PUBLIC_CASE.path.map((step, index) => (
+              <li key={step} className="flex items-center gap-3">
+                {index > 0 ? <span className="text-muted">↓</span> : null}
+                <span className="border-l border-accent/40 pl-3 font-display text-lg">
+                  {step}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-10">
+            <ButtonLink href={TINDA_PUBLIC_CASE.href} variant="outline">
+              Смотреть кейсы
             </ButtonLink>
           </div>
         </Container>
       </section>
+
+      <PublicLiaEntry />
     </>
   );
 }

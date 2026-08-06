@@ -15,6 +15,8 @@ export type ExpertWithUser = ExpertProfile & {
 export async function listPublishedExperts(filters?: {
   specialization?: ExpertSpecialization | null;
   region?: string | null;
+  q?: string | null;
+  minExperience?: number | null;
 }): Promise<ExpertWithUser[]> {
   const fromDemo = () =>
     getDemoExperts().filter((expert) => {
@@ -29,6 +31,18 @@ export async function listPublishedExperts(filters?: {
         !expert.region.toLowerCase().includes(filters.region.toLowerCase())
       ) {
         return false;
+      }
+      if (
+        filters?.minExperience != null &&
+        expert.experienceYears < filters.minExperience
+      ) {
+        return false;
+      }
+      if (filters?.q?.trim()) {
+        const q = filters.q.trim().toLowerCase();
+        const hay =
+          `${expert.fullName ?? ""} ${expert.headline} ${expert.description} ${expert.region}`.toLowerCase();
+        if (!hay.includes(q)) return false;
       }
       return true;
     });
@@ -59,7 +73,7 @@ export async function listPublishedExperts(filters?: {
     return isDemoCatalogFallbackEnabled() ? fromDemo() : [];
   }
 
-  return data.map((row) => {
+  const mapped = data.map((row) => {
     const expert = mapExpertProfileRow(row as ExpertProfileRow);
     const profiles = row.profiles as {
       full_name: string | null;
@@ -75,6 +89,22 @@ export async function listPublishedExperts(filters?: {
         profiles?.verification_status ??
         "unverified",
     };
+  });
+
+  return mapped.filter((expert) => {
+    if (
+      filters?.minExperience != null &&
+      expert.experienceYears < filters.minExperience
+    ) {
+      return false;
+    }
+    if (filters?.q?.trim()) {
+      const q = filters.q.trim().toLowerCase();
+      const hay =
+        `${expert.fullName ?? ""} ${expert.headline} ${expert.description} ${expert.region}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   });
 }
 

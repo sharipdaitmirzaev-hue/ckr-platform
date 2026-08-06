@@ -41,25 +41,60 @@ export async function listOpportunityCategories(): Promise<
   return data as OpportunityCategoryRow[];
 }
 
-export async function listPublishedOpportunities(): Promise<
-  OpportunityWithOwner[]
-> {
+export type OpportunityCatalogFilters = {
+  type?: string | null;
+  region?: string | null;
+  q?: string | null;
+};
+
+export async function listPublishedOpportunities(
+  filters: OpportunityCatalogFilters = {},
+): Promise<OpportunityWithOwner[]> {
+  const fromDemo = () => {
+    const items = isDemoCatalogFallbackEnabled() ? getDemoOpportunities() : [];
+    const q = filters.q?.trim().toLowerCase() ?? "";
+    return items.filter((item) => {
+      if (filters.type && item.type !== filters.type) return false;
+      if (
+        filters.region &&
+        !item.region.toLowerCase().includes(filters.region.toLowerCase())
+      ) {
+        return false;
+      }
+      if (q) {
+        const hay =
+          `${item.title} ${item.description} ${item.region}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  };
+
   if (!hasSupabaseEnv()) {
-    return isDemoCatalogFallbackEnabled() ? getDemoOpportunities() : [];
+    return fromDemo();
   }
 
   const supabase = createClient();
   const types = await typeNameMap(supabase);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("opportunities")
     .select("*, profiles:owner_id ( full_name )")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(CATALOG_LIST_LIMIT);
 
+  if (filters.type) query = query.eq("type", filters.type);
+  if (filters.region) query = query.ilike("region", `%${filters.region}%`);
+  if (filters.q?.trim()) {
+    const q = filters.q.trim();
+    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+  }
+
+  const { data, error } = await query;
+
   if (error || !data || data.length === 0) {
-    return isDemoCatalogFallbackEnabled() ? getDemoOpportunities() : [];
+    return fromDemo();
   }
 
   return data.map((row) => {

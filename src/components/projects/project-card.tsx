@@ -52,9 +52,13 @@ export function ProjectCard({
       </div>
       <CardTitle className="mt-4">{project.title}</CardTitle>
       <CardDescription>{project.summary}</CardDescription>
-      <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted">
-        {projectStageLabels[project.stage]}
-      </p>
+      <div className="mt-4 space-y-1 text-xs uppercase tracking-[0.14em] text-muted">
+        <p>Стадия: {projectStageLabels[project.stage]}</p>
+        <p>Требуется: {formatNeed(project)}</p>
+      </div>
+      {href ? (
+        <p className="mt-4 text-sm text-accent">Подробнее →</p>
+      ) : null}
     </>
   );
 

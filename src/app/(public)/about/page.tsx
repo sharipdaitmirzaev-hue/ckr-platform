@@ -55,7 +55,13 @@ export default function AboutPage() {
               {brand.positioning}
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/lia" size="lg">
+              <ButtonLink href="/how-it-works" size="lg">
+                Как работает ЦКР
+              </ButtonLink>
+              <ButtonLink href="/cases" variant="outline" size="lg">
+                Кейсы
+              </ButtonLink>
+              <ButtonLink href="/lia" variant="outline" size="lg">
                 Начать с Лией
               </ButtonLink>
               <ButtonLink href="/features" variant="outline" size="lg">

@@ -434,6 +434,15 @@
 - Лия: `EcosystemValueReport` («Какая польза от экосистемы ЦКР?»)
 - Без новых крупных бизнес-модулей
 
-## Этап 48+ — backlog
+## Этап 48 — Public Marketplace ✅ (код готов)
+
+Подробности: [public-marketplace.md](./public-marketplace.md)
+
+- Публичная главная и каталоги с фильтрами
+- Ролевые страницы, how-it-works, cases (ТИНДА), публичная Лия
+- SEO: metadata / OG / sitemap / robots
+- Без новых крупных бизнес-сущностей
+
+## Этап 49+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

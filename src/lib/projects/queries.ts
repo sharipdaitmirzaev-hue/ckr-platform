@@ -37,26 +37,78 @@ export async function listCategories(): Promise<CategoryRow[]> {
   return data as CategoryRow[];
 }
 
-export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
+export type ProjectCatalogFilters = {
+  q?: string | null;
+  category?: string | null;
+  region?: string | null;
+  stage?: string | null;
+  status?: string | null;
+};
+
+function filterProjectsClient(
+  items: ProjectWithOwner[],
+  filters: ProjectCatalogFilters,
+): ProjectWithOwner[] {
+  const q = filters.q?.trim().toLowerCase() ?? "";
+  return items.filter((project) => {
+    if (filters.category && project.category !== filters.category) return false;
+    if (
+      filters.region &&
+      !project.region.toLowerCase().includes(filters.region.toLowerCase())
+    ) {
+      return false;
+    }
+    if (filters.stage && project.stage !== filters.stage) return false;
+    if (filters.status && project.status !== filters.status) return false;
+    if (q) {
+      const hay = `${project.title} ${project.summary} ${project.description} ${project.region}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+export async function listPublishedProjects(
+  filters: ProjectCatalogFilters = {},
+): Promise<ProjectWithOwner[]> {
+  const fromDemo = () =>
+    filterProjectsClient(
+      isDemoCatalogFallbackEnabled() ? getDemoProjects() : [],
+      filters,
+    );
+
   if (!hasSupabaseEnv()) {
-    return isDemoCatalogFallbackEnabled() ? getDemoProjects() : [];
+    return fromDemo();
   }
 
   const supabase = createClient();
   const categories = await categoryNameMap(supabase);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("projects")
     .select("*, profiles:owner_id ( full_name )")
     .in("status", ["published", "active", "completed"])
     .order("created_at", { ascending: false })
     .limit(CATALOG_LIST_LIMIT);
 
-  if (error || !data || data.length === 0) {
-    return isDemoCatalogFallbackEnabled() ? getDemoProjects() : [];
+  if (filters.category) query = query.eq("category", filters.category);
+  if (filters.region) query = query.ilike("region", `%${filters.region}%`);
+  if (filters.stage) query = query.eq("stage", filters.stage);
+  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.q?.trim()) {
+    const q = filters.q.trim();
+    query = query.or(
+      `title.ilike.%${q}%,summary.ilike.%${q}%,description.ilike.%${q}%`,
+    );
   }
 
-  return data.map((row) => {
+  const { data, error } = await query;
+
+  if (error || !data || data.length === 0) {
+    return fromDemo();
+  }
+
+  const mapped = data.map((row) => {
     const project = mapProjectRow(row as ProjectRow);
     const profiles = row.profiles as { full_name: string | null } | null;
     return {
@@ -65,6 +117,9 @@ export async function listPublishedProjects(): Promise<ProjectWithOwner[]> {
       categoryName: categories.get(project.category) ?? project.category,
     };
   });
+
+  // Доп. клиентский фильтр для q по region и демо-совместимости
+  return filterProjectsClient(mapped, { ...filters, category: null, stage: null, status: null, region: null });
 }
 
 export async function listMyProjects(ownerId: string): Promise<Project[]> {

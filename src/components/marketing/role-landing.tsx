@@ -55,6 +55,30 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
         </Container>
       </section>
 
+      {content.scenario && content.scenario.length > 0 ? (
+        <section className="border-b border-border py-16 sm:py-20">
+          <Container>
+            <SectionHeading
+              eyebrow="Сценарий"
+              title="Как работать в ЦКР"
+              description="Типовой путь роли — от входа до результата."
+            />
+            <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {content.scenario.map((step, index) => (
+                <li key={step} className="border-l border-accent/40 pl-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted">
+                    0{index + 1}
+                  </p>
+                  <p className="mt-2 font-display text-lg text-foreground">
+                    {step}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </Container>
+        </section>
+      ) : null}
+
       <section className="border-b border-border py-16 sm:py-20">
         <Container>
           <SectionHeading
@@ -80,8 +104,11 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
             <ButtonLink href={content.ctaPrimary.href}>
               {content.ctaPrimary.label}
             </ButtonLink>
+            <ButtonLink href={content.ctaSecondary.href} variant="outline">
+              {content.ctaSecondary.label}
+            </ButtonLink>
             <ButtonLink href="/register" variant="outline">
-              Создать аккаунт
+              Регистрация
             </ButtonLink>
           </div>
         </Container>

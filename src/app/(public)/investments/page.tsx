@@ -1,3 +1,4 @@
+import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
 import { InvestmentCard } from "@/components/investments/investment-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -6,19 +7,27 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import {
   AMOUNT_FILTERS,
   INVESTMENT_DIRECTIONS,
+  INVESTMENT_TYPES,
+  investmentTypeLabels,
   type AmountFilterId,
 } from "@/config/investments";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { maskDisplayName } from "@/lib/demo/mode";
 import { listPublishedInvestmentOffers } from "@/lib/investments/queries";
-import { cn } from "@/lib/utils";
+import type { InvestmentType } from "@/types";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Инвестиции",
   description:
-    "Инвестиционные предложения ЦКР: капиталы, готовые к проектам и партнёрству.",
+    "Инвестиционные предложения ЦКР: фильтры по отрасли, сумме и типу участия.",
+  openGraph: {
+    title: "Инвестиции · ЦКР",
+    description: "Капитал и форматы участия для проектов экосистемы.",
+    url: "/investments",
+    type: "website",
+  },
+  alternates: { canonical: "/investments" },
 };
 
 export const dynamic = "force-dynamic";
@@ -27,6 +36,7 @@ type InvestmentsPageProps = {
   searchParams?: {
     amount?: string;
     category?: string;
+    type?: string;
   };
 };
 
@@ -36,114 +46,82 @@ export default async function InvestmentsPage({
   const amount = AMOUNT_FILTERS.some((item) => item.id === searchParams?.amount)
     ? (searchParams?.amount as AmountFilterId)
     : null;
-  const category =
-    INVESTMENT_DIRECTIONS.some((item) => item.slug === searchParams?.category)
-      ? searchParams?.category
-      : null;
+  const category = INVESTMENT_DIRECTIONS.some(
+    (item) => item.slug === searchParams?.category,
+  )
+    ? searchParams?.category
+    : null;
+  const type = INVESTMENT_TYPES.includes(
+    searchParams?.type as InvestmentType,
+  )
+    ? (searchParams?.type as InvestmentType)
+    : null;
 
   const [offers, current] = await Promise.all([
-    listPublishedInvestmentOffers({ amount, category }),
+    listPublishedInvestmentOffers({ amount, category, type }),
     getCurrentUser(),
   ]);
 
-  function hrefFor(next: { amount?: string | null; category?: string | null }) {
-    const params = new URLSearchParams();
-    const nextAmount = next.amount === undefined ? amount : next.amount;
-    const nextCategory =
-      next.category === undefined ? category : next.category;
-    if (nextAmount) params.set("amount", nextAmount);
-    if (nextCategory) params.set("category", nextCategory);
-    const query = params.toString();
-    return query ? `/investments?${query}` : "/investments";
-  }
+  const preserve = { amount, category, type };
 
   return (
     <div className="py-14 sm:py-16">
       <Container>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
-            eyebrow="Каталог"
+            eyebrow="Marketplace"
             title="Инвестиции"
-            description="Инвесторы ЦКР публикуют интересы и готовый капитал. Проекты находят подходящие предложения и отправляют заявки через платформу."
+            description="Проект, описание, объём и формат участия — найдите капитал или разместите предложение."
           />
-          <ButtonLink href="/dashboard/investments/create" variant="outline">
-            Разместить предложение
+          <ButtonLink
+            href={current ? "/dashboard/investments/create" : "/register"}
+            variant="outline"
+          >
+            {current ? "Разместить предложение" : "Войти, чтобы разместить"}
           </ButtonLink>
         </div>
 
         <div className="mt-10 space-y-6 border-t border-border pt-8">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">
-              Сумма
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                href={hrefFor({ amount: null })}
-                className={cn(
-                  "rounded-sm border px-3 py-1.5 text-sm transition-colors",
-                  !amount
-                    ? "border-accent/50 bg-accent-muted text-accent"
-                    : "border-border text-muted hover:text-foreground",
-                )}
-              >
-                Все
-              </Link>
-              {AMOUNT_FILTERS.map((filter) => (
-                <Link
-                  key={filter.id}
-                  href={hrefFor({ amount: filter.id })}
-                  className={cn(
-                    "rounded-sm border px-3 py-1.5 text-sm transition-colors",
-                    amount === filter.id
-                      ? "border-accent/50 bg-accent-muted text-accent"
-                      : "border-border text-muted hover:text-foreground",
-                  )}
-                >
-                  {filter.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">
-              Направления
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                href={hrefFor({ category: null })}
-                className={cn(
-                  "rounded-sm border px-3 py-1.5 text-sm transition-colors",
-                  !category
-                    ? "border-accent/50 bg-accent-muted text-accent"
-                    : "border-border text-muted hover:text-foreground",
-                )}
-              >
-                Все
-              </Link>
-              {INVESTMENT_DIRECTIONS.map((direction) => (
-                <Link
-                  key={direction.slug}
-                  href={hrefFor({ category: direction.slug })}
-                  className={cn(
-                    "rounded-sm border px-3 py-1.5 text-sm transition-colors",
-                    category === direction.slug
-                      ? "border-accent/50 bg-accent-muted text-accent"
-                      : "border-border text-muted hover:text-foreground",
-                  )}
-                >
-                  {direction.name}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <CatalogFilterBar
+            label="Отрасль"
+            basePath="/investments"
+            param="category"
+            current={category ?? null}
+            options={INVESTMENT_DIRECTIONS.map((d) => ({
+              id: d.slug,
+              label: d.name,
+            }))}
+            preserve={preserve}
+          />
+          <CatalogFilterBar
+            label="Сумма"
+            basePath="/investments"
+            param="amount"
+            current={amount}
+            options={AMOUNT_FILTERS.map((f) => ({
+              id: f.id,
+              label: f.label,
+            }))}
+            preserve={preserve}
+          />
+          <CatalogFilterBar
+            label="Тип участия"
+            basePath="/investments"
+            param="type"
+            current={type}
+            options={INVESTMENT_TYPES.map((t) => ({
+              id: t,
+              label: investmentTypeLabels[t],
+            }))}
+            preserve={preserve}
+          />
         </div>
 
         {offers.length === 0 ? (
           <EmptyState
             className="mt-12"
             title="Пока нет инвестиционных предложений"
-            description="Измените фильтры или откройте демо-каталог после seed."
+            description="Измените фильтры или разместите предложение."
             actionHref="/demo"
             actionLabel="О демонстрации"
           />

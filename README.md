@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.47.0-beta** (Ecosystem Value).  
-Обзор: [Ecosystem Value](./docs/ecosystem-value.md) · [Ecosystem Beta](./docs/ecosystem-beta.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.48.0-beta** (Public Marketplace).  
+Обзор: [Public Marketplace](./docs/public-marketplace.md) · [Ecosystem Value](./docs/ecosystem-value.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 
@@ -75,6 +75,7 @@ supabase           # миграции
 - [Wave 2 Ecosystem Beta](./docs/ecosystem-beta.md)
 - [Ecosystem Value](./docs/ecosystem-value.md)
 - [ТИНДА ecosystem review](./docs/tinda-ecosystem-review.md)
+- [Public Marketplace](./docs/public-marketplace.md)
 - [Help center](./docs/help-center.md)
 - [ТИНДА production case](./docs/tinda-production-case.md)
 - [ТИНДА публичный кейс](./docs/tinda-case-public.md)

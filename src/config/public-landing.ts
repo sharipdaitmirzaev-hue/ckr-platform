@@ -1,5 +1,5 @@
 export type RoleLandingContent = {
-  slug: "entrepreneurs" | "investors" | "experts";
+  slug: "entrepreneurs" | "investors" | "experts" | "organizations";
   href: string;
   eyebrow: string;
   title: string;
@@ -8,6 +8,8 @@ export type RoleLandingContent = {
   advantages: string[];
   ctaPrimary: { label: string; href: string };
   ctaSecondary: { label: string; href: string };
+  /** Сценарий работы (этап 48). */
+  scenario?: string[];
 };
 
 export const roleLandings: Record<
@@ -16,7 +18,7 @@ export const roleLandings: Record<
 > = {
   entrepreneurs: {
     slug: "entrepreneurs",
-    href: "/entrepreneurs",
+    href: "/entrepreneur",
     eyebrow: "Для предпринимателей",
     title: "От идеи до запуска — с ресурсами и партнёрами ЦКР",
     problem:
@@ -37,10 +39,16 @@ export const roleLandings: Record<
       label: "Смотреть проекты",
       href: "/projects",
     },
+    scenario: [
+      "Регистрация и профиль",
+      "Создание проекта с Лией",
+      "Поиск ресурсов и экспертов",
+      "Заявки и реализация",
+    ],
   },
   investors: {
     slug: "investors",
-    href: "/investors",
+    href: "/investor",
     eyebrow: "Для инвесторов",
     title: "Проекты и сделки в одной прозрачной среде",
     problem:
@@ -61,10 +69,16 @@ export const roleLandings: Record<
       label: "Разместить предложение",
       href: "/dashboard/investments/create",
     },
+    scenario: [
+      "Регистрация и профиль",
+      "Каталог проектов",
+      "Интерес и заявка",
+      "Сделка в контуре ЦКР",
+    ],
   },
   experts: {
     slug: "experts",
-    href: "/experts",
+    href: "/expert",
     eyebrow: "Для экспертов",
     title: "Ваша экспертиза — рядом с реальными проектами",
     problem:
@@ -79,12 +93,48 @@ export const roleLandings: Record<
     ],
     ctaPrimary: {
       label: "Стать экспертом",
-      href: "/dashboard/expert",
+      href: "/register",
     },
     ctaSecondary: {
       label: "Каталог экспертов",
       href: "/experts#catalog",
     },
+    scenario: [
+      "Профиль эксперта",
+      "Верификация",
+      "Получение запросов",
+      "Сопровождение проекта",
+    ],
+  },
+  organizations: {
+    slug: "organizations",
+    href: "/organization",
+    eyebrow: "Для организаций",
+    title: "Проекты компании и партнёрства в экосистеме ЦКР",
+    problem:
+      "Команде сложно держать развитие бизнеса, поиск партнёров и сделки в одном контуре — всё разъезжается по чатам и таблицам.",
+    solution:
+      "ЦКР даёт организации профиль, проекты, партнёрства и связь с предпринимателями, экспертами и инвесторами без новых разрозненных инструментов.",
+    advantages: [
+      "Профиль организации и команда",
+      "Проекты развития компании",
+      "Партнёрства и заявки",
+      "Кейс ТИНДА как ориентир production-контура",
+    ],
+    ctaPrimary: {
+      label: "Зарегистрировать организацию",
+      href: "/register",
+    },
+    ctaSecondary: {
+      label: "Кабинет партнёра",
+      href: "/partner",
+    },
+    scenario: [
+      "Профиль организации",
+      "Создание проекта",
+      "Поиск партнёров и ресурсов",
+      "Сделки и партнёрства",
+    ],
   },
 };
 

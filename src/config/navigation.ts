@@ -26,19 +26,14 @@ export const mainNav: NavItem[] = [
     description: "Проверенные компетенции для сопровождения проектов",
   },
   {
-    label: "Решения",
-    href: "/solutions",
-    description: "Комплексные предложения для реализации проектов",
+    label: "Как работает",
+    href: "/how-it-works",
+    description: "Путь от идеи до сделки в экосистеме ЦКР",
   },
   {
-    label: "Тарифы",
-    href: "/pricing",
-    description: "Подписки ЦКР: доступ к возможностям и сопровождению",
-  },
-  {
-    label: "Услуги",
-    href: "/services",
-    description: "Профессиональные услуги ЦКР для реализации проектов",
+    label: "Кейсы",
+    href: "/cases",
+    description: "ТИНДА и публичные результаты на платформе",
   },
   {
     label: "Лия",
@@ -49,11 +44,6 @@ export const mainNav: NavItem[] = [
     label: "О платформе",
     href: "/about",
     description: "Миссия и подход ЦКР",
-  },
-  {
-    label: "Функции",
-    href: "/features",
-    description: "Лия, проекты, инвестиции, сделки и сопровождение",
   },
 ];
 

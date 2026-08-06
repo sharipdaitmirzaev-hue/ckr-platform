@@ -41,7 +41,7 @@ export function SiteFooter() {
             <ul className="mt-4 space-y-2.5">
               <li>
                 <Link
-                  href="/entrepreneurs"
+                  href="/entrepreneur"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
                   Предпринимателям
@@ -49,7 +49,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/investors"
+                  href="/investor"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
                   Инвесторам
@@ -57,10 +57,34 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/experts"
+                  href="/expert"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
                   Экспертам
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/organization"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Организациям
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/how-it-works"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Как работает
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/cases"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Кейсы
                 </Link>
               </li>
               <li>
@@ -69,14 +93,6 @@ export function SiteFooter() {
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
                   О платформе
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/features"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Функции
                 </Link>
               </li>
               <li>

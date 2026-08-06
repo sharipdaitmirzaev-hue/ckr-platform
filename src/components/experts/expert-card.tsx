@@ -51,7 +51,9 @@ export function ExpertCard({
             ? `${expert.services.slice(0, 80).trimEnd()}…`
             : expert.services || "—"}
         </p>
+        <p>Проверка: {expert.verificationStatus ?? "unverified"}</p>
       </div>
+      {href ? <p className="mt-4 text-sm text-accent">Связаться →</p> : null}
     </>
   );
 

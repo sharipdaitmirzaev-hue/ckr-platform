@@ -9,6 +9,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "/about",
+    "/how-it-works",
+    "/cases",
     "/features",
     "/projects",
     "/opportunities",
@@ -19,6 +21,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/services",
     "/demo",
     "/lia",
+    "/entrepreneur",
+    "/investor",
+    "/expert",
+    "/organization",
     "/entrepreneurs",
     "/investors",
     "/login",
@@ -34,7 +40,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ? 1
         : path === roleLandings.entrepreneurs.href ||
             path === roleLandings.investors.href ||
-            path === "/experts"
+            path === roleLandings.organizations.href ||
+            path === "/experts" ||
+            path === "/how-it-works" ||
+            path === "/cases"
           ? 0.9
           : 0.7,
   }));

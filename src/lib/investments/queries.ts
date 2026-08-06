@@ -20,6 +20,7 @@ export type InvestmentOfferWithOwner = InvestmentOffer & {
 export type InvestmentCatalogFilters = {
   amount?: AmountFilterId | null;
   category?: string | null;
+  type?: string | null;
 };
 
 function overlapsAmount(
@@ -45,6 +46,9 @@ export async function listPublishedInvestmentOffers(
           ? offer.categories.includes(filters.category)
           : true,
       )
+      .filter((offer) =>
+        filters.type ? offer.investmentType === filters.type : true,
+      )
       .filter((offer) => overlapsAmount(offer, filters.amount));
 
   if (!hasSupabaseEnv()) {
@@ -62,6 +66,9 @@ export async function listPublishedInvestmentOffers(
   if (filters.category) {
     query = query.contains("categories", [filters.category]);
   }
+  if (filters.type) {
+    query = query.eq("investment_type", filters.type);
+  }
 
   const { data, error } = await query;
   if (error || !data || data.length === 0) {
@@ -77,7 +84,10 @@ export async function listPublishedInvestmentOffers(
         ownerName: profiles?.full_name ?? null,
       };
     })
-    .filter((offer) => overlapsAmount(offer, filters.amount));
+    .filter((offer) => overlapsAmount(offer, filters.amount))
+    .filter((offer) =>
+      filters.type ? offer.investmentType === filters.type : true,
+    );
 }
 
 export async function listMyInvestmentOffers(
