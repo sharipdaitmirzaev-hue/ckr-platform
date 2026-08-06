@@ -161,9 +161,6 @@ function detectScenario(
   if (BETA_EXPANSION_START_PATTERN.test(value)) {
     return "beta_expansion";
   }
-  if (OPEN_BETA_READINESS_START_PATTERN.test(value)) {
-    return "open_beta_readiness";
-  }
   if (FIRST_USERS_START_PATTERN.test(value)) {
     return "first_users";
   }
