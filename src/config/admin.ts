@@ -51,6 +51,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Closed Wave 1 — ТИНДА: цели и прогресс",
   },
   {
+    label: "Wave Review",
+    href: "/admin/wave-review",
+    description: "Анализ результатов первой закрытой волны",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

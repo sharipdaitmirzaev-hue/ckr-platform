@@ -398,6 +398,15 @@
 - Лия: `ClosedWaveReport` («Проанализируй первую волну ЦКР»)
 - Без новых крупных бизнес-модулей
 
-## Этап 44+ — backlog
+## Этап 44 — Closed Wave Review ✅ (код готов)
+
+Подробности: [closed-wave-review.md](./closed-wave-review.md)
+
+- `/admin/wave-review`: цели, UX, активность, Next Wave Decision
+- `ClosedWaveReviewReport` + improvement loop из проблем волны
+- Лия: `WaveReviewReport` («Проанализируй результаты первой волны»)
+- Без новых крупных бизнес-модулей
+
+## Этап 45+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

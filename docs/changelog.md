@@ -4,6 +4,19 @@
 
 ---
 
+## 0.44.0-beta — 2026-03-25
+
+Closed Wave Review — анализ результатов первой закрытой волны ТИНДА (без новых бизнес-модулей).
+
+### Изменения
+
+- Дашборд `/admin/wave-review`: волна, цели, активность, UX, Next Wave Decision
+- `ClosedWaveReviewReport` + автосвязка проблем → pilot_issues → product_improvements
+- Лия: «Проанализируй результаты первой волны» → `WaveReviewReport`
+- Документация: `closed-wave-review.md`, `tinda-wave-review.md`
+
+---
+
 ## 0.43.0-beta — 2026-03-25
 
 Closed Wave 1 — ТИНДА: первая закрытая волна на реальном контуре ООО ТИНДА (без новых бизнес-модулей).

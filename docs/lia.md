@@ -90,6 +90,7 @@ RLS: пользователь видит и меняет только свои �
 17. **Как проходит запуск?** — `launch_status` → `LaunchStatusReport` (активность волны, блокеры, рекомендации; только анализ). См. [wave-launch.md](./wave-launch.md).
 18. **Достигнуты ли цели запуска?** — `launch_goals` → `LaunchGoalReport` (achieved / failed, risks, next_actions; только анализ). См. [launch-success-framework.md](./launch-success-framework.md).
 19. **Проанализируй первую волну ЦКР** — `closed_wave` → `ClosedWaveReport` (цели, UX, бизнес-результаты; только анализ). См. [closed-wave-tinda-report.md](./closed-wave-tinda-report.md).
+20. **Проанализируй результаты первой волны** — `wave_review` → `WaveReviewReport` (success factors, problems, patterns; только анализ). См. [closed-wave-review.md](./closed-wave-review.md).
 
 Структура результата поиска:
 

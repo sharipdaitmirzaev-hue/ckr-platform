@@ -6,6 +6,7 @@ import { LaunchGoalReportCard } from "@/components/lia/launch-goal-report";
 import { LaunchGuideCard } from "@/components/lia/launch-guide";
 import { LaunchReadinessReportCard } from "@/components/lia/launch-readiness-report";
 import { LaunchStatusReportCard } from "@/components/lia/launch-status-report";
+import { WaveReviewReportCard } from "@/components/lia/wave-review-report";
 import { LiaResults } from "@/components/lia/lia-results";
 import { OutcomeReportCard } from "@/components/lia/outcome-report";
 import { PilotInsightReportCard } from "@/components/lia/pilot-insight-report";
@@ -81,6 +82,7 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const launchStatusReport = message.metadata?.launchStatusReport;
         const launchGoalReport = message.metadata?.launchGoalReport;
         const closedWaveReport = message.metadata?.closedWaveReport;
+        const waveReviewReport = message.metadata?.waveReviewReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -152,6 +154,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && closedWaveReport ? (
               <ClosedWaveReportCard report={closedWaveReport} />
+            ) : null}
+            {!isUser && waveReviewReport ? (
+              <WaveReviewReportCard report={waveReviewReport} />
             ) : null}
           </li>
         );

@@ -100,8 +100,8 @@ export default async function AdminLaunchPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/admin/beta-review" className="text-accent hover:underline">
-          Beta Review
+        <Link href="/admin/wave-review" className="text-accent hover:underline">
+          Wave Review
         </Link>
         <Link
           href="/admin/improvements"

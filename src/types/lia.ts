@@ -22,7 +22,8 @@ export type LiaScenarioId =
   | "launch_guide"
   | "launch_status"
   | "launch_goals"
-  | "closed_wave";
+  | "closed_wave"
+  | "wave_review";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -159,6 +160,15 @@ export type ClosedWaveReport = {
   failed_goals: string[];
   user_experience: string[];
   business_results: string[];
+  recommendations: string[];
+};
+
+/** Сценарий «Проанализируй результаты первой волны» (только анализ). */
+export type WaveReviewReport = {
+  summary: string;
+  success_factors: string[];
+  problems: string[];
+  patterns: string[];
   recommendations: string[];
 };
 
@@ -341,6 +351,7 @@ export type LiaMessageMetadata = {
   launchStatusReport?: LaunchStatusReport | null;
   launchGoalReport?: LaunchGoalReport | null;
   closedWaveReport?: ClosedWaveReport | null;
+  waveReviewReport?: WaveReviewReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

@@ -156,6 +156,13 @@ export const LIA_SCENARIOS: {
     description:
       "Closed Wave 1 — ТИНДА: цели, UX, бизнес-результаты → ClosedWaveReport (только анализ)",
   },
+  {
+    id: "wave_review",
+    label: "Проанализируй результаты первой волны",
+    prompt: "Проанализируй результаты первой волны",
+    description:
+      "Success factors, problems, patterns → WaveReviewReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -249,7 +256,10 @@ export const LAUNCH_GOALS_START_PATTERN =
   /достигнуты\s+ли\s+цели\s+запуска|цели\s+запуска|launch\s*goals|goal\s*report/i;
 
 export const CLOSED_WAVE_START_PATTERN =
-  /проанализируй\s+первую\s+волну|анализ\s+первой\s+волны|closed\s*wave|первая\s+волна\s+цкр/i;
+  /проанализируй\s+первую\s+волну(?!\s+цкр)?|анализ\s+первой\s+волны|closed\s*wave|первая\s+волна\s+цкр/i;
+
+export const WAVE_REVIEW_START_PATTERN =
+  /проанализируй\s+результаты\s+первой\s+волны|результаты\s+первой\s+волны|wave\s*review|обзор\s+волны/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [
