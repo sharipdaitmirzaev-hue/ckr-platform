@@ -30,7 +30,8 @@ export type LiaScenarioId =
   | "ecosystem_value"
   | "first_users"
   | "first_users_review"
-  | "beta_expansion";
+  | "beta_expansion"
+  | "open_beta_readiness";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -271,6 +272,16 @@ export type BetaExpansionReport = {
   recommendations: string[];
 };
 
+/** Сценарий «Готов ли ЦКР к открытому запуску?» (этап 54, только анализ). */
+export type OpenBetaReadinessReport = {
+  summary: string;
+  product_readiness: string[];
+  user_readiness: string[];
+  ecosystem_readiness: string[];
+  risks: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -460,6 +471,7 @@ export type LiaMessageMetadata = {
   firstUsersLiaReport?: FirstUsersLiaReport | null;
   firstUsersReviewReport?: FirstUsersReviewReport | null;
   betaExpansionReport?: BetaExpansionReport | null;
+  openBetaReadinessReport?: OpenBetaReadinessReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

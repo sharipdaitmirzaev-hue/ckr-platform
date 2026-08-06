@@ -491,6 +491,15 @@
 - Лия: «Как проходит расширенная beta?»
 - Без новых крупных бизнес-модулей
 
-## Этап 54+ — backlog
+## Этап 54 — Open Beta Readiness ✅ (код готов)
+
+Подробности: [open-beta-readiness.md](./open-beta-readiness.md) · [open-beta-launch-plan.md](./open-beta-launch-plan.md)
+
+- `/admin/open-beta-review`: Product / User / Ecosystem / Technical / Business
+- OpenBetaDecision + OpenBetaReadinessReport
+- Лия: «Готов ли ЦКР к открытому запуску?»
+- Без новых крупных бизнес-модулей
+
+## Этап 55+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

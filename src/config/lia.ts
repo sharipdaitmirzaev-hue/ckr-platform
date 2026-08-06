@@ -212,6 +212,13 @@ export const LIA_SCENARIOS: {
     description:
       "Beta Expansion Wave: активация, роли, Лия, экосистема → BetaExpansionReport (только анализ)",
   },
+  {
+    id: "open_beta_readiness",
+    label: "Готов ли ЦКР к открытому запуску?",
+    prompt: "Готов ли ЦКР к открытому запуску?",
+    description:
+      "Open Beta Readiness: product / users / ecosystem → OpenBetaReadinessReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -330,6 +337,9 @@ export const FIRST_USERS_REVIEW_START_PATTERN =
 
 export const BETA_EXPANSION_START_PATTERN =
   /как\s+проходит\s+расширенн(ая|ой)\s+beta|расширенн(ая|ой)\s+beta|beta\s*expansion(\s*wave)?|beta\s*expansion\s*report/i;
+
+export const OPEN_BETA_READINESS_START_PATTERN =
+  /готов\s+ли\s+цкр\s+к\s+открытому\s+запуску|открытому\s+запуску|open\s*beta\s*readiness|готовность\s+к\s+open\s*beta/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

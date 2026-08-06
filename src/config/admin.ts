@@ -91,6 +91,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Расширенная закрытая beta после Product Fix Sprint",
   },
   {
+    label: "Open Beta Review",
+    href: "/admin/open-beta-review",
+    description: "Готовность ЦКР к открытому запуску",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

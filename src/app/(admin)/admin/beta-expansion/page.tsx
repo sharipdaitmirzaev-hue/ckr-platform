@@ -62,6 +62,12 @@ export default async function AdminBetaExpansionPage() {
         >
           Product Fix Sprint
         </Link>
+        <Link
+          href="/admin/open-beta-review"
+          className="text-accent hover:underline"
+        >
+          Open Beta Review
+        </Link>
         <Link href="/admin/improvements" className="text-accent hover:underline">
           Улучшения
         </Link>

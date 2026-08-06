@@ -4,6 +4,20 @@
 
 ---
 
+## 0.54.0-beta — 2026-08-06
+
+Open Beta Readiness — проверка готовности ЦКР к открытому запуску (без новых крупных модулей).
+
+### Изменения
+
+- Дашборд `/admin/open-beta-review`: Product / User / Ecosystem / Technical / Business
+- `TechnicalChecklist` + `BusinessReadiness`
+- `OpenBetaDecision`: open_beta / continue_beta / needs_improvement
+- Лия: «Готов ли ЦКР к открытому запуску?» → `OpenBetaReadinessReport`
+- Документация: `open-beta-readiness.md`, `open-beta-launch-plan.md`
+
+---
+
 ## 0.53.0-beta — 2026-08-06
 
 Beta Expansion Wave — расширенная закрытая beta после Product Fix Sprint (без новых крупных модулей).
