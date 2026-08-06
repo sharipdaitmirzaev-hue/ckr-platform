@@ -4,6 +4,10 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { betaInviteStatusLabels, type BetaInviteStatus } from "@/config/beta";
+import {
+  inviteSourceLabels,
+  type InviteSource,
+} from "@/config/first-users-wave";
 import { roleLabels, type AssignableRole } from "@/config/roles";
 import { CreateInviteForm } from "@/features/beta/components/create-invite-form";
 import { InviteRowActions } from "@/features/beta/components/invite-row-actions";
@@ -11,6 +15,7 @@ import { listBetaInvites } from "@/lib/beta/queries";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import type { BetaInvite } from "@/types";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Приглашения — Админ",
@@ -19,7 +24,12 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 function inviteTone(status: BetaInviteStatus) {
-  if (status === "completed" || status === "activated" || status === "used") {
+  if (
+    status === "completed" ||
+    status === "activated" ||
+    status === "active" ||
+    status === "used"
+  ) {
     return "success" as const;
   }
   if (status === "invited" || status === "sent") return "accent" as const;
@@ -45,6 +55,14 @@ const columns: AdminTableColumn<BetaInvite>[] = [
     header: "Роль",
     cell: (invite) =>
       roleLabels[invite.role as AssignableRole] ?? invite.role,
+  },
+  {
+    key: "source",
+    header: "Источник",
+    cell: (invite) =>
+      inviteSourceLabels[(invite.source as InviteSource) ?? "manual"] ??
+      invite.source ??
+      "manual",
   },
   {
     key: "status",
@@ -89,10 +107,15 @@ export default async function AdminInvitesPage() {
   return (
     <div className="space-y-10">
       <SectionHeading
-        eyebrow="Closed beta"
+        eyebrow="First Users Wave"
         title="Приглашения в ЦКР"
-        description="Создавайте коды доступа, отслеживайте статус и отключайте приглашения для закрытого beta-запуска."
+        description="Роль, источник и статус (invited → activated → active → completed | disabled). Дашборд волны: /admin/first-users."
       />
+      <p className="text-sm">
+        <Link href="/admin/first-users" className="text-accent hover:underline">
+          First Users Dashboard →
+        </Link>
+      </p>
 
       {!hasSupabaseEnv() ? (
         <Card variant="surface" className="p-5 text-sm text-muted">

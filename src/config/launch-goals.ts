@@ -84,6 +84,18 @@ export const WAVE2_ECOSYSTEM_GOAL_IDS = {
   dealOrPartnership: "c0000006-0000-4000-8000-00000000000c",
 } as const;
 
+/** Seed UUID целей First Users Wave (этап 50). */
+export const FIRST_USERS_WAVE_GOAL_IDS = {
+  entrepreneurs: "c0000007-0000-4000-8000-000000000001",
+  experts: "c0000007-0000-4000-8000-000000000002",
+  investors: "c0000007-0000-4000-8000-000000000003",
+  organizations: "c0000007-0000-4000-8000-000000000004",
+  activationPct: "c0000007-0000-4000-8000-000000000005",
+  firstActionPct: "c0000007-0000-4000-8000-000000000006",
+  liaPct: "c0000007-0000-4000-8000-000000000007",
+  feedback: "c0000007-0000-4000-8000-000000000008",
+} as const;
+
 export function isLaunchGoalStatus(value: string): value is LaunchGoalStatus {
   return (LAUNCH_GOAL_STATUSES as readonly string[]).includes(value);
 }

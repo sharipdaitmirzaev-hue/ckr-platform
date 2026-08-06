@@ -117,6 +117,19 @@ export async function syncLaunchGoalsForWave(
     ecosystemMetrics = await ecosystem.getEcosystemMetrics();
     ecosystemMetricValueForGoal = ecosystem.ecosystemMetricValueForGoal;
   }
+  let firstUsersMetrics: Awaited<
+    ReturnType<
+      typeof import("@/lib/launch/first-users").getFirstUsersDashboard
+    >
+  >["metrics"] | null = null;
+  let firstUsersMetricValueForGoal: typeof import("@/lib/launch/first-users").firstUsersMetricValueForGoal | null =
+    null;
+  if (wave.id === LAUNCH_WAVE_IDS.firstUsers) {
+    const firstUsers = await import("@/lib/launch/first-users");
+    const dashboard = await firstUsers.getFirstUsersDashboard();
+    firstUsersMetrics = dashboard.metrics;
+    firstUsersMetricValueForGoal = firstUsers.firstUsersMetricValueForGoal;
+  }
   const goals = await listLaunchGoals(wave.id);
   const supabase = createClient();
   const updated: LaunchGoalRow[] = [];
@@ -131,10 +144,16 @@ export async function syncLaunchGoalsForWave(
       ecosystemMetrics && ecosystemMetricValueForGoal
         ? ecosystemMetricValueForGoal(goal.title, ecosystemMetrics)
         : null;
+    const firstUsersValue =
+      firstUsersMetrics && firstUsersMetricValueForGoal
+        ? firstUsersMetricValueForGoal(goal.title, firstUsersMetrics)
+        : null;
     const current =
-      ecosystemValue != null
-        ? ecosystemValue
-        : metricValueForGoal(goal.metric_type, goal.title, metrics);
+      firstUsersValue != null
+        ? firstUsersValue
+        : ecosystemValue != null
+          ? ecosystemValue
+          : metricValueForGoal(goal.metric_type, goal.title, metrics);
     let status = goal.status as LaunchGoalStatus;
     const becameAchieved =
       status === "active" &&

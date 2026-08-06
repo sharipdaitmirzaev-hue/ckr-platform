@@ -74,11 +74,11 @@ export async function createExpertProfileAction(
 
   const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
   await trackAnalyticsEvent({
-    eventType: "profile_completed",
+    eventType: "expert_profile_created",
     userId: user.id,
     entityType: "expert",
     entityId: user.id,
-    metadata: { object: "expert_profile", channel: "first_users_launch" },
+    metadata: { object: "expert_profile", channel: "first_users_wave" },
   });
 
   const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
@@ -87,7 +87,7 @@ export async function createExpertProfileAction(
     userId: user.id,
     entityType: "expert",
     entityId: user.id,
-    metadata: { channel: "first_users_launch", object: "expert_profile" },
+    metadata: { channel: "first_users_wave", object: "expert_profile" },
   });
 
   revalidatePath("/experts");

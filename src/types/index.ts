@@ -461,6 +461,7 @@ export type ProductTestChecklistItem = {
 export type BetaInviteStatus =
   | "invited"
   | "activated"
+  | "active"
   | "completed"
   | "disabled"
   | "created"
@@ -474,6 +475,7 @@ export type BetaInvite = {
   code: string;
   role: string;
   status: BetaInviteStatus;
+  source?: string | null;
   createdAt?: string;
   usedAt: string | null;
   createdBy: string | null;

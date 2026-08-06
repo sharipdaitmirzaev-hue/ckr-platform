@@ -3,6 +3,7 @@ import { LiaRecommendations } from "@/components/lia/lia-recommendations";
 import { LiaWidget } from "@/components/lia/lia-widget";
 import { FirstActionHint } from "@/components/onboarding/first-action-hint";
 import { FirstIntentPrompt } from "@/components/onboarding/first-intent-prompt";
+import { FirstUsersFeedbackPrompt } from "@/components/onboarding/first-users-feedback-prompt";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -96,6 +97,8 @@ export default async function DashboardPage() {
         hasLia={hasLia}
         hasInterest={hasInterest}
       />
+
+      {firstActionDone ? <FirstUsersFeedbackPrompt /> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(

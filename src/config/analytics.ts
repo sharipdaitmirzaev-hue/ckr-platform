@@ -40,6 +40,13 @@ export const ANALYTICS_EVENT_TYPES = [
   "registration_completed",
   "lia_started",
   "first_object_created",
+  "invite_sent",
+  "invite_accepted",
+  "first_login",
+  "lia_first_used",
+  "expert_profile_created",
+  "investment_interest_created",
+  "feedback_sent",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -86,6 +93,13 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   registration_completed: "Регистрация завершена",
   lia_started: "Старт сценария с Лией",
   first_object_created: "Первый объект создан",
+  invite_sent: "Приглашение отправлено",
+  invite_accepted: "Приглашение принято",
+  first_login: "Первый вход",
+  lia_first_used: "Лия использована впервые",
+  expert_profile_created: "Профиль эксперта создан",
+  investment_interest_created: "Интерес к инвестиции/проекту",
+  feedback_sent: "Обратная связь отправлена",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

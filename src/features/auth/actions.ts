@@ -178,6 +178,14 @@ export async function registerAction(
         used_by: data.user.id,
       })
       .eq("id", inviteId);
+
+    await trackAnalyticsEvent({
+      eventType: "invite_accepted",
+      userId: data.user.id,
+      entityType: "beta_invite",
+      entityId: inviteId,
+      metadata: { role, channel: "first_users_wave" },
+    });
   }
 
   // Если email confirmation включён и сессии нет — просим подтвердить почту.
@@ -221,10 +229,28 @@ export async function loginAction(
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
     return { error: mapAuthError(error.message) };
+  }
+
+  if (data.user) {
+    const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+    await trackBetaMilestone({
+      eventType: "first_login",
+      userId: data.user.id,
+      entityType: "user",
+      entityId: data.user.id,
+      metadata: { channel: "first_users_wave" },
+    });
+
+    // Перевод приглашения activated → active при первом входе
+    await supabase
+      .from("beta_invites")
+      .update({ status: "active" })
+      .eq("used_by", data.user.id)
+      .in("status", ["activated", "used"]);
   }
 
   revalidatePath("/", "layout");

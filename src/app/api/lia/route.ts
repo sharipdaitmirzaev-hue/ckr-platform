@@ -191,6 +191,16 @@ export async function POST(request: Request) {
         channel: "first_users_launch",
       },
     });
+    await trackBetaMilestone({
+      eventType: "lia_first_used",
+      userId: current.user.id,
+      entityType: "lia_session",
+      entityId: sessionId,
+      metadata: {
+        scenario: scenario ?? null,
+        channel: "first_users_wave",
+      },
+    });
 
     return apiSuccess({
       sessionId,

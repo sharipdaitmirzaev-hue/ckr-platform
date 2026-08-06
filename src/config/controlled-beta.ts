@@ -95,7 +95,7 @@ export const BETA_SCENARIO_CHECKLISTS: Record<
 /** Нормализация legacy-статусов beta_invites → participation. */
 export function normalizeBetaParticipationStatus(
   status: string,
-): "invited" | "activated" | "completed" | "disabled" | string {
+): "invited" | "activated" | "active" | "completed" | "disabled" | string {
   if (status === "created" || status === "sent") return "invited";
   if (status === "used") return "activated";
   if (status === "expired") return "disabled";
@@ -107,5 +107,14 @@ export function isOpenInviteStatus(status: string): boolean {
 }
 
 export function isActivatedInviteStatus(status: string): boolean {
-  return status === "activated" || status === "used" || status === "completed";
+  return (
+    status === "activated" ||
+    status === "active" ||
+    status === "used" ||
+    status === "completed"
+  );
+}
+
+export function isActiveInviteStatus(status: string): boolean {
+  return status === "active" || status === "activated" || status === "used";
 }

@@ -3,6 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { betaInviteRoles } from "@/config/beta";
+import {
+  INVITE_SOURCES,
+  inviteSourceLabels,
+} from "@/config/first-users-wave";
 import { roleLabels } from "@/config/roles";
 import {
   createBetaInviteAction,
@@ -40,7 +44,7 @@ export function CreateInviteForm() {
       </div>
       <div className="space-y-2">
         <label htmlFor="invite-role" className="text-sm text-muted">
-          Роль
+          Роль участника
         </label>
         <select
           id="invite-role"
@@ -51,6 +55,23 @@ export function CreateInviteForm() {
           {betaInviteRoles.map((role) => (
             <option key={role} value={role}>
               {roleLabels[role]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="invite-source" className="text-sm text-muted">
+          Источник приглашения
+        </label>
+        <select
+          id="invite-source"
+          name="source"
+          defaultValue="first_users_wave"
+          className="h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+        >
+          {INVITE_SOURCES.map((source) => (
+            <option key={source} value={source}>
+              {inviteSourceLabels[source]}
             </option>
           ))}
         </select>

@@ -184,6 +184,13 @@ export const LIA_SCENARIOS: {
     description:
       "Ценность связей и MatchQualityScore → EcosystemValueReport (только анализ)",
   },
+  {
+    id: "first_users",
+    label: "Как прошёл первый запуск ЦКР?",
+    prompt: "Как прошёл первый запуск ЦКР?",
+    description:
+      "First Users Wave: активация, поведение, проблемы, успехи → FirstUsersReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -290,6 +297,9 @@ export const ECOSYSTEM_VALUE_START_PATTERN =
 
 export const ECOSYSTEM_START_PATTERN =
   /как\s+развивается\s+экосистема\s+цкр|развитие\s+экосистемы|экосистема\s+цкр|ecosystem\s*report|ecosystem\s*beta/i;
+
+export const FIRST_USERS_START_PATTERN =
+  /как\s+прош[её]л\s+первый\s+запуск\s+цкр|первый\s+запуск\s+цкр|first\s*users(\s*wave)?|first\s*users\s*report/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

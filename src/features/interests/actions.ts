@@ -60,6 +60,15 @@ export async function toggleInterestAction(
     return { error: error.message };
   }
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "investment_interest_created",
+    userId: user.id,
+    entityType: targetType,
+    entityId: targetId,
+    metadata: { channel: "first_users_wave" },
+  });
+
   const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
   await trackBetaMilestone({
     eventType: "first_interest_created",

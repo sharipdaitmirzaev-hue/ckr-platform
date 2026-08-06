@@ -71,6 +71,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Ценность связей и качество совпадений",
   },
   {
+    label: "First Users",
+    href: "/admin/first-users",
+    description: "First Users Wave: приглашения, сценарии, feedback",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

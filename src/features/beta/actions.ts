@@ -9,6 +9,10 @@ import {
   type UserFeedbackEventType,
 } from "@/config/beta";
 import {
+  isInviteSource,
+  type InviteSource,
+} from "@/config/first-users-wave";
+import {
   FEEDBACK_PRIORITIES,
   type FeedbackPriority,
 } from "@/config/pilot-operations";
@@ -31,6 +35,7 @@ function revalidateInvites() {
   revalidatePath("/admin/invites");
   revalidatePath("/admin/pilot");
   revalidatePath("/admin/beta-report");
+  revalidatePath("/admin/first-users");
 }
 
 export async function createBetaInviteAction(
@@ -42,6 +47,7 @@ export async function createBetaInviteAction(
     .trim()
     .toLowerCase();
   const roleRaw = String(formData.get("role") ?? "entrepreneur");
+  const sourceRaw = String(formData.get("source") ?? "first_users_wave");
   const markSent = formData.get("markSent") === "on";
 
   if (!email || !email.includes("@")) {
@@ -50,18 +56,41 @@ export async function createBetaInviteAction(
   if (!isBetaInviteRole(roleRaw)) {
     return { error: "Некорректная роль приглашения." };
   }
+  const source: InviteSource = isInviteSource(sourceRaw)
+    ? sourceRaw
+    : "first_users_wave";
 
   const code = generateInviteCode();
   const supabase = createClient();
-  const { error } = await supabase.from("beta_invites").insert({
-    email,
-    code,
-    role: roleRaw,
-    status: "invited",
-    created_by: admin.user.id,
-  });
+  const { data, error } = await supabase
+    .from("beta_invites")
+    .insert({
+      email,
+      code,
+      role: roleRaw,
+      source,
+      status: "invited",
+      created_by: admin.user.id,
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "invite_sent",
+    userId: admin.user.id,
+    entityType: "beta_invite",
+    entityId: data?.id ?? null,
+    metadata: {
+      email,
+      role: roleRaw,
+      source,
+      channel: "first_users_wave",
+      markSent,
+    },
+  });
 
   revalidateInvites();
   return {
@@ -73,7 +102,7 @@ export async function createBetaInviteAction(
 export async function markInviteSentAction(
   formData: FormData,
 ): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const inviteId = String(formData.get("inviteId") ?? "");
   if (!inviteId) return;
 
@@ -84,6 +113,32 @@ export async function markInviteSentAction(
     .update({ status: "invited" })
     .eq("id", inviteId)
     .in("status", ["created", "invited", "sent"]);
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "invite_sent",
+    userId: admin.user.id,
+    entityType: "beta_invite",
+    entityId: inviteId,
+    metadata: { channel: "first_users_wave", action: "mark_sent" },
+  });
+
+  revalidateInvites();
+}
+
+export async function markInviteActiveAction(
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+
+  const supabase = createClient();
+  await supabase
+    .from("beta_invites")
+    .update({ status: "active" })
+    .eq("id", inviteId)
+    .in("status", ["activated", "used", "active"]);
 
   revalidateInvites();
 }
@@ -98,7 +153,14 @@ export async function expireInviteAction(formData: FormData): Promise<void> {
     .from("beta_invites")
     .update({ status: "disabled" })
     .eq("id", inviteId)
-    .in("status", ["created", "sent", "invited", "activated", "used"]);
+    .in("status", [
+      "created",
+      "sent",
+      "invited",
+      "activated",
+      "active",
+      "used",
+    ]);
 
   revalidateInvites();
 }
@@ -115,7 +177,7 @@ export async function markInviteCompletedAction(
     .from("beta_invites")
     .update({ status: "completed" })
     .eq("id", inviteId)
-    .in("status", ["activated", "used"]);
+    .in("status", ["activated", "active", "used"]);
 
   revalidateInvites();
 }
@@ -174,8 +236,59 @@ export async function submitFeedbackAction(input: {
 
   if (error) return { ok: false, error: error.message };
 
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "feedback_sent",
+    userId: user?.id ?? null,
+    entityType: "feedback",
+    metadata: {
+      type,
+      priority,
+      page: page || "/",
+      channel: "first_users_wave",
+    },
+  });
+
   revalidatePath("/admin/pilot");
   revalidatePath("/admin/pilot/report");
+  revalidatePath("/admin/first-users");
+  revalidatePath("/admin/improvements");
+  return { ok: true };
+}
+
+/** Structured feedback First Users: liked / unclear / blockers. */
+export async function submitFirstUsersFeedbackAction(input: {
+  liked: string;
+  unclear: string;
+  blocker: string;
+}): Promise<BetaClientResult> {
+  const liked = input.liked.trim();
+  const unclear = input.unclear.trim();
+  const blocker = input.blocker.trim();
+
+  if (liked.length < 3 || unclear.length < 3 || blocker.length < 3) {
+    return {
+      ok: false,
+      error: "Заполните все три поля (от 3 символов каждое).",
+    };
+  }
+
+  const parts = [
+    { type: "review" as const, message: `Что понравилось: ${liked}` },
+    { type: "question" as const, message: `Что непонятно: ${unclear}` },
+    { type: "ux" as const, message: `Что мешает: ${blocker}` },
+  ];
+
+  for (const part of parts) {
+    const result = await submitFeedbackAction({
+      type: part.type,
+      message: part.message,
+      page: "/dashboard",
+      priority: part.type === "ux" ? "high" : "medium",
+    });
+    if (!result.ok) return result;
+  }
+
   return { ok: true };
 }
 

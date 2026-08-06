@@ -4,6 +4,22 @@
 
 ---
 
+## 0.50.0-beta — 2026-08-06
+
+First Users Wave — ограниченный запуск на реальных пользователях (без новых крупных модулей).
+
+### Изменения
+
+- Launch Wave «First Users Wave» (`closed`, `active`) + цели когорты
+- `beta_invites`: статус `active`, поле `source`, форма приглашения с ролью/источником
+- Дашборд `/admin/first-users`: пользователи, сценарии, проблемы, Лия, путь участников
+- Аналитика: `invite_sent`, `invite_accepted`, `first_login`, `lia_first_used`, `expert_profile_created`, `investment_interest_created`, `feedback_sent`
+- Feedback loop: structured отзыв → feedback → pilot_issues → improvements
+- Лия: «Как прошёл первый запуск ЦКР?» → `FirstUsersReport`
+- Документация: `first-users-wave.md`
+
+---
+
 ## 0.49.0-beta — 2026-08-06
 
 First Users Launch — подготовка публичной платформы к первым реальным пользователям (без новых крупных модулей).

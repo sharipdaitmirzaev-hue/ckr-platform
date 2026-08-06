@@ -61,10 +61,13 @@ export const LAUNCH_WAVE_IDS = {
   public: "c0000001-0000-4000-8000-000000000003",
   /** Launch Wave 2 — экосистема beta */
   wave2: "c0000001-0000-4000-8000-000000000004",
+  /** First Users Wave — ограниченный запуск (этап 50) */
+  firstUsers: "c0000001-0000-4000-8000-000000000005",
 } as const;
 
 export const CLOSED_WAVE_TINDA_NAME = "Closed Wave 1 — ТИНДА" as const;
 export const LAUNCH_WAVE_2_NAME = "Wave 2 — Ecosystem Beta" as const;
+export const FIRST_USERS_WAVE_NAME = "First Users Wave" as const;
 
 export const TINDA_WAVE_PARTICIPANT_ID =
   "c0000002-0000-4000-8000-000000000001";

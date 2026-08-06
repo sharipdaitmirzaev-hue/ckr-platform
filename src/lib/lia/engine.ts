@@ -20,6 +20,7 @@ import {
   LAUNCH_DECISION_START_PATTERN,
   ECOSYSTEM_START_PATTERN,
   ECOSYSTEM_VALUE_START_PATTERN,
+  FIRST_USERS_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -58,6 +59,7 @@ import type {
   LaunchDecisionAIReport,
   EcosystemReport,
   EcosystemValueReport,
+  FirstUsersReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -141,6 +143,9 @@ function detectScenario(
   }
   if (LAUNCH_GOALS_START_PATTERN.test(value)) {
     return "launch_goals";
+  }
+  if (FIRST_USERS_START_PATTERN.test(value)) {
+    return "first_users";
   }
   if (ECOSYSTEM_VALUE_START_PATTERN.test(value)) {
     return "ecosystem_value";
@@ -1259,6 +1264,46 @@ async function handleEcosystemAnalysis(input: {
     metadata: {
       scenario: "ecosystem",
       ecosystemReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleFirstUsersAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildFirstUsersReport } = await import("@/lib/launch/first-users");
+  const report: FirstUsersReport = await buildFirstUsersReport();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "first_users" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как прошёл первый запуск ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — FirstUsersReport. Лия не меняет приглашения и статусы — только анализирует первую когорту.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "first_users",
+      firstUsersReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2692,6 +2737,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleEcosystemValueAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "first_users") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить FirstUsersReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "first_users", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleFirstUsersAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

@@ -12,6 +12,7 @@ export function mapBetaInviteRow(row: BetaInviteRow): BetaInvite {
     code: row.code,
     role: row.role,
     status: row.status,
+    source: row.source ?? "manual",
     createdAt: row.created_at,
     usedAt: row.used_at,
     createdBy: row.created_by,

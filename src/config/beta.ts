@@ -4,6 +4,7 @@ import { ASSIGNABLE_ROLES, type AssignableRole } from "@/config/roles";
 export const BETA_INVITE_STATUSES = [
   "invited",
   "activated",
+  "active",
   "completed",
   "disabled",
   "created",
@@ -14,9 +15,19 @@ export const BETA_INVITE_STATUSES = [
 
 export type BetaInviteStatus = (typeof BETA_INVITE_STATUSES)[number];
 
+/** Канонические статусы First Users / controlled beta. */
+export const BETA_INVITE_CANONICAL_STATUSES = [
+  "invited",
+  "activated",
+  "active",
+  "completed",
+  "disabled",
+] as const;
+
 export const betaInviteStatusLabels: Record<BetaInviteStatus, string> = {
   invited: "Приглашён",
   activated: "Активирован",
+  active: "Активен",
   completed: "Завершил сценарий",
   disabled: "Отключён",
   created: "Создано (legacy)",

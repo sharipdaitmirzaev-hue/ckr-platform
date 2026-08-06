@@ -181,6 +181,7 @@ export type ProductTestRow = {
 export type DbBetaInviteStatus =
   | "invited"
   | "activated"
+  | "active"
   | "completed"
   | "disabled"
   | "created"
@@ -194,6 +195,7 @@ export type BetaInviteRow = {
   code: string;
   role: string;
   status: DbBetaInviteStatus;
+  source: string;
   created_at: string;
   used_at: string | null;
   created_by: string | null;
@@ -1447,12 +1449,14 @@ export type Database = {
           code: string;
           role?: string;
           status?: DbBetaInviteStatus;
+          source?: string;
           created_by?: string | null;
           used_by?: string | null;
           used_at?: string | null;
         };
         Update: Partial<{
           status: DbBetaInviteStatus;
+          source: string;
           used_at: string | null;
           used_by: string | null;
         }>;

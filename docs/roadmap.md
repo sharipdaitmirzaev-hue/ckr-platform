@@ -452,6 +452,16 @@
 - Демо-метки seed, проверка модерации, аналитика воронки
 - Без новых крупных бизнес-модулей
 
-## Этап 50+ — backlog
+## Этап 50 — First Users Wave ✅ (код готов)
+
+Подробности: [first-users-wave.md](./first-users-wave.md)
+
+- Launch Wave «First Users Wave» (closed, active)
+- Приглашения: роль, источник, статусы invited→…→completed
+- `/admin/first-users`, feedback loop, аналитика поведения
+- Лия: FirstUsersReport («Как прошёл первый запуск ЦКР?»)
+- Без массового запуска и новых крупных модулей
+
+## Этап 51+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

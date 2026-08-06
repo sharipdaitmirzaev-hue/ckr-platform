@@ -49,8 +49,15 @@
 - `lia_started`
 - `first_object_created`
 
+First Users Wave (этап 50):
+
+- `invite_sent` · `invite_accepted` · `first_login`
+- `lia_first_used` · `expert_profile_created` · `investment_interest_created`
+- `feedback_sent` (+ уже существующий `profile_completed` / `project_created`)
+
 Запись: `trackAnalyticsEvent()` в `src/lib/analytics/track.ts` (не ломает основной сценарий при ошибке).  
-Клиентские точки: `PublicPageViewTracker`, `RegistrationStartedTracker` → `trackLaunchFunnelEventAction`.
+Клиентские точки: `PublicPageViewTracker`, `RegistrationStartedTracker` → `trackLaunchFunnelEventAction`.  
+Дашборд: `/admin/first-users`.
 
 ### RLS
 
