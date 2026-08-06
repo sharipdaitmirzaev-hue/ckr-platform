@@ -505,16 +505,11 @@ export async function getEcosystemValueDashboard(): Promise<EcosystemValueDashbo
 
     const matching: EcosystemMatchingMetrics = { by_type, totals };
 
-    const funnelCreated = totals.created;
-    const funnelAccepted = totals.accepted;
-    const funnelInteraction = totals.active;
-    const funnelResult = totals.completed + deals.filter((d) => d.status === "completed").length;
-
     const quality = computeMatchQualityScore({
-      created: funnelCreated,
-      accepted: funnelAccepted,
-      interaction: funnelInteraction,
-      result: Math.max(funnelResult, totals.completed),
+      created: totals.created,
+      accepted: totals.accepted,
+      interaction: totals.active,
+      result: totals.completed,
       byType: by_type,
     });
 
