@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.42.0-beta** (launch success framework).  
-Обзор: [Launch success](./docs/launch-success-framework.md) · [Wave launch](./docs/wave-launch.md) · [Help center](./docs/help-center.md) · страницы `/about` и `/features`
+Текущая версия ядра: **0.43.0-beta** (Closed Wave 1 — ТИНДА).  
+Обзор: [Отчёт волны ТИНДА](./docs/closed-wave-tinda-report.md) · [Launch success](./docs/launch-success-framework.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 
@@ -67,6 +67,7 @@ supabase           # миграции
 - [Public launch checklist](./docs/public-launch-checklist.md)
 - [Wave launch](./docs/wave-launch.md)
 - [Launch success framework](./docs/launch-success-framework.md)
+- [Closed Wave ТИНДА — отчёт](./docs/closed-wave-tinda-report.md)
 - [Help center](./docs/help-center.md)
 - [ТИНДА production case](./docs/tinda-production-case.md)
 - [ТИНДА публичный кейс](./docs/tinda-case-public.md)

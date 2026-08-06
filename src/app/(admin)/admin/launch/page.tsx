@@ -94,9 +94,9 @@ export default async function AdminLaunchPage() {
   return (
     <div className="space-y-10">
       <SectionHeading
-        eyebrow="Launch success"
+        eyebrow="Closed Wave 1 — ТИНДА"
         title="Launch Dashboard"
-        description="Цели волн, метрики и контроль успешности запуска ЦКР. Без новых бизнес-модулей."
+        description="Контроль первой закрытой волны: статус, цели, прогресс и проблемы. Используются существующие модули ЦКР."
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
@@ -110,18 +110,18 @@ export default async function AdminLaunchPage() {
           Улучшения
         </Link>
         <Link
-          href="/lia?scenario=launch_goals"
+          href="/lia?scenario=closed_wave"
           className="rounded-sm border border-accent/40 bg-accent-muted/40 px-3 py-1.5 text-accent hover:bg-accent-muted"
+        >
+          Лия: первая волна
+        </Link>
+        <Link
+          href="/lia?scenario=launch_goals"
+          className="text-accent hover:underline"
         >
           Лия: цели запуска
         </Link>
-        <Link
-          href="/lia?scenario=launch_status"
-          className="text-accent hover:underline"
-        >
-          Лия: как проходит запуск
-        </Link>
-        <span className="text-muted">docs/launch-success-framework.md</span>
+        <span className="text-muted">docs/closed-wave-tinda-report.md</span>
       </div>
 
       {/* Текущая волна */}

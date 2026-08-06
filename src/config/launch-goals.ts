@@ -1,4 +1,4 @@
-/** Цели запуска (этап 42). */
+/** Цели запуска (этапы 42–43). */
 
 export const LAUNCH_GOAL_STATUSES = [
   "active",
@@ -38,7 +38,7 @@ export const launchGoalMetricLabels: Record<LaunchGoalMetricType, string> = {
   business_results: "Бизнес-результаты",
 };
 
-/** Analytics / feed / notifications event names (этап 42). */
+/** Analytics / feed / notifications event names. */
 export const LAUNCH_GOAL_EVENT_TYPES = [
   "launch_goal_created",
   "launch_goal_achieved",
@@ -55,18 +55,17 @@ export const launchGoalEventLabels: Record<LaunchGoalEventType, string> = {
   launch_wave_completed: "Волна запуска завершена",
 };
 
-/** Seed UUID целей closed wave. */
+/** Seed UUID целей Closed Wave 1 — ТИНДА (этап 43). */
 export const LAUNCH_GOAL_IDS = {
-  users20: "c0000003-0000-4000-8000-000000000001",
-  profiles10: "c0000003-0000-4000-8000-000000000002",
-  projects5: "c0000003-0000-4000-8000-000000000003",
-  applications3: "c0000003-0000-4000-8000-000000000004",
-  deals1: "c0000003-0000-4000-8000-000000000005",
-  lia5: "c0000003-0000-4000-8000-000000000006",
-  tindaClients: "c0000003-0000-4000-8000-000000000007",
-  tindaNegotiations: "c0000003-0000-4000-8000-000000000008",
-  tindaPartners: "c0000003-0000-4000-8000-000000000009",
-  tindaDeals: "c0000003-0000-4000-8000-00000000000a",
+  orgProfile: "c0000004-0000-4000-8000-000000000001",
+  projectCreated: "c0000004-0000-4000-8000-000000000002",
+  onboarding: "c0000004-0000-4000-8000-000000000003",
+  roadmap: "c0000004-0000-4000-8000-000000000004",
+  firstTasks: "c0000004-0000-4000-8000-000000000005",
+  kpiUpdated: "c0000004-0000-4000-8000-000000000006",
+  crmClients: "c0000004-0000-4000-8000-000000000007",
+  partners: "c0000004-0000-4000-8000-000000000008",
+  deals: "c0000004-0000-4000-8000-000000000009",
 } as const;
 
 export function isLaunchGoalStatus(value: string): value is LaunchGoalStatus {

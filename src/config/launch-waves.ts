@@ -46,12 +46,15 @@ export const launchWaveParticipantStatusLabels: Record<
   left: "Вышел",
 };
 
-/** Фиксированные UUID seed-волн (миграция 20260325430000). */
+/** Фиксированные UUID seed-волн (миграции 430000 / 450000). */
 export const LAUNCH_WAVE_IDS = {
   internal: "c0000001-0000-4000-8000-000000000001",
+  /** Closed Wave 1 — ТИНДА */
   closed: "c0000001-0000-4000-8000-000000000002",
   public: "c0000001-0000-4000-8000-000000000003",
 } as const;
+
+export const CLOSED_WAVE_TINDA_NAME = "Closed Wave 1 — ТИНДА" as const;
 
 export const TINDA_WAVE_PARTICIPANT_ID =
   "c0000002-0000-4000-8000-000000000001";

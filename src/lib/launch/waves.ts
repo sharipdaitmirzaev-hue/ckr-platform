@@ -339,7 +339,10 @@ export async function getLaunchWaveDashboard(): Promise<LaunchWaveDashboard> {
       status: "production_pilot_case",
       organization: "ООО ТИНДА",
       projectTitle: "Развитие оптовой платформы ТИНДА",
-      waveName: closedWave?.name ?? currentWave?.name ?? null,
+      waveName:
+        closedWave?.name ??
+        currentWave?.name ??
+        "Closed Wave 1 — ТИНДА",
       waveStatus:
         (closedWave?.status as LaunchWaveStatus | undefined) ??
         (currentWave?.status as LaunchWaveStatus | null) ??
@@ -352,9 +355,9 @@ export async function getLaunchWaveDashboard(): Promise<LaunchWaveDashboard> {
       },
       results: [
         "Организация и проект развития в единой модели ЦКР",
-        "Workspace: этапы подготовки → продаж → партнёров",
-        "Пилотная сделка и CRM-сегменты",
-        "Кейс волны 1 (closed) — production pilot case",
+        "Workspace: подготовка → продажи → масштабирование",
+        "Пилотная сделка и CRM-сегменты клиентов / партнёров",
+        "Closed Wave 1 — ТИНДА: цели активности, проекта и бизнеса",
       ],
     };
 

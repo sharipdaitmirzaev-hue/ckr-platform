@@ -40,7 +40,18 @@ function emptyBundle(): LaunchGoalsBundle {
       users: { invited: 0, registered: 0, active: 0 },
       activation: { profile_completed: 0, first_action: 0, lia_used: 0 },
       business: { projects: 0, applications: 0, deals: 0, results: 0 },
-      tinda: { client_contacts: 0, negotiations: 0, partners: 0, deals: 0 },
+      tinda: {
+        org_profile: 0,
+        project: 0,
+        onboarding: 0,
+        roadmap: 0,
+        tasks_done: 0,
+        kpi_updated: 0,
+        client_contacts: 0,
+        negotiations: 0,
+        partners: 0,
+        deals: 0,
+      },
       period_label: "—",
     },
     wave: null,
@@ -72,6 +83,7 @@ export async function listLaunchGoals(
       .from("launch_goals")
       .select("*")
       .eq("wave_id", waveId)
+      .neq("status", "cancelled")
       .order("created_at", { ascending: true });
     if (error) return [];
     return (data ?? []) as LaunchGoalRow[];

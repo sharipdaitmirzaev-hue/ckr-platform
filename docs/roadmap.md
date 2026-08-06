@@ -389,6 +389,15 @@
 - События целей → analytics / activity_feed / notifications
 - Без новых крупных бизнес-модулей
 
-## Этап 43+ — backlog
+## Этап 43 — Closed Wave 1 — ТИНДА ✅ (код готов)
+
+Подробности: [closed-wave-tinda-report.md](./closed-wave-tinda-report.md)
+
+- Конфигурация волны и целей под ООО ТИНДА
+- Проверка пути org → project → lia → roadmap → CRM → deals
+- Лия: `ClosedWaveReport` («Проанализируй первую волну ЦКР»)
+- Без новых крупных бизнес-модулей
+
+## Этап 44+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

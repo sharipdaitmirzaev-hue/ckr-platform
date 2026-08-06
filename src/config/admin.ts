@@ -48,7 +48,7 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: "Launch",
     href: "/admin/launch",
-    description: "Волны, цели, LaunchMetrics и успех запуска",
+    description: "Closed Wave 1 — ТИНДА: цели и прогресс",
   },
   {
     label: "Улучшения",

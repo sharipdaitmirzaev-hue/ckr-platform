@@ -15,6 +15,7 @@ import {
   LAUNCH_GUIDE_START_PATTERN,
   LAUNCH_STATUS_START_PATTERN,
   LAUNCH_GOALS_START_PATTERN,
+  CLOSED_WAVE_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -43,6 +44,7 @@ import type {
   PilotInsightReport,
   BetaAnalysisReport,
   BetaReviewReport,
+  ClosedWaveReport,
   LaunchGuide,
   LaunchGoalReport,
   LaunchReadinessReport,
@@ -131,6 +133,9 @@ function detectScenario(
   }
   if (LAUNCH_GOALS_START_PATTERN.test(value)) {
     return "launch_goals";
+  }
+  if (CLOSED_WAVE_START_PATTERN.test(value)) {
+    return "closed_wave";
   }
   if (LAUNCH_READINESS_START_PATTERN.test(value)) {
     return "launch_readiness";
@@ -1110,6 +1115,46 @@ async function handleLaunchReadiness(input: {
     metadata: {
       scenario: "launch_readiness",
       launchReadinessReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleClosedWaveAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildClosedWaveReport } = await import("@/lib/launch/closed-wave");
+  const report: ClosedWaveReport = await buildClosedWaveReport(input.userId);
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "closed_wave" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Проанализируй первую волну ЦКР» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — ClosedWaveReport. Лия не меняет волну, цели и данные ТИНДА — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "closed_wave",
+      closedWaveReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2391,6 +2436,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleLaunchGoalsAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "closed_wave") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить ClosedWaveReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "closed_wave", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleClosedWaveAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

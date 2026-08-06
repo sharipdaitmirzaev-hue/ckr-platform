@@ -149,6 +149,13 @@ export const LIA_SCENARIOS: {
     description:
       "Цели волны: achieved / failed, риски, next actions → LaunchGoalReport (только анализ)",
   },
+  {
+    id: "closed_wave",
+    label: "Проанализируй первую волну ЦКР",
+    prompt: "Проанализируй первую волну ЦКР",
+    description:
+      "Closed Wave 1 — ТИНДА: цели, UX, бизнес-результаты → ClosedWaveReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -240,6 +247,9 @@ export const LAUNCH_STATUS_START_PATTERN =
 
 export const LAUNCH_GOALS_START_PATTERN =
   /достигнуты\s+ли\s+цели\s+запуска|цели\s+запуска|launch\s*goals|goal\s*report/i;
+
+export const CLOSED_WAVE_START_PATTERN =
+  /проанализируй\s+первую\s+волну|анализ\s+первой\s+волны|closed\s*wave|первая\s+волна\s+цкр/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

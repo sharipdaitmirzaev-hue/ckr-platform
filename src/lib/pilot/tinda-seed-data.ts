@@ -129,11 +129,12 @@ export const tindaPilotChecklist = [
 ] as const;
 
 export const tindaSeedMeta = {
-  version: 6,
+  version: 7,
   organization: "ООО ТИНДА",
   projectTitle: "Развитие оптовой платформы ТИНДА",
-  note: "Production pilot case ЦКР (этап 42). Волна 1 closed + launch_goals. Seed без реальных ПДн.",
+  note: "Closed Wave 1 — ТИНДА (этап 43). Полный путь org→project→lia→roadmap→CRM→deals.",
   caseStatus: "production_pilot_case" as const,
+  waveName: "Closed Wave 1 — ТИНДА" as const,
 } as const;
 
 export const tindaExecutionRoadmap = {
@@ -157,7 +158,7 @@ export const tindaExecutionItems = [
   {
     id: TINDA_ROADMAP_ITEM_IDS.sales,
     title: "Продажи",
-    description: "Поиск клиентов, переговоры, первые сделки.",
+    description: "Поиск клиентов, переговоры, первые заявки.",
     orderNumber: 2,
     status: "in_progress" as const,
     milestoneId: TINDA_MILESTONE_IDS.sales,
@@ -165,7 +166,7 @@ export const tindaExecutionItems = [
   {
     id: TINDA_ROADMAP_ITEM_IDS.scale,
     title: "Масштабирование",
-    description: "Расширение клиентов, новые регионы, новые категории.",
+    description: "Партнёры, новые направления, рост.",
     orderNumber: 3,
     status: "planned" as const,
     milestoneId: TINDA_MILESTONE_IDS.scale,
@@ -211,29 +212,29 @@ export const tindaExecutionTasks = [
   {
     id: TINDA_TASK_IDS.firstDeals,
     itemId: TINDA_ROADMAP_ITEM_IDS.sales,
-    title: "Первые сделки",
-    description: "Закрыть пилотные сделки через workspace ЦКР.",
+    title: "Первые заявки",
+    description: "Зафиксировать первые заявки клиентов через workspace ЦКР.",
     status: "new" as const,
   },
   {
     id: TINDA_TASK_IDS.expandClients,
     itemId: TINDA_ROADMAP_ITEM_IDS.scale,
-    title: "Расширение клиентов",
-    description: "Увеличить клиентскую базу за пределами текущего ядра.",
+    title: "Партнёры",
+    description: "Укрепить партнёрскую сеть и совместные продажи.",
     status: "new" as const,
   },
   {
     id: TINDA_TASK_IDS.newRegions,
     itemId: TINDA_ROADMAP_ITEM_IDS.scale,
-    title: "Новые регионы",
-    description: "Подготовить выход в соседние регионы ДВ.",
+    title: "Новые направления",
+    description: "Подготовить новые направления ассортимента / каналов.",
     status: "new" as const,
   },
   {
     id: TINDA_TASK_IDS.newCategories,
     itemId: TINDA_ROADMAP_ITEM_IDS.scale,
-    title: "Новые категории",
-    description: "Добавить 1–2 новые категории ассортимента.",
+    title: "Рост",
+    description: "Зафиксировать рост KPI и масштабирование клиентской базы.",
     status: "new" as const,
   },
 ] as const;

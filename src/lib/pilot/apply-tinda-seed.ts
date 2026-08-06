@@ -555,7 +555,7 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
           wave_id: LAUNCH_WAVE_IDS.closed,
           user_id: ownerId,
           status: "active",
-          notes: "ООО ТИНДА — production pilot case, волна 1 closed",
+          notes: "ООО ТИНДА — участник Closed Wave 1 — ТИНДА",
         });
       if (!waveError) waveParticipants = 1;
     } catch {
