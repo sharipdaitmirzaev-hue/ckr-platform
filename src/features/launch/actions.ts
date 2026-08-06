@@ -1,12 +1,19 @@
 "use server";
 
 import {
+  isLaunchGoalMetricType,
+  isLaunchGoalStatus,
+} from "@/config/launch-goals";
+import {
   isLaunchWaveParticipantStatus,
   isLaunchWaveStatus,
   isLaunchWaveType,
 } from "@/config/launch-waves";
 import { requireStaff } from "@/lib/auth/require-staff";
+import { emitLaunchGoalEvent } from "@/lib/launch/events";
+import { evaluateWaveCompletion } from "@/lib/launch/goals";
 import { createClient } from "@/lib/supabase/server";
+import type { LaunchWaveRow } from "@/types/database";
 import { revalidatePath } from "next/cache";
 
 export type LaunchActionState = {
@@ -67,7 +74,7 @@ export async function createLaunchWaveAction(
 export async function updateLaunchWaveStatusAction(
   formData: FormData,
 ): Promise<void> {
-  await requireStaff("/admin/launch");
+  const staff = await requireStaff("/admin/launch");
   const id = String(formData.get("id") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
   if (!id || !isLaunchWaveStatus(status)) return;
@@ -82,7 +89,17 @@ export async function updateLaunchWaveStatusAction(
       .neq("id", id);
   }
 
-  await supabase.from("launch_waves").update({ status }).eq("id", id);
+  const { data: wave } = await supabase
+    .from("launch_waves")
+    .update({ status })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (status === "completed" && wave) {
+    await evaluateWaveCompletion(wave as LaunchWaveRow, staff.user.id);
+  }
+
   revalidateLaunch();
 }
 
@@ -129,5 +146,115 @@ export async function updateLaunchWaveParticipantStatusAction(
     .update({ status })
     .eq("id", id);
 
+  revalidateLaunch();
+}
+
+export async function createLaunchGoalAction(
+  _prev: LaunchActionState,
+  formData: FormData,
+): Promise<LaunchActionState> {
+  const staff = await requireStaff("/admin/launch");
+  const waveId = String(formData.get("waveId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const metricType = String(formData.get("metricType") ?? "users");
+  const targetRaw = String(formData.get("targetValue") ?? "0");
+  const targetValue = Number(targetRaw);
+
+  if (!waveId) return { error: "Укажите волну." };
+  if (title.length < 3) {
+    return { error: "Укажите название цели (от 3 символов)." };
+  }
+  if (!isLaunchGoalMetricType(metricType)) {
+    return { error: "Некорректный тип метрики." };
+  }
+  if (!Number.isFinite(targetValue) || targetValue < 0) {
+    return { error: "Укажите корректный target_value." };
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("launch_goals")
+    .insert({
+      wave_id: waveId,
+      title,
+      description,
+      metric_type: metricType,
+      target_value: targetValue,
+      current_value: 0,
+      status: "active",
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error) return { error: error.message };
+
+  await emitLaunchGoalEvent({
+    eventType: "launch_goal_created",
+    userId: staff.user.id,
+    entityId: (data?.id as string) ?? null,
+    title: `Цель создана: ${title}`,
+    body: `${title} · target ${targetValue} (${metricType})`,
+    metadata: { waveId, metricType, targetValue },
+  });
+
+  revalidateLaunch();
+  return { success: "Цель добавлена." };
+}
+
+export async function updateLaunchGoalStatusAction(
+  formData: FormData,
+): Promise<void> {
+  const staff = await requireStaff("/admin/launch");
+  const id = String(formData.get("id") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+  if (!id || !isLaunchGoalStatus(status)) return;
+
+  const supabase = createClient();
+  const { data: prev } = await supabase
+    .from("launch_goals")
+    .select("id, title, status, current_value, target_value")
+    .eq("id", id)
+    .maybeSingle();
+
+  await supabase
+    .from("launch_goals")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (prev && prev.status !== status) {
+    if (status === "achieved") {
+      await emitLaunchGoalEvent({
+        eventType: "launch_goal_achieved",
+        userId: staff.user.id,
+        entityId: id,
+        title: `Цель достигнута: ${prev.title}`,
+        body: `${prev.title}: ${prev.current_value} / ${prev.target_value}`,
+      });
+    } else if (status === "failed") {
+      await emitLaunchGoalEvent({
+        eventType: "launch_goal_failed",
+        userId: staff.user.id,
+        entityId: id,
+        title: `Цель не достигнута: ${prev.title}`,
+        body: `${prev.title}: ${prev.current_value} / ${prev.target_value}`,
+      });
+    }
+  }
+
+  revalidateLaunch();
+}
+
+export async function syncLaunchGoalsAction(): Promise<void> {
+  const staff = await requireStaff("/admin/launch");
+  const { getActiveLaunchWave } = await import("@/lib/launch/waves");
+  const { syncLaunchGoalsForWave } = await import("@/lib/launch/goals");
+  const wave = await getActiveLaunchWave();
+  if (wave) {
+    await syncLaunchGoalsForWave(wave, staff.user.id);
+  }
   revalidateLaunch();
 }

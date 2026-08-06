@@ -31,6 +31,10 @@ export const ANALYTICS_EVENT_TYPES = [
   "first_project",
   "first_investment_interest",
   "first_expert_request",
+  "launch_goal_created",
+  "launch_goal_achieved",
+  "launch_goal_failed",
+  "launch_wave_completed",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -68,6 +72,10 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   first_project: "Первый проект (launch)",
   first_investment_interest: "Первый интерес к инвестициям",
   first_expert_request: "Первый запрос эксперту",
+  launch_goal_created: "Цель запуска создана",
+  launch_goal_achieved: "Цель запуска достигнута",
+  launch_goal_failed: "Цель запуска не достигнута",
+  launch_wave_completed: "Волна запуска завершена",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

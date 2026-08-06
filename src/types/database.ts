@@ -278,6 +278,34 @@ export type LaunchWaveParticipantRow = {
   created_at: string;
 };
 
+export type DbLaunchGoalStatus =
+  | "active"
+  | "achieved"
+  | "failed"
+  | "cancelled";
+
+export type DbLaunchGoalMetricType =
+  | "users"
+  | "activation"
+  | "projects"
+  | "applications"
+  | "deals"
+  | "lia_usage"
+  | "business_results";
+
+export type LaunchGoalRow = {
+  id: string;
+  wave_id: string;
+  title: string;
+  description: string;
+  metric_type: DbLaunchGoalMetricType;
+  target_value: number;
+  current_value: number;
+  status: DbLaunchGoalStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PilotChecklistRow = {
   id: string;
   participant_id: string;
@@ -1485,6 +1513,29 @@ export type Database = {
           notes: string;
         }>;
       };
+      launch_goals: {
+        Row: LaunchGoalRow;
+        Insert: {
+          id?: string;
+          wave_id: string;
+          title: string;
+          description?: string;
+          metric_type?: DbLaunchGoalMetricType;
+          target_value?: number;
+          current_value?: number;
+          status?: DbLaunchGoalStatus;
+        };
+        Update: Partial<{
+          wave_id: string;
+          title: string;
+          description: string;
+          metric_type: DbLaunchGoalMetricType;
+          target_value: number;
+          current_value: number;
+          status: DbLaunchGoalStatus;
+          updated_at: string;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -2042,6 +2093,8 @@ export type Database = {
       launch_wave_status: DbLaunchWaveStatus;
       launch_wave_type: DbLaunchWaveType;
       launch_wave_participant_status: DbLaunchWaveParticipantStatus;
+      launch_goal_status: DbLaunchGoalStatus;
+      launch_goal_metric_type: DbLaunchGoalMetricType;
     };
   };
 };

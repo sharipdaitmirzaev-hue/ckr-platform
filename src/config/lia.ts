@@ -142,6 +142,13 @@ export const LIA_SCENARIOS: {
     description:
       "Активность волны, блокеры, рекомендации → LaunchStatusReport (только анализ)",
   },
+  {
+    id: "launch_goals",
+    label: "Достигнуты ли цели запуска?",
+    prompt: "Достигнуты ли цели запуска?",
+    description:
+      "Цели волны: achieved / failed, риски, next actions → LaunchGoalReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -230,6 +237,9 @@ export const LAUNCH_GUIDE_START_PATTERN =
 
 export const LAUNCH_STATUS_START_PATTERN =
   /как\s+проходит\s+запуск(?!\s+цкр)|launch\s*status|статус\s+запуска|статус\s+волн/i;
+
+export const LAUNCH_GOALS_START_PATTERN =
+  /достигнуты\s+ли\s+цели\s+запуска|цели\s+запуска|launch\s*goals|goal\s*report/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

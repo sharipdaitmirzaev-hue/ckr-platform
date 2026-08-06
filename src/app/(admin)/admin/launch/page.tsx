@@ -2,6 +2,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { StatsCard } from "@/components/analytics/stats-card";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
   launchAnalyticsEventLabels,
@@ -11,6 +12,10 @@ import {
   type LaunchCheckStatus,
 } from "@/config/launch";
 import {
+  launchGoalStatusLabels,
+  type LaunchGoalStatus,
+} from "@/config/launch-goals";
+import {
   launchWaveParticipantStatusLabels,
   launchWaveStatusLabels,
   launchWaveTypeLabels,
@@ -19,11 +24,15 @@ import {
   type LaunchWaveType,
 } from "@/config/launch-waves";
 import { AddWaveParticipantForm } from "@/features/launch/components/add-wave-participant-form";
+import { CreateLaunchGoalForm } from "@/features/launch/components/create-launch-goal-form";
 import { CreateLaunchWaveForm } from "@/features/launch/components/create-launch-wave-form";
+import { LaunchGoalStatusForm } from "@/features/launch/components/launch-goal-status-form";
 import { LaunchWaveStatusForm } from "@/features/launch/components/launch-wave-status-form";
 import { WaveParticipantStatusForm } from "@/features/launch/components/wave-participant-status-form";
 import { getLaunchChecklist } from "@/lib/launch/checklist";
+import { getLaunchGoalsBundle } from "@/lib/launch/goals";
 import { getLaunchWaveDashboard } from "@/lib/launch/waves";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -72,17 +81,22 @@ function CheckList({ title, items }: { title: string; items: LaunchCheckItem[] }
 }
 
 export default async function AdminLaunchPage() {
+  const current = await getCurrentUser();
   const [data, waves] = await Promise.all([
     getLaunchChecklist(),
     getLaunchWaveDashboard(),
   ]);
+  const goalsBundle = await getLaunchGoalsBundle(
+    waves.currentWave,
+    current?.user.id ?? null,
+  );
 
   return (
     <div className="space-y-10">
       <SectionHeading
-        eyebrow="Wave launch"
+        eyebrow="Launch success"
         title="Launch Dashboard"
-        description="Волновой запуск после Conditional Go: управление волнами, участниками и сбором результатов. Без новых бизнес-модулей."
+        description="Цели волн, метрики и контроль успешности запуска ЦКР. Без новых бизнес-модулей."
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
@@ -96,18 +110,18 @@ export default async function AdminLaunchPage() {
           Улучшения
         </Link>
         <Link
-          href="/lia?scenario=launch_status"
+          href="/lia?scenario=launch_goals"
           className="rounded-sm border border-accent/40 bg-accent-muted/40 px-3 py-1.5 text-accent hover:bg-accent-muted"
+        >
+          Лия: цели запуска
+        </Link>
+        <Link
+          href="/lia?scenario=launch_status"
+          className="text-accent hover:underline"
         >
           Лия: как проходит запуск
         </Link>
-        <Link
-          href="/lia?scenario=launch_guide"
-          className="text-accent hover:underline"
-        >
-          Лия: как начать
-        </Link>
-        <span className="text-muted">docs/wave-launch.md</span>
+        <span className="text-muted">docs/launch-success-framework.md</span>
       </div>
 
       {/* Текущая волна */}
@@ -165,6 +179,153 @@ export default async function AdminLaunchPage() {
           value={waves.activity.activeUsers7d}
         />
         <StatsCard label="Проблемы open" value={waves.problems.length} />
+      </section>
+
+      {/* LaunchMetrics */}
+      <section className="space-y-4">
+        <h2 className="font-display text-xl text-foreground">LaunchMetrics</h2>
+        <p className="text-sm text-muted">{goalsBundle.metrics.period_label}</p>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card variant="surface" className="space-y-3 p-5">
+            <h3 className="font-display text-lg text-foreground">Пользователи</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <StatsCard
+                label="Приглашено"
+                value={goalsBundle.metrics.users.invited}
+              />
+              <StatsCard
+                label="Зарегистрировано"
+                value={goalsBundle.metrics.users.registered}
+              />
+              <StatsCard
+                label="Активно"
+                value={goalsBundle.metrics.users.active}
+              />
+            </div>
+          </Card>
+          <Card variant="surface" className="space-y-3 p-5">
+            <h3 className="font-display text-lg text-foreground">Активация</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <StatsCard
+                label="Профиль"
+                value={goalsBundle.metrics.activation.profile_completed}
+              />
+              <StatsCard
+                label="Первое действие"
+                value={goalsBundle.metrics.activation.first_action}
+              />
+              <StatsCard
+                label="Лия"
+                value={goalsBundle.metrics.activation.lia_used}
+              />
+            </div>
+          </Card>
+          <Card variant="surface" className="space-y-3 p-5">
+            <h3 className="font-display text-lg text-foreground">Бизнес</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <StatsCard
+                label="Проекты"
+                value={goalsBundle.metrics.business.projects}
+              />
+              <StatsCard
+                label="Заявки"
+                value={goalsBundle.metrics.business.applications}
+              />
+              <StatsCard
+                label="Сделки"
+                value={goalsBundle.metrics.business.deals}
+              />
+              <StatsCard
+                label="Результаты"
+                value={goalsBundle.metrics.business.results}
+              />
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Цели волны */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl text-foreground">
+              Цели волны
+            </h2>
+            <p className="text-sm text-muted">
+              Прогресс {goalsBundle.summary.overallProgress}% · достигнуто{" "}
+              {goalsBundle.summary.achieved} · в работе{" "}
+              {goalsBundle.summary.active} · failed {goalsBundle.summary.failed}
+            </p>
+          </div>
+          <ProgressBar
+            value={goalsBundle.summary.overallProgress}
+            className="w-full max-w-xs"
+          />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card variant="surface" className="space-y-4 p-5 lg:col-span-2">
+            {goalsBundle.goals.length === 0 ? (
+              <p className="text-sm text-muted">
+                У активной волны пока нет целей. Добавьте цель или примените
+                миграцию launch_goals.
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {goalsBundle.goals.map((goal) => (
+                  <li
+                    key={goal.id}
+                    className="rounded-sm border border-border px-3 py-3"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {goal.title}
+                        </p>
+                        <p className="text-xs text-muted">
+                          {goal.metricLabel} · {goal.current_value} /{" "}
+                          {goal.target_value}
+                        </p>
+                        {goal.description ? (
+                          <p className="mt-1 text-sm text-muted">
+                            {goal.description}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="soft">
+                          {
+                            launchGoalStatusLabels[
+                              goal.status as LaunchGoalStatus
+                            ]
+                          }
+                        </Badge>
+                        <LaunchGoalStatusForm
+                          id={goal.id}
+                          status={goal.status as LaunchGoalStatus}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <ProgressBar value={goal.progress} showLabel />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+          <Card variant="surface" className="p-5">
+            {waves.currentWave ? (
+              <CreateLaunchGoalForm
+                waveId={waves.currentWave.id}
+                waveName={waves.currentWave.name}
+              />
+            ) : (
+              <p className="text-sm text-muted">
+                Активируйте волну, чтобы добавлять цели.
+              </p>
+            )}
+          </Card>
+        </div>
       </section>
 
       {/* LaunchReport */}
@@ -339,21 +500,32 @@ export default async function AdminLaunchPage() {
             ? ` (${launchWaveStatusLabels[waves.tinda.waveStatus]})`
             : ""}
         </p>
+        <p className="text-xs uppercase tracking-[0.14em] text-muted">
+          Пользователи: команда ТИНДА
+        </p>
         <div className="grid gap-3 sm:grid-cols-4">
-          <StatsCard label="Проекты (wave)" value={waves.tinda.metrics.projects} />
-          <StatsCard label="Лия" value={waves.tinda.metrics.lia} />
-          <StatsCard label="Сделки" value={waves.tinda.metrics.deals} />
           <StatsCard
-            label="Участники кейса"
-            value={waves.tinda.metrics.participants}
+            label="Контакты клиентов"
+            value={goalsBundle.metrics.tinda.client_contacts}
           />
+          <StatsCard
+            label="Переговоры"
+            value={goalsBundle.metrics.tinda.negotiations}
+          />
+          <StatsCard
+            label="Партнёры"
+            value={goalsBundle.metrics.tinda.partners}
+          />
+          <StatsCard label="Сделки" value={goalsBundle.metrics.tinda.deals} />
         </div>
         <ul className="list-disc space-y-1 pl-5 text-sm text-foreground">
           {waves.tinda.results.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-        <span className="text-sm text-muted">docs/tinda-case-public.md</span>
+        <span className="text-sm text-muted">
+          docs/tinda-production-case.md · цели closed wave
+        </span>
       </Card>
 
       <Card variant="surface" className="space-y-3 p-5">

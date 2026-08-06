@@ -379,6 +379,16 @@
 - ТИНДА → production pilot case
 - Без новых крупных бизнес-модулей
 
-## Этап 42+ — backlog
+## Этап 42 — Launch Success Framework ✅ (код готов)
+
+Подробности: [launch-success-framework.md](./launch-success-framework.md)
+
+- `launch_goals` + ProgressBar на `/admin/launch`
+- LaunchMetrics (users / activation / business)
+- Лия: `LaunchGoalReport` («Достигнуты ли цели запуска?»)
+- События целей → analytics / activity_feed / notifications
+- Без новых крупных бизнес-модулей
+
+## Этап 43+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

@@ -14,6 +14,7 @@ import {
   LAUNCH_READINESS_START_PATTERN,
   LAUNCH_GUIDE_START_PATTERN,
   LAUNCH_STATUS_START_PATTERN,
+  LAUNCH_GOALS_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -43,6 +44,7 @@ import type {
   BetaAnalysisReport,
   BetaReviewReport,
   LaunchGuide,
+  LaunchGoalReport,
   LaunchReadinessReport,
   LaunchStatusReport,
   ProductImprovementReport,
@@ -126,6 +128,9 @@ function detectScenario(
   }
   if (LAUNCH_STATUS_START_PATTERN.test(value)) {
     return "launch_status";
+  }
+  if (LAUNCH_GOALS_START_PATTERN.test(value)) {
+    return "launch_goals";
   }
   if (LAUNCH_READINESS_START_PATTERN.test(value)) {
     return "launch_readiness";
@@ -1105,6 +1110,49 @@ async function handleLaunchReadiness(input: {
     metadata: {
       scenario: "launch_readiness",
       launchReadinessReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleLaunchGoalsAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { getActiveLaunchWave } = await import("@/lib/launch/waves");
+  const { getLaunchGoalsBundle } = await import("@/lib/launch/goals");
+  const wave = await getActiveLaunchWave();
+  const bundle = await getLaunchGoalsBundle(wave, input.userId);
+  const report: LaunchGoalReport = bundle.goalReport;
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "launch_goals" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Достигнуты ли цели запуска?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — LaunchGoalReport. Лия не изменяет показатели и статусы целей — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "launch_goals",
+      launchGoalReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2329,6 +2377,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleLaunchStatus({ userId: input.userId });
+  }
+
+  if (scenario === "launch_goals") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить LaunchGoalReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "launch_goals", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLaunchGoalsAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

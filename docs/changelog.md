@@ -4,6 +4,20 @@
 
 ---
 
+## 0.42.0-beta — 2026-03-25
+
+Launch Success Framework — цели волн, метрики и анализ успешности запуска (без новых бизнес-модулей).
+
+### Изменения
+
+- Таблица `launch_goals` + seed целей Closed Wave / ТИНДА
+- LaunchMetrics и блок «Цели волны» с ProgressBar на `/admin/launch`
+- События: `launch_goal_created` / `achieved` / `failed` / `launch_wave_completed`
+- Лия: «Достигнуты ли цели запуска?» → `LaunchGoalReport` (только анализ)
+- Документация: `launch-success-framework.md`
+
+---
+
 ## 0.41.0-beta — 2026-03-25
 
 Wave Launch — волновой запуск ЦКР после Conditional Go (без новых бизнес-модулей).

@@ -57,6 +57,10 @@ export const activityActionLabels: Record<string, string> = {
   deal_created: "Сделка",
   deal_updated: "Сделка обновлена",
   note: "Заметка",
+  launch_goal_created: "Цель запуска",
+  launch_goal_achieved: "Цель достигнута",
+  launch_goal_failed: "Цель не достигнута",
+  launch_wave_completed: "Волна завершена",
 };
 
 export function hrefForNotification(input: {

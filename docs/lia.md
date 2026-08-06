@@ -88,6 +88,7 @@ RLS: пользователь видит и меняет только свои �
 15. **Что нужно исправить перед запуском?** — `launch_readiness` → `LaunchReadinessReport` (только анализ). См. [public-launch-plan.md](./public-launch-plan.md).
 16. **Как начать работу с ЦКР?** — `launch_guide` → `LaunchGuide` (роль + первый шаг; только подсказки). См. [help-center.md](./help-center.md), [public-launch-checklist.md](./public-launch-checklist.md).
 17. **Как проходит запуск?** — `launch_status` → `LaunchStatusReport` (активность волны, блокеры, рекомендации; только анализ). См. [wave-launch.md](./wave-launch.md).
+18. **Достигнуты ли цели запуска?** — `launch_goals` → `LaunchGoalReport` (achieved / failed, risks, next_actions; только анализ). См. [launch-success-framework.md](./launch-success-framework.md).
 
 Структура результата поиска:
 
