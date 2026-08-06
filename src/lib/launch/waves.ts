@@ -222,7 +222,7 @@ export async function getLaunchWaveDashboard(): Promise<LaunchWaveDashboard> {
       .map((p) => p.user_id)
       .filter((id): id is string => Boolean(id));
 
-    let profiles = new Map<string, string>();
+    const profiles = new Map<string, string>();
     if (userIds.length > 0) {
       const { data: profileRows } = await supabase
         .from("profiles")
