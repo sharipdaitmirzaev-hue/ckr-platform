@@ -136,6 +136,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "User / Marketplace / Ecosystem / Partnership KPI роста",
   },
   {
+    label: "Project Acquisition",
+    href: "/admin/project-acquisition",
+    description: "Воронка и качество привлечения бизнес-проектов",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

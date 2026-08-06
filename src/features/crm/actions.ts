@@ -173,21 +173,66 @@ export async function createCrmLeadAction(
   });
 
   if (error) return { error: error.message };
+
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "project_lead_created",
+      userId: staff.user.id,
+      entityType: "lead",
+      metadata: {
+        source: "crm",
+        channel: "crm",
+        stage,
+        title,
+      },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
   revalidateCrm();
+  revalidatePath("/admin/project-acquisition");
   return { success: "Лид создан." };
 }
 
 export async function updateCrmLeadStageAction(
   formData: FormData,
 ): Promise<void> {
-  await requireStaff();
+  const staff = await requireStaff();
   const id = String(formData.get("leadId") ?? "");
   const stage = String(formData.get("stage") ?? "");
   if (!id || !isCrmLeadStage(stage)) return;
 
   const supabase = createClient();
   await supabase.from("leads").update({ stage }).eq("id", id);
+
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    if (stage === "contacted") {
+      await trackAnalyticsEvent({
+        eventType: "project_contacted",
+        userId: staff.user.id,
+        entityType: "lead",
+        entityId: id,
+        metadata: { source: "crm", stage },
+      });
+    }
+    if (stage === "qualified") {
+      await trackAnalyticsEvent({
+        eventType: "project_interest_confirmed",
+        userId: staff.user.id,
+        entityType: "lead",
+        entityId: id,
+        metadata: { source: "crm", stage },
+      });
+    }
+  } catch {
+    // мягкий сбой
+  }
+
   revalidateCrm([`/admin/crm/leads/${id}`]);
+  revalidatePath("/admin/project-acquisition");
 }
 
 export async function createCrmActivityAction(
@@ -483,10 +528,29 @@ async function convertLeadToProject(
     createdBy: adminId,
   });
 
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "project_draft_created",
+      userId: adminId,
+      entityType: "project",
+      entityId: data.id,
+      metadata: {
+        source: "crm",
+        channel: "crm",
+        leadId: lead.id,
+        acquisition: true,
+      },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
   revalidateCrm([
     `/admin/crm/leads/${lead.id}`,
     "/dashboard/projects",
     "/admin/projects",
+    "/admin/project-acquisition",
   ]);
   return {
     success: "Лид конвертирован в черновик проекта.",

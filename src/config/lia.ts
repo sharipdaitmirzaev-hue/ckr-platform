@@ -69,9 +69,10 @@ export const LIA_SCENARIOS: {
   },
   {
     id: "business_audit",
-    label: "Аудит бизнеса",
-    prompt: "Аудит бизнеса",
-    description: "Диагностика действующего бизнеса → SWOT и следующие шаги",
+    label: "Аудит моего бизнеса",
+    prompt: "Аудит моего бизнеса",
+    description:
+      "Публичный сценарий: диагностика → BusinessAuditReport → предложение создать проект ЦКР (после подтверждения)",
   },
   {
     id: "develop_strategy",
@@ -261,6 +262,13 @@ export const LIA_SCENARIOS: {
     description:
       "Growth Engine: пользователи, проекты, эксперты, партнёры, каналы → GrowthReport (только анализ)",
   },
+  {
+    id: "project_acquisition",
+    label: "Как развивается поток проектов ЦКР?",
+    prompt: "Как развивается поток проектов ЦКР?",
+    description:
+      "Project Acquisition: источники, конверсия, качество → ProjectAcquisitionReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -318,7 +326,7 @@ export const CHECK_RELIABILITY_PATTERN =
   /провер(ь|ить|ьте)?\s+над[её]жност|над[её]жност(ь|и)\s+участник|check.?reliab/i;
 
 export const BUSINESS_AUDIT_START_PATTERN =
-  /аудит\s+бизнеса|проведи\s+аудит|business\s*audit|диагностик[аи]\s+бизнеса/i;
+  /аудит\s+(моего\s+)?бизнеса|проведи\s+аудит|business\s*audit|диагностик[аи]\s+бизнеса/i;
 
 export const DEVELOP_STRATEGY_START_PATTERN =
   /разработать\s+стратегию|стратегия\s+развития|develop\s+strategy|построй\s+стратегию/i;
@@ -397,6 +405,9 @@ export const LIVE_LAUNCH_START_PATTERN =
 
 export const GROWTH_START_PATTERN =
   /как\s+раст[её]т\s+цкр|рост\s+цкр|growth\s*(engine|report)?|growth\s*kpi/i;
+
+export const PROJECT_ACQUISITION_START_PATTERN =
+  /как\s+развивается\s+поток\s+проектов(\s+цкр)?|поток\s+проектов\s+цкр|project\s*acquisition(\s*report)?|acquisition\s*pipeline/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

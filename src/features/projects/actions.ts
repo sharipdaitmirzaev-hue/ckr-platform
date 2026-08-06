@@ -104,6 +104,12 @@ export async function createProjectAction(
     return { error: error?.message ?? "Не удалось создать проект." };
   }
 
+  const template = String(formData.get("template") ?? "").trim();
+  const fromAcquisition =
+    template === "business_development" ||
+    String(formData.get("source") ?? "").includes("acquisition") ||
+    String(formData.get("source") ?? "") === "lia";
+
   const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
   await trackAnalyticsEvent({
     eventType: "project_created",
@@ -114,8 +120,24 @@ export async function createProjectAction(
       category: parsed.data.category,
       region: parsed.data.region,
       status: "draft",
+      template: template || null,
+      source: fromAcquisition ? "lia" : "entrepreneur",
+      acquisition: fromAcquisition,
     },
   });
+  if (fromAcquisition) {
+    await trackAnalyticsEvent({
+      eventType: "project_draft_created",
+      userId: user.id,
+      entityType: "project",
+      entityId: data.id,
+      metadata: {
+        source: template === "business_development" ? "lia" : "entrepreneur",
+        template: template || null,
+        acquisition: true,
+      },
+    });
+  }
 
   const { trackUserFeedbackEvent } = await import(
     "@/lib/beta/track-feedback-event"
@@ -307,6 +329,30 @@ export async function advanceProjectStatusAction(
       entityId: projectId,
       metadata: { from: current },
     });
+
+    try {
+      const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+      const { data: linkedLead } = await supabase
+        .from("leads")
+        .select("id")
+        .eq("converted_project_id", projectId)
+        .maybeSingle();
+      if (linkedLead?.id || current === "draft" || current === "moderation") {
+        await trackAnalyticsEvent({
+          eventType: "project_published_from_acquisition",
+          userId: user.id,
+          entityType: "project",
+          entityId: projectId,
+          metadata: {
+            from: current,
+            leadId: linkedLead?.id ?? null,
+            acquisition: Boolean(linkedLead?.id),
+          },
+        });
+      }
+    } catch {
+      // мягкий сбой
+    }
   }
 
   if (nextStatus === "completed") {

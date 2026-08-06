@@ -51,6 +51,11 @@ export const ANALYTICS_EVENT_TYPES = [
   "product_fix_started",
   "product_fix_completed",
   "activation_after_fix",
+  "project_lead_created",
+  "project_contacted",
+  "project_interest_confirmed",
+  "project_draft_created",
+  "project_published_from_acquisition",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -108,6 +113,11 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   product_fix_started: "Исправление продукта начато",
   product_fix_completed: "Исправление продукта завершено",
   activation_after_fix: "Активация после исправления",
+  project_lead_created: "Лид проекта создан",
+  project_contacted: "Контакт по проекту",
+  project_interest_confirmed: "Интерес к проекту подтверждён",
+  project_draft_created: "Черновик проекта (acquisition)",
+  project_published_from_acquisition: "Публикация из acquisition",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

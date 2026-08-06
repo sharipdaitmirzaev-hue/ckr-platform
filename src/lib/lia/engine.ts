@@ -30,6 +30,7 @@ import {
   PUBLIC_LAUNCH_START_PATTERN,
   LIVE_LAUNCH_START_PATTERN,
   GROWTH_START_PATTERN,
+  PROJECT_ACQUISITION_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -82,6 +83,7 @@ import type {
   PublicLaunchReport,
   LiveLaunchReport,
   GrowthReport,
+  ProjectAcquisitionReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -198,6 +200,9 @@ function detectScenario(
   }
   if (GROWTH_START_PATTERN.test(value)) {
     return "growth";
+  }
+  if (PROJECT_ACQUISITION_START_PATTERN.test(value)) {
+    return "project_acquisition";
   }
   if (PUBLIC_LAUNCH_START_PATTERN.test(value)) {
     return "public_launch";
@@ -559,15 +564,36 @@ async function handleBusinessAudit(
   }
 
   const report = buildBusinessAuditReport(answers);
+  const projectDraft = buildProjectDraftFromAudit(answers, report);
+
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "lia_started",
+      entityType: "project_acquisition",
+      metadata: {
+        source: "lia",
+        scenario: "business_audit",
+        channel: "lia",
+        acquisition: true,
+        draftProposed: true,
+      },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
   const content = [
-    "Аудит бизнеса подготовлен.",
+    "Аудит моего бизнеса подготовлен.",
     "",
     report.summary,
     "",
-    "Ниже — сильные/слабые стороны, возможности, риски и следующие шаги.",
-    "Лия только рекомендует: создайте проект и CRM-сегменты вручную.",
+    "Ниже — BusinessAuditReport: сильные/слабые стороны, возможности, риски и шаги.",
     "",
-    "Рекомендуемый шаблон проекта: business_development.",
+    "Предлагаю создать проект развития ЦКР по шаблону business_development.",
+    "Проект появится только после вашего подтверждения (кнопка «Создать проект»).",
+    "",
+    "Дальше: стратегия → ресурсы → эксперты / партнёры / инвестиции.",
     "",
     `_${LIA_DISCLAIMER}_`,
   ].join("\n");
@@ -579,12 +605,81 @@ async function handleBusinessAudit(
       businessAuditStep: step,
       businessAuditAnswers: answers,
       businessAuditReport: report,
+      projectDraft,
       disclaimer: LIA_DISCLAIMER,
+      source: "lia",
+      acquisition: true,
     },
     results: [],
-    projectDraft: null,
+    projectDraft,
     solutionDraft: null,
     catalogDraft: null,
+  };
+}
+
+function buildProjectDraftFromAudit(
+  answers: Record<string, string>,
+  report: BusinessAuditReport,
+): ProjectDraft {
+  const industry = answers.industry?.trim() || report.industry;
+  const region = answers.region?.trim() || report.region;
+  const stage = mapStage(answers.stage || report.stage || "operating");
+  const resources = answers.resources?.trim() || "";
+  const problems = answers.problems?.trim() || "";
+  const goals = answers.goals?.trim() || "";
+  const team = answers.team?.trim() || "";
+
+  const title = ensureMinLength(
+    `Развитие бизнеса: ${industry}`.slice(0, 80),
+    5,
+    "Проект развития бизнеса",
+  );
+
+  const summary = ensureMinLength(
+    [
+      report.summary.slice(0, 180),
+      goals ? `Цели: ${goals.slice(0, 80)}` : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    20,
+    "Проект развития действующего бизнеса в ЦКР.",
+  ).slice(0, 400);
+
+  const description = ensureMinLength(
+    [
+      report.summary,
+      "",
+      goals ? `Цели: ${goals}` : "",
+      problems ? `Проблемы и ограничения: ${problems}` : "",
+      resources ? `Ресурсы: ${resources}` : "",
+      team ? `Команда: ${team}` : "",
+      "",
+      "Шаблон: business_development.",
+      "Путь: аудит → стратегия → проект → ресурсы → эксперты/партнёры/инвестиции.",
+    ]
+      .filter((line) => line !== undefined)
+      .join("\n")
+      .trim(),
+    40,
+    "Черновик проекта развития сформирован после аудита Лии.",
+  );
+
+  return {
+    title,
+    summary,
+    description,
+    category: mapCategorySlug(industry),
+    region: region || "Россия",
+    investment_required: 0,
+    stage,
+    currency: "RUB",
+    existing_resources: resources,
+    required_resources: problems
+      ? `Решение ограничений: ${problems.slice(0, 200)}`
+      : "Ресурсы для развития бизнеса",
+    assets: resources,
+    needs: problems || "Поддержка развития",
   };
 }
 
@@ -1743,6 +1838,49 @@ async function handleGrowthAnalysis(input: {
     metadata: {
       scenario: "growth",
       growthReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleProjectAcquisitionAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildProjectAcquisitionReportAsync } = await import(
+    "@/lib/project-acquisition/dashboard"
+  );
+  const report: ProjectAcquisitionReport =
+    await buildProjectAcquisitionReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "project_acquisition",
+      metadata: { source: "lia", scenario: "project_acquisition" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как развивается поток проектов ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — ProjectAcquisitionReport. Лия только анализирует поток проектов.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "project_acquisition",
+      projectAcquisitionReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -3388,6 +3526,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handleGrowthAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "project_acquisition") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить ProjectAcquisitionReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "project_acquisition",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleProjectAcquisitionAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {
