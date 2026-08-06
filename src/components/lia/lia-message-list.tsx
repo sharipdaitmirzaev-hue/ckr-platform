@@ -3,6 +3,7 @@ import { BetaReviewReportCard } from "@/components/lia/beta-review-report";
 import { BusinessAuditReportCard } from "@/components/lia/business-audit-report";
 import { LaunchGuideCard } from "@/components/lia/launch-guide";
 import { LaunchReadinessReportCard } from "@/components/lia/launch-readiness-report";
+import { LaunchStatusReportCard } from "@/components/lia/launch-status-report";
 import { LiaResults } from "@/components/lia/lia-results";
 import { OutcomeReportCard } from "@/components/lia/outcome-report";
 import { PilotInsightReportCard } from "@/components/lia/pilot-insight-report";
@@ -75,6 +76,7 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const betaReviewReport = message.metadata?.betaReviewReport;
         const launchReadinessReport = message.metadata?.launchReadinessReport;
         const launchGuide = message.metadata?.launchGuide;
+        const launchStatusReport = message.metadata?.launchStatusReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -137,6 +139,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && launchGuide ? (
               <LaunchGuideCard report={launchGuide} />
+            ) : null}
+            {!isUser && launchStatusReport ? (
+              <LaunchStatusReportCard report={launchStatusReport} />
             ) : null}
           </li>
         );

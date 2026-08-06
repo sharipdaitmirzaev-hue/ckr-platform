@@ -48,7 +48,7 @@ export const adminNavItems: AdminNavItem[] = [
   {
     label: "Launch",
     href: "/admin/launch",
-    description: "Чеклист Public Launch и закрытие issues",
+    description: "Волны запуска, участники, LaunchReport",
   },
   {
     label: "Улучшения",

@@ -129,10 +129,11 @@ export const tindaPilotChecklist = [
 ] as const;
 
 export const tindaSeedMeta = {
-  version: 4,
+  version: 5,
   organization: "ООО ТИНДА",
   projectTitle: "Развитие оптовой платформы ТИНДА",
-  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн. Этап 36: pilot_participants + checklists.",
+  note: "Production pilot case ЦКР (этап 41). Волна 1 closed. Seed без реальных ПДн.",
+  caseStatus: "production_pilot_case" as const,
 } as const;
 
 export const tindaExecutionRoadmap = {

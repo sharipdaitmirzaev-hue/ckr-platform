@@ -19,7 +19,8 @@ export type LiaScenarioId =
   | "beta_analysis"
   | "beta_review"
   | "launch_readiness"
-  | "launch_guide";
+  | "launch_guide"
+  | "launch_status";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -129,6 +130,14 @@ export type LaunchGuide = {
   first_step: string;
   next_steps: string[];
   tips: string[];
+};
+
+/** Сценарий «Как проходит запуск?» — статус волны (только анализ). */
+export type LaunchStatusReport = {
+  summary: string;
+  activity: string[];
+  blockers: string[];
+  recommendations: string[];
 };
 
 export type LiaSession = {
@@ -307,6 +316,7 @@ export type LiaMessageMetadata = {
   betaReviewReport?: BetaReviewReport | null;
   launchReadinessReport?: LaunchReadinessReport | null;
   launchGuide?: LaunchGuide | null;
+  launchStatusReport?: LaunchStatusReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

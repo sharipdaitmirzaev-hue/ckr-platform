@@ -135,6 +135,13 @@ export const LIA_SCENARIOS: {
     description:
       "Какую роль выбрать и что сделать первым шагом → LaunchGuide",
   },
+  {
+    id: "launch_status",
+    label: "Как проходит запуск?",
+    prompt: "Как проходит запуск?",
+    description:
+      "Активность волны, блокеры, рекомендации → LaunchStatusReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -210,7 +217,7 @@ export const PRODUCT_IMPROVEMENT_START_PATTERN =
   /что\s+улучшить\s+в\s+цкр|улучш(ить|ения)\s+(в\s+)?цкр|product\s*improvement|цикл\s+улучшен/i;
 
 export const BETA_ANALYSIS_START_PATTERN =
-  /как\s+проходит\s+запуск|запуск\s+цкр|beta\s*analysis|controlled\s*beta|как\s+ид[её]т\s+beta/i;
+  /как\s+проходит\s+запуск\s+цкр|запуск\s+цкр|beta\s*analysis|controlled\s*beta|как\s+ид[её]т\s+beta/i;
 
 export const BETA_REVIEW_START_PATTERN =
   /обзор\s+закрытой\s+beta|обзор\s+beta|beta\s*review|анализ\s+beta/i;
@@ -220,6 +227,9 @@ export const LAUNCH_READINESS_START_PATTERN =
 
 export const LAUNCH_GUIDE_START_PATTERN =
   /как\s+начать\s+работу\s+с\s+цкр|как\s+начать\s+с\s+цкр|начать\s+работу\s+с\s+цкр|launch\s*guide/i;
+
+export const LAUNCH_STATUS_START_PATTERN =
+  /как\s+проходит\s+запуск(?!\s+цкр)|launch\s*status|статус\s+запуска|статус\s+волн/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

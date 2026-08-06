@@ -249,6 +249,35 @@ export type PilotParticipantRow = {
   updated_at: string;
 };
 
+export type DbLaunchWaveStatus = "planned" | "active" | "completed";
+export type DbLaunchWaveType = "internal" | "closed" | "public";
+export type DbLaunchWaveParticipantStatus =
+  | "invited"
+  | "joined"
+  | "active"
+  | "completed"
+  | "left";
+
+export type LaunchWaveRow = {
+  id: string;
+  name: string;
+  description: string;
+  status: DbLaunchWaveStatus;
+  wave_type: DbLaunchWaveType;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+};
+
+export type LaunchWaveParticipantRow = {
+  id: string;
+  wave_id: string;
+  user_id: string | null;
+  status: DbLaunchWaveParticipantStatus;
+  notes: string;
+  created_at: string;
+};
+
 export type PilotChecklistRow = {
   id: string;
   participant_id: string;
@@ -1420,6 +1449,42 @@ export type Database = {
           Omit<PilotParticipantRow, "id" | "created_at">
         >;
       };
+      launch_waves: {
+        Row: LaunchWaveRow;
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string;
+          status?: DbLaunchWaveStatus;
+          wave_type?: DbLaunchWaveType;
+          start_date?: string | null;
+          end_date?: string | null;
+        };
+        Update: Partial<{
+          name: string;
+          description: string;
+          status: DbLaunchWaveStatus;
+          wave_type: DbLaunchWaveType;
+          start_date: string | null;
+          end_date: string | null;
+        }>;
+      };
+      launch_wave_participants: {
+        Row: LaunchWaveParticipantRow;
+        Insert: {
+          id?: string;
+          wave_id: string;
+          user_id?: string | null;
+          status?: DbLaunchWaveParticipantStatus;
+          notes?: string;
+        };
+        Update: Partial<{
+          wave_id: string;
+          user_id: string | null;
+          status: DbLaunchWaveParticipantStatus;
+          notes: string;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -1974,6 +2039,9 @@ export type Database = {
       product_improvement_priority: DbProductImprovementPriority;
       product_improvement_status: DbProductImprovementStatus;
       product_improvement_source: DbProductImprovementSource;
+      launch_wave_status: DbLaunchWaveStatus;
+      launch_wave_type: DbLaunchWaveType;
+      launch_wave_participant_status: DbLaunchWaveParticipantStatus;
     };
   };
 };

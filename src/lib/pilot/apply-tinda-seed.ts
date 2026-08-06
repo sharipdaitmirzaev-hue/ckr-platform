@@ -526,7 +526,7 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         user_id: ownerId,
         role: "organization",
         status: "active",
-        notes: "ООО ТИНДА — первый пилотный проект (этап 36)",
+        notes: "ООО ТИНДА — production pilot case (этап 41)",
       });
     if (participantError) {
       throw new Error(`pilot_participants: ${participantError.message}`);
@@ -543,9 +543,28 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
       if (!error) checklistItems += 1;
     }
 
+    let waveParticipants = 0;
+    try {
+      const { LAUNCH_WAVE_IDS, TINDA_WAVE_PARTICIPANT_ID } = await import(
+        "@/config/launch-waves"
+      );
+      const { error: waveError } = await admin
+        .from("launch_wave_participants")
+        .upsert({
+          id: TINDA_WAVE_PARTICIPANT_ID,
+          wave_id: LAUNCH_WAVE_IDS.closed,
+          user_id: ownerId,
+          status: "active",
+          notes: "ООО ТИНДА — production pilot case, волна 1 closed",
+        });
+      if (!waveError) waveParticipants = 1;
+    } catch {
+      // таблица волн может ещё не быть применена
+    }
+
     return {
       ok: true,
-      message: `Пилот ТИНДА v${tindaSeedMeta.version} применён. Смените пароль pilot.tinda@ckr.local после запуска.`,
+      message: `ТИНДА production pilot case v${tindaSeedMeta.version} применён. Смените пароль pilot.tinda@ckr.local после запуска.`,
       created: {
         organization: 1,
         project: 1,
@@ -560,6 +579,7 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         liaAnalyses: 1,
         pilotParticipants: 1,
         pilotChecklists: checklistItems,
+        waveParticipants,
       },
       ids: {
         ownerId,

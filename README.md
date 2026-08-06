@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.40.0-beta** (public launch prep после Conditional Go).  
-Обзор: [Launch checklist](./docs/public-launch-checklist.md) · [Help center](./docs/help-center.md) · [Public launch plan](./docs/public-launch-plan.md) · страницы `/about` и `/features`
+Текущая версия ядра: **0.41.0-beta** (wave launch после Conditional Go).  
+Обзор: [Wave launch](./docs/wave-launch.md) · [Launch checklist](./docs/public-launch-checklist.md) · [Help center](./docs/help-center.md) · страницы `/about` и `/features`
 
 ## Стек
 
@@ -65,7 +65,9 @@ supabase           # миграции
 - [Beta Review](./docs/beta-review.md)
 - [Public launch plan](./docs/public-launch-plan.md)
 - [Public launch checklist](./docs/public-launch-checklist.md)
+- [Wave launch](./docs/wave-launch.md)
 - [Help center](./docs/help-center.md)
+- [ТИНДА production case](./docs/tinda-production-case.md)
 - [ТИНДА публичный кейс](./docs/tinda-case-public.md)
 - [ТИНДА beta review](./docs/tinda-beta-review.md)
 

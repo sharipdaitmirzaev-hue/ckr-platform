@@ -369,6 +369,16 @@
 - Help center, публичный кейс ТИНДА
 - Без новых крупных бизнес-модулей
 
-## Этап 41+ — backlog
+## Этап 41 — Wave Launch ✅ (код готов)
+
+Подробности: [wave-launch.md](./wave-launch.md)
+
+- `launch_waves` / `launch_wave_participants`
+- Launch Dashboard: волна, участники, LaunchReport, проблемы, результаты
+- Лия: `LaunchStatusReport` («Как проходит запуск?»)
+- ТИНДА → production pilot case
+- Без новых крупных бизнес-модулей
+
+## Этап 42+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

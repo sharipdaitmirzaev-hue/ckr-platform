@@ -13,6 +13,7 @@ import {
   BETA_REVIEW_START_PATTERN,
   LAUNCH_READINESS_START_PATTERN,
   LAUNCH_GUIDE_START_PATTERN,
+  LAUNCH_STATUS_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -43,6 +44,7 @@ import type {
   BetaReviewReport,
   LaunchGuide,
   LaunchReadinessReport,
+  LaunchStatusReport,
   ProductImprovementReport,
   ProgressReport,
   ProjectDraft,
@@ -121,6 +123,9 @@ function detectScenario(
   }
   if (LAUNCH_GUIDE_START_PATTERN.test(value)) {
     return "launch_guide";
+  }
+  if (LAUNCH_STATUS_START_PATTERN.test(value)) {
+    return "launch_status";
   }
   if (LAUNCH_READINESS_START_PATTERN.test(value)) {
     return "launch_readiness";
@@ -1100,6 +1105,47 @@ async function handleLaunchReadiness(input: {
     metadata: {
       scenario: "launch_readiness",
       launchReadinessReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleLaunchStatus(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { getLaunchWaveDashboard } = await import("@/lib/launch/waves");
+  const dashboard = await getLaunchWaveDashboard();
+  const report: LaunchStatusReport = dashboard.statusReport;
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "launch_status" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как проходит запуск?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — LaunchStatusReport. Лия не меняет волны и доступы — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "launch_status",
+      launchStatusReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2269,6 +2315,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleLaunchGuide({ userId: input.userId });
+  }
+
+  if (scenario === "launch_status") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить LaunchStatusReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "launch_status", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLaunchStatus({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

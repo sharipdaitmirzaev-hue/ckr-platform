@@ -4,6 +4,20 @@
 
 ---
 
+## 0.41.0-beta — 2026-03-25
+
+Wave Launch — волновой запуск ЦКР после Conditional Go (без новых бизнес-модулей).
+
+### Изменения
+
+- Таблицы `launch_waves` и `launch_wave_participants`
+- Launch Dashboard `/admin/launch`: текущая волна, участники, активация, LaunchReport, ТИНДА
+- Лия: «Как проходит запуск?» → `LaunchStatusReport` (только анализ)
+- ТИНДА → production pilot case (волна closed)
+- Документация: `wave-launch.md`, `tinda-production-case.md`
+
+---
+
 ## 0.40.0-beta — 2026-03-25
 
 Public Launch prep — подготовка к открытому запуску после Conditional Go (без новых бизнес-модулей).
