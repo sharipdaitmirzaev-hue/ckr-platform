@@ -18,6 +18,7 @@ import {
   CLOSED_WAVE_START_PATTERN,
   WAVE_REVIEW_START_PATTERN,
   LAUNCH_DECISION_START_PATTERN,
+  ECOSYSTEM_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -54,6 +55,7 @@ import type {
   ProductImprovementReport,
   WaveReviewReport,
   LaunchDecisionAIReport,
+  EcosystemReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -137,6 +139,9 @@ function detectScenario(
   }
   if (LAUNCH_GOALS_START_PATTERN.test(value)) {
     return "launch_goals";
+  }
+  if (ECOSYSTEM_START_PATTERN.test(value)) {
+    return "ecosystem";
   }
   if (LAUNCH_DECISION_START_PATTERN.test(value)) {
     return "launch_decision";
@@ -1209,6 +1214,46 @@ async function handleLaunchDecisionAnalysis(input: {
     metadata: {
       scenario: "launch_decision",
       launchDecisionAIReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleEcosystemAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildEcosystemReport } = await import("@/lib/launch/ecosystem");
+  const report: EcosystemReport = await buildEcosystemReport();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "ecosystem" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как развивается экосистема ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — EcosystemReport. Лия не меняет волны, заявки и сделки — только анализирует сетевой эффект.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "ecosystem",
+      ecosystemReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2572,6 +2617,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleLaunchDecisionAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "ecosystem") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить EcosystemReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "ecosystem", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleEcosystemAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

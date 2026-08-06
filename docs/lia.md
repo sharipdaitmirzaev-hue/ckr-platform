@@ -92,6 +92,7 @@ RLS: пользователь видит и меняет только свои �
 19. **Проанализируй первую волну ЦКР** — `closed_wave` → `ClosedWaveReport` (цели, UX, бизнес-результаты; только анализ). См. [closed-wave-tinda-report.md](./closed-wave-tinda-report.md).
 20. **Проанализируй результаты первой волны** — `wave_review` → `WaveReviewReport` (success factors, problems, patterns; только анализ). См. [closed-wave-review.md](./closed-wave-review.md).
 21. **Готов ли ЦКР к следующей волне?** — `launch_decision` → `LaunchDecisionAIReport` (strengths, weaknesses, risks, recommendation; только анализ). См. [launch-decision-gate.md](./launch-decision-gate.md).
+22. **Как развивается экосистема ЦКР?** — `ecosystem` → `EcosystemReport` (active users, activity, connections, recommendations; только анализ). См. [ecosystem-beta.md](./ecosystem-beta.md).
 
 Структура результата поиска:
 

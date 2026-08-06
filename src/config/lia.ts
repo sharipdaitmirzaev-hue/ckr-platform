@@ -170,6 +170,13 @@ export const LIA_SCENARIOS: {
     description:
       "Decision Gate: strengths / weaknesses / risks → LaunchDecisionAIReport (только анализ)",
   },
+  {
+    id: "ecosystem",
+    label: "Как развивается экосистема ЦКР?",
+    prompt: "Как развивается экосистема ЦКР?",
+    description:
+      "Wave 2: пользователи, проекты, эксперты, инвестиции, связи → EcosystemReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -270,6 +277,9 @@ export const WAVE_REVIEW_START_PATTERN =
 
 export const LAUNCH_DECISION_START_PATTERN =
   /готов\s+ли\s+цкр\s+к\s+следующей\s+волне|следующей\s+волне|launch\s*decision|decision\s*gate/i;
+
+export const ECOSYSTEM_START_PATTERN =
+  /как\s+развивается\s+экосистема\s+цкр|развитие\s+экосистемы|экосистема\s+цкр|ecosystem\s*report|ecosystem\s*beta/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

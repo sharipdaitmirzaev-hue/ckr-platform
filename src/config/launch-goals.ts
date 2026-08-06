@@ -68,6 +68,22 @@ export const LAUNCH_GOAL_IDS = {
   deals: "c0000004-0000-4000-8000-000000000009",
 } as const;
 
+/** Seed UUID целей Wave 2 — Ecosystem Beta (этап 46). */
+export const WAVE2_ECOSYSTEM_GOAL_IDS = {
+  entrepreneurs: "c0000006-0000-4000-8000-000000000001",
+  experts: "c0000006-0000-4000-8000-000000000002",
+  investors: "c0000006-0000-4000-8000-000000000003",
+  organizations: "c0000006-0000-4000-8000-000000000004",
+  profilePct: "c0000006-0000-4000-8000-000000000005",
+  liaPct: "c0000006-0000-4000-8000-000000000006",
+  firstActionPct: "c0000006-0000-4000-8000-000000000007",
+  projects: "c0000006-0000-4000-8000-000000000008",
+  interests: "c0000006-0000-4000-8000-000000000009",
+  applications: "c0000006-0000-4000-8000-00000000000a",
+  expertInteractions: "c0000006-0000-4000-8000-00000000000b",
+  dealOrPartnership: "c0000006-0000-4000-8000-00000000000c",
+} as const;
+
 export function isLaunchGoalStatus(value: string): value is LaunchGoalStatus {
   return (LAUNCH_GOAL_STATUSES as readonly string[]).includes(value);
 }

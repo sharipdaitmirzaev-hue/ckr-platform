@@ -72,6 +72,12 @@ export default async function AdminLaunchDecisionPage() {
           Launch
         </Link>
         <Link
+          href="/admin/ecosystem-report"
+          className="text-accent hover:underline"
+        >
+          Ecosystem Report
+        </Link>
+        <Link
           href="/admin/improvements"
           className="text-accent hover:underline"
         >
@@ -335,12 +341,12 @@ export default async function AdminLaunchDecisionPage() {
       {/* Launch Wave 2 */}
       <section className="space-y-4">
         <h2 className="font-display text-xl text-foreground">
-          Следующая волна — Launch Wave 2
+          Следующая волна — Wave 2 Ecosystem Beta
         </h2>
         <Card variant="surface" className="space-y-3 p-5">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-foreground">
-              {data.wave2?.name ?? "Launch Wave 2"}
+              {data.wave2?.name ?? "Wave 2 — Ecosystem Beta"}
             </p>
             {data.wave2 ? (
               <>

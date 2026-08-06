@@ -110,6 +110,12 @@ export default async function AdminLaunchPage() {
           Decision Gate
         </Link>
         <Link
+          href="/admin/ecosystem-report"
+          className="text-accent hover:underline"
+        >
+          Ecosystem Report
+        </Link>
+        <Link
           href="/admin/improvements"
           className="text-accent hover:underline"
         >

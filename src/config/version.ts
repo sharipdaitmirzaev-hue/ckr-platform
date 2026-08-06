@@ -1,7 +1,7 @@
 /** Версия платформы для beta badge и changelog. */
 export const platformVersion = {
-  version: "0.45.0-beta",
+  version: "0.46.0-beta",
   label: "Beta",
   releasedAt: "2026-03-25",
-  channel: "launch-decision",
+  channel: "ecosystem-beta",
 } as const;

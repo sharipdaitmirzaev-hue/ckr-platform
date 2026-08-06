@@ -61,6 +61,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Decision Gate: решение после Closed Wave 1",
   },
   {
+    label: "Ecosystem Report",
+    href: "/admin/ecosystem-report",
+    description: "Wave 2: связи и сетевой эффект экосистемы",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

@@ -20,7 +20,7 @@ export const launchDecisionHints: Record<LaunchDecision, string> = {
   continue_closed:
     "Closed Wave 1 остаётся основной: донастроить сценарии ТИНДА и закрыть блокеры.",
   expand_beta:
-    "Активировать Launch Wave 2 (beta): предприниматели + инвесторы + эксперты.",
+    "Активировать Wave 2 — Ecosystem Beta: предприниматели + эксперты + инвесторы + организации.",
   public_launch_ready:
     "Готовить public-контур (Wave 3) после стабилизации Wave 2.",
   needs_improvement:

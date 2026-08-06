@@ -4,6 +4,19 @@
 
 ---
 
+## 0.46.0-beta — 2026-03-25
+
+Wave 2 — Ecosystem Beta: проверка сетевого эффекта ЦКР (без новых бизнес-модулей).
+
+### Изменения
+
+- Волна «Wave 2 — Ecosystem Beta» (`beta`, active) + цели пользователей / активации / экосистемы
+- Дашборд `/admin/ecosystem-report`: связи, метрики, сценарии, ТИНДА production check
+- Лия: «Как развивается экосистема ЦКР?» → `EcosystemReport`
+- Документация: `ecosystem-beta.md`
+
+---
+
 ## 0.45.0-beta — 2026-03-25
 
 Launch Decision Gate — решение после Closed Wave 1 и подготовка Launch Wave 2 (без новых бизнес-модулей).

@@ -3,6 +3,7 @@ import {
   type LaunchGoalMetricType,
   type LaunchGoalStatus,
 } from "@/config/launch-goals";
+import { LAUNCH_WAVE_IDS } from "@/config/launch-waves";
 import {
   getLaunchMetrics,
   metricValueForGoal,
@@ -104,6 +105,18 @@ export async function syncLaunchGoalsForWave(
   if (!hasSupabaseEnv()) return [];
 
   const metrics = await getLaunchMetrics(wave);
+  let ecosystemMetrics: Awaited<
+    ReturnType<
+      typeof import("@/lib/launch/ecosystem").getEcosystemMetrics
+    >
+  > | null = null;
+  let ecosystemMetricValueForGoal: typeof import("@/lib/launch/ecosystem").ecosystemMetricValueForGoal | null =
+    null;
+  if (wave.id === LAUNCH_WAVE_IDS.wave2) {
+    const ecosystem = await import("@/lib/launch/ecosystem");
+    ecosystemMetrics = await ecosystem.getEcosystemMetrics();
+    ecosystemMetricValueForGoal = ecosystem.ecosystemMetricValueForGoal;
+  }
   const goals = await listLaunchGoals(wave.id);
   const supabase = createClient();
   const updated: LaunchGoalRow[] = [];
@@ -114,11 +127,14 @@ export async function syncLaunchGoalsForWave(
       continue;
     }
 
-    const current = metricValueForGoal(
-      goal.metric_type,
-      goal.title,
-      metrics,
-    );
+    const ecosystemValue =
+      ecosystemMetrics && ecosystemMetricValueForGoal
+        ? ecosystemMetricValueForGoal(goal.title, ecosystemMetrics)
+        : null;
+    const current =
+      ecosystemValue != null
+        ? ecosystemValue
+        : metricValueForGoal(goal.metric_type, goal.title, metrics);
     let status = goal.status as LaunchGoalStatus;
     const becameAchieved =
       status === "active" &&

@@ -24,7 +24,8 @@ export type LiaScenarioId =
   | "launch_goals"
   | "closed_wave"
   | "wave_review"
-  | "launch_decision";
+  | "launch_decision"
+  | "ecosystem";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -180,6 +181,17 @@ export type LaunchDecisionAIReport = {
   weaknesses: string[];
   risks: string[];
   recommendation: string;
+};
+
+/** Сценарий «Как развивается экосистема ЦКР?» (только анализ). */
+export type EcosystemReport = {
+  summary: string;
+  active_users: string[];
+  project_activity: string[];
+  expert_activity: string[];
+  investment_activity: string[];
+  connections: string[];
+  recommendations: string[];
 };
 
 export type LiaSession = {
@@ -363,6 +375,7 @@ export type LiaMessageMetadata = {
   closedWaveReport?: ClosedWaveReport | null;
   waveReviewReport?: WaveReviewReport | null;
   launchDecisionAIReport?: LaunchDecisionAIReport | null;
+  ecosystemReport?: EcosystemReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

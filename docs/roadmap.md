@@ -416,6 +416,15 @@
 - Лия: `LaunchDecisionAIReport` («Готов ли ЦКР к следующей волне?»)
 - Без новых крупных бизнес-модулей
 
-## Этап 46+ — backlog
+## Этап 46 — Wave 2 Ecosystem Beta ✅ (код готов)
+
+Подробности: [ecosystem-beta.md](./ecosystem-beta.md)
+
+- Волна «Wave 2 — Ecosystem Beta» + цели когорт / активации / связей
+- `/admin/ecosystem-report`: связи ролей, метрики, сценарии, ТИНДА check
+- Лия: `EcosystemReport` («Как развивается экосистема ЦКР?»)
+- Без новых крупных бизнес-модулей
+
+## Этап 47+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

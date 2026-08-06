@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.45.0-beta** (Launch Decision Gate).  
-Обзор: [Decision Gate](./docs/launch-decision-gate.md) · [ТИНДА decision](./docs/tinda-decision-report.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.46.0-beta** (Wave 2 Ecosystem Beta).  
+Обзор: [Ecosystem Beta](./docs/ecosystem-beta.md) · [Decision Gate](./docs/launch-decision-gate.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 
@@ -72,6 +72,7 @@ supabase           # миграции
 - [ТИНДА wave review](./docs/tinda-wave-review.md)
 - [Launch Decision Gate](./docs/launch-decision-gate.md)
 - [ТИНДА decision report](./docs/tinda-decision-report.md)
+- [Wave 2 Ecosystem Beta](./docs/ecosystem-beta.md)
 - [Help center](./docs/help-center.md)
 - [ТИНДА production case](./docs/tinda-production-case.md)
 - [ТИНДА публичный кейс](./docs/tinda-case-public.md)

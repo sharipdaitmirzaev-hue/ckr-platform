@@ -100,6 +100,7 @@ export async function getLaunchDecisionDashboard(
       waves.find((w) => w.id === LAUNCH_WAVE_IDS.closed) ?? review.wave;
     const wave2 =
       waves.find((w) => w.id === LAUNCH_WAVE_IDS.wave2) ??
+      waves.find((w) => w.name === "Wave 2 — Ecosystem Beta") ??
       waves.find((w) => w.name === "Launch Wave 2") ??
       null;
 
@@ -233,7 +234,7 @@ export async function getLaunchDecisionDashboard(
 
     const next_step =
       suggested === "expand_beta"
-        ? "Активировать Launch Wave 2 и набрать когорту предпринимателей / экспертов / инвесторов."
+        ? "Активировать Wave 2 — Ecosystem Beta и набрать когорту предпринимателей / экспертов / инвесторов / организаций."
         : suggested === "public_launch_ready"
           ? "Зафиксировать решение и готовить Wave 3 — Public по чеклисту."
           : suggested === "continue_closed"
