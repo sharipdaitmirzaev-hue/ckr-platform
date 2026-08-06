@@ -18,7 +18,8 @@ export type LiaScenarioId =
   | "product_improvement"
   | "beta_analysis"
   | "beta_review"
-  | "launch_readiness";
+  | "launch_readiness"
+  | "launch_guide";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -118,6 +119,16 @@ export type LaunchReadinessReport = {
   critical_issues: string[];
   recommended_actions: string[];
   launch_risks: string[];
+};
+
+/** Сценарий «Как начать работу с ЦКР?» — роль и первый шаг. */
+export type LaunchGuide = {
+  summary: string;
+  recommended_role: string;
+  role_rationale: string;
+  first_step: string;
+  next_steps: string[];
+  tips: string[];
 };
 
 export type LiaSession = {
@@ -295,6 +306,7 @@ export type LiaMessageMetadata = {
   betaAnalysisReport?: BetaAnalysisReport | null;
   betaReviewReport?: BetaReviewReport | null;
   launchReadinessReport?: LaunchReadinessReport | null;
+  launchGuide?: LaunchGuide | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

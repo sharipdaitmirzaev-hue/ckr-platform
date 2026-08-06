@@ -359,6 +359,16 @@
 - План public launch и обзор ТИНДА
 - Без новых крупных бизнес-модулей
 
-## Этап 40+ — backlog
+## Этап 40 — Public Launch prep ✅ (код готов)
+
+Подробности: [public-launch-checklist.md](./public-launch-checklist.md)
+
+- `/admin/launch`: Product / Users / Technical / Business + buckets issues
+- Онбординг-подсказки и launch analytics
+- Лия: `LaunchGuide` («Как начать работу с ЦКР?»)
+- Help center, публичный кейс ТИНДА
+- Без новых крупных бизнес-модулей
+
+## Этап 41+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

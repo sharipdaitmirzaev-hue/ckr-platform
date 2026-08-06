@@ -147,6 +147,13 @@ export async function createProjectFromLiaDraftAction(
     entityId: data.id,
     metadata: { source: "lia" },
   });
+  await trackBetaMilestone({
+    eventType: "first_project",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+    metadata: { source: "lia", channel: "public_launch" },
+  });
 
   revalidatePath("/projects");
   revalidatePath("/dashboard/projects");

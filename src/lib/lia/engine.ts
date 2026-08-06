@@ -12,6 +12,7 @@ import {
   BETA_ANALYSIS_START_PATTERN,
   BETA_REVIEW_START_PATTERN,
   LAUNCH_READINESS_START_PATTERN,
+  LAUNCH_GUIDE_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -40,6 +41,7 @@ import type {
   PilotInsightReport,
   BetaAnalysisReport,
   BetaReviewReport,
+  LaunchGuide,
   LaunchReadinessReport,
   ProductImprovementReport,
   ProgressReport,
@@ -116,6 +118,9 @@ function detectScenario(
   }
   if (BETA_REVIEW_START_PATTERN.test(value)) {
     return "beta_review";
+  }
+  if (LAUNCH_GUIDE_START_PATTERN.test(value)) {
+    return "launch_guide";
   }
   if (LAUNCH_READINESS_START_PATTERN.test(value)) {
     return "launch_readiness";
@@ -1095,6 +1100,110 @@ async function handleLaunchReadiness(input: {
     metadata: {
       scenario: "launch_readiness",
       launchReadinessReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleLaunchGuide(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { pathForRoles, rolePaths } = await import("@/config/onboarding");
+  const { roleLabels, roleDescriptions, ASSIGNABLE_ROLES } = await import(
+    "@/config/roles"
+  );
+  type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+  let roles: AssignableRole[] = [];
+  try {
+    const supabase = createClient();
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", input.userId);
+    roles = ((roleRows ?? []) as Array<{ role: string }>)
+      .map((row) => row.role)
+      .filter((role): role is AssignableRole =>
+        (ASSIGNABLE_ROLES as readonly string[]).includes(role),
+      );
+  } catch {
+    roles = [];
+  }
+
+  const hasRoles = roles.length > 0;
+  const primary = hasRoles ? pathForRoles(roles).role : "entrepreneur";
+  const path = rolePaths[primary];
+
+  const report: LaunchGuide = hasRoles
+    ? {
+        summary: `У вас уже выбрана роль «${roleLabels[primary]}». Ниже — как получить первую ценность в ЦКР без лишних шагов.`,
+        recommended_role: roleLabels[primary],
+        role_rationale: roleDescriptions[primary],
+        first_step: `${path.title}: ${path.description}`,
+        next_steps: [
+          `Откройте: ${path.href}`,
+          "Заполните профиль до понятного «о себе» — так вас найдут партнёры.",
+          "Задайте Лии сценарий под вашу задачу (идея, поиск, эксперт).",
+        ],
+        tips: [
+          "Не останавливайтесь после онбординга — первый объект или интерес важнее идеального профиля.",
+          "Лия только рекомендует: заявки и сделки подтверждаете вы.",
+          "Справка: docs/help-center.md и /features.",
+        ],
+      }
+    : {
+        summary:
+          "ЦКР — платформа комплексных решений. Сначала выберите роль, затем сделайте одно конкретное действие — так вы быстрее увидите ценность.",
+        recommended_role: "Предприниматель (если есть идея или действующий бизнес)",
+        role_rationale:
+          "Большинству новых пользователей подходит роль предпринимателя: создание проекта и поиск ресурсов. Инвестор — если ищете проекты; эксперт — если предлагаете компетенции; компания — для орг-кабинета.",
+        first_step:
+          "Пройдите онбординг: выберите роль → заполните профиль → выполните первое действие из персонального пути.",
+        next_steps: [
+          "Предприниматель → создать проект с Лией (/lia)",
+          "Инвестор → открыть каталог проектов (/projects) и отметить интерес",
+          "Эксперт → оформить профиль эксперта (/dashboard/expert)",
+          "Компания → кабинет организации (/partner)",
+        ],
+        tips: [
+          "Точка высокого выхода — сразу после профиля: не уходите, сделайте первый шаг.",
+          "Одна роль на старте лучше, чем все сразу — роли можно дополнить позже.",
+          "Спросите Лию «Как начать работу с ЦКР?» ещё раз после выбора роли — подсказка станет персональной.",
+        ],
+      };
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "launch_guide", role: primary },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Подготовлен гид запуска в ЦКР.",
+      "",
+      report.summary,
+      "",
+      `Роль: ${report.recommended_role}`,
+      `Первый шаг: ${report.first_step}`,
+      "",
+      "Ниже — LaunchGuide. Лия не выбирает роль за вас и не создаёт объекты — только объясняет путь.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "launch_guide",
+      launchGuide: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2146,6 +2255,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleLaunchReadiness({ userId: input.userId });
+  }
+
+  if (scenario === "launch_guide") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить персональный LaunchGuide.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "launch_guide", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLaunchGuide({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

@@ -128,6 +128,13 @@ export const LIA_SCENARIOS: {
     description:
       "Critical issues, действия, риски launch → LaunchReadinessReport (только анализ)",
   },
+  {
+    id: "launch_guide",
+    label: "Как начать работу с ЦКР?",
+    prompt: "Как начать работу с ЦКР?",
+    description:
+      "Какую роль выбрать и что сделать первым шагом → LaunchGuide",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -210,6 +217,9 @@ export const BETA_REVIEW_START_PATTERN =
 
 export const LAUNCH_READINESS_START_PATTERN =
   /что\s+нужно\s+исправить\s+перед\s+запуском|исправить\s+перед\s+запуском|launch\s*readiness|готовность\s+к\s+запуску/i;
+
+export const LAUNCH_GUIDE_START_PATTERN =
+  /как\s+начать\s+работу\s+с\s+цкр|как\s+начать\s+с\s+цкр|начать\s+работу\s+с\s+цкр|launch\s*guide/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

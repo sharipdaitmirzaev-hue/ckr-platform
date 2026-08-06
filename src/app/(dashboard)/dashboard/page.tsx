@@ -1,6 +1,7 @@
 import { ActivityFeed } from "@/components/activity/activity-feed";
 import { LiaRecommendations } from "@/components/lia/lia-recommendations";
 import { LiaWidget } from "@/components/lia/lia-widget";
+import { FirstActionHint } from "@/components/onboarding/first-action-hint";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -8,11 +9,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { VerificationBadge } from "@/components/verification/verification-badge";
 import { projectStatusLabels } from "@/config/projects";
-import { roleLabels } from "@/config/roles";
+import { ASSIGNABLE_ROLES, roleLabels, type AssignableRole } from "@/config/roles";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { listActivityFeed } from "@/lib/activity/queries";
 import { getDashboardOverview } from "@/lib/dashboard/overview";
 import { buildLiaRecommendations } from "@/lib/lia/recommendations";
+import { createClient } from "@/lib/supabase/server";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -29,11 +32,34 @@ export default async function DashboardPage() {
   }
 
   const { user, profile } = current;
+  const roles = current.roles.filter((role): role is AssignableRole =>
+    (ASSIGNABLE_ROLES as readonly string[]).includes(role),
+  );
+
   const [recommendations, activity, overview] = await Promise.all([
     buildLiaRecommendations(user.id),
     listActivityFeed(user.id, 6),
     getDashboardOverview(user.id),
   ]);
+
+  let hasLia = false;
+  let hasInterest = false;
+  if (hasSupabaseEnv()) {
+    const supabase = createClient();
+    const [liaRes, interestRes] = await Promise.all([
+      supabase
+        .from("analytics_events")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .in("event_type", ["first_lia_use", "lia_used"]),
+      supabase
+        .from("investor_interests")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id),
+    ]);
+    hasLia = (liaRes.count ?? 0) > 0;
+    hasInterest = (interestRes.count ?? 0) > 0;
+  }
 
   return (
     <div className="space-y-8">
@@ -41,6 +67,13 @@ export default async function DashboardPage() {
         eyebrow="Кабинет"
         title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
         description="Единый обзор: проекты, заявки, инвестиции, сделки, уведомления и рекомендации Лии."
+      />
+
+      <FirstActionHint
+        roles={roles}
+        hasProject={overview.projects.length > 0}
+        hasLia={hasLia}
+        hasInterest={hasInterest}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

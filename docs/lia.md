@@ -86,6 +86,7 @@ RLS: пользователь видит и меняет только свои �
 13. **Как проходит запуск ЦКР?** — `beta_analysis` → `BetaAnalysisReport` (активация, блокеры, неиспользуемые функции; только анализ). См. [controlled-beta.md](./controlled-beta.md).
 14. **Сделай обзор закрытой beta** — `beta_review` → `BetaReviewReport` (только по данным). См. [beta-review.md](./beta-review.md).
 15. **Что нужно исправить перед запуском?** — `launch_readiness` → `LaunchReadinessReport` (только анализ). См. [public-launch-plan.md](./public-launch-plan.md).
+16. **Как начать работу с ЦКР?** — `launch_guide` → `LaunchGuide` (роль + первый шаг; только подсказки). См. [help-center.md](./help-center.md), [public-launch-checklist.md](./public-launch-checklist.md).
 
 Структура результата поиска:
 

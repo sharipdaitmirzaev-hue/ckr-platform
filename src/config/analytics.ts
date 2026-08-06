@@ -26,6 +26,11 @@ export const ANALYTICS_EVENT_TYPES = [
   "first_project_created",
   "first_application_sent",
   "first_interest_created",
+  "public_registration",
+  "role_selected",
+  "first_project",
+  "first_investment_interest",
+  "first_expert_request",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -58,6 +63,11 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   first_project_created: "Первый проект",
   first_application_sent: "Первая заявка",
   first_interest_created: "Первый интерес",
+  public_registration: "Публичная регистрация",
+  role_selected: "Выбор роли",
+  first_project: "Первый проект (launch)",
+  first_investment_interest: "Первый интерес к инвестициям",
+  first_expert_request: "Первый запрос эксперту",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

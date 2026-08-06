@@ -67,6 +67,15 @@ export async function toggleInterestAction(
     entityType: targetType,
     entityId: targetId,
   });
+  if (targetType === "project" || targetType === "investment") {
+    await trackBetaMilestone({
+      eventType: "first_investment_interest",
+      userId: user.id,
+      entityType: targetType,
+      entityId: targetId,
+      metadata: { channel: "public_launch" },
+    });
+  }
 
   revalidatePath("/dashboard/interests");
   revalidatePath("/dashboard");

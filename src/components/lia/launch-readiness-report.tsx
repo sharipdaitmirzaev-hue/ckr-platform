@@ -35,9 +35,14 @@ export function LaunchReadinessReportCard({ report }: Props) {
       <p className="text-xs text-muted">
         Лия не меняет доступы и не открывает public launch автоматически.
       </p>
-      <ButtonLink href="/admin/beta-review" size="sm" variant="outline">
-        Beta Review
-      </ButtonLink>
+      <div className="flex flex-wrap gap-2">
+        <ButtonLink href="/admin/launch" size="sm">
+          Launch Checklist
+        </ButtonLink>
+        <ButtonLink href="/admin/beta-review" size="sm" variant="outline">
+          Beta Review
+        </ButtonLink>
+      </div>
     </div>
   );
 }

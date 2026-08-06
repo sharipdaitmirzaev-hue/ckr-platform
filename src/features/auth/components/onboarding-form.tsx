@@ -93,6 +93,10 @@ export function OnboardingForm({ profile, roles }: OnboardingFormProps) {
           {path.title}
         </h3>
         <p className="mt-2 text-sm text-muted">{path.description}</p>
+        <p className="mt-2 text-xs text-muted">
+          Важно: после сохранения профиля сразу откройте первый шаг — на этом
+          месте чаще всего «выходят» из онбординга.
+        </p>
         <ul className="mt-4 space-y-1.5 text-xs text-muted">
           {selected.map((role) => (
             <li key={role}>

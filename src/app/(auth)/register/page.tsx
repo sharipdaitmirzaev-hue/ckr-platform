@@ -15,9 +15,16 @@ export default function RegisterPage() {
         Регистрация
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Создайте аккаунт в экосистеме ЦКР. После регистрации можно добавить
-        дополнительные роли.
+        Создайте аккаунт в экосистеме ЦКР. После регистрации — выбор роли,
+        профиль и первый шаг с подсказкой Лии.
       </p>
+
+      <ol className="mt-4 space-y-1 text-xs text-muted">
+        <li>1. Регистрация</li>
+        <li>2. Выбор роли</li>
+        <li>3. Профиль</li>
+        <li>4. Первое действие (проект / Лия / каталог)</li>
+      </ol>
 
       <Suspense fallback={<p className="mt-8 text-sm text-muted">Загрузка формы…</p>}>
         <RegisterForm />

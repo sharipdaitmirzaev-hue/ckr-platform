@@ -147,6 +147,15 @@ export async function createApplicationAction(
     entityType: parsed.data.targetType,
     entityId: parsed.data.targetId,
   });
+  if (parsed.data.targetType === "expert") {
+    await trackBetaMilestone({
+      eventType: "first_expert_request",
+      userId: user.id,
+      entityType: "expert",
+      entityId: parsed.data.targetId,
+      metadata: { channel: "public_launch" },
+    });
+  }
 
   revalidatePath("/dashboard/applications");
   revalidatePath(`/project/${parsed.data.targetId}`);

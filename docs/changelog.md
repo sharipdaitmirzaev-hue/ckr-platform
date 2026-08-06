@@ -4,6 +4,20 @@
 
 ---
 
+## 0.40.0-beta — 2026-03-25
+
+Public Launch prep — подготовка к открытому запуску после Conditional Go (без новых бизнес-модулей).
+
+### Изменения
+
+- Launch Checklist `/admin/launch`: Product / Users / Technical / Business
+- Интеграция product_improvements + pilot_issues + feedback (исправлено / запланировано / отклонено)
+- Подсказки онбординга на точках высокого выхода; Launch analytics events
+- Лия: «Как начать работу с ЦКР?» → `LaunchGuide`
+- Документация: `help-center.md`, `public-launch-checklist.md`, `tinda-case-public.md`
+
+---
+
 ## 0.39.0-beta — 2026-03-25
 
 Beta Review — анализ закрытой beta и подготовка решения о Public Launch (без новых бизнес-модулей).

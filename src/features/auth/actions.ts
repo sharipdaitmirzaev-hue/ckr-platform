@@ -145,6 +145,13 @@ export async function registerAction(
     entityId: data.user.id,
     metadata: { role, inviteId },
   });
+  await trackAnalyticsEvent({
+    eventType: "public_registration",
+    userId: data.user.id,
+    entityType: "user",
+    entityId: data.user.id,
+    metadata: { role, inviteId, channel: "public_launch" },
+  });
 
   const { trackPilotMetric } = await import("@/lib/pilot/track");
   await trackPilotMetric({
@@ -315,6 +322,15 @@ export async function onboardingAction(
     eventType: "profile_completed",
     userId: user.id,
     metadata: { roles: parsed.data.roles },
+  });
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "role_selected",
+    userId: user.id,
+    entityType: "user",
+    entityId: user.id,
+    metadata: { roles: parsed.data.roles, channel: "public_launch" },
   });
 
   const { pathForRoles } = await import("@/config/onboarding");
