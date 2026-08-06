@@ -200,22 +200,22 @@ export async function getBetaReport(): Promise<BetaReportData> {
       }
     }
     const profileUsers = usersWithEvent("profile_completed");
-    const liaUsers = new Set([
-      ...usersWithEvent("first_lia_use"),
-      ...usersWithEvent("lia_used"),
+    const liaUsers = new Set<string>([
+      ...Array.from(usersWithEvent("first_lia_use")),
+      ...Array.from(usersWithEvent("lia_used")),
     ]);
-    const projectUsers = new Set([
-      ...usersWithEvent("first_project_created"),
-      ...usersWithEvent("project_created"),
+    const projectUsers = new Set<string>([
+      ...Array.from(usersWithEvent("first_project_created")),
+      ...Array.from(usersWithEvent("project_created")),
     ]);
     const appUsers = usersWithEvent("first_application_sent");
     const interestUsers = usersWithEvent("first_interest_created");
-    const firstActionUsers = new Set([
-      ...liaUsers,
-      ...projectUsers,
-      ...appUsers,
-      ...interestUsers,
-      ...usersWithEvent("project_viewed"),
+    const firstActionUsers = new Set<string>([
+      ...Array.from(liaUsers),
+      ...Array.from(projectUsers),
+      ...Array.from(appUsers),
+      ...Array.from(interestUsers),
+      ...Array.from(usersWithEvent("project_viewed")),
     ]);
 
     const onboardingEvents: Record<string, number> = {};
