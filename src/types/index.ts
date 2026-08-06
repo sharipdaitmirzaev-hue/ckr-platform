@@ -530,6 +530,26 @@ export type PilotIssue = {
   severity: "critical" | "high" | "medium" | "low";
   status: "open" | "in_progress" | "resolved" | "closed";
   createdBy: string | null;
+  sourceType?: string | null;
+  sourceId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+/** Улучшение продукта (этап 37). */
+export type ProductImprovement = {
+  id: string;
+  title: string;
+  description: string;
+  sourceType:
+    | "feedback"
+    | "pilot_issue"
+    | "analytics"
+    | "lia"
+    | "manual";
+  sourceId: string | null;
+  priority: "critical" | "high" | "medium" | "low";
+  status: "planned" | "in_progress" | "released" | "rejected";
   createdAt?: string;
   updatedAt?: string;
 };

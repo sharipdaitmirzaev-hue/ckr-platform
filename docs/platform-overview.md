@@ -5,7 +5,7 @@
 
 Логика: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Версия ядра после Этапа 36: `0.36.0-beta` (Pilot Operations, см. [pilot-operations.md](./pilot-operations.md)).
+Версия ядра после Этапа 37: `0.37.0-beta` (цикл улучшений, см. [product-improvement-loop.md](./product-improvement-loop.md)).
 
 ---
 

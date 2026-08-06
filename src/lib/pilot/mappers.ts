@@ -10,6 +10,8 @@ export function mapPilotIssueRow(row: PilotIssueRow): PilotIssue {
     severity: row.severity as PilotIssueSeverity,
     status: row.status as PilotIssueStatus,
     createdBy: row.created_by,
+    sourceType: row.source_type ?? null,
+    sourceId: row.source_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

@@ -4,6 +4,20 @@
 
 ---
 
+## 0.37.0-beta — 2026-03-25
+
+Product Improvement Loop — цикл улучшений на данных закрытого пилота (без новых бизнес-модулей).
+
+### Изменения
+
+- Таблица `product_improvements` + связь feedback → pilot_issues (`source_*`)
+- Центр улучшений `/admin/improvements`
+- Продвижение: feedback → issue → improvement
+- Лия: «Что улучшить в ЦКР?» → `ProductImprovementReport` (только анализ)
+- Документация: `product-improvement-loop.md`, `tinda-pilot-review.md`
+
+---
+
 ## 0.36.0-beta — 2026-03-25
 
 Pilot Operations — подготовка закрытого пилота и сбор реальных данных использования (без новых бизнес-направлений).

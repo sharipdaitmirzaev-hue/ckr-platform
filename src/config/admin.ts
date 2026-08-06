@@ -36,6 +36,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Метрики, участники и проблемы пилота",
   },
   {
+    label: "Улучшения",
+    href: "/admin/improvements",
+    description: "Цикл улучшений: feedback → issues → product",
+  },
+  {
     label: "CRM",
     href: "/admin/crm",
     description: "Контакты, лиды, задачи команды ЦКР",

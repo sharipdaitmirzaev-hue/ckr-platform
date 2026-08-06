@@ -329,6 +329,16 @@
 - Контроль прогресса ТИНДА
 - Без новых крупных бизнес-модулей
 
-## Этап 37+ — после пилота (backlog)
+## Этап 37 — Product Improvement Loop ✅ (код готов)
+
+Подробности: [product-improvement-loop.md](./product-improvement-loop.md)
+
+- Центр улучшений `/admin/improvements`
+- `product_improvements` + цепочка feedback → pilot_issues → улучшения
+- Лия: `ProductImprovementReport` («Что улучшить в ЦКР?»)
+- Обзор пилота ТИНДА: `tinda-pilot-review.md`
+- Без новых крупных бизнес-модулей
+
+## Этап 38+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

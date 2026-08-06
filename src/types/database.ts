@@ -264,6 +264,39 @@ export type PilotIssueRow = {
   severity: DbPilotIssueSeverity;
   status: DbPilotIssueStatus;
   created_by: string | null;
+  source_type?: string | null;
+  source_id?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DbProductImprovementPriority =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low";
+
+export type DbProductImprovementStatus =
+  | "planned"
+  | "in_progress"
+  | "released"
+  | "rejected";
+
+export type DbProductImprovementSource =
+  | "feedback"
+  | "pilot_issue"
+  | "analytics"
+  | "lia"
+  | "manual";
+
+export type ProductImprovementRow = {
+  id: string;
+  title: string;
+  description: string;
+  source_type: DbProductImprovementSource;
+  source_id: string | null;
+  priority: DbProductImprovementPriority;
+  status: DbProductImprovementStatus;
   created_at: string;
   updated_at: string;
 };
@@ -1400,12 +1433,37 @@ export type Database = {
           severity?: DbPilotIssueSeverity;
           status?: DbPilotIssueStatus;
           created_by?: string | null;
+          source_type?: string | null;
+          source_id?: string | null;
         };
         Update: Partial<{
           title: string;
           description: string;
           severity: DbPilotIssueSeverity;
           status: DbPilotIssueStatus;
+          source_type: string | null;
+          source_id: string | null;
+          updated_at: string;
+        }>;
+      };
+      product_improvements: {
+        Row: ProductImprovementRow;
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string;
+          source_type?: DbProductImprovementSource;
+          source_id?: string | null;
+          priority?: DbProductImprovementPriority;
+          status?: DbProductImprovementStatus;
+        };
+        Update: Partial<{
+          title: string;
+          description: string;
+          source_type: DbProductImprovementSource;
+          source_id: string | null;
+          priority: DbProductImprovementPriority;
+          status: DbProductImprovementStatus;
           updated_at: string;
         }>;
       };
@@ -1905,6 +1963,9 @@ export type Database = {
       investor_interest_target_type: DbInvestorInterestTargetType;
       pilot_issue_severity: DbPilotIssueSeverity;
       pilot_issue_status: DbPilotIssueStatus;
+      product_improvement_priority: DbProductImprovementPriority;
+      product_improvement_status: DbProductImprovementStatus;
+      product_improvement_source: DbProductImprovementSource;
     };
   };
 };

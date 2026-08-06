@@ -100,6 +100,13 @@ export const LIA_SCENARIOS: {
     description:
       "Пилот: активность, roadmap, задачи, KPI, сделки → PilotInsightReport (только анализ)",
   },
+  {
+    id: "product_improvement",
+    label: "Что улучшить в ЦКР?",
+    prompt: "Что улучшить в ЦКР?",
+    description:
+      "Feedback, issues, метрики пилота → ProductImprovementReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -170,6 +177,9 @@ export const EVALUATE_OUTCOME_START_PATTERN =
 
 export const PILOT_INSIGHT_START_PATTERN =
   /что\s+мешает\s+проекту|мешает\s+двигаться|pilot\s*insight|блокир(ует|уют)\s+проект/i;
+
+export const PRODUCT_IMPROVEMENT_START_PATTERN =
+  /что\s+улучшить\s+в\s+цкр|улучш(ить|ения)\s+(в\s+)?цкр|product\s*improvement|цикл\s+улучшен/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

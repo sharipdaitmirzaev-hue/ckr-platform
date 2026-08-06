@@ -9,6 +9,7 @@ import {
   EVALUATE_OUTCOME_START_PATTERN,
   LIA_DISCLAIMER,
   PILOT_INSIGHT_START_PATTERN,
+  PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
 } from "@/config/lia";
@@ -34,6 +35,7 @@ import type {
   LiaScenarioId,
   OutcomeReport,
   PilotInsightReport,
+  ProductImprovementReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -99,6 +101,9 @@ function detectScenario(
   }
   if (PILOT_INSIGHT_START_PATTERN.test(value)) {
     return "pilot_insight";
+  }
+  if (PRODUCT_IMPROVEMENT_START_PATTERN.test(value)) {
+    return "product_improvement";
   }
   return null;
 }
@@ -1002,6 +1007,203 @@ async function handleEvaluateOutcome(input: {
   };
 }
 
+async function handleProductImprovement(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const supabase = createClient();
+  const [
+    feedbackRes,
+    issuesRes,
+    improvementsRes,
+    eventsRes,
+  ] = await Promise.all([
+    supabase
+      .from("feedback")
+      .select("id, type, message, priority, page, rating")
+      .order("created_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("pilot_issues")
+      .select("id, title, description, severity, status")
+      .order("created_at", { ascending: false })
+      .limit(60),
+    supabase
+      .from("product_improvements")
+      .select("id, title, priority, status, source_type")
+      .order("created_at", { ascending: false })
+      .limit(60),
+    supabase
+      .from("analytics_events")
+      .select("event_type")
+      .in("event_type", [
+        "registration_completed",
+        "profile_completed",
+        "project_created",
+        "project_published",
+        "application_sent",
+        "deal_created",
+        "lia_used",
+      ])
+      .limit(400),
+  ]);
+
+  const feedback = feedbackRes.data ?? [];
+  const issues = issuesRes.data ?? [];
+  const improvements = improvementsRes.data ?? [];
+  const events = eventsRes.data ?? [];
+
+  const openIssues = issues.filter(
+    (i) => i.status === "open" || i.status === "in_progress",
+  );
+  const criticalIssues = openIssues.filter(
+    (i) => i.severity === "critical" || i.severity === "high",
+  );
+
+  const typeCounts = new Map<string, number>();
+  const priorityCounts = new Map<string, number>();
+  for (const item of feedback) {
+    typeCounts.set(
+      item.type as string,
+      (typeCounts.get(item.type as string) ?? 0) + 1,
+    );
+    const pr = (item.priority as string) || "medium";
+    priorityCounts.set(pr, (priorityCounts.get(pr) ?? 0) + 1);
+  }
+
+  const metricCounts = new Map<string, number>();
+  for (const row of events) {
+    const key = row.event_type as string;
+    metricCounts.set(key, (metricCounts.get(key) ?? 0) + 1);
+  }
+
+  const main_problems: string[] = [];
+  for (const issue of criticalIssues.slice(0, 6)) {
+    main_problems.push(`[${issue.severity}] ${issue.title}`);
+  }
+  for (const item of feedback
+    .filter(
+      (f) =>
+        f.priority === "critical" ||
+        f.priority === "high" ||
+        f.type === "bug" ||
+        f.type === "ux",
+    )
+    .slice(0, 6)) {
+    main_problems.push(
+      `Feedback ${item.type}/${item.priority}: ${String(item.message).slice(0, 100)}`,
+    );
+  }
+  if (main_problems.length === 0) {
+    main_problems.push(
+      "Критических проблем в выборке нет — смотрите паттерны и воронку",
+    );
+  }
+
+  const patterns: string[] = [];
+  const topTypes = [...typeCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+  if (topTypes.length > 0) {
+    patterns.push(
+      `Частые категории feedback: ${topTypes
+        .map(([k, v]) => `${k} (${v})`)
+        .join(", ")}`,
+    );
+  }
+  const regs = metricCounts.get("registration_completed") ?? 0;
+  const profiles = metricCounts.get("profile_completed") ?? 0;
+  const projects = metricCounts.get("project_created") ?? 0;
+  const apps = metricCounts.get("application_sent") ?? 0;
+  const deals = metricCounts.get("deal_created") ?? 0;
+  const lia = metricCounts.get("lia_used") ?? 0;
+  if (regs > 0 && profiles / regs < 0.7) {
+    patterns.push(
+      `Воронка: профиль завершают реже регистрации (${profiles}/${regs})`,
+    );
+  }
+  if (projects > 0 && apps / projects < 0.4) {
+    patterns.push(
+      `Воронка: мало заявок относительно проектов (${apps}/${projects})`,
+    );
+  }
+  if (lia === 0) {
+    patterns.push("Лия почти не используется в метриках пилота");
+  } else {
+    patterns.push(`Лия использована ${lia} раз(а) по метрикам пилота`);
+  }
+  const planned = improvements.filter((i) => i.status === "planned").length;
+  const inProgress = improvements.filter(
+    (i) => i.status === "in_progress",
+  ).length;
+  patterns.push(
+    `Бэклог улучшений: ${improvements.length} (planned ${planned}, in_progress ${inProgress})`,
+  );
+  if (deals === 0 && apps > 0) {
+    patterns.push("Есть заявки, но сделки ещё не зафиксированы");
+  }
+
+  const recommendations = [
+    openIssues.length > 0
+      ? `Разберите ${openIssues.length} открытых pilot_issues, критичные — в первую очередь`
+      : "Открытых pilot_issues мало — поддерживайте ритм сбора feedback",
+    feedback.length > 0
+      ? "Продвигайте ценный feedback в проблемы и product_improvements на /admin/improvements"
+      : "Усильте сбор обратной связи (категория + приоритет)",
+    "Сверьте просадки воронки на /admin/pilot/report и заведите улучшения по слабым шагам",
+    "Не добавляйте новые бизнес-модули — закрывайте UX/баги и ценность текущего контура",
+  ];
+
+  const priority_actions = [
+    criticalIssues[0]
+      ? `Эскалировать: «${criticalIssues[0].title}»`
+      : "Проверить critical/high feedback за последнюю неделю",
+    "Создать 1–3 product_improvements из топ-паттернов feedback",
+    "Обновить статус улучшений in_progress → released после фикса",
+    "Зафиксировать выводы пилота ТИНДА в docs/tinda-pilot-review.md",
+  ];
+
+  const report: ProductImprovementReport = {
+    summary: `Анализ цикла улучшений: feedback ${feedback.length}, открытых проблем ${openIssues.length}, улучшений ${improvements.length}. Лия только анализирует — записи не создаёт.`,
+    main_problems,
+    patterns,
+    recommendations,
+    priority_actions,
+  };
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "product",
+      metadata: { source: "lia", scenario: "product_improvement" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Что улучшить в ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — ProductImprovementReport. Лия не создаёт улучшения автоматически — только анализирует и предлагает.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "product_improvement",
+      productImprovementReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handlePilotInsight(input: {
   userMessage: string;
   projectId?: string | null;
@@ -1673,6 +1875,23 @@ export async function runLiaEngine(input: {
       projectId: input.projectId,
       userId: input.userId,
     });
+  }
+
+  if (scenario === "product_improvement") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить анализ улучшений ЦКР.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "product_improvement",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleProductImprovement({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

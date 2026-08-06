@@ -68,6 +68,12 @@ export default async function AdminPilotPage() {
         >
           Отчёт пилота
         </Link>
+        <Link
+          href="/admin/improvements"
+          className="text-accent hover:underline"
+        >
+          Центр улучшений
+        </Link>
         <Link href="/admin/results" className="text-accent hover:underline">
           Результаты ЦКР
         </Link>

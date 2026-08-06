@@ -82,6 +82,7 @@ RLS: пользователь видит и меняет только свои �
 9. **Проверь прогресс проекта** — `check_progress` → `ProgressReport`.
 10. **Оцени результат проекта** — `evaluate_outcome` → `OutcomeReport` (достижения, просадки, риски, рекомендации). См. [project-outcomes.md](./project-outcomes.md).
 11. **Что мешает проекту двигаться?** — `pilot_insight` → `PilotInsightReport` (блокировки, неактивные участники, рекомендации; только анализ). См. [pilot-operations.md](./pilot-operations.md).
+12. **Что улучшить в ЦКР?** — `product_improvement` → `ProductImprovementReport` (проблемы, паттерны, приоритетные действия; только анализ). См. [product-improvement-loop.md](./product-improvement-loop.md).
 
 Структура результата поиска:
 
