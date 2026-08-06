@@ -576,7 +576,7 @@ export async function getFirstUsersDashboard(): Promise<FirstUsersDashboard> {
     );
     let firstAction = 0;
     let liaUsed = 0;
-    for (const userId of registeredUsers) {
+    for (const userId of Array.from(registeredUsers)) {
       const types = new Set(
         (eventsByUser.get(userId) ?? []).map((e) => e.event_type),
       );
