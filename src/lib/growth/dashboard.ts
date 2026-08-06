@@ -250,7 +250,7 @@ export async function getGrowthDashboard(): Promise<GrowthDashboard> {
         )
       : 0;
 
-  for (const f of funnelMap.values()) {
+  for (const f of Array.from(funnelMap.values())) {
     f.firstAction = Math.round(f.activation * actionShare);
     f.result = Math.round(f.activation * resultShare);
   }
@@ -326,7 +326,7 @@ export async function getGrowthDashboard(): Promise<GrowthDashboard> {
       }
 
       let hasAnalytics = false;
-      for (const [ch, b] of byChannel) {
+      for (const [ch, b] of Array.from(byChannel.entries())) {
         if (b.source + b.reg + b.act.size > 0) hasAnalytics = true;
         const f = funnelMap.get(ch)!;
         if (b.source > 0) f.source = Math.max(f.source, b.source);
