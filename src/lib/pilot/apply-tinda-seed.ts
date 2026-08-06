@@ -6,6 +6,7 @@ import {
   TINDA_LEAD_IDS,
   TINDA_ORG_ID,
   TINDA_OWNER_ID,
+  TINDA_PARTICIPANT_ID,
   TINDA_PARTNERSHIP_IDS,
   TINDA_PROJECT_ID,
   TINDA_ROADMAP_ID,
@@ -18,6 +19,7 @@ import {
   tindaFinancialMetrics,
   tindaMilestones,
   tindaOrganization,
+  tindaPilotChecklist,
   tindaProject,
   tindaProjectResults,
   tindaSeedMeta,
@@ -517,6 +519,30 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
       }
     }
 
+    const { error: participantError } = await admin
+      .from("pilot_participants")
+      .upsert({
+        id: TINDA_PARTICIPANT_ID,
+        user_id: ownerId,
+        role: "organization",
+        status: "active",
+        notes: "ООО ТИНДА — первый пилотный проект (этап 36)",
+      });
+    if (participantError) {
+      throw new Error(`pilot_participants: ${participantError.message}`);
+    }
+
+    let checklistItems = 0;
+    for (const item of tindaPilotChecklist) {
+      const { error } = await admin.from("pilot_checklists").upsert({
+        id: item.id,
+        participant_id: TINDA_PARTICIPANT_ID,
+        item: item.item,
+        status: item.status,
+      });
+      if (!error) checklistItems += 1;
+    }
+
     return {
       ok: true,
       message: `Пилот ТИНДА v${tindaSeedMeta.version} применён. Смените пароль pilot.tinda@ckr.local после запуска.`,
@@ -532,6 +558,8 @@ export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
         contacts,
         deals: 1,
         liaAnalyses: 1,
+        pilotParticipants: 1,
+        pilotChecklists: checklistItems,
       },
       ids: {
         ownerId,

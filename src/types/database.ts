@@ -192,7 +192,16 @@ export type BetaInviteRow = {
   used_by: string | null;
 };
 
-export type DbFeedbackType = "bug" | "idea" | "question" | "review";
+export type DbFeedbackType =
+  | "bug"
+  | "ux"
+  | "idea"
+  | "business_value"
+  | "lia_quality"
+  | "question"
+  | "review";
+
+export type DbFeedbackPriority = "low" | "medium" | "high" | "critical";
 
 export type FeedbackRow = {
   id: string;
@@ -203,7 +212,42 @@ export type FeedbackRow = {
   page: string;
   related_type: string | null;
   related_id: string | null;
+  priority: DbFeedbackPriority;
   created_at: string;
+};
+
+export type DbPilotParticipantRole =
+  | "entrepreneur"
+  | "investor"
+  | "expert"
+  | "organization"
+  | "operator";
+
+export type DbPilotParticipantStatus =
+  | "invited"
+  | "active"
+  | "inactive"
+  | "completed";
+
+export type DbPilotChecklistStatus = "pending" | "done" | "skipped";
+
+export type PilotParticipantRow = {
+  id: string;
+  user_id: string | null;
+  role: DbPilotParticipantRole;
+  status: DbPilotParticipantStatus;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PilotChecklistRow = {
+  id: string;
+  participant_id: string;
+  item: string;
+  status: DbPilotChecklistStatus;
+  created_at: string;
+  updated_at: string;
 };
 
 export type DbPilotIssueSeverity = "critical" | "high" | "medium" | "low";
@@ -1311,13 +1355,41 @@ export type Database = {
           page?: string;
           related_type?: string | null;
           related_id?: string | null;
+          priority?: DbFeedbackPriority;
         };
         Update: Partial<{
           message: string;
           rating: number | null;
           related_type: string | null;
           related_id: string | null;
+          priority: DbFeedbackPriority;
+          type: DbFeedbackType;
         }>;
+      };
+      pilot_participants: {
+        Row: PilotParticipantRow;
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          role?: DbPilotParticipantRole;
+          status?: DbPilotParticipantStatus;
+          notes?: string;
+        };
+        Update: Partial<
+          Omit<PilotParticipantRow, "id" | "created_at">
+        >;
+      };
+      pilot_checklists: {
+        Row: PilotChecklistRow;
+        Insert: {
+          id?: string;
+          participant_id: string;
+          item: string;
+          status?: DbPilotChecklistStatus;
+        };
+        Update: Partial<
+          Omit<PilotChecklistRow, "id" | "created_at" | "participant_id">
+        >;
       };
       pilot_issues: {
         Row: PilotIssueRow;
@@ -1802,6 +1874,10 @@ export type Database = {
       product_test_status: DbProductTestStatus;
       beta_invite_status: DbBetaInviteStatus;
       feedback_type: DbFeedbackType;
+      feedback_priority: DbFeedbackPriority;
+      pilot_participant_role: DbPilotParticipantRole;
+      pilot_participant_status: DbPilotParticipantStatus;
+      pilot_checklist_status: DbPilotChecklistStatus;
       crm_contact_type: DbCrmContactType;
       crm_contact_status: DbCrmContactStatus;
       crm_lead_stage: DbCrmLeadStage;

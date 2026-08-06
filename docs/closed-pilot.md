@@ -1,7 +1,8 @@
 # Closed Pilot ЦКР
 
 Этап 29: инструменты наблюдения за закрытым пилотом.  
-Версия: `0.30.0-beta` · Связано: [launch-readiness.md](./launch-readiness.md) · [tinda-pilot.md](./tinda-pilot.md) · [beta-launch.md](./beta-launch.md)
+Этап 36: операционное управление — [pilot-operations.md](./pilot-operations.md).  
+Версия: `0.36.0-beta` · Связано: [launch-readiness.md](./launch-readiness.md) · [tinda-pilot.md](./tinda-pilot.md) · [beta-launch.md](./beta-launch.md)
 
 ---
 
@@ -79,6 +80,9 @@ Dashboard: `/admin/pilot` — счётчики, участники, активн
 - **объектом** — `related_type` + `related_id` (из URL: project / opportunity / investment / …)
 
 UI: кнопка «Обратная связь» на публичных и кабинетных страницах (кроме `/admin`).
+
+Категории пилота (этап 36): `bug` · `ux` · `idea` · `business_value` · `lia_quality` (+ `question` / `review`).  
+Приоритет: `low` · `medium` · `high` · `critical`.
 
 ---
 

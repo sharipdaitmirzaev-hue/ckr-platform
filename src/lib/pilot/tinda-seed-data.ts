@@ -83,11 +83,56 @@ export const TINDA_FINANCIAL_IDS = {
   revenue: "b0000010-0000-4000-8000-000000000002",
 } as const;
 
+/** Pilot Operations (этап 36) */
+export const TINDA_PARTICIPANT_ID = "b0000011-0000-4000-8000-000000000001";
+
+export const TINDA_CHECKLIST_IDS = {
+  profile: "b0000012-0000-4000-8000-000000000001",
+  onboarding: "b0000012-0000-4000-8000-000000000002",
+  project: "b0000012-0000-4000-8000-000000000003",
+  lia: "b0000012-0000-4000-8000-000000000004",
+  application: "b0000012-0000-4000-8000-000000000005",
+  result: "b0000012-0000-4000-8000-000000000006",
+} as const;
+
+export const tindaPilotChecklist = [
+  {
+    id: TINDA_CHECKLIST_IDS.profile,
+    item: "Создал профиль",
+    status: "done" as const,
+  },
+  {
+    id: TINDA_CHECKLIST_IDS.onboarding,
+    item: "Прошёл онбординг",
+    status: "done" as const,
+  },
+  {
+    id: TINDA_CHECKLIST_IDS.project,
+    item: "Создал проект",
+    status: "done" as const,
+  },
+  {
+    id: TINDA_CHECKLIST_IDS.lia,
+    item: "Использовал Лию",
+    status: "done" as const,
+  },
+  {
+    id: TINDA_CHECKLIST_IDS.application,
+    item: "Отправил заявку",
+    status: "pending" as const,
+  },
+  {
+    id: TINDA_CHECKLIST_IDS.result,
+    item: "Получил результат",
+    status: "pending" as const,
+  },
+] as const;
+
 export const tindaSeedMeta = {
-  version: 3,
+  version: 4,
   organization: "ООО ТИНДА",
   projectTitle: "Развитие оптовой платформы ТИНДА",
-  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн. Этап 34: outcomes + financial metrics.",
+  note: "Пилот ЦКР на организации ТИНДА. Seed без реальных ПДн. Этап 36: pilot_participants + checklists.",
 } as const;
 
 export const tindaExecutionRoadmap = {

@@ -8,6 +8,10 @@ import {
   type FeedbackType,
   type UserFeedbackEventType,
 } from "@/config/beta";
+import {
+  FEEDBACK_PRIORITIES,
+  type FeedbackPriority,
+} from "@/config/pilot-operations";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { trackUserFeedbackEvent } from "@/lib/beta/track-feedback-event";
 import { createClient } from "@/lib/supabase/server";
@@ -103,12 +107,14 @@ export async function submitFeedbackAction(input: {
   page?: string;
   relatedType?: string | null;
   relatedId?: string | null;
+  priority?: FeedbackPriority;
 }): Promise<BetaClientResult> {
   const type = input.type;
   const message = input.message.trim();
   const page = (input.page ?? "").trim();
   const relatedType = (input.relatedType ?? "").trim() || null;
   const relatedId = (input.relatedId ?? "").trim() || null;
+  const priority = input.priority ?? "medium";
   const rating =
     input.rating === undefined || input.rating === null
       ? null
@@ -116,6 +122,9 @@ export async function submitFeedbackAction(input: {
 
   if (!FEEDBACK_TYPES.includes(type)) {
     return { ok: false, error: "Некорректный тип обратной связи." };
+  }
+  if (!(FEEDBACK_PRIORITIES as readonly string[]).includes(priority)) {
+    return { ok: false, error: "Некорректный приоритет." };
   }
   if (message.length < 5) {
     return { ok: false, error: "Опишите сообщение подробнее (от 5 символов)." };
@@ -140,11 +149,13 @@ export async function submitFeedbackAction(input: {
     page: page || "/",
     related_type: relatedType,
     related_id: relatedId,
+    priority,
   });
 
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/pilot");
+  revalidatePath("/admin/pilot/report");
   return { ok: true };
 }
 

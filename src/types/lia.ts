@@ -13,7 +13,8 @@ export type LiaScenarioId =
   | "business_audit"
   | "develop_strategy"
   | "check_progress"
-  | "evaluate_outcome";
+  | "evaluate_outcome"
+  | "pilot_insight";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -67,6 +68,15 @@ export type OutcomeReport = {
   risks: string[];
   recommendations: string[];
   next_steps: string[];
+};
+
+/** Отчёт сценария «Что мешает проекту двигаться?» (пилот, только анализ). */
+export type PilotInsightReport = {
+  summary: string;
+  blocked_projects: string[];
+  inactive_users: string[];
+  recommendations: string[];
+  next_actions: string[];
 };
 
 export type LiaSession = {
@@ -239,6 +249,7 @@ export type LiaMessageMetadata = {
   strategyReport?: StrategyReport | null;
   progressReport?: ProgressReport | null;
   outcomeReport?: OutcomeReport | null;
+  pilotInsightReport?: PilotInsightReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

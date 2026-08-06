@@ -29,6 +29,7 @@ export function mapFeedbackRow(row: FeedbackRow): Feedback {
     page: row.page,
     relatedType: row.related_type ?? null,
     relatedId: row.related_id ?? null,
+    priority: row.priority ?? "medium",
     createdAt: row.created_at,
   };
 }

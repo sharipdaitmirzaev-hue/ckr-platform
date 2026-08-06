@@ -81,6 +81,7 @@ RLS: пользователь видит и меняет только свои �
 8. **Разработать стратегию развития** — `develop_strategy`: данные проекта, аудит, цели → `StrategyReport` (цели, направления роста, ресурсы, риски, план действий). См. [ckr-methodology.md](./ckr-methodology.md).
 9. **Проверь прогресс проекта** — `check_progress` → `ProgressReport`.
 10. **Оцени результат проекта** — `evaluate_outcome` → `OutcomeReport` (достижения, просадки, риски, рекомендации). См. [project-outcomes.md](./project-outcomes.md).
+11. **Что мешает проекту двигаться?** — `pilot_insight` → `PilotInsightReport` (блокировки, неактивные участники, рекомендации; только анализ). См. [pilot-operations.md](./pilot-operations.md).
 
 Структура результата поиска:
 

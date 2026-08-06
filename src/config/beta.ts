@@ -16,9 +16,13 @@ export const betaInviteStatusLabels: Record<BetaInviteStatus, string> = {
   expired: "Отключено",
 };
 
+/** Категории обратной связи пилота (этап 36). */
 export const FEEDBACK_TYPES = [
   "bug",
+  "ux",
   "idea",
+  "business_value",
+  "lia_quality",
   "question",
   "review",
 ] as const;
@@ -27,7 +31,10 @@ export type FeedbackType = (typeof FEEDBACK_TYPES)[number];
 
 export const feedbackTypeLabels: Record<FeedbackType, string> = {
   bug: "Ошибка",
+  ux: "UX",
   idea: "Идея",
+  business_value: "Бизнес-ценность",
+  lia_quality: "Качество Лии",
   question: "Вопрос",
   review: "Отзыв",
 };

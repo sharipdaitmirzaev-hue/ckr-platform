@@ -318,6 +318,17 @@
 
 Дальнейшее развитие (не в 1.0): [roadmap-after-1.0.md](./roadmap-after-1.0.md)
 
-## Этап 36+ — после 1.0 (backlog)
+## Этап 36 — Pilot Operations ✅ (код готов)
+
+Подробности: [pilot-operations.md](./pilot-operations.md)
+
+- Управление участниками пилота (`pilot_participants`) и чеклистами
+- Расширение `/admin/pilot` и отчёт `/admin/pilot/report`
+- Feedback: категории + приоритет
+- Лия: `PilotInsightReport` («Что мешает проекту двигаться?»)
+- Контроль прогресса ТИНДА
+- Без новых крупных бизнес-модулей
+
+## Этап 37+ — после пилота (backlog)
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

@@ -8,6 +8,7 @@ import {
   DEVELOP_STRATEGY_STEPS,
   EVALUATE_OUTCOME_START_PATTERN,
   LIA_DISCLAIMER,
+  PILOT_INSIGHT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
 } from "@/config/lia";
@@ -32,6 +33,7 @@ import type {
   LiaResultLink,
   LiaScenarioId,
   OutcomeReport,
+  PilotInsightReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -94,6 +96,9 @@ function detectScenario(
   }
   if (EVALUATE_OUTCOME_START_PATTERN.test(value)) {
     return "evaluate_outcome";
+  }
+  if (PILOT_INSIGHT_START_PATTERN.test(value)) {
+    return "pilot_insight";
   }
   return null;
 }
@@ -997,6 +1002,220 @@ async function handleEvaluateOutcome(input: {
   };
 }
 
+async function handlePilotInsight(input: {
+  userMessage: string;
+  projectId?: string | null;
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const focusProjectId =
+    input.projectId || extractProjectIdFromMessage(input.userMessage);
+  const supabase = createClient();
+  const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+
+  const [projectsRes, participantsRes, dealsRes] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, title, status, stage, owner_id, updated_at")
+      .in("status", ["published", "active", "moderation"])
+      .order("updated_at", { ascending: false })
+      .limit(40),
+    supabase
+      .from("pilot_participants")
+      .select("id, user_id, role, status, notes")
+      .order("created_at", { ascending: false })
+      .limit(80),
+    supabase
+      .from("deals")
+      .select("id, project_id, status, updated_at")
+      .limit(100),
+  ]);
+
+  const projects = projectsRes.data ?? [];
+  const participants = participantsRes.data ?? [];
+  const deals = dealsRes.data ?? [];
+
+  const focusIds = focusProjectId
+    ? projects.filter((p) => p.id === focusProjectId)
+    : projects;
+  const analyzeList = focusIds.length > 0 ? focusIds : projects.slice(0, 12);
+
+  const blocked_projects: string[] = [];
+  const recommendations: string[] = [];
+  const next_actions: string[] = [];
+
+  for (const project of analyzeList) {
+    const progress = await getProjectProgressSummary(project.id as string);
+    const projectDeals = deals.filter((d) => d.project_id === project.id);
+    const stale =
+      new Date(project.updated_at as string).getTime() < cutoff;
+    const blockedItems = progress.items.filter(
+      (item) => item.status === "blocked",
+    );
+    const laggingKpi = progress.metrics.filter((metric) => {
+      if (metric.targetValue <= 0) return false;
+      return metric.currentValue / metric.targetValue < 0.4;
+    });
+
+    const blockers: string[] = [];
+    if (blockedItems.length > 0) {
+      blockers.push(
+        `roadmap blocked: ${blockedItems.map((i) => i.title).join(", ")}`,
+      );
+    }
+    if (progress.overdueTasks.length > 0) {
+      blockers.push(`просрочено задач: ${progress.overdueTasks.length}`);
+    }
+    if (progress.overdueItems.length > 0) {
+      blockers.push(`просрочено этапов: ${progress.overdueItems.length}`);
+    }
+    if (!progress.roadmap) {
+      blockers.push("нет активной roadmap");
+    }
+    if (laggingKpi.length > 0) {
+      blockers.push(
+        `KPI отстают: ${laggingKpi.map((m) => m.name).join(", ")}`,
+      );
+    }
+    if (stale) {
+      blockers.push("нет обновлений 14+ дней");
+    }
+    if (projectDeals.length === 0) {
+      blockers.push("нет сделок");
+    }
+
+    if (blockers.length > 0) {
+      blocked_projects.push(
+        `«${project.title}»: ${blockers.join("; ")}`,
+      );
+    }
+  }
+
+  const inactive_users: string[] = [];
+  for (const participant of participants) {
+    if (
+      participant.status === "inactive" ||
+      participant.status === "invited"
+    ) {
+      const label =
+        (participant.notes as string)?.trim() ||
+        (participant.user_id as string | null)?.slice(0, 8) ||
+        participant.id;
+      inactive_users.push(
+        `${label} · ${participant.role} · ${participant.status}`,
+      );
+    }
+  }
+
+  if (blocked_projects.length === 0) {
+    recommendations.push(
+      "Критических блокировок по выборке проектов не видно — держите ритм обновления roadmap и KPI",
+    );
+  } else {
+    recommendations.push(
+      "Разберите blocked/просроченные этапы roadmap и переназначьте сроки задач",
+    );
+    recommendations.push(
+      "Обновите отстающие KPI и зафиксируйте ближайшие сделки в workspace",
+    );
+  }
+
+  if (inactive_users.length > 0) {
+    recommendations.push(
+      "Верните invited/inactive участников: короткий чеклист и сценарий в Лии",
+    );
+  } else {
+    recommendations.push(
+      "Участники пилота в активном контуре — продолжайте сбор feedback",
+    );
+  }
+
+  recommendations.push(
+    "Сверьте воронку на /admin/pilot/report и зафиксируйте issues",
+  );
+
+  next_actions.push(
+    focusProjectId
+      ? "Откройте workspace выбранного проекта и обновите текущий этап"
+      : "Откройте /admin/pilot и выберите проект с наибольшим числом блокировок",
+  );
+  next_actions.push("Запустите «Проверь прогресс проекта» по приоритетному проекту");
+  next_actions.push("Соберите обратную связь (категория + приоритет) от оператора");
+
+  const report: PilotInsightReport = {
+    summary: focusProjectId
+      ? `Анализ препятствий для проекта ${focusProjectId}: заблокировано/застопорено ${blocked_projects.length}, неактивных участников ${inactive_users.length}.`
+      : `Обзор пилота: проектов в выборке ${analyzeList.length}, с блокерами ${blocked_projects.length}, неактивных участников ${inactive_users.length}. Лия только анализирует.`,
+    blocked_projects:
+      blocked_projects.length > 0
+        ? blocked_projects
+        : ["Явных блокировок в выборке не обнаружено"],
+    inactive_users:
+      inactive_users.length > 0
+        ? inactive_users
+        : ["Неактивных участников pilot_participants не видно"],
+    recommendations,
+    next_actions,
+  };
+
+  const activityProjectId =
+    (focusProjectId as string | null) ||
+    (analyzeList[0]?.id as string | undefined);
+  if (activityProjectId) {
+    try {
+      await supabase.from("project_activity").insert({
+        project_id: activityProjectId,
+        actor_id: input.userId,
+        activity_type: "note",
+        title: "Лия: что мешает проекту двигаться",
+        body: report.summary,
+        metadata: { source: "lia", scenario: "pilot_insight" },
+      });
+    } catch {
+      // мягкий сбой
+    }
+  }
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: activityProjectId ? "project" : "pilot",
+      entityId: activityProjectId,
+      metadata: { source: "lia", scenario: "pilot_insight" },
+    });
+  } catch {
+    // мягкий сбой метрики
+  }
+
+  return {
+    content: [
+      "Сценарий «Что мешает проекту двигаться?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — PilotInsightReport. Лия не изменяет данные — только анализирует и предлагает.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "pilot_insight",
+      pilotInsightReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: analyzeList.slice(0, 3).map((project) => ({
+      type: "project" as const,
+      id: project.id as string,
+      title: project.title as string,
+      summary: `${project.status} · ${project.stage}`,
+      href: `/dashboard/projects/${project.id}/workspace`,
+    })),
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleCheckProgress(input: {
   userMessage: string;
   projectId?: string | null;
@@ -1432,6 +1651,24 @@ export async function runLiaEngine(input: {
       };
     }
     return handleEvaluateOutcome({
+      userMessage: input.userMessage,
+      projectId: input.projectId,
+      userId: input.userId,
+    });
+  }
+
+  if (scenario === "pilot_insight") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить анализ препятствий пилота.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "pilot_insight", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handlePilotInsight({
       userMessage: input.userMessage,
       projectId: input.projectId,
       userId: input.userId,

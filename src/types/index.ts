@@ -472,7 +472,16 @@ export type BetaInvite = {
   usedBy: string | null;
 };
 
-export type FeedbackType = "bug" | "idea" | "question" | "review";
+export type FeedbackType =
+  | "bug"
+  | "ux"
+  | "idea"
+  | "business_value"
+  | "lia_quality"
+  | "question"
+  | "review";
+
+export type FeedbackPriority = "low" | "medium" | "high" | "critical";
 
 export type Feedback = {
   id: string;
@@ -483,7 +492,34 @@ export type Feedback = {
   page: string;
   relatedType: string | null;
   relatedId: string | null;
+  priority: FeedbackPriority;
   createdAt?: string;
+};
+
+export type PilotParticipantRecord = {
+  id: string;
+  userId: string | null;
+  role:
+    | "entrepreneur"
+    | "investor"
+    | "expert"
+    | "organization"
+    | "operator";
+  status: "invited" | "active" | "inactive" | "completed";
+  notes: string;
+  createdAt?: string;
+  updatedAt?: string;
+  fullName?: string | null;
+  email?: string | null;
+};
+
+export type PilotChecklistItem = {
+  id: string;
+  participantId: string;
+  item: string;
+  status: "pending" | "done" | "skipped";
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 /** Проблема closed pilot (этап 29). */

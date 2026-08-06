@@ -93,6 +93,13 @@ export const LIA_SCENARIOS: {
     description:
       "KPI, roadmap, project_results, финансы → OutcomeReport (только анализ)",
   },
+  {
+    id: "pilot_insight",
+    label: "Что мешает проекту двигаться?",
+    prompt: "Что мешает проекту двигаться?",
+    description:
+      "Пилот: активность, roadmap, задачи, KPI, сделки → PilotInsightReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -160,6 +167,9 @@ export const CHECK_PROGRESS_START_PATTERN =
 
 export const EVALUATE_OUTCOME_START_PATTERN =
   /оцени\s+результат|оценка\s+результата|результат\s+проекта|evaluate\s+outcome|итог\s+проекта/i;
+
+export const PILOT_INSIGHT_START_PATTERN =
+  /что\s+мешает\s+проекту|мешает\s+двигаться|pilot\s*insight|блокир(ует|уют)\s+проект/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

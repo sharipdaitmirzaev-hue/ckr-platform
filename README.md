@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.35.0-beta** (упаковка ЦКР 1.0 для закрытого пилота).  
-Обзор: [docs/ckr-1.0-overview.md](./docs/ckr-1.0-overview.md) · [User flows](./docs/user-flows.md) · [Demo script](./docs/demo-script.md) · страницы `/about` и `/features`
+Текущая версия ядра: **0.36.0-beta** (Pilot Operations — закрытый пилот).  
+Обзор: [docs/ckr-1.0-overview.md](./docs/ckr-1.0-overview.md) · [Pilot ops](./docs/pilot-operations.md) · [User flows](./docs/user-flows.md) · страницы `/about` и `/features`
 
 ## Стек
 
@@ -55,7 +55,9 @@ supabase           # миграции
 - [Demo-сценарий](./docs/demo-script.md)
 - [Roadmap после 1.0](./docs/roadmap-after-1.0.md)
 - [Пилот ТИНДА](./docs/tinda-pilot.md)
+- [Прогресс пилота ТИНДА](./docs/tinda-pilot-progress.md)
 - [Closed pilot](./docs/closed-pilot.md)
+- [Pilot Operations](./docs/pilot-operations.md)
 
 ### Ядро
 
