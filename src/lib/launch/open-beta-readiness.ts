@@ -192,7 +192,7 @@ function buildProductChecks(input: {
 }): ReadinessCheckItem[] {
   return PRODUCT_READINESS_CHECKS.map((item) => {
     let status: ReadinessStatus = "ready";
-    let detail = item.readyDetail;
+    let detail: string = item.readyDetail;
 
     if (item.id === "lia") {
       if (input.liaPct < 30) {
@@ -228,7 +228,7 @@ function buildBusinessChecks(input: {
 }): ReadinessCheckItem[] {
   return BUSINESS_READINESS_CHECKS.map((item) => {
     let status: ReadinessStatus = "ready";
-    let detail = item.readyDetail;
+    let detail: string = item.readyDetail;
 
     if (item.id === "cases" && input.projects < 5) {
       status = "needs_attention";
