@@ -12,7 +12,6 @@ import {
   OPEN_BETA_WAVE_NAME,
   toOpenBetaJourneyStatus,
   type OpenBetaFeedbackCategory,
-  type OpenBetaJourneyStepKey,
   type OpenBetaRoleKey,
 } from "@/config/open-beta";
 import {
