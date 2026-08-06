@@ -404,13 +404,13 @@ export async function getEcosystemValueDashboard(): Promise<EcosystemValueDashbo
         d.deal_type === "partnership",
     );
 
-    function appCounts(list: typeof apps) {
+    const appCounts = (list: typeof apps) => {
       const sent = list.length;
       const accepted = list.filter((a) => a.status === "accepted").length;
       return { sent, accepted };
-    }
+    };
 
-    function dealCounts(list: typeof deals) {
+    const dealCounts = (list: typeof deals) => {
       const active = list.filter(
         (d) =>
           d.status === "active" ||
@@ -419,7 +419,7 @@ export async function getEcosystemValueDashboard(): Promise<EcosystemValueDashbo
       ).length;
       const completed = list.filter((d) => d.status === "completed").length;
       return { active, completed };
-    }
+    };
 
     const expertApp = appCounts(expertApps);
     const expertDeal = dealCounts(expertDeals);
