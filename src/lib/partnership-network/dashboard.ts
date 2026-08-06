@@ -496,7 +496,7 @@ export async function getPartnershipNetworkDashboard(): Promise<PartnershipNetwo
       }
 
       // Organizations without partnership row → potential partner_found
-      for (const org of orgById.values()) {
+      for (const org of Array.from(orgById.values())) {
         const hasPartnership = rows.some((r) => r.organization_id === org.id);
         if (hasPartnership) continue;
         stageCounts.partner_found += 1;
