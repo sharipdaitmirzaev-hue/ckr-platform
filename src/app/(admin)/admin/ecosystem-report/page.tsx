@@ -52,6 +52,18 @@ export default async function AdminEcosystemReportPage() {
           Decision Gate
         </Link>
         <Link
+          href="/admin/ecosystem-value"
+          className="text-accent hover:underline"
+        >
+          Matching Analysis
+        </Link>
+        <Link
+          href="/admin/launch-decision"
+          className="text-accent hover:underline"
+        >
+          Decision Gate
+        </Link>
+        <Link
           href="/lia?scenario=ecosystem"
           className="rounded-sm border border-accent/40 bg-accent-muted/40 px-3 py-1.5 text-accent hover:bg-accent-muted"
         >

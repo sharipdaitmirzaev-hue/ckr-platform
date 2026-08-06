@@ -19,6 +19,7 @@ import {
   WAVE_REVIEW_START_PATTERN,
   LAUNCH_DECISION_START_PATTERN,
   ECOSYSTEM_START_PATTERN,
+  ECOSYSTEM_VALUE_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -56,6 +57,7 @@ import type {
   WaveReviewReport,
   LaunchDecisionAIReport,
   EcosystemReport,
+  EcosystemValueReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -139,6 +141,9 @@ function detectScenario(
   }
   if (LAUNCH_GOALS_START_PATTERN.test(value)) {
     return "launch_goals";
+  }
+  if (ECOSYSTEM_VALUE_START_PATTERN.test(value)) {
+    return "ecosystem_value";
   }
   if (ECOSYSTEM_START_PATTERN.test(value)) {
     return "ecosystem";
@@ -1254,6 +1259,48 @@ async function handleEcosystemAnalysis(input: {
     metadata: {
       scenario: "ecosystem",
       ecosystemReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleEcosystemValueAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildEcosystemValueReport } = await import(
+    "@/lib/launch/ecosystem-value"
+  );
+  const report: EcosystemValueReport = await buildEcosystemValueReport();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "ecosystem_value" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Какая польза от экосистемы ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — EcosystemValueReport. Лия не изменяет связи и не принимает решения — только анализирует ценность совпадений.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "ecosystem_value",
+      ecosystemValueReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2631,6 +2678,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleEcosystemAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "ecosystem_value") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить EcosystemValueReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "ecosystem_value", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleEcosystemValueAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

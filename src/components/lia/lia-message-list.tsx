@@ -7,6 +7,7 @@ import { LaunchGuideCard } from "@/components/lia/launch-guide";
 import { LaunchReadinessReportCard } from "@/components/lia/launch-readiness-report";
 import { LaunchStatusReportCard } from "@/components/lia/launch-status-report";
 import { EcosystemReportCard } from "@/components/lia/ecosystem-report";
+import { EcosystemValueReportCard } from "@/components/lia/ecosystem-value-report";
 import { LaunchDecisionReportCard } from "@/components/lia/launch-decision-report";
 import { WaveReviewReportCard } from "@/components/lia/wave-review-report";
 import { LiaResults } from "@/components/lia/lia-results";
@@ -88,6 +89,7 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const launchDecisionAIReport =
           message.metadata?.launchDecisionAIReport;
         const ecosystemReport = message.metadata?.ecosystemReport;
+        const ecosystemValueReport = message.metadata?.ecosystemValueReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -168,6 +170,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && ecosystemReport ? (
               <EcosystemReportCard report={ecosystemReport} />
+            ) : null}
+            {!isUser && ecosystemValueReport ? (
+              <EcosystemValueReportCard report={ecosystemValueReport} />
             ) : null}
           </li>
         );

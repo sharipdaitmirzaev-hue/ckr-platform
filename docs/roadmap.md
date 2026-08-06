@@ -425,6 +425,15 @@
 - Лия: `EcosystemReport` («Как развивается экосистема ЦКР?»)
 - Без новых крупных бизнес-модулей
 
-## Этап 47+ — backlog
+## Этап 47 — Ecosystem Value ✅ (код готов)
+
+Подробности: [ecosystem-value.md](./ecosystem-value.md)
+
+- `EcosystemMatchingMetrics` + `MatchQualityScore`
+- `/admin/ecosystem-value`: ценность связей, MatchingChart, ConnectionTable
+- Лия: `EcosystemValueReport` («Какая польза от экосистемы ЦКР?»)
+- Без новых крупных бизнес-модулей
+
+## Этап 48+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

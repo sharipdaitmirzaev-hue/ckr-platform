@@ -4,6 +4,19 @@
 
 ---
 
+## 0.47.0-beta — 2026-03-25
+
+Ecosystem Value — анализ ценности связей и качества совпадений (без новых бизнес-модулей).
+
+### Изменения
+
+- `EcosystemMatchingMetrics` + `MatchQualityScore` (воронка совпадений)
+- Дашборд `/admin/ecosystem-value`: показатели, связи, MatchingChart, ConnectionTable
+- Лия: «Какая польза от экосистемы ЦКР?» → `EcosystemValueReport`
+- Документация: `ecosystem-value.md`, `tinda-ecosystem-review.md`
+
+---
+
 ## 0.46.0-beta — 2026-03-25
 
 Wave 2 — Ecosystem Beta: проверка сетевого эффекта ЦКР (без новых бизнес-модулей).

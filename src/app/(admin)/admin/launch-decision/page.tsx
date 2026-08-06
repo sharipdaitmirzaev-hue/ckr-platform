@@ -78,6 +78,12 @@ export default async function AdminLaunchDecisionPage() {
           Ecosystem Report
         </Link>
         <Link
+          href="/admin/ecosystem-value"
+          className="text-accent hover:underline"
+        >
+          Matching Analysis
+        </Link>
+        <Link
           href="/admin/improvements"
           className="text-accent hover:underline"
         >

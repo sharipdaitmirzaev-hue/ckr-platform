@@ -2,7 +2,9 @@
 
 Этап 46 · Версия `0.46.0-beta`  
 UI: `/admin/ecosystem-report` · Волна: **Wave 2 — Ecosystem Beta** (`beta`, active)  
-Связано: [launch-decision-gate.md](./launch-decision-gate.md) · [closed-wave-tinda-report.md](./closed-wave-tinda-report.md)
+Связано: [ecosystem-value.md](./ecosystem-value.md) · [launch-decision-gate.md](./launch-decision-gate.md) · [closed-wave-tinda-report.md](./closed-wave-tinda-report.md)
+
+Цепочка: **Wave 2 → Ecosystem Report → Matching Analysis → Decision Gate**.
 
 Новые бизнес-модули не добавляются. Цель — проверить **сетевой эффект** ЦКР.
 

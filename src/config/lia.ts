@@ -177,6 +177,13 @@ export const LIA_SCENARIOS: {
     description:
       "Wave 2: пользователи, проекты, эксперты, инвестиции, связи → EcosystemReport (только анализ)",
   },
+  {
+    id: "ecosystem_value",
+    label: "Какая польза от экосистемы ЦКР?",
+    prompt: "Какая польза от экосистемы ЦКР?",
+    description:
+      "Ценность связей и MatchQualityScore → EcosystemValueReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -277,6 +284,9 @@ export const WAVE_REVIEW_START_PATTERN =
 
 export const LAUNCH_DECISION_START_PATTERN =
   /готов\s+ли\s+цкр\s+к\s+следующей\s+волне|следующей\s+волне|launch\s*decision|decision\s*gate/i;
+
+export const ECOSYSTEM_VALUE_START_PATTERN =
+  /какая\s+польза\s+от\s+экосистемы\s+цкр|польза\s+от\s+экосистемы|ценность\s+экосистемы|ecosystem\s*value|match\s*quality/i;
 
 export const ECOSYSTEM_START_PATTERN =
   /как\s+развивается\s+экосистема\s+цкр|развитие\s+экосистемы|экосистема\s+цкр|ecosystem\s*report|ecosystem\s*beta/i;

@@ -66,6 +66,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Wave 2: связи и сетевой эффект экосистемы",
   },
   {
+    label: "Ecosystem Value",
+    href: "/admin/ecosystem-value",
+    description: "Ценность связей и качество совпадений",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",
