@@ -65,8 +65,14 @@ export default async function AdminBetaReportPage() {
           Приглашения
         </Link>
         <Link
-          href="/lia?scenario=beta_analysis"
+          href="/admin/beta-review"
           className="rounded-sm border border-accent/40 bg-accent-muted/40 px-3 py-1.5 text-accent hover:bg-accent-muted"
+        >
+          Beta Review
+        </Link>
+        <Link
+          href="/lia?scenario=beta_analysis"
+          className="text-accent hover:underline"
         >
           Лия: как проходит запуск
         </Link>

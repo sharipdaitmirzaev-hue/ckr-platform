@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.38.0-beta** (controlled beta).  
-Обзор: [docs/controlled-beta.md](./docs/controlled-beta.md) · [Pilot ops](./docs/pilot-operations.md) · [Improvement loop](./docs/product-improvement-loop.md) · страницы `/about` и `/features`
+Текущая версия ядра: **0.39.0-beta** (beta review → public launch plan).  
+Обзор: [docs/beta-review.md](./docs/beta-review.md) · [Public launch plan](./docs/public-launch-plan.md) · [Controlled beta](./docs/controlled-beta.md) · страницы `/about` и `/features`
 
 ## Стек
 
@@ -62,6 +62,9 @@ supabase           # миграции
 - [Обзор пилота ТИНДА](./docs/tinda-pilot-review.md)
 - [Controlled Beta](./docs/controlled-beta.md)
 - [ТИНДА beta report](./docs/tinda-beta-report.md)
+- [Beta Review](./docs/beta-review.md)
+- [Public launch plan](./docs/public-launch-plan.md)
+- [ТИНДА beta review](./docs/tinda-beta-review.md)
 
 ### Ядро
 

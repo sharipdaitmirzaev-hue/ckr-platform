@@ -84,6 +84,8 @@ RLS: пользователь видит и меняет только свои �
 11. **Что мешает проекту двигаться?** — `pilot_insight` → `PilotInsightReport` (блокировки, неактивные участники, рекомендации; только анализ). См. [pilot-operations.md](./pilot-operations.md).
 12. **Что улучшить в ЦКР?** — `product_improvement` → `ProductImprovementReport` (проблемы, паттерны, приоритетные действия; только анализ). См. [product-improvement-loop.md](./product-improvement-loop.md).
 13. **Как проходит запуск ЦКР?** — `beta_analysis` → `BetaAnalysisReport` (активация, блокеры, неиспользуемые функции; только анализ). См. [controlled-beta.md](./controlled-beta.md).
+14. **Сделай обзор закрытой beta** — `beta_review` → `BetaReviewReport` (только по данным). См. [beta-review.md](./beta-review.md).
+15. **Что нужно исправить перед запуском?** — `launch_readiness` → `LaunchReadinessReport` (только анализ). См. [public-launch-plan.md](./public-launch-plan.md).
 
 Структура результата поиска:
 

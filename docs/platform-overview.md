@@ -5,7 +5,7 @@
 
 Логика: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Версия ядра после Этапа 38: `0.38.0-beta` (controlled beta, см. [controlled-beta.md](./controlled-beta.md)).
+Версия ядра после Этапа 39: `0.39.0-beta` (beta review, см. [beta-review.md](./beta-review.md)).
 
 ---
 

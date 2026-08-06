@@ -350,6 +350,15 @@
 - ТИНДА как beta case
 - Без новых крупных бизнес-модулей
 
-## Этап 39+ — backlog
+## Этап 39 — Beta Review ✅ (код готов)
+
+Подробности: [beta-review.md](./beta-review.md)
+
+- `/admin/beta-review`: воронка, роли, модули, PMF
+- `BetaReviewReport` / `LaunchReadinessReport`
+- План public launch и обзор ТИНДА
+- Без новых крупных бизнес-модулей
+
+## Этап 40+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

@@ -10,6 +10,8 @@ import {
   LIA_DISCLAIMER,
   PILOT_INSIGHT_START_PATTERN,
   BETA_ANALYSIS_START_PATTERN,
+  BETA_REVIEW_START_PATTERN,
+  LAUNCH_READINESS_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -37,6 +39,8 @@ import type {
   OutcomeReport,
   PilotInsightReport,
   BetaAnalysisReport,
+  BetaReviewReport,
+  LaunchReadinessReport,
   ProductImprovementReport,
   ProgressReport,
   ProjectDraft,
@@ -109,6 +113,12 @@ function detectScenario(
   }
   if (BETA_ANALYSIS_START_PATTERN.test(value)) {
     return "beta_analysis";
+  }
+  if (BETA_REVIEW_START_PATTERN.test(value)) {
+    return "beta_review";
+  }
+  if (LAUNCH_READINESS_START_PATTERN.test(value)) {
+    return "launch_readiness";
   }
   return null;
 }
@@ -1006,6 +1016,88 @@ async function handleEvaluateOutcome(input: {
         href: `/dashboard/projects/${project.id}/workspace`,
       },
     ],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleBetaReview(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { getBetaReviewDashboard } = await import("@/lib/beta/review");
+  const dashboard = await getBetaReviewDashboard();
+  const report: BetaReviewReport = dashboard.reviewReport;
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "beta",
+      metadata: { source: "lia", scenario: "beta_review" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Обзор закрытой beta сформирован по данным платформы.",
+      "",
+      report.summary,
+      "",
+      "Ниже — BetaReviewReport. Лия не изменяет продукт — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "beta_review",
+      betaReviewReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleLaunchReadiness(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { getBetaReviewDashboard } = await import("@/lib/beta/review");
+  const dashboard = await getBetaReviewDashboard();
+  const report: LaunchReadinessReport = dashboard.launchReport;
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "beta",
+      metadata: { source: "lia", scenario: "launch_readiness" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Что нужно исправить перед запуском?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — LaunchReadinessReport. Лия не открывает доступ и не меняет настройки — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "launch_readiness",
+      launchReadinessReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
     projectDraft: null,
     solutionDraft: null,
     catalogDraft: null,
@@ -2026,6 +2118,34 @@ export async function runLiaEngine(input: {
       };
     }
     return handleBetaAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "beta_review") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить обзор beta.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "beta_review", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleBetaReview({ userId: input.userId });
+  }
+
+  if (scenario === "launch_readiness") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы оценить готовность к запуску.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "launch_readiness", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLaunchReadiness({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

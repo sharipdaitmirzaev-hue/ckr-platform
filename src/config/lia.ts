@@ -114,6 +114,20 @@ export const LIA_SCENARIOS: {
     description:
       "Controlled beta: активация, блокеры, неиспользуемые модули → BetaAnalysisReport",
   },
+  {
+    id: "beta_review",
+    label: "Сделай обзор закрытой beta",
+    prompt: "Сделай обзор закрытой beta",
+    description:
+      "Воронка, потоки, unused features, ценность → BetaReviewReport (только данные)",
+  },
+  {
+    id: "launch_readiness",
+    label: "Что нужно исправить перед запуском?",
+    prompt: "Что нужно исправить перед запуском?",
+    description:
+      "Critical issues, действия, риски launch → LaunchReadinessReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -190,6 +204,12 @@ export const PRODUCT_IMPROVEMENT_START_PATTERN =
 
 export const BETA_ANALYSIS_START_PATTERN =
   /как\s+проходит\s+запуск|запуск\s+цкр|beta\s*analysis|controlled\s*beta|как\s+ид[её]т\s+beta/i;
+
+export const BETA_REVIEW_START_PATTERN =
+  /обзор\s+закрытой\s+beta|обзор\s+beta|beta\s*review|анализ\s+beta/i;
+
+export const LAUNCH_READINESS_START_PATTERN =
+  /что\s+нужно\s+исправить\s+перед\s+запуском|исправить\s+перед\s+запуском|launch\s*readiness|готовность\s+к\s+запуску/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

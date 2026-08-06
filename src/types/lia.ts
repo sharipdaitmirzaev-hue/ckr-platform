@@ -16,7 +16,9 @@ export type LiaScenarioId =
   | "evaluate_outcome"
   | "pilot_insight"
   | "product_improvement"
-  | "beta_analysis";
+  | "beta_analysis"
+  | "beta_review"
+  | "launch_readiness";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -97,6 +99,25 @@ export type BetaAnalysisReport = {
   blocked_users: string[];
   unused_features: string[];
   recommendations: string[];
+};
+
+/** Обзор закрытой beta (этап 39, только по данным). */
+export type BetaReviewReport = {
+  summary: string;
+  successful_flows: string[];
+  blocked_flows: string[];
+  unused_features: string[];
+  user_problems: string[];
+  business_value_signals: string[];
+  recommendations: string[];
+};
+
+/** Готовность к public launch (только анализ). */
+export type LaunchReadinessReport = {
+  summary: string;
+  critical_issues: string[];
+  recommended_actions: string[];
+  launch_risks: string[];
 };
 
 export type LiaSession = {
@@ -272,6 +293,8 @@ export type LiaMessageMetadata = {
   pilotInsightReport?: PilotInsightReport | null;
   productImprovementReport?: ProductImprovementReport | null;
   betaAnalysisReport?: BetaAnalysisReport | null;
+  betaReviewReport?: BetaReviewReport | null;
+  launchReadinessReport?: LaunchReadinessReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;
