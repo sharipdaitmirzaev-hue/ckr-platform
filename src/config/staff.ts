@@ -26,6 +26,8 @@ export const STAFF_ADMIN_PREFIXES = [
   "/admin/public-launch",
   "/admin/public-launch-kpi",
   "/admin/public-launch-operations",
+  "/admin/growth",
+  "/admin/growth-kpi",
 ] as const;
 
 export function isStaffAdminPath(pathname: string): boolean {

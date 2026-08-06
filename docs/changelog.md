@@ -4,6 +4,20 @@
 
 ---
 
+## 0.60.0-beta — 2026-08-06
+
+Growth Engine — управляемый рост после Public Launch (без новых крупных бизнес-модулей).
+
+### Изменения
+
+- Дашборды `/admin/growth` и `/admin/growth-kpi`
+- GrowthChannels, ProjectGrowthPipeline (CRM), ExpertGrowthPipeline, PartnerGrowthTracking
+- GrowthTasks (`growth_tasks`) + операционные типы роста
+- Лия: «Как растёт ЦКР?» → `GrowthReport`
+- Документация: `growth-engine.md`
+
+---
+
 ## 0.59.0-beta — 2026-08-06
 
 Public Launch Operations — активация волны и операционное управление (без новых крупных бизнес-модулей).

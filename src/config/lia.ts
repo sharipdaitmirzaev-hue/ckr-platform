@@ -254,6 +254,13 @@ export const LIA_SCENARIOS: {
     description:
       "Launch Operations: live-метрики, health, задачи → LiveLaunchReport (только анализ)",
   },
+  {
+    id: "growth",
+    label: "Как растёт ЦКР?",
+    prompt: "Как растёт ЦКР?",
+    description:
+      "Growth Engine: пользователи, проекты, эксперты, партнёры, каналы → GrowthReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -387,6 +394,9 @@ export const PUBLIC_LAUNCH_START_PATTERN =
 
 export const LIVE_LAUNCH_START_PATTERN =
   /как\s+проходит\s+запуск\s+цкр\s+сейчас|запуск\s+цкр\s+сейчас|live\s*launch(\s*report)?|операци(и|онный)\s+запуск/i;
+
+export const GROWTH_START_PATTERN =
+  /как\s+раст[её]т\s+цкр|рост\s+цкр|growth\s*(engine|report)?|growth\s*kpi/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

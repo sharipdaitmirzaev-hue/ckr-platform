@@ -126,6 +126,16 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Операционное управление активным Public Launch",
   },
   {
+    label: "Growth",
+    href: "/admin/growth",
+    description: "Рост аудитории, проектов, экспертов и партнёров",
+  },
+  {
+    label: "Growth KPI",
+    href: "/admin/growth-kpi",
+    description: "User / Marketplace / Ecosystem / Partnership KPI роста",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

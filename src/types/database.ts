@@ -401,6 +401,15 @@ export type DbLaunchOpsTaskType =
 
 export type DbLaunchOpsTaskStatus = "new" | "in_progress" | "completed";
 
+export type DbGrowthTaskType =
+  | "find_partner"
+  | "invite_experts"
+  | "attract_projects"
+  | "prepare_event"
+  | "create_content";
+
+export type DbGrowthTaskStatus = "new" | "in_progress" | "completed";
+
 export type PublicLaunchActivationRow = {
   id: string;
   wave_id: string | null;
@@ -419,6 +428,18 @@ export type LaunchOperationsTaskRow = {
   title: string;
   description: string;
   status: DbLaunchOpsTaskStatus;
+  assignee_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GrowthTaskRow = {
+  id: string;
+  task_type: DbGrowthTaskType;
+  title: string;
+  description: string;
+  status: DbGrowthTaskStatus;
   assignee_id: string | null;
   created_by: string | null;
   created_at: string;
@@ -1688,6 +1709,27 @@ export type Database = {
           updated_at: string;
         }>;
       };
+      growth_tasks: {
+        Row: GrowthTaskRow;
+        Insert: {
+          id?: string;
+          task_type: DbGrowthTaskType;
+          title: string;
+          description?: string;
+          status?: DbGrowthTaskStatus;
+          assignee_id?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          task_type: DbGrowthTaskType;
+          title: string;
+          description: string;
+          status: DbGrowthTaskStatus;
+          assignee_id: string | null;
+          created_by: string | null;
+          updated_at: string;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -2251,6 +2293,8 @@ export type Database = {
       public_launch_decision_kind: DbPublicLaunchDecisionKind;
       launch_ops_task_type: DbLaunchOpsTaskType;
       launch_ops_task_status: DbLaunchOpsTaskStatus;
+      growth_task_type: DbGrowthTaskType;
+      growth_task_status: DbGrowthTaskStatus;
     };
   };
 };

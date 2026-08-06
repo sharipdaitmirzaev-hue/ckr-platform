@@ -549,7 +549,16 @@
 - ЦКР как работающая публичная beta-платформа
 - Без новых крупных бизнес-модулей
 
-## Этап 60+ — backlog
+## Этап 60 — Growth Engine ✅ (код готов)
 
-Рост, партнёрства, проекты, сделки, монетизация — см. roadmap-after-1.0.
+Подробности: [growth-engine.md](./growth-engine.md)
+
+- `/admin/growth` + `/admin/growth-kpi`
+- GrowthChannels · ProjectGrowthPipeline · ExpertGrowthPipeline · PartnerGrowthTracking
+- GrowthTasks + Лия «Как растёт ЦКР?» → GrowthReport
+- Без новых крупных бизнес-модулей / каталогов / ролей
+
+## Этап 61+ — backlog
+
+Сделки, монетизация, масштаб партнёрств — см. roadmap-after-1.0.
 
