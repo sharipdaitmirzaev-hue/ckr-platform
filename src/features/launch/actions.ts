@@ -350,9 +350,11 @@ export async function recordPublicLaunchDecisionAction(
  * planned → active; Open Beta Wave → completed.
  */
 export async function activatePublicLaunchWaveAction(
-  _prev: LaunchActionState,
-  _formData: FormData,
+  prev: LaunchActionState,
+  formData: FormData,
 ): Promise<LaunchActionState> {
+  void prev;
+  void formData;
   const staff = await requireStaff("/admin/public-launch");
   const supabase = createClient();
 

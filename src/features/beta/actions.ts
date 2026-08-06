@@ -270,6 +270,8 @@ export async function submitFeedbackAction(input: {
   revalidatePath("/admin/improvements");
   revalidatePath("/admin/open-beta");
   revalidatePath("/admin/open-beta-growth");
+  revalidatePath("/admin/public-launch");
+  revalidatePath("/admin/public-launch-kpi");
   return { ok: true };
 }
 
