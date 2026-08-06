@@ -11,6 +11,7 @@ export const FIRST_USERS_WAVE_GOAL_ID_MAP = FIRST_USERS_WAVE_GOAL_IDS;
 
 /** Источники приглашения beta_invites.source */
 export const INVITE_SOURCES = [
+  "beta_expansion_wave",
   "first_users_wave",
   "manual",
   "referral",
@@ -21,6 +22,7 @@ export const INVITE_SOURCES = [
 export type InviteSource = (typeof INVITE_SOURCES)[number];
 
 export const inviteSourceLabels: Record<InviteSource, string> = {
+  beta_expansion_wave: "Beta Expansion Wave",
   first_users_wave: "First Users Wave",
   manual: "Вручную",
   referral: "Реферал",

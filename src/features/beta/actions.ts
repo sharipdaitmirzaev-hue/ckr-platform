@@ -36,6 +36,7 @@ function revalidateInvites() {
   revalidatePath("/admin/pilot");
   revalidatePath("/admin/beta-report");
   revalidatePath("/admin/first-users");
+  revalidatePath("/admin/beta-expansion");
 }
 
 export async function createBetaInviteAction(
@@ -47,7 +48,7 @@ export async function createBetaInviteAction(
     .trim()
     .toLowerCase();
   const roleRaw = String(formData.get("role") ?? "entrepreneur");
-  const sourceRaw = String(formData.get("source") ?? "first_users_wave");
+  const sourceRaw = String(formData.get("source") ?? "beta_expansion_wave");
   const markSent = formData.get("markSent") === "on";
 
   if (!email || !email.includes("@")) {
@@ -58,7 +59,7 @@ export async function createBetaInviteAction(
   }
   const source: InviteSource = isInviteSource(sourceRaw)
     ? sourceRaw
-    : "first_users_wave";
+    : "beta_expansion_wave";
 
   const code = generateInviteCode();
   const supabase = createClient();

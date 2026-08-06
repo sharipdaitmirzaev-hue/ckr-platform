@@ -481,6 +481,16 @@
 - Лия: «Что улучшилось после исправлений?»
 - Без новых крупных бизнес-модулей
 
-## Этап 53+ — backlog
+## Этап 53 — Beta Expansion Wave ✅ (код готов)
+
+Подробности: [beta-expansion.md](./beta-expansion.md)
+
+- Launch Wave «Beta Expansion Wave» (`beta`, `active`)
+- `/admin/beta-expansion`: когорта, активация, экосистема, сравнение с First Users
+- BetaExpansionDecision + BetaExpansionReport
+- Лия: «Как проходит расширенная beta?»
+- Без новых крупных бизнес-модулей
+
+## Этап 54+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

@@ -4,6 +4,21 @@
 
 ---
 
+## 0.53.0-beta — 2026-08-06
+
+Beta Expansion Wave — расширенная закрытая beta после Product Fix Sprint (без новых крупных модулей).
+
+### Изменения
+
+- Launch Wave «Beta Expansion Wave» (`beta`, `active`) + цели активации и экосистемы
+- Дашборд `/admin/beta-expansion`: пользователи, роли, активация, экосистема, сравнение с First Users
+- Feedback loop: проблемы до/после Product Fix
+- `BetaExpansionDecision`: continue_beta / open_beta_ready / needs_improvement
+- Лия: «Как проходит расширенная beta?» → `BetaExpansionReport`
+- Документация: `beta-expansion.md`
+
+---
+
 ## 0.52.0-beta — 2026-08-06
 
 Product Fix Sprint — исправления Critical/High по First Users Review (без новых крупных модулей).

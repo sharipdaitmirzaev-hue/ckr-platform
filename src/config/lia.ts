@@ -205,6 +205,13 @@ export const LIA_SCENARIOS: {
     description:
       "First Users Review: активация, поведение, успехи, проблемы → FirstUsersReviewReport (только анализ)",
   },
+  {
+    id: "beta_expansion",
+    label: "Как проходит расширенная beta?",
+    prompt: "Как проходит расширенная beta?",
+    description:
+      "Beta Expansion Wave: активация, роли, Лия, экосистема → BetaExpansionReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -320,6 +327,9 @@ export const FIRST_USERS_START_PATTERN =
 
 export const FIRST_USERS_REVIEW_START_PATTERN =
   /что\s+показал\s+первый\s+запуск\s+цкр|показал\s+первый\s+запуск|first\s*users\s*review|обзор\s+первого\s+запуска/i;
+
+export const BETA_EXPANSION_START_PATTERN =
+  /как\s+проходит\s+расширенн(ая|ой)\s+beta|расширенн(ая|ой)\s+beta|beta\s*expansion(\s*wave)?|beta\s*expansion\s*report/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

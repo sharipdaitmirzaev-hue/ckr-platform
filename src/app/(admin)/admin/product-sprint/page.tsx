@@ -56,6 +56,9 @@ export default async function AdminProductSprintPage() {
         >
           First Users Review
         </Link>
+        <Link href="/admin/beta-expansion" className="text-accent hover:underline">
+          Beta Expansion
+        </Link>
         <Link href="/admin/improvements" className="text-accent hover:underline">
           Улучшения
         </Link>

@@ -86,6 +86,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Исправления Critical/High по First Users Review",
   },
   {
+    label: "Beta Expansion",
+    href: "/admin/beta-expansion",
+    description: "Расширенная закрытая beta после Product Fix Sprint",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

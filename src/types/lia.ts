@@ -29,7 +29,8 @@ export type LiaScenarioId =
   | "ecosystem"
   | "ecosystem_value"
   | "first_users"
-  | "first_users_review";
+  | "first_users_review"
+  | "beta_expansion";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -259,6 +260,17 @@ export type FirstUsersReviewReport = {
   recommendations: string[];
 };
 
+/** Сценарий «Как проходит расширенная beta?» (этап 53, только анализ). */
+export type BetaExpansionReport = {
+  summary: string;
+  activation: string[];
+  role_analysis: string[];
+  lia_usage: string[];
+  ecosystem_growth: string[];
+  problems: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -447,6 +459,7 @@ export type LiaMessageMetadata = {
   firstUsersReport?: FirstUsersReport | null;
   firstUsersLiaReport?: FirstUsersLiaReport | null;
   firstUsersReviewReport?: FirstUsersReviewReport | null;
+  betaExpansionReport?: BetaExpansionReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

@@ -130,6 +130,20 @@ export async function syncLaunchGoalsForWave(
     firstUsersMetrics = dashboard.metrics;
     firstUsersMetricValueForGoal = firstUsers.firstUsersMetricValueForGoal;
   }
+  let betaExpansionMetrics: Awaited<
+    ReturnType<
+      typeof import("@/lib/launch/beta-expansion").getBetaExpansionDashboard
+    >
+  >["metrics"] | null = null;
+  let betaExpansionMetricValueForGoal: typeof import("@/lib/launch/beta-expansion").betaExpansionMetricValueForGoal | null =
+    null;
+  if (wave.id === LAUNCH_WAVE_IDS.betaExpansion) {
+    const betaExpansion = await import("@/lib/launch/beta-expansion");
+    const dashboard = await betaExpansion.getBetaExpansionDashboard();
+    betaExpansionMetrics = dashboard.metrics;
+    betaExpansionMetricValueForGoal =
+      betaExpansion.betaExpansionMetricValueForGoal;
+  }
   const goals = await listLaunchGoals(wave.id);
   const supabase = createClient();
   const updated: LaunchGoalRow[] = [];
@@ -148,12 +162,18 @@ export async function syncLaunchGoalsForWave(
       firstUsersMetrics && firstUsersMetricValueForGoal
         ? firstUsersMetricValueForGoal(goal.title, firstUsersMetrics)
         : null;
+    const betaExpansionValue =
+      betaExpansionMetrics && betaExpansionMetricValueForGoal
+        ? betaExpansionMetricValueForGoal(goal.title, betaExpansionMetrics)
+        : null;
     const current =
-      firstUsersValue != null
-        ? firstUsersValue
-        : ecosystemValue != null
-          ? ecosystemValue
-          : metricValueForGoal(goal.metric_type, goal.title, metrics);
+      betaExpansionValue != null
+        ? betaExpansionValue
+        : firstUsersValue != null
+          ? firstUsersValue
+          : ecosystemValue != null
+            ? ecosystemValue
+            : metricValueForGoal(goal.metric_type, goal.title, metrics);
     let status = goal.status as LaunchGoalStatus;
     const becameAchieved =
       status === "active" &&

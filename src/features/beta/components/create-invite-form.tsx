@@ -66,7 +66,7 @@ export function CreateInviteForm() {
         <select
           id="invite-source"
           name="source"
-          defaultValue="first_users_wave"
+          defaultValue="beta_expansion_wave"
           className="h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
         >
           {INVITE_SOURCES.map((source) => (

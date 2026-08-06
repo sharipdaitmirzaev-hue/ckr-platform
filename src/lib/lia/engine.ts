@@ -22,6 +22,7 @@ import {
   ECOSYSTEM_VALUE_START_PATTERN,
   FIRST_USERS_START_PATTERN,
   FIRST_USERS_REVIEW_START_PATTERN,
+  BETA_EXPANSION_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -64,6 +65,7 @@ import type {
   EcosystemValueReport,
   FirstUsersReport,
   FirstUsersReviewReport,
+  BetaExpansionReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -153,6 +155,9 @@ function detectScenario(
   }
   if (FIRST_USERS_REVIEW_START_PATTERN.test(value)) {
     return "first_users_review";
+  }
+  if (BETA_EXPANSION_START_PATTERN.test(value)) {
+    return "beta_expansion";
   }
   if (FIRST_USERS_START_PATTERN.test(value)) {
     return "first_users";
@@ -1359,6 +1364,48 @@ async function handleFirstUsersReviewAnalysis(input: {
       scenario: "first_users_review",
       firstUsersReviewReport: report,
       firstUsersLiaReport: liaReport,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleBetaExpansionAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildBetaExpansionReportAsync } = await import(
+    "@/lib/launch/beta-expansion"
+  );
+  const report: BetaExpansionReport = await buildBetaExpansionReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "beta_expansion" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как проходит расширенная beta?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — BetaExpansionReport. Лия только анализирует Beta Expansion Wave.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "beta_expansion",
+      betaExpansionReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2883,6 +2930,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handleFirstUsersReviewAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "beta_expansion") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить BetaExpansionReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "beta_expansion",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleBetaExpansionAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.52.0-beta** (Product Fix Sprint).  
-Обзор: [Product Fix Sprint](./docs/product-fix-sprint.md) · [First Users Review](./docs/first-users-review.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.53.0-beta** (Beta Expansion Wave).  
+Обзор: [Beta Expansion](./docs/beta-expansion.md) · [Product Fix Sprint](./docs/product-fix-sprint.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 
