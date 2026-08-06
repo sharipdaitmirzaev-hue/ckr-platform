@@ -189,6 +189,15 @@ function buildProductChecks(input: {
 }): ReadinessCheckItem[] {
   return PUBLIC_PRODUCT_CHECKS.map((item) => {
     if (item.id === "lia") {
+      if (!input.hasEnv) {
+        return {
+          id: item.id,
+          label: item.label,
+          status: "blocked",
+          detail: "Supabase env не настроен — Лия недоступна в полном объёме.",
+          href: item.href,
+        };
+      }
       const status: ReadinessStatus =
         input.liaPct >= 35
           ? "ready"
@@ -233,12 +242,12 @@ function buildProductChecks(input: {
         href: item.href,
       };
     }
-    if (!input.hasEnv && (item.id === "dashboards" || item.id === "lia")) {
+    if (!input.hasEnv && item.id === "dashboards") {
       return {
         id: item.id,
         label: item.label,
         status: "blocked",
-        detail: "Supabase env не настроен — кабинеты/Лия недоступны в полном объёме.",
+        detail: "Supabase env не настроен — кабинеты недоступны в полном объёме.",
         href: item.href,
       };
     }
@@ -307,19 +316,11 @@ function buildBusinessLaunchReadiness(input: {
         href: item.href,
       };
     }
-    if (item.id === "value_clarity") {
-      return {
-        id: item.id,
-        label: item.label,
-        status: input.deals + input.projects >= 3 ? "ready" : "needs_attention",
-        detail: item.readyDetail,
-        href: item.href,
-      };
-    }
+    // value_clarity
     return {
       id: item.id,
       label: item.label,
-      status: "ready" as const,
+      status: input.deals + input.projects >= 3 ? "ready" : "needs_attention",
       detail: item.readyDetail,
       href: item.href,
     };
