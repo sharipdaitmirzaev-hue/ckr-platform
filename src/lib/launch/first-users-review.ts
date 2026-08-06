@@ -469,16 +469,21 @@ async function loadTindaInsight(
       const [viewsRes, fbRes] = await Promise.all([
         supabase
           .from("analytics_events")
-          .select("id", { count: "exact", head: true })
+          .select("id, metadata")
           .eq("event_type", "public_page_view")
-          .contains("metadata", { path: "/cases" }),
+          .limit(2000),
         supabase
           .from("feedback")
           .select("id, message")
           .ilike("message", "%тинд%")
           .limit(20),
       ]);
-      caseViews = viewsRes.count ?? 0;
+      caseViews = ((viewsRes.data ?? []) as Array<{ metadata: Record<string, unknown> | null }>).filter(
+        (row) => {
+          const path = row.metadata?.path;
+          return typeof path === "string" && path.startsWith("/cases");
+        },
+      ).length;
       tindaMentions = (fbRes.data ?? []).length;
       for (const row of fbRes.data ?? []) {
         const msg = (row as { message?: string }).message ?? "";
