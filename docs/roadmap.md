@@ -339,6 +339,17 @@
 - Обзор пилота ТИНДА: `tinda-pilot-review.md`
 - Без новых крупных бизнес-модулей
 
-## Этап 38+ — backlog
+## Этап 38 — Controlled Beta ✅ (код готов)
+
+Подробности: [controlled-beta.md](./controlled-beta.md)
+
+- Управление доступом `beta_invites` (invited/activated/completed/disabled)
+- Beta Participants + `/admin/beta-report`
+- Онбординг-метрики и чеклисты сценариев ролей
+- Лия: `BetaAnalysisReport`
+- ТИНДА как beta case
+- Без новых крупных бизнес-модулей
+
+## Этап 39+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

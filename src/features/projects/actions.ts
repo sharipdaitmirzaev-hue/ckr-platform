@@ -127,6 +127,14 @@ export async function createProjectAction(
     entityId: data.id,
   });
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_project_created",
+    userId: user.id,
+    entityType: "project",
+    entityId: data.id,
+  });
+
   revalidateProject(data.id);
   redirect("/dashboard/projects?feedback=project_created");
 }

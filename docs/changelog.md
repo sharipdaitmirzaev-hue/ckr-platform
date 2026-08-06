@@ -4,6 +4,21 @@
 
 ---
 
+## 0.38.0-beta — 2026-03-25
+
+Controlled Beta — ограниченный запуск ЦКР на реальных пользователях (без новых бизнес-модулей).
+
+### Изменения
+
+- Статусы `beta_invites`: `invited` / `activated` / `completed` / `disabled` (+ legacy)
+- Beta Participants на `/admin/pilot`, отчёт `/admin/beta-report`
+- Онбординг-события в `analytics_events` (first_* / onboarding_*)
+- Чеклисты сценариев ролей
+- Лия: «Как проходит запуск ЦКР?» → `BetaAnalysisReport`
+- Документация: `controlled-beta.md`, `tinda-beta-report.md`
+
+---
+
 ## 0.37.0-beta — 2026-03-25
 
 Product Improvement Loop — цикл улучшений на данных закрытого пилота (без новых бизнес-модулей).

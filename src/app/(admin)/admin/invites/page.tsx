@@ -19,9 +19,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 function inviteTone(status: BetaInviteStatus) {
-  if (status === "used") return "success" as const;
-  if (status === "sent") return "accent" as const;
-  if (status === "expired") return "danger" as const;
+  if (status === "completed" || status === "activated" || status === "used") {
+    return "success" as const;
+  }
+  if (status === "invited" || status === "sent") return "accent" as const;
+  if (status === "disabled" || status === "expired") return "danger" as const;
   return "warning" as const;
 }
 

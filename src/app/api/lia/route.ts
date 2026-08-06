@@ -173,6 +173,15 @@ export async function POST(request: Request) {
       metadata: { scenario, projectId },
     });
 
+    const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+    await trackBetaMilestone({
+      eventType: "first_lia_use",
+      userId: current.user.id,
+      entityType: "lia_session",
+      entityId: sessionId,
+      metadata: { scenario: scenario ?? null },
+    });
+
     return apiSuccess({
       sessionId,
       assistantMessage,

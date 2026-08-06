@@ -140,6 +140,14 @@ export async function createApplicationAction(
     entityId: parsed.data.targetId,
   });
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_application_sent",
+    userId: user.id,
+    entityType: parsed.data.targetType,
+    entityId: parsed.data.targetId,
+  });
+
   revalidatePath("/dashboard/applications");
   revalidatePath(`/project/${parsed.data.targetId}`);
   revalidatePath(`/opportunity/${parsed.data.targetId}`);

@@ -23,6 +23,9 @@ import { CreatePilotParticipantForm } from "@/features/pilot/components/create-p
 import { PilotChecklistStatusForm } from "@/features/pilot/components/pilot-checklist-status-form";
 import { PilotIssueStatusForm } from "@/features/pilot/components/pilot-issue-status-form";
 import { PilotParticipantStatusForm } from "@/features/pilot/components/pilot-participant-status-form";
+import { betaInviteStatusLabels, type BetaInviteStatus } from "@/config/beta";
+import { roleLabels, type AssignableRole } from "@/config/roles";
+import { getBetaReport } from "@/lib/beta/report";
 import {
   getPilotDashboard,
   listPilotChecklists,
@@ -49,8 +52,11 @@ const stageLabels: Record<string, string> = {
 };
 
 export default async function AdminPilotPage() {
-  const data = await getPilotDashboard();
-  const checklists = await listPilotChecklists();
+  const [data, checklists, beta] = await Promise.all([
+    getPilotDashboard(),
+    listPilotChecklists(),
+    getBetaReport(),
+  ]);
   const { ops } = data;
 
   return (
@@ -69,6 +75,15 @@ export default async function AdminPilotPage() {
           Отчёт пилота
         </Link>
         <Link
+          href="/admin/beta-report"
+          className="rounded-sm border border-accent/40 bg-accent-muted/40 px-3 py-1.5 text-accent hover:bg-accent-muted"
+        >
+          Beta Report
+        </Link>
+        <Link href="/admin/invites" className="text-accent hover:underline">
+          Приглашения
+        </Link>
+        <Link
           href="/admin/improvements"
           className="text-accent hover:underline"
         >
@@ -78,22 +93,91 @@ export default async function AdminPilotPage() {
           Результаты ЦКР
         </Link>
         <Link
-          href="/lia?scenario=pilot_insight"
+          href="/lia?scenario=beta_analysis"
           className="text-accent hover:underline"
         >
-          Лия: что мешает проекту
+          Лия: как проходит запуск
         </Link>
-        <span className="text-muted">docs/pilot-operations.md</span>
+        <span className="text-muted">docs/controlled-beta.md</span>
       </div>
+
+      <section className="space-y-4">
+        <h2 className="font-display text-xl text-foreground">
+          Beta Participants
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatsCard label="Приглашён" value={beta.users.invited} />
+          <StatsCard label="Зарегистрирован / активирован" value={beta.users.activated} />
+          <StatsCard label="Активен" value={beta.users.active} />
+          <StatsCard
+            label="Завершил сценарий"
+            value={beta.users.completed}
+          />
+        </div>
+        <Card variant="surface" className="space-y-3 p-5">
+          <p className="text-sm text-muted">
+            Роль, дата входа, последнее действие и модули — по данным
+            beta_invites + analytics_events.
+          </p>
+          {beta.participants.length === 0 ? (
+            <p className="text-sm text-muted">
+              Участников beta пока нет. Создайте приглашение в /admin/invites.
+            </p>
+          ) : (
+            <ul className="max-h-80 space-y-2 overflow-auto text-sm">
+              {beta.participants.slice(0, 25).map((p) => (
+                <li
+                  key={p.inviteId}
+                  className="rounded-sm border border-border px-3 py-2"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-foreground">
+                      {p.fullName || p.email}
+                    </span>
+                    <Badge variant="soft">
+                      {roleLabels[p.role as AssignableRole] ?? p.role}
+                    </Badge>
+                    <Badge variant="default">
+                      {betaInviteStatusLabels[
+                        p.participationStatus as BetaInviteStatus
+                      ] ?? p.participationStatus}
+                    </Badge>
+                    {p.scenarioComplete ? (
+                      <Badge variant="accent">сценарий ✓</Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-xs text-muted">
+                    вход:{" "}
+                    {p.activatedAt
+                      ? new Date(p.activatedAt).toLocaleString("ru-RU")
+                      : "—"}{" "}
+                    · последнее:{" "}
+                    {p.lastActionAt
+                      ? `${p.lastActionType} · ${new Date(
+                          p.lastActionAt,
+                        ).toLocaleString("ru-RU")}`
+                      : "—"}
+                  </p>
+                  {p.modules.length > 0 ? (
+                    <p className="mt-1 text-xs text-muted">
+                      модули: {p.modules.join(", ")}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
 
       <Card variant="surface" className="space-y-2 p-5">
         <h2 className="font-display text-lg text-foreground">
-          Пилот ООО ТИНДА
+          Beta case: ООО ТИНДА
         </h2>
         <p className="text-sm text-muted">
-          Первый пилотный проект: контроль активности команды, roadmap, KPI и
-          результатов. Документация прогресса —{" "}
-          <code className="text-foreground">docs/tinda-pilot-progress.md</code>.
+          Переведён из demo/pilot в controlled beta case: проект, roadmap, KPI,
+          результаты, активность. Отчёт —{" "}
+          <code className="text-foreground">docs/tinda-beta-report.md</code>.
         </p>
         {ops.tinda ? (
           <p className="text-sm text-foreground">

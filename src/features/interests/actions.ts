@@ -60,6 +60,14 @@ export async function toggleInterestAction(
     return { error: error.message };
   }
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "first_interest_created",
+    userId: user.id,
+    entityType: targetType,
+    entityId: targetId,
+  });
+
   revalidatePath("/dashboard/interests");
   revalidatePath("/dashboard");
   return { success: "Добавлено в интересы.", interested: true };

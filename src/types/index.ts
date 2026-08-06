@@ -458,7 +458,15 @@ export type ProductTestChecklistItem = {
   note?: string;
 };
 
-export type BetaInviteStatus = "created" | "sent" | "used" | "expired";
+export type BetaInviteStatus =
+  | "invited"
+  | "activated"
+  | "completed"
+  | "disabled"
+  | "created"
+  | "sent"
+  | "used"
+  | "expired";
 
 export type BetaInvite = {
   id: string;

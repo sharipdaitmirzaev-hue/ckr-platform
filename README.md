@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.37.0-beta** (цикл улучшений по данным пилота).  
-Обзор: [docs/ckr-1.0-overview.md](./docs/ckr-1.0-overview.md) · [Pilot ops](./docs/pilot-operations.md) · [Improvement loop](./docs/product-improvement-loop.md) · страницы `/about` и `/features`
+Текущая версия ядра: **0.38.0-beta** (controlled beta).  
+Обзор: [docs/controlled-beta.md](./docs/controlled-beta.md) · [Pilot ops](./docs/pilot-operations.md) · [Improvement loop](./docs/product-improvement-loop.md) · страницы `/about` и `/features`
 
 ## Стек
 
@@ -60,6 +60,8 @@ supabase           # миграции
 - [Pilot Operations](./docs/pilot-operations.md)
 - [Цикл улучшений](./docs/product-improvement-loop.md)
 - [Обзор пилота ТИНДА](./docs/tinda-pilot-review.md)
+- [Controlled Beta](./docs/controlled-beta.md)
+- [ТИНДА beta report](./docs/tinda-beta-report.md)
 
 ### Ядро
 

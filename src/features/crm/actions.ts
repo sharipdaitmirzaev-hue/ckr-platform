@@ -368,7 +368,7 @@ async function convertLeadToUser(
     email: contact.email.toLowerCase(),
     code,
     role,
-    status: "created",
+    status: "invited",
     created_by: adminId,
   });
 

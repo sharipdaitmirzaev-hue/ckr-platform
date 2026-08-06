@@ -1,6 +1,11 @@
 import { ASSIGNABLE_ROLES, type AssignableRole } from "@/config/roles";
 
+/** Статусы участия controlled beta (+ legacy для совместимости). */
 export const BETA_INVITE_STATUSES = [
+  "invited",
+  "activated",
+  "completed",
+  "disabled",
   "created",
   "sent",
   "used",
@@ -10,10 +15,14 @@ export const BETA_INVITE_STATUSES = [
 export type BetaInviteStatus = (typeof BETA_INVITE_STATUSES)[number];
 
 export const betaInviteStatusLabels: Record<BetaInviteStatus, string> = {
-  created: "Создано",
-  sent: "Отправлено",
-  used: "Использовано",
-  expired: "Отключено",
+  invited: "Приглашён",
+  activated: "Активирован",
+  completed: "Завершил сценарий",
+  disabled: "Отключён",
+  created: "Создано (legacy)",
+  sent: "Отправлено (legacy)",
+  used: "Использовано (legacy)",
+  expired: "Отключено (legacy)",
 };
 
 /** Категории обратной связи пилота (этап 36). */

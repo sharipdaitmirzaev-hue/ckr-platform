@@ -107,6 +107,13 @@ export const LIA_SCENARIOS: {
     description:
       "Feedback, issues, метрики пилота → ProductImprovementReport (только анализ)",
   },
+  {
+    id: "beta_analysis",
+    label: "Как проходит запуск ЦКР?",
+    prompt: "Как проходит запуск ЦКР?",
+    description:
+      "Controlled beta: активация, блокеры, неиспользуемые модули → BetaAnalysisReport",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -180,6 +187,9 @@ export const PILOT_INSIGHT_START_PATTERN =
 
 export const PRODUCT_IMPROVEMENT_START_PATTERN =
   /что\s+улучшить\s+в\s+цкр|улучш(ить|ения)\s+(в\s+)?цкр|product\s*improvement|цикл\s+улучшен/i;
+
+export const BETA_ANALYSIS_START_PATTERN =
+  /как\s+проходит\s+запуск|запуск\s+цкр|beta\s*analysis|controlled\s*beta|как\s+ид[её]т\s+beta/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

@@ -29,6 +29,8 @@ export type BetaClientResult =
 
 function revalidateInvites() {
   revalidatePath("/admin/invites");
+  revalidatePath("/admin/pilot");
+  revalidatePath("/admin/beta-report");
 }
 
 export async function createBetaInviteAction(
@@ -55,7 +57,7 @@ export async function createBetaInviteAction(
     email,
     code,
     role: roleRaw,
-    status: markSent ? "sent" : "created",
+    status: "invited",
     created_by: admin.user.id,
   });
 
@@ -63,7 +65,7 @@ export async function createBetaInviteAction(
 
   revalidateInvites();
   return {
-    success: `Приглашение создано${markSent ? " и отмечено как отправленное" : ""}.`,
+    success: `Приглашение создано${markSent ? " (готово к отправке)" : ""}.`,
     code,
   };
 }
@@ -76,11 +78,12 @@ export async function markInviteSentAction(
   if (!inviteId) return;
 
   const supabase = createClient();
+  // Статус участия остаётся invited; legacy sent для совместимости UI
   await supabase
     .from("beta_invites")
-    .update({ status: "sent" })
+    .update({ status: "invited" })
     .eq("id", inviteId)
-    .in("status", ["created"]);
+    .in("status", ["created", "invited", "sent"]);
 
   revalidateInvites();
 }
@@ -93,9 +96,26 @@ export async function expireInviteAction(formData: FormData): Promise<void> {
   const supabase = createClient();
   await supabase
     .from("beta_invites")
-    .update({ status: "expired" })
+    .update({ status: "disabled" })
     .eq("id", inviteId)
-    .in("status", ["created", "sent"]);
+    .in("status", ["created", "sent", "invited", "activated", "used"]);
+
+  revalidateInvites();
+}
+
+export async function markInviteCompletedAction(
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+
+  const supabase = createClient();
+  await supabase
+    .from("beta_invites")
+    .update({ status: "completed" })
+    .eq("id", inviteId)
+    .in("status", ["activated", "used"]);
 
   revalidateInvites();
 }

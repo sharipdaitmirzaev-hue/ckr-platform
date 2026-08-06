@@ -19,6 +19,13 @@ export const ANALYTICS_EVENT_TYPES = [
   "financial_metric_updated",
   "project_completed",
   "outcome_generated",
+  "onboarding_started",
+  "onboarding_completed",
+  "profile_completed",
+  "first_lia_use",
+  "first_project_created",
+  "first_application_sent",
+  "first_interest_created",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -44,6 +51,13 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   financial_metric_updated: "Обновление финпоказателя",
   project_completed: "Завершение проекта",
   outcome_generated: "Генерация отчёта по результату",
+  onboarding_started: "Онбординг начат",
+  onboarding_completed: "Онбординг завершён",
+  profile_completed: "Профиль заполнен",
+  first_lia_use: "Первое использование Лии",
+  first_project_created: "Первый проект",
+  first_application_sent: "Первая заявка",
+  first_interest_created: "Первый интерес",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

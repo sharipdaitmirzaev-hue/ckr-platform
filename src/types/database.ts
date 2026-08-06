@@ -178,7 +178,15 @@ export type ProductTestRow = {
   updated_at: string;
 };
 
-export type DbBetaInviteStatus = "created" | "sent" | "used" | "expired";
+export type DbBetaInviteStatus =
+  | "invited"
+  | "activated"
+  | "completed"
+  | "disabled"
+  | "created"
+  | "sent"
+  | "used"
+  | "expired";
 
 export type BetaInviteRow = {
   id: string;

@@ -36,6 +36,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Метрики, участники и проблемы пилота",
   },
   {
+    label: "Beta Report",
+    href: "/admin/beta-report",
+    description: "Controlled beta: воронка и активность",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

@@ -97,7 +97,11 @@ export async function registerAction(
     if (inviteError || !invite) {
       return { error: "Приглашение не найдено." };
     }
-    if (invite.status !== "created" && invite.status !== "sent") {
+    if (
+      invite.status !== "created" &&
+      invite.status !== "sent" &&
+      invite.status !== "invited"
+    ) {
       return { error: "Приглашение уже использовано или отключено." };
     }
     if (
@@ -155,7 +159,7 @@ export async function registerAction(
     await supabase
       .from("beta_invites")
       .update({
-        status: "used",
+        status: "activated",
         used_at: new Date().toISOString(),
         used_by: data.user.id,
       })
@@ -298,6 +302,18 @@ export async function onboardingAction(
     userId: user.id,
     entityType: "user",
     entityId: user.id,
+    metadata: { roles: parsed.data.roles },
+  });
+
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "onboarding_completed",
+    userId: user.id,
+    metadata: { roles: parsed.data.roles },
+  });
+  await trackBetaMilestone({
+    eventType: "profile_completed",
+    userId: user.id,
     metadata: { roles: parsed.data.roles },
   });
 

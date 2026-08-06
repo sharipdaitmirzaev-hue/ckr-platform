@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import {
   expireInviteAction,
+  markInviteCompletedAction,
   markInviteSentAction,
 } from "@/features/beta/actions";
 import type { BetaInvite } from "@/types";
@@ -10,11 +11,18 @@ type InviteRowActionsProps = {
 };
 
 export function InviteRowActions({ invite }: InviteRowActionsProps) {
-  const canSend = invite.status === "created";
+  const canSend =
+    invite.status === "created" || invite.status === "invited";
+  const canComplete =
+    invite.status === "activated" || invite.status === "used";
   const canExpire =
-    invite.status === "created" || invite.status === "sent";
+    invite.status === "created" ||
+    invite.status === "sent" ||
+    invite.status === "invited" ||
+    invite.status === "activated" ||
+    invite.status === "used";
 
-  if (!canSend && !canExpire) {
+  if (!canSend && !canExpire && !canComplete) {
     return <span className="text-xs text-muted">—</span>;
   }
 
@@ -25,6 +33,14 @@ export function InviteRowActions({ invite }: InviteRowActionsProps) {
           <input type="hidden" name="inviteId" value={invite.id} />
           <Button type="submit" size="sm" variant="secondary">
             Отправлено
+          </Button>
+        </form>
+      ) : null}
+      {canComplete ? (
+        <form action={markInviteCompletedAction}>
+          <input type="hidden" name="inviteId" value={invite.id} />
+          <Button type="submit" size="sm" variant="secondary">
+            Сценарий завершён
           </Button>
         </form>
       ) : null}

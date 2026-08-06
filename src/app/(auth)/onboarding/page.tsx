@@ -18,6 +18,12 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
+  const { trackBetaMilestone } = await import("@/lib/beta/track-milestone");
+  await trackBetaMilestone({
+    eventType: "onboarding_started",
+    userId: current.user.id,
+  });
+
   const roles = current.roles.filter((role): role is AssignableRole =>
     (ASSIGNABLE_ROLES as readonly string[]).includes(role),
   );

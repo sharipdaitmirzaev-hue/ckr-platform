@@ -9,6 +9,7 @@ import {
   EVALUATE_OUTCOME_START_PATTERN,
   LIA_DISCLAIMER,
   PILOT_INSIGHT_START_PATTERN,
+  BETA_ANALYSIS_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -35,6 +36,7 @@ import type {
   LiaScenarioId,
   OutcomeReport,
   PilotInsightReport,
+  BetaAnalysisReport,
   ProductImprovementReport,
   ProgressReport,
   ProjectDraft,
@@ -104,6 +106,9 @@ function detectScenario(
   }
   if (PRODUCT_IMPROVEMENT_START_PATTERN.test(value)) {
     return "product_improvement";
+  }
+  if (BETA_ANALYSIS_START_PATTERN.test(value)) {
+    return "beta_analysis";
   }
   return null;
 }
@@ -1007,6 +1012,121 @@ async function handleEvaluateOutcome(input: {
   };
 }
 
+async function handleBetaAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { getBetaReport } = await import("@/lib/beta/report");
+  const reportData = await getBetaReport();
+
+  const invitedPool =
+    reportData.users.invited + reportData.users.activated;
+  const activation_rate =
+    invitedPool > 0
+      ? Math.round((reportData.users.activated / invitedPool) * 100)
+      : reportData.users.activated > 0
+        ? 100
+        : 0;
+
+  const blocked_users: string[] = [];
+  for (const p of reportData.participants) {
+    if (
+      p.participationStatus === "invited" &&
+      !p.userId
+    ) {
+      blocked_users.push(`${p.email} · приглашён, не активирован`);
+    } else if (
+      p.userId &&
+      !p.scenarioComplete &&
+      (!p.lastActionAt ||
+        Date.now() - new Date(p.lastActionAt).getTime() >
+          7 * 24 * 60 * 60 * 1000)
+    ) {
+      blocked_users.push(
+        `${p.fullName || p.email} · нет действий 7+ дн. / сценарий не завершён`,
+      );
+    }
+  }
+  if (blocked_users.length === 0) {
+    blocked_users.push("Явных застреваний по выборке не видно");
+  }
+
+  const unused_features: string[] = [];
+  if (reportData.funnel.lia < Math.max(1, Math.floor(reportData.funnel.profile * 0.4))) {
+    unused_features.push("Лия — мало первых использований относительно профилей");
+  }
+  if (
+    reportData.activity.applications <
+    Math.max(1, Math.floor(reportData.activity.projects * 0.3))
+  ) {
+    unused_features.push("Заявки — слабое использование относительно проектов");
+  }
+  if (reportData.activity.interests === 0) {
+    unused_features.push("Интересы инвесторов — нет событий first_interest_created");
+  }
+  if (reportData.activity.deals === 0) {
+    unused_features.push("Сделки — ещё не зафиксированы в beta");
+  }
+  if (
+    (reportData.onboardingEvents.first_project_created ?? 0) === 0 &&
+    reportData.funnel.profile > 0
+  ) {
+    unused_features.push("Создание проекта — нет first_project_created");
+  }
+  if (unused_features.length === 0) {
+    unused_features.push("Критичных провалов по модулям не видно");
+  }
+
+  const recommendations = [
+    activation_rate < 50
+      ? "Усильте follow-up по invited: повторное письмо и короткий гайд онбординга"
+      : "Активация на приемлемом уровне — держите ритм приглашений",
+    "Проведите застрявших через чеклист роли на /admin/beta-report",
+    "Сфокусируйтесь на неиспользуемых модулях без добавления новых направлений",
+    "Сверьте ТИНДА как beta case: roadmap / KPI / результаты",
+  ];
+
+  const report: BetaAnalysisReport = {
+    summary: `Controlled beta: приглашено ${reportData.users.invited}, активировано ${reportData.users.activated}, активно ${reportData.users.active}. Активация ${activation_rate}%. Лия только анализирует.`,
+    activation_rate,
+    blocked_users: blocked_users.slice(0, 12),
+    unused_features,
+    recommendations,
+  };
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "beta",
+      metadata: { source: "lia", scenario: "beta_analysis" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как проходит запуск ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — BetaAnalysisReport. Лия не изменяет доступы и статусы — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "beta_analysis",
+      betaAnalysisReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleProductImprovement(input: {
   userId: string;
 }): Promise<LiaEngineResult> {
@@ -1892,6 +2012,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleProductImprovement({ userId: input.userId });
+  }
+
+  if (scenario === "beta_analysis") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить анализ запуска ЦКР.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "beta_analysis", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleBetaAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {
