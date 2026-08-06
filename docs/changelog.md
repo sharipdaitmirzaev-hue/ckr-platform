@@ -4,6 +4,20 @@
 
 ---
 
+## 0.51.0-beta — 2026-08-06
+
+First Users Review — анализ первой когорты и решение по следующей волне (без новых крупных модулей).
+
+### Изменения
+
+- Дашборд `/admin/first-users-review`: воронка, роли, Лия, Product Issues, ТИНДА, решение
+- `FirstUsersLiaReport` + `FirstUsersReviewReport`
+- `FirstUsersDecision`: continue_closed / expand_beta / prepare_public
+- Лия: «Что показал первый запуск ЦКР?»
+- Документация: `first-users-review.md`
+
+---
+
 ## 0.50.0-beta — 2026-08-06
 
 First Users Wave — ограниченный запуск на реальных пользователях (без новых крупных модулей).

@@ -21,6 +21,7 @@ import {
   ECOSYSTEM_START_PATTERN,
   ECOSYSTEM_VALUE_START_PATTERN,
   FIRST_USERS_START_PATTERN,
+  FIRST_USERS_REVIEW_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -60,6 +61,7 @@ import type {
   EcosystemReport,
   EcosystemValueReport,
   FirstUsersReport,
+  FirstUsersReviewReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -143,6 +145,9 @@ function detectScenario(
   }
   if (LAUNCH_GOALS_START_PATTERN.test(value)) {
     return "launch_goals";
+  }
+  if (FIRST_USERS_REVIEW_START_PATTERN.test(value)) {
+    return "first_users_review";
   }
   if (FIRST_USERS_START_PATTERN.test(value)) {
     return "first_users";
@@ -1304,6 +1309,51 @@ async function handleFirstUsersAnalysis(input: {
     metadata: {
       scenario: "first_users",
       firstUsersReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleFirstUsersReviewAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const {
+    buildFirstUsersReviewReport,
+    buildFirstUsersLiaReport,
+  } = await import("@/lib/launch/first-users-review");
+  const report: FirstUsersReviewReport = await buildFirstUsersReviewReport();
+  const liaReport = await buildFirstUsersLiaReport();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "first_users_review" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Что показал первый запуск ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — FirstUsersReviewReport и FirstUsersLiaReport. Лия только анализирует — решения по волне принимает оператор.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "first_users_review",
+      firstUsersReviewReport: report,
+      firstUsersLiaReport: liaReport,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2751,6 +2801,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handleFirstUsersAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "first_users_review") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить FirstUsersReviewReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "first_users_review",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleFirstUsersReviewAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

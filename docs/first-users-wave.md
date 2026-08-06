@@ -111,6 +111,8 @@ UI: `FirstUsersFeedbackPrompt` на `/dashboard` после первого де�
 - Активность Лии: диалоги и сценарии  
 - Путь участников + FirstUsersReport  
 
+Обзор и решение после волны: [`/admin/first-users-review`](./first-users-review.md).
+
 ---
 
 ## Лия

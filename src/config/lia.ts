@@ -191,6 +191,13 @@ export const LIA_SCENARIOS: {
     description:
       "First Users Wave: активация, поведение, проблемы, успехи → FirstUsersReport (только анализ)",
   },
+  {
+    id: "first_users_review",
+    label: "Что показал первый запуск ЦКР?",
+    prompt: "Что показал первый запуск ЦКР?",
+    description:
+      "First Users Review: активация, поведение, успехи, проблемы → FirstUsersReviewReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -300,6 +307,9 @@ export const ECOSYSTEM_START_PATTERN =
 
 export const FIRST_USERS_START_PATTERN =
   /как\s+прош[её]л\s+первый\s+запуск\s+цкр|первый\s+запуск\s+цкр|first\s*users(\s*wave)?|first\s*users\s*report/i;
+
+export const FIRST_USERS_REVIEW_START_PATTERN =
+  /что\s+показал\s+первый\s+запуск\s+цкр|показал\s+первый\s+запуск|first\s*users\s*review|обзор\s+первого\s+запуска/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [

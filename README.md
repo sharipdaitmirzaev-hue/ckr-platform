@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.50.0-beta** (First Users Wave).  
-Обзор: [First Users Wave](./docs/first-users-wave.md) · [First users launch](./docs/first-users-launch.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.51.0-beta** (First Users Review).  
+Обзор: [First Users Review](./docs/first-users-review.md) · [First Users Wave](./docs/first-users-wave.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 

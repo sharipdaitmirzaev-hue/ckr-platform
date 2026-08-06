@@ -27,7 +27,8 @@ export type LiaScenarioId =
   | "launch_decision"
   | "ecosystem"
   | "ecosystem_value"
-  | "first_users";
+  | "first_users"
+  | "first_users_review";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -216,6 +217,25 @@ export type FirstUsersReport = {
   recommendations: string[];
 };
 
+/** Анализ Лии в First Users Wave (этап 51). */
+export type FirstUsersLiaReport = {
+  summary: string;
+  used_scenarios: string[];
+  successful_flows: string[];
+  blocked_flows: string[];
+  recommendations: string[];
+};
+
+/** Сценарий «Что показал первый запуск ЦКР?» (только анализ). */
+export type FirstUsersReviewReport = {
+  summary: string;
+  activation: string[];
+  user_behavior: string[];
+  successful_cases: string[];
+  main_problems: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -400,6 +420,8 @@ export type LiaMessageMetadata = {
   ecosystemReport?: EcosystemReport | null;
   ecosystemValueReport?: EcosystemValueReport | null;
   firstUsersReport?: FirstUsersReport | null;
+  firstUsersLiaReport?: FirstUsersLiaReport | null;
+  firstUsersReviewReport?: FirstUsersReviewReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

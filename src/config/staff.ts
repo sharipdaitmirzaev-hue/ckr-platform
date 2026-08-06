@@ -16,6 +16,7 @@ export const STAFF_ADMIN_PREFIXES = [
   "/admin/ecosystem-report",
   "/admin/ecosystem-value",
   "/admin/first-users",
+  "/admin/first-users-review",
 ] as const;
 
 export function isStaffAdminPath(pathname: string): boolean {

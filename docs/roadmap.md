@@ -462,6 +462,15 @@
 - Лия: FirstUsersReport («Как прошёл первый запуск ЦКР?»)
 - Без массового запуска и новых крупных модулей
 
-## Этап 51+ — backlog
+## Этап 51 — First Users Review ✅ (код готов)
+
+Подробности: [first-users-review.md](./first-users-review.md)
+
+- `/admin/first-users-review`: воронка, роли, Лия, issues, ТИНДА
+- FirstUsersDecision + FirstUsersReviewReport / FirstUsersLiaReport
+- Лия: «Что показал первый запуск ЦКР?»
+- Без новых крупных бизнес-модулей
+
+## Этап 52+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

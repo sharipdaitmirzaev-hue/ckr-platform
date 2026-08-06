@@ -47,6 +47,12 @@ export default async function AdminFirstUsersPage() {
         <Link href="/admin/invites" className="text-accent hover:underline">
           Приглашения
         </Link>
+        <Link
+          href="/admin/first-users-review"
+          className="text-accent hover:underline"
+        >
+          Review
+        </Link>
         <Link href="/admin/launch" className="text-accent hover:underline">
           Launch
         </Link>

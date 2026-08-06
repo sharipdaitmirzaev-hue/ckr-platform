@@ -95,6 +95,7 @@ RLS: пользователь видит и меняет только свои �
 22. **Как развивается экосистема ЦКР?** — `ecosystem` → `EcosystemReport` (active users, activity, connections, recommendations; только анализ). См. [ecosystem-beta.md](./ecosystem-beta.md).
 23. **Какая польза от экосистемы ЦКР?** — `ecosystem_value` → `EcosystemValueReport` (strong/weak/successful/blocked matches; только анализ). См. [ecosystem-value.md](./ecosystem-value.md).
 24. **Как прошёл первый запуск ЦКР?** — `first_users` → `FirstUsersReport` (activation, user_behavior, problems, success_cases; только анализ). См. [first-users-wave.md](./first-users-wave.md).
+25. **Что показал первый запуск ЦКР?** — `first_users_review` → `FirstUsersReviewReport` (+ `FirstUsersLiaReport`; только анализ). См. [first-users-review.md](./first-users-review.md).
 
 Структура результата поиска:
 
