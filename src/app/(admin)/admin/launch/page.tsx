@@ -104,6 +104,12 @@ export default async function AdminLaunchPage() {
           Wave Review
         </Link>
         <Link
+          href="/admin/launch-decision"
+          className="text-accent hover:underline"
+        >
+          Decision Gate
+        </Link>
+        <Link
           href="/admin/improvements"
           className="text-accent hover:underline"
         >

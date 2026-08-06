@@ -1,5 +1,6 @@
 "use server";
 
+import { isLaunchDecision } from "@/config/launch-decision";
 import {
   isLaunchGoalMetricType,
   isLaunchGoalStatus,
@@ -23,6 +24,8 @@ export type LaunchActionState = {
 
 function revalidateLaunch() {
   revalidatePath("/admin/launch");
+  revalidatePath("/admin/launch-decision");
+  revalidatePath("/admin/wave-review");
 }
 
 export async function createLaunchWaveAction(
@@ -257,4 +260,37 @@ export async function syncLaunchGoalsAction(): Promise<void> {
     await syncLaunchGoalsForWave(wave, staff.user.id);
   }
   revalidateLaunch();
+}
+
+export async function recordLaunchDecisionAction(
+  _prev: LaunchActionState,
+  formData: FormData,
+): Promise<LaunchActionState> {
+  const staff = await requireStaff("/admin/launch-decision");
+  const decision = String(formData.get("decision") ?? "").trim();
+  const waveId = String(formData.get("waveId") ?? "").trim() || null;
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  if (!isLaunchDecision(decision)) {
+    return { error: "Некорректное решение Decision Gate." };
+  }
+  if (decision === "needs_improvement") {
+    return {
+      error:
+        "needs_improvement фиксируется через улучшения; выберите continue_closed, expand_beta или public_launch_ready.",
+    };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.from("launch_decisions").insert({
+    wave_id: waveId,
+    decision,
+    notes,
+    created_by: staff.user.id,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidateLaunch();
+  return { success: "Решение Decision Gate зафиксировано." };
 }

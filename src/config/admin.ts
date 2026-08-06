@@ -56,6 +56,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Анализ результатов первой закрытой волны",
   },
   {
+    label: "Launch Decision",
+    href: "/admin/launch-decision",
+    description: "Decision Gate: решение после Closed Wave 1",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

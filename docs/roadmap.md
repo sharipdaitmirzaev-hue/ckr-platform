@@ -407,6 +407,15 @@
 - Лия: `WaveReviewReport` («Проанализируй результаты первой волны»)
 - Без новых крупных бизнес-модулей
 
-## Этап 45+ — backlog
+## Этап 45 — Launch Decision Gate ✅ (код готов)
+
+Подробности: [launch-decision-gate.md](./launch-decision-gate.md)
+
+- `/admin/launch-decision`: LaunchDecisionReport, triage Critical→Low, решение
+- Подготовка Launch Wave 2 (closed/beta) + цели экосистемы
+- Лия: `LaunchDecisionAIReport` («Готов ли ЦКР к следующей волне?»)
+- Без новых крупных бизнес-модулей
+
+## Этап 46+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

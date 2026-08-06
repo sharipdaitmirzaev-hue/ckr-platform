@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.44.0-beta** (Closed Wave Review).  
-Обзор: [Wave review](./docs/closed-wave-review.md) · [ТИНДА wave review](./docs/tinda-wave-review.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.45.0-beta** (Launch Decision Gate).  
+Обзор: [Decision Gate](./docs/launch-decision-gate.md) · [ТИНДА decision](./docs/tinda-decision-report.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 
@@ -70,6 +70,8 @@ supabase           # миграции
 - [Closed Wave ТИНДА — отчёт](./docs/closed-wave-tinda-report.md)
 - [Closed Wave Review](./docs/closed-wave-review.md)
 - [ТИНДА wave review](./docs/tinda-wave-review.md)
+- [Launch Decision Gate](./docs/launch-decision-gate.md)
+- [ТИНДА decision report](./docs/tinda-decision-report.md)
 - [Help center](./docs/help-center.md)
 - [ТИНДА production case](./docs/tinda-production-case.md)
 - [ТИНДА публичный кейс](./docs/tinda-case-public.md)

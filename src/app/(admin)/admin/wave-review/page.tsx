@@ -57,6 +57,12 @@ export default async function AdminWaveReviewPage() {
           Улучшения
         </Link>
         <Link
+          href="/admin/launch-decision"
+          className="text-accent hover:underline"
+        >
+          Decision Gate
+        </Link>
+        <Link
           href="/lia?scenario=wave_review"
           className="rounded-sm border border-accent/40 bg-accent-muted/40 px-3 py-1.5 text-accent hover:bg-accent-muted"
         >

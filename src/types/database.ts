@@ -250,7 +250,22 @@ export type PilotParticipantRow = {
 };
 
 export type DbLaunchWaveStatus = "planned" | "active" | "completed";
-export type DbLaunchWaveType = "internal" | "closed" | "public";
+export type DbLaunchWaveType = "internal" | "closed" | "beta" | "public";
+
+export type DbLaunchDecisionKind =
+  | "continue_closed"
+  | "expand_beta"
+  | "public_launch_ready"
+  | "needs_improvement";
+
+export type LaunchDecisionRow = {
+  id: string;
+  wave_id: string | null;
+  decision: DbLaunchDecisionKind;
+  notes: string;
+  created_by: string | null;
+  created_at: string;
+};
 export type DbLaunchWaveParticipantStatus =
   | "invited"
   | "joined"
@@ -1536,6 +1551,22 @@ export type Database = {
           updated_at: string;
         }>;
       };
+      launch_decisions: {
+        Row: LaunchDecisionRow;
+        Insert: {
+          id?: string;
+          wave_id?: string | null;
+          decision: DbLaunchDecisionKind;
+          notes?: string;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          wave_id: string | null;
+          decision: DbLaunchDecisionKind;
+          notes: string;
+          created_by: string | null;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -2095,6 +2126,7 @@ export type Database = {
       launch_wave_participant_status: DbLaunchWaveParticipantStatus;
       launch_goal_status: DbLaunchGoalStatus;
       launch_goal_metric_type: DbLaunchGoalMetricType;
+      launch_decision_kind: DbLaunchDecisionKind;
     };
   };
 };

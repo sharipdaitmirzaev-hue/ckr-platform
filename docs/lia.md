@@ -91,6 +91,7 @@ RLS: пользователь видит и меняет только свои �
 18. **Достигнуты ли цели запуска?** — `launch_goals` → `LaunchGoalReport` (achieved / failed, risks, next_actions; только анализ). См. [launch-success-framework.md](./launch-success-framework.md).
 19. **Проанализируй первую волну ЦКР** — `closed_wave` → `ClosedWaveReport` (цели, UX, бизнес-результаты; только анализ). См. [closed-wave-tinda-report.md](./closed-wave-tinda-report.md).
 20. **Проанализируй результаты первой волны** — `wave_review` → `WaveReviewReport` (success factors, problems, patterns; только анализ). См. [closed-wave-review.md](./closed-wave-review.md).
+21. **Готов ли ЦКР к следующей волне?** — `launch_decision` → `LaunchDecisionAIReport` (strengths, weaknesses, risks, recommendation; только анализ). См. [launch-decision-gate.md](./launch-decision-gate.md).
 
 Структура результата поиска:
 

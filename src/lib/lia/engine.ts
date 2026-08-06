@@ -17,6 +17,7 @@ import {
   LAUNCH_GOALS_START_PATTERN,
   CLOSED_WAVE_START_PATTERN,
   WAVE_REVIEW_START_PATTERN,
+  LAUNCH_DECISION_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
   REALIZE_PROJECT_PATTERN,
@@ -52,6 +53,7 @@ import type {
   LaunchStatusReport,
   ProductImprovementReport,
   WaveReviewReport,
+  LaunchDecisionAIReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -135,6 +137,9 @@ function detectScenario(
   }
   if (LAUNCH_GOALS_START_PATTERN.test(value)) {
     return "launch_goals";
+  }
+  if (LAUNCH_DECISION_START_PATTERN.test(value)) {
+    return "launch_decision";
   }
   if (WAVE_REVIEW_START_PATTERN.test(value)) {
     return "wave_review";
@@ -1160,6 +1165,50 @@ async function handleWaveReviewAnalysis(input: {
     metadata: {
       scenario: "wave_review",
       waveReviewReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleLaunchDecisionAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildLaunchDecisionAIReport } = await import(
+    "@/lib/launch/decision"
+  );
+  const report: LaunchDecisionAIReport = await buildLaunchDecisionAIReport(
+    input.userId,
+  );
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "launch_decision" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Готов ли ЦКР к следующей волне?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — LaunchDecisionAIReport. Лия не фиксирует решение и не меняет волны — только анализирует.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "launch_decision",
+      launchDecisionAIReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -2509,6 +2558,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handleWaveReviewAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "launch_decision") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить LaunchDecisionAIReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "launch_decision", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLaunchDecisionAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

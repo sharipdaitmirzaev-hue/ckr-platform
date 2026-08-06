@@ -4,6 +4,19 @@
 
 ---
 
+## 0.45.0-beta — 2026-03-25
+
+Launch Decision Gate — решение после Closed Wave 1 и подготовка Launch Wave 2 (без новых бизнес-модулей).
+
+### Изменения
+
+- Дашборд `/admin/launch-decision`: LaunchDecisionReport, triage улучшений, решение, Wave 2
+- Таблица `launch_decisions` + seed Launch Wave 2 и целей экосистемы
+- Лия: «Готов ли ЦКР к следующей волне?» → `LaunchDecisionAIReport`
+- Документация: `launch-decision-gate.md`, `tinda-decision-report.md`
+
+---
+
 ## 0.44.0-beta — 2026-03-25
 
 Closed Wave Review — анализ результатов первой закрытой волны ТИНДА (без новых бизнес-модулей).

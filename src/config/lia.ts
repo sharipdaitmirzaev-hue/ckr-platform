@@ -163,6 +163,13 @@ export const LIA_SCENARIOS: {
     description:
       "Success factors, problems, patterns → WaveReviewReport (только анализ)",
   },
+  {
+    id: "launch_decision",
+    label: "Готов ли ЦКР к следующей волне?",
+    prompt: "Готов ли ЦКР к следующей волне?",
+    description:
+      "Decision Gate: strengths / weaknesses / risks → LaunchDecisionAIReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -260,6 +267,9 @@ export const CLOSED_WAVE_START_PATTERN =
 
 export const WAVE_REVIEW_START_PATTERN =
   /проанализируй\s+результаты\s+первой\s+волны|результаты\s+первой\s+волны|wave\s*review|обзор\s+волны/i;
+
+export const LAUNCH_DECISION_START_PATTERN =
+  /готов\s+ли\s+цкр\s+к\s+следующей\s+волне|следующей\s+волне|launch\s*decision|decision\s*gate/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [
