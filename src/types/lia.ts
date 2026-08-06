@@ -35,7 +35,8 @@ export type LiaScenarioId =
   | "open_beta"
   | "open_beta_growth"
   | "public_launch_decision"
-  | "public_launch";
+  | "public_launch"
+  | "live_launch";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -346,6 +347,16 @@ export type PublicLaunchReport = {
   recommendations: string[];
 };
 
+/** Сценарий «Как проходит запуск ЦКР сейчас?» (этап 59, только анализ). */
+export type LiveLaunchReport = {
+  summary: string;
+  users: string[];
+  activity: string[];
+  ecosystem: string[];
+  issues: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -542,6 +553,7 @@ export type LiaMessageMetadata = {
   userValueFeedbackReport?: UserValueFeedbackReport | null;
   publicLaunchDecisionReport?: PublicLaunchDecisionReport | null;
   publicLaunchReport?: PublicLaunchReport | null;
+  liveLaunchReport?: LiveLaunchReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

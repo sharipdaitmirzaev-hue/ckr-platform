@@ -76,6 +76,12 @@ export default async function AdminPublicLaunchPage() {
         >
           KPI
         </Link>
+        <Link
+          href="/admin/public-launch-operations"
+          className="text-accent hover:underline"
+        >
+          Operations
+        </Link>
         <Link href="/admin/open-beta" className="text-accent hover:underline">
           Open Beta
         </Link>

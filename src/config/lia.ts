@@ -247,6 +247,13 @@ export const LIA_SCENARIOS: {
     description:
       "Public Launch Wave 1: пользователи, активация, экосистема, бизнес → PublicLaunchReport (только анализ)",
   },
+  {
+    id: "live_launch",
+    label: "Как проходит запуск ЦКР сейчас?",
+    prompt: "Как проходит запуск ЦКР сейчас?",
+    description:
+      "Launch Operations: live-метрики, health, задачи → LiveLaunchReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -377,6 +384,9 @@ export const PUBLIC_LAUNCH_DECISION_START_PATTERN =
 
 export const PUBLIC_LAUNCH_START_PATTERN =
   /как\s+проходит\s+публичный\s+запуск\s+цкр|публичный\s+запуск\s+цкр|public\s*launch(\s*wave)?(\s*report)?(?!\s*decision)/i;
+
+export const LIVE_LAUNCH_START_PATTERN =
+  /как\s+проходит\s+запуск\s+цкр\s+сейчас|запуск\s+цкр\s+сейчас|live\s*launch(\s*report)?|операци(и|онный)\s+запуск/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

@@ -44,6 +44,7 @@ export const PRODUCT_IMPROVEMENT_SOURCES = [
   "analytics",
   "lia",
   "manual",
+  "public_launch",
 ] as const;
 
 export type ProductImprovementSource =
@@ -58,6 +59,7 @@ export const productImprovementSourceLabels: Record<
   analytics: "Аналитика",
   lia: "Лия",
   manual: "Вручную",
+  public_launch: "Public Launch",
 };
 
 export function isProductImprovementPriority(

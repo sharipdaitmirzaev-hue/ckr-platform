@@ -260,7 +260,9 @@ export async function submitFeedbackAction(input: {
       priority,
       page: page || "/",
       category,
-      channel: "open_beta_wave",
+      channel:
+        category === "public_launch" ? "public_launch" : "open_beta_wave",
+      source: category === "public_launch" ? "public_launch" : undefined,
     },
   });
 
@@ -272,6 +274,7 @@ export async function submitFeedbackAction(input: {
   revalidatePath("/admin/open-beta-growth");
   revalidatePath("/admin/public-launch");
   revalidatePath("/admin/public-launch-kpi");
+  revalidatePath("/admin/public-launch-operations");
   return { ok: true };
 }
 

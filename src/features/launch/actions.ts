@@ -12,6 +12,11 @@ import {
 } from "@/config/launch-waves";
 import { isPublicLaunchDecision } from "@/config/public-launch-decision";
 import {
+  DEFAULT_LAUNCH_OPS_TASKS,
+  isLaunchOpsTaskStatus,
+  isLaunchOpsTaskType,
+} from "@/config/launch-operations";
+import {
   PUBLIC_LAUNCH_WAVE_ID,
   PUBLIC_LAUNCH_WAVE_NAME,
 } from "@/config/public-launch";
@@ -35,6 +40,7 @@ function revalidateLaunch() {
   revalidatePath("/admin/public-launch-decision");
   revalidatePath("/admin/public-launch");
   revalidatePath("/admin/public-launch-kpi");
+  revalidatePath("/admin/public-launch-operations");
   revalidatePath("/admin/open-beta");
 }
 
@@ -348,15 +354,28 @@ export async function recordPublicLaunchDecisionAction(
 /**
  * Активирует Public Launch Wave 1 только если последнее решение = public_launch.
  * planned → active; Open Beta Wave → completed.
+ * Фиксирует дату старта, ответственного, комментарий и событие public_launch_activated.
  */
 export async function activatePublicLaunchWaveAction(
   prev: LaunchActionState,
   formData: FormData,
 ): Promise<LaunchActionState> {
   void prev;
-  void formData;
   const staff = await requireStaff("/admin/public-launch");
   const supabase = createClient();
+
+  const startDateRaw = String(formData.get("startDate") ?? "").trim();
+  const comment = String(formData.get("comment") ?? "").trim();
+  const responsibleName = String(formData.get("responsible") ?? "").trim();
+  const startDate =
+    startDateRaw || new Date().toISOString().slice(0, 10);
+
+  if (comment.length < 3) {
+    return { error: "Укажите комментарий запуска (от 3 символов)." };
+  }
+  if (responsibleName.length < 2) {
+    return { error: "Укажите ответственного за запуск." };
+  }
 
   const { data: decisionRow, error: decisionError } = await supabase
     .from("public_launch_decisions")
@@ -417,7 +436,7 @@ export async function activatePublicLaunchWaveAction(
     .from("launch_waves")
     .update({
       status: "active",
-      start_date: today,
+      start_date: startDate,
       wave_type: "public",
       name: PUBLIC_LAUNCH_WAVE_NAME,
     })
@@ -447,17 +466,58 @@ export async function activatePublicLaunchWaveAction(
     .update({ wave_id: PUBLIC_LAUNCH_WAVE_ID })
     .eq("id", decisionRow.id);
 
+  // Журнал активации
+  const { error: activationError } = await supabase
+    .from("public_launch_activations")
+    .insert({
+      wave_id: PUBLIC_LAUNCH_WAVE_ID,
+      decision_id: decisionRow.id,
+      start_date: startDate,
+      comment: `${comment}\nОтветственный: ${responsibleName}`,
+      responsible_id: staff.user.id,
+      activated_by: staff.user.id,
+    });
+
+  if (activationError) {
+    // не блокируем активацию волны, если нет таблицы — но сообщаем
+    if (
+      !activationError.message.includes("public_launch_activations") &&
+      activationError.code !== "42P01"
+    ) {
+      return { error: activationError.message };
+    }
+  }
+
+  // Seed операционных задач
+  try {
+    const rows = DEFAULT_LAUNCH_OPS_TASKS.map((t) => ({
+      wave_id: PUBLIC_LAUNCH_WAVE_ID,
+      task_type: t.taskType,
+      title: t.title,
+      description: t.description,
+      status: "new" as const,
+      created_by: staff.user.id,
+      assignee_id: staff.user.id,
+    }));
+    await supabase.from("launch_operations_tasks").insert(rows);
+  } catch {
+    // мягкий сбой
+  }
+
   try {
     const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
     await trackAnalyticsEvent({
-      eventType: "launch_goal_created",
+      eventType: "public_launch_activated",
       userId: staff.user.id,
       entityType: "launch_wave",
       entityId: PUBLIC_LAUNCH_WAVE_ID,
       metadata: {
         wave: PUBLIC_LAUNCH_WAVE_NAME,
         decision: "public_launch",
-        source: "public_launch_activation",
+        startDate,
+        responsible: responsibleName,
+        comment,
+        source: "public_launch",
         channel: "public_launch",
       },
     });
@@ -467,6 +527,68 @@ export async function activatePublicLaunchWaveAction(
 
   revalidateLaunch();
   return {
-    success: `${PUBLIC_LAUNCH_WAVE_NAME} активирована (planned → active).`,
+    success: `${PUBLIC_LAUNCH_WAVE_NAME} активирована (planned → active). Событие public_launch_activated записано.`,
   };
+}
+
+export async function createLaunchOpsTaskAction(
+  prev: LaunchActionState,
+  formData: FormData,
+): Promise<LaunchActionState> {
+  void prev;
+  const staff = await requireStaff("/admin/public-launch-operations");
+  const taskType = String(formData.get("taskType") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!isLaunchOpsTaskType(taskType)) {
+    return { error: "Некорректный тип задачи." };
+  }
+  if (title.length < 3) {
+    return { error: "Укажите название задачи (от 3 символов)." };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.from("launch_operations_tasks").insert({
+    wave_id: PUBLIC_LAUNCH_WAVE_ID,
+    task_type: taskType,
+    title,
+    description,
+    status: "new",
+    created_by: staff.user.id,
+    assignee_id: staff.user.id,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.message.includes("launch_operations_tasks") ||
+        error.code === "42P01"
+          ? "Примените миграцию 20260325540000_public_launch_operations.sql"
+          : error.message,
+    };
+  }
+
+  revalidateLaunch();
+  return { success: "Задача LaunchOperationsTasks создана." };
+}
+
+export async function updateLaunchOpsTaskStatusAction(
+  formData: FormData,
+): Promise<void> {
+  await requireStaff("/admin/public-launch-operations");
+  const taskId = String(formData.get("taskId") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+  if (!taskId || !isLaunchOpsTaskStatus(status)) return;
+
+  const supabase = createClient();
+  await supabase
+    .from("launch_operations_tasks")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", taskId);
+
+  revalidateLaunch();
 }

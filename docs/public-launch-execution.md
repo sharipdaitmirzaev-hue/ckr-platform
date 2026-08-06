@@ -3,7 +3,7 @@
 Этап 58 · Версия `0.58.0-beta`  
 UI: `/admin/public-launch` · KPI: `/admin/public-launch-kpi` · Лия: «Как проходит публичный запуск ЦКР?»
 
-Связано: [public-launch-decision.md](./public-launch-decision.md) · [public-beta-launch-plan.md](./public-beta-launch-plan.md) · [open-beta-growth.md](./open-beta-growth.md)
+Связано: [public-launch-operations.md](./public-launch-operations.md) · [public-launch-decision.md](./public-launch-decision.md) · [public-beta-launch-plan.md](./public-beta-launch-plan.md) · [open-beta-growth.md](./open-beta-growth.md)
 
 ---
 

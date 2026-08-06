@@ -24,6 +24,7 @@ import { RoleGrowthReportCard } from "@/components/lia/role-growth-report";
 import { UserValueFeedbackReportCard } from "@/components/lia/user-value-feedback-report";
 import { PublicLaunchDecisionReportCard } from "@/components/lia/public-launch-decision-report";
 import { PublicLaunchReportCard } from "@/components/lia/public-launch-report";
+import { LiveLaunchReportCard } from "@/components/lia/live-launch-report";
 import { ProductFixImprovementReportCard } from "@/components/lia/product-fix-improvement-report";
 import { ProductImprovementReportCard } from "@/components/lia/product-improvement-report";
 import { ProgressReportCard } from "@/components/lia/progress-report";
@@ -118,6 +119,7 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const publicLaunchDecisionReport =
           message.metadata?.publicLaunchDecisionReport;
         const publicLaunchReport = message.metadata?.publicLaunchReport;
+        const liveLaunchReport = message.metadata?.liveLaunchReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -241,6 +243,9 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && publicLaunchReport ? (
               <PublicLaunchReportCard report={publicLaunchReport} />
+            ) : null}
+            {!isUser && liveLaunchReport ? (
+              <LiveLaunchReportCard report={liveLaunchReport} />
             ) : null}
           </li>
         );

@@ -4,6 +4,20 @@
 
 ---
 
+## 0.59.0-beta — 2026-08-06
+
+Public Launch Operations — активация волны и операционное управление (без новых крупных бизнес-модулей).
+
+### Изменения
+
+- Активация Public Launch Wave 1: дата, ответственный, комментарий, событие `public_launch_activated`
+- `/admin/public-launch-operations`: daily metrics, health, задачи, сценарии ролей
+- `LaunchOperationsTasks`, `LaunchHealthMonitor`, источник improvements `public_launch`
+- Лия: «Как проходит запуск ЦКР сейчас?» → `LiveLaunchReport`
+- Документация: `public-launch-operations.md`
+
+---
+
 ## 0.58.0-beta — 2026-08-06
 
 Public Launch Execution — управление публичным запуском после Decision Gate (без новых крупных бизнес-модулей).

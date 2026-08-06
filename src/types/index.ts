@@ -560,7 +560,8 @@ export type ProductImprovement = {
     | "pilot_issue"
     | "analytics"
     | "lia"
-    | "manual";
+    | "manual"
+    | "public_launch";
   sourceId: string | null;
   priority: "critical" | "high" | "medium" | "low";
   status: "planned" | "in_progress" | "released" | "rejected";

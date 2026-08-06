@@ -28,6 +28,7 @@ import {
   OPEN_BETA_START_PATTERN,
   PUBLIC_LAUNCH_DECISION_START_PATTERN,
   PUBLIC_LAUNCH_START_PATTERN,
+  LIVE_LAUNCH_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -78,6 +79,7 @@ import type {
   UserValueFeedbackReport,
   PublicLaunchDecisionReport,
   PublicLaunchReport,
+  LiveLaunchReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -188,6 +190,9 @@ function detectScenario(
   }
   if (CLOSED_WAVE_START_PATTERN.test(value)) {
     return "closed_wave";
+  }
+  if (LIVE_LAUNCH_START_PATTERN.test(value)) {
+    return "live_launch";
   }
   if (PUBLIC_LAUNCH_START_PATTERN.test(value)) {
     return "public_launch";
@@ -1651,6 +1656,48 @@ async function handlePublicLaunchAnalysis(input: {
     metadata: {
       scenario: "public_launch",
       publicLaunchReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
+async function handleLiveLaunchAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildLiveLaunchReportAsync } = await import(
+    "@/lib/launch/public-launch-operations"
+  );
+  const report: LiveLaunchReport = await buildLiveLaunchReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "launch",
+      metadata: { source: "lia", scenario: "live_launch" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как проходит запуск ЦКР сейчас?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — LiveLaunchReport. Лия только анализирует текущий операционный запуск.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "live_launch",
+      liveLaunchReport: report,
       disclaimer: LIA_DISCLAIMER,
     },
     results: [],
@@ -3268,6 +3315,20 @@ export async function runLiaEngine(input: {
       };
     }
     return handlePublicLaunchAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "live_launch") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить LiveLaunchReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: { scenario: "live_launch", disclaimer: LIA_DISCLAIMER },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLiveLaunchAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

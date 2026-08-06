@@ -539,6 +539,17 @@
 - Лия: «Как проходит публичный запуск ЦКР?»
 - Без новых крупных бизнес-модулей
 
-## Этап 59+ — backlog
+## Этап 59 — Public Launch Operations ✅ (код готов)
 
-В т.ч. API для мобильного приложения — см. roadmap-after-1.0.
+Подробности: [public-launch-operations.md](./public-launch-operations.md)
+
+- Активация волны только при Decision = public_launch
+- `/admin/public-launch-operations`: daily metrics, health, ops tasks
+- LiveLaunchReport + источник feedback/improvements `public_launch`
+- ЦКР как работающая публичная beta-платформа
+- Без новых крупных бизнес-модулей
+
+## Этап 60+ — backlog
+
+Рост, партнёрства, проекты, сделки, монетизация — см. roadmap-after-1.0.
+

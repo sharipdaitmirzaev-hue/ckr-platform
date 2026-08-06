@@ -389,7 +389,41 @@ export type DbProductImprovementSource =
   | "pilot_issue"
   | "analytics"
   | "lia"
-  | "manual";
+  | "manual"
+  | "public_launch";
+
+export type DbLaunchOpsTaskType =
+  | "check_project"
+  | "check_expert"
+  | "reply_user"
+  | "handle_issue"
+  | "contact_partner";
+
+export type DbLaunchOpsTaskStatus = "new" | "in_progress" | "completed";
+
+export type PublicLaunchActivationRow = {
+  id: string;
+  wave_id: string | null;
+  decision_id: string | null;
+  start_date: string;
+  comment: string;
+  responsible_id: string | null;
+  activated_by: string | null;
+  created_at: string;
+};
+
+export type LaunchOperationsTaskRow = {
+  id: string;
+  wave_id: string | null;
+  task_type: DbLaunchOpsTaskType;
+  title: string;
+  description: string;
+  status: DbLaunchOpsTaskStatus;
+  assignee_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export type ProductImprovementRow = {
   id: string;
@@ -1611,6 +1645,49 @@ export type Database = {
           created_by: string | null;
         }>;
       };
+      public_launch_activations: {
+        Row: PublicLaunchActivationRow;
+        Insert: {
+          id?: string;
+          wave_id?: string | null;
+          decision_id?: string | null;
+          start_date?: string;
+          comment?: string;
+          responsible_id?: string | null;
+          activated_by?: string | null;
+        };
+        Update: Partial<{
+          wave_id: string | null;
+          decision_id: string | null;
+          start_date: string;
+          comment: string;
+          responsible_id: string | null;
+          activated_by: string | null;
+        }>;
+      };
+      launch_operations_tasks: {
+        Row: LaunchOperationsTaskRow;
+        Insert: {
+          id?: string;
+          wave_id?: string | null;
+          task_type: DbLaunchOpsTaskType;
+          title: string;
+          description?: string;
+          status?: DbLaunchOpsTaskStatus;
+          assignee_id?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          wave_id: string | null;
+          task_type: DbLaunchOpsTaskType;
+          title: string;
+          description: string;
+          status: DbLaunchOpsTaskStatus;
+          assignee_id: string | null;
+          created_by: string | null;
+          updated_at: string;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -2172,6 +2249,8 @@ export type Database = {
       launch_goal_metric_type: DbLaunchGoalMetricType;
       launch_decision_kind: DbLaunchDecisionKind;
       public_launch_decision_kind: DbPublicLaunchDecisionKind;
+      launch_ops_task_type: DbLaunchOpsTaskType;
+      launch_ops_task_status: DbLaunchOpsTaskStatus;
     };
   };
 };
