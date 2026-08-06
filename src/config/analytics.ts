@@ -56,6 +56,11 @@ export const ANALYTICS_EVENT_TYPES = [
   "project_interest_confirmed",
   "project_draft_created",
   "project_published_from_acquisition",
+  "partner_created",
+  "partner_contacted",
+  "partner_activated",
+  "partner_referral_created",
+  "partner_result_created",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -118,6 +123,11 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   project_interest_confirmed: "Интерес к проекту подтверждён",
   project_draft_created: "Черновик проекта (acquisition)",
   project_published_from_acquisition: "Публикация из acquisition",
+  partner_created: "Партнёр создан",
+  partner_contacted: "Контакт с партнёром",
+  partner_activated: "Партнёр активирован",
+  partner_referral_created: "Реферал от партнёра",
+  partner_result_created: "Результат партнёрства",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

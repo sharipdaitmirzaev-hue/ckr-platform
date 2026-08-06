@@ -50,5 +50,8 @@ export function mapPartnershipRow(row: PartnershipRow): Partnership {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    pipelineStage: row.pipeline_stage,
+    assigneeId: row.assignee_id ?? null,
+    startedAt: row.started_at ?? null,
   };
 }

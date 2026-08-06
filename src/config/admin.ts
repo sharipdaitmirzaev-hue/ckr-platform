@@ -141,6 +141,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Воронка и качество привлечения бизнес-проектов",
   },
   {
+    label: "Partnerships",
+    href: "/admin/partnerships",
+    description: "Партнёрская сеть: pipeline, outcomes, attribution",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

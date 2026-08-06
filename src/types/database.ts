@@ -410,6 +410,23 @@ export type DbGrowthTaskType =
 
 export type DbGrowthTaskStatus = "new" | "in_progress" | "completed";
 
+export type DbPartnershipPipelineStage =
+  | "partner_found"
+  | "contacted"
+  | "meeting"
+  | "negotiation"
+  | "active"
+  | "completed";
+
+export type DbPartnershipTaskType =
+  | "find_contact"
+  | "hold_meeting"
+  | "prepare_offer"
+  | "sign_agreement"
+  | "support_partner";
+
+export type DbPartnershipTaskStatus = "new" | "in_progress" | "completed";
+
 export type PublicLaunchActivationRow = {
   id: string;
   wave_id: string | null;
@@ -440,6 +457,20 @@ export type GrowthTaskRow = {
   title: string;
   description: string;
   status: DbGrowthTaskStatus;
+  assignee_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PartnershipTaskRow = {
+  id: string;
+  task_type: DbPartnershipTaskType;
+  title: string;
+  description: string;
+  status: DbPartnershipTaskStatus;
+  organization_id: string | null;
+  partnership_id: string | null;
   assignee_id: string | null;
   created_by: string | null;
   created_at: string;
@@ -749,6 +780,9 @@ export type PartnershipRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  pipeline_stage?: DbPartnershipPipelineStage;
+  assignee_id?: string | null;
+  started_at?: string | null;
 };
 
 export type DbReputationEntityType = "user" | "organization";
@@ -1730,6 +1764,31 @@ export type Database = {
           updated_at: string;
         }>;
       };
+      partnership_tasks: {
+        Row: PartnershipTaskRow;
+        Insert: {
+          id?: string;
+          task_type: DbPartnershipTaskType;
+          title: string;
+          description?: string;
+          status?: DbPartnershipTaskStatus;
+          organization_id?: string | null;
+          partnership_id?: string | null;
+          assignee_id?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          task_type: DbPartnershipTaskType;
+          title: string;
+          description: string;
+          status: DbPartnershipTaskStatus;
+          organization_id: string | null;
+          partnership_id: string | null;
+          assignee_id: string | null;
+          created_by: string | null;
+          updated_at: string;
+        }>;
+      };
       pilot_checklists: {
         Row: PilotChecklistRow;
         Insert: {
@@ -2012,6 +2071,9 @@ export type Database = {
           status?: DbPartnershipStatus;
           description?: string;
           created_by?: string | null;
+          pipeline_stage?: DbPartnershipPipelineStage;
+          assignee_id?: string | null;
+          started_at?: string | null;
         };
         Update: Partial<
           Omit<PartnershipRow, "id" | "created_at" | "created_by" | "organization_id">
@@ -2295,6 +2357,9 @@ export type Database = {
       launch_ops_task_status: DbLaunchOpsTaskStatus;
       growth_task_type: DbGrowthTaskType;
       growth_task_status: DbGrowthTaskStatus;
+      partnership_pipeline_stage: DbPartnershipPipelineStage;
+      partnership_task_type: DbPartnershipTaskType;
+      partnership_task_status: DbPartnershipTaskStatus;
     };
   };
 };

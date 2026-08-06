@@ -102,7 +102,26 @@ export async function createOrganizationAction(
     source: "organization_created",
   });
 
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: "partner_created",
+      userId: session.user.id,
+      entityType: "organization",
+      entityId: data.id,
+      metadata: {
+        source: "partner",
+        organizationId: data.id,
+        partnerName: name,
+        type,
+      },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
   revalidatePartner();
+  revalidatePath("/admin/partnerships");
   redirect("/partner/profile");
 }
 
@@ -213,6 +232,9 @@ export async function createPartnershipAction(
     return { error: "Некорректный статус партнёрства." };
   }
 
+  const pipelineStage =
+    status === "active" ? "active" : status === "inactive" ? "completed" : "partner_found";
+
   const supabase = createClient();
   const { data, error } = await supabase
     .from("partnerships")
@@ -222,6 +244,9 @@ export async function createPartnershipAction(
       status,
       description,
       created_by: session.user.id,
+      pipeline_stage: pipelineStage,
+      started_at: status === "active" ? new Date().toISOString() : null,
+      assignee_id: session.user.id,
     })
     .select("id")
     .single();
@@ -251,7 +276,27 @@ export async function createPartnershipAction(
     meta: { organizationId: org.id, status },
   });
 
+  try {
+    const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    await trackAnalyticsEvent({
+      eventType: status === "active" ? "partner_activated" : "partner_created",
+      userId: session.user.id,
+      entityType: "partnership",
+      entityId: data?.id ?? null,
+      metadata: {
+        source: "partner",
+        organizationId: org.id,
+        partnerName: org.name,
+        status,
+        pipelineStage,
+      },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
   revalidatePartner();
+  revalidatePath("/admin/partnerships");
   return { success: "Партнёрство создано." };
 }
 

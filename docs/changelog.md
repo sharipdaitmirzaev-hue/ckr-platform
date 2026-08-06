@@ -4,6 +4,20 @@
 
 ---
 
+## 0.62.0-beta — 2026-08-06
+
+Partnership Network — развитие партнёрской сети на базе organizations / partnerships.
+
+### Изменения
+
+- Дашборд `/admin/partnerships`: партнёры, типы, pipeline, outcomes, attribution, задачи
+- `PartnershipPipeline` + `partnership_tasks` (миграция `20260325560000_partnership_network.sql`)
+- Лия: «Как развивается партнёрская сеть ЦКР?» → `PartnershipReport`
+- Analytics: `partner_created`, `partner_contacted`, `partner_activated`, `partner_referral_created`, `partner_result_created`
+- Документация: `partnership-network.md`, `initial-partner-strategy.md`
+
+---
+
 ## 0.61.0-beta — 2026-08-06
 
 Project Acquisition Engine — поток бизнес-проектов от поиска до развития (без нового каталога).

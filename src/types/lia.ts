@@ -38,7 +38,8 @@ export type LiaScenarioId =
   | "public_launch"
   | "live_launch"
   | "growth"
-  | "project_acquisition";
+  | "project_acquisition"
+  | "partnership_network";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -380,6 +381,17 @@ export type ProjectAcquisitionReport = {
   recommendations: string[];
 };
 
+/** Сценарий «Как развивается партнёрская сеть ЦКР?» (этап 62, только анализ). */
+export type PartnershipReport = {
+  summary: string;
+  partners: string[];
+  activity: string[];
+  referrals: string[];
+  results: string[];
+  problems: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -579,6 +591,7 @@ export type LiaMessageMetadata = {
   liveLaunchReport?: LiveLaunchReport | null;
   growthReport?: GrowthReport | null;
   projectAcquisitionReport?: ProjectAcquisitionReport | null;
+  partnershipReport?: PartnershipReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

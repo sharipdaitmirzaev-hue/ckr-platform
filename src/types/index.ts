@@ -798,6 +798,14 @@ export type OrganizationMember = {
   email?: string;
 };
 
+export type PartnershipPipelineStage =
+  | "partner_found"
+  | "contacted"
+  | "meeting"
+  | "negotiation"
+  | "active"
+  | "completed";
+
 export type Partnership = {
   id: string;
   organizationId: string;
@@ -807,6 +815,9 @@ export type Partnership = {
   createdBy: string | null;
   createdAt?: string;
   updatedAt?: string;
+  pipelineStage?: PartnershipPipelineStage;
+  assigneeId?: string | null;
+  startedAt?: string | null;
 };
 
 /** Репутация и доверие (Этап 24). */

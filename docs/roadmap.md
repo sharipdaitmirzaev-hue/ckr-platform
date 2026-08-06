@@ -567,7 +567,15 @@
 - ProjectAcquisitionReport + analytics acquisition events
 - Без нового каталога проектов
 
-## Этап 62+ — backlog
+## Этап 62 — Partnership Network ✅ (код готов)
 
-Сделки, монетизация, масштаб партнёрств — см. roadmap-after-1.0.
+Подробности: [partnership-network.md](./partnership-network.md) · [initial-partner-strategy.md](./initial-partner-strategy.md)
+
+- `/admin/partnerships`: pipeline, outcomes, attribution, PartnershipTasks
+- organizations + partnerships (без отдельной системы партнёров)
+- Лия «Как развивается партнёрская сеть ЦКР?» → PartnershipReport
+
+## Этап 63+ — backlog
+
+Сделки, монетизация — см. roadmap-after-1.0.
 

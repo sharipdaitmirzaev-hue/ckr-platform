@@ -269,6 +269,13 @@ export const LIA_SCENARIOS: {
     description:
       "Project Acquisition: источники, конверсия, качество → ProjectAcquisitionReport (только анализ)",
   },
+  {
+    id: "partnership_network",
+    label: "Как развивается партнёрская сеть ЦКР?",
+    prompt: "Как развивается партнёрская сеть ЦКР?",
+    description:
+      "Partnership Network: партнёры, referrals, результаты → PartnershipReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -408,6 +415,9 @@ export const GROWTH_START_PATTERN =
 
 export const PROJECT_ACQUISITION_START_PATTERN =
   /как\s+развивается\s+поток\s+проектов(\s+цкр)?|поток\s+проектов\s+цкр|project\s*acquisition(\s*report)?|acquisition\s*pipeline/i;
+
+export const PARTNERSHIP_NETWORK_START_PATTERN =
+  /как\s+развивается\s+партн[её]рск(ая|ой)\s+сеть(\s+цкр)?|партн[её]рск(ая|ой)\s+сеть\s+цкр|partnership\s*(network|report)?/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

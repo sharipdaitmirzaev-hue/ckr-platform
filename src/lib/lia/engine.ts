@@ -31,6 +31,7 @@ import {
   LIVE_LAUNCH_START_PATTERN,
   GROWTH_START_PATTERN,
   PROJECT_ACQUISITION_START_PATTERN,
+  PARTNERSHIP_NETWORK_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -84,6 +85,7 @@ import type {
   LiveLaunchReport,
   GrowthReport,
   ProjectAcquisitionReport,
+  PartnershipReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -203,6 +205,9 @@ function detectScenario(
   }
   if (PROJECT_ACQUISITION_START_PATTERN.test(value)) {
     return "project_acquisition";
+  }
+  if (PARTNERSHIP_NETWORK_START_PATTERN.test(value)) {
+    return "partnership_network";
   }
   if (PUBLIC_LAUNCH_START_PATTERN.test(value)) {
     return "public_launch";
@@ -1890,6 +1895,48 @@ async function handleProjectAcquisitionAnalysis(input: {
   };
 }
 
+async function handlePartnershipNetworkAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildPartnershipReportAsync } = await import(
+    "@/lib/partnership-network/dashboard"
+  );
+  const report: PartnershipReport = await buildPartnershipReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "partnership_network",
+      metadata: { source: "lia", scenario: "partnership_network" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «Как развивается партнёрская сеть ЦКР?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — PartnershipReport. Лия только анализирует партнёрскую сеть.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "partnership_network",
+      partnershipReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleEcosystemValueAnalysis(input: {
   userId: string;
 }): Promise<LiaEngineResult> {
@@ -3543,6 +3590,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handleProjectAcquisitionAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "partnership_network") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить PartnershipReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "partnership_network",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handlePartnershipNetworkAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {
