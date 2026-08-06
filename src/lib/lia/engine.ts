@@ -1100,7 +1100,7 @@ async function handleProductImprovement(input: {
   }
 
   const patterns: string[] = [];
-  const topTypes = [...typeCounts.entries()]
+  const topTypes = Array.from(typeCounts.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4);
   if (topTypes.length > 0) {

@@ -109,7 +109,7 @@ export async function getImprovementsDashboard(): Promise<ImprovementsDashboard>
         byStatus,
         byPriority,
       },
-      metricHints: [...metricMap.entries()]
+      metricHints: Array.from(metricMap.entries())
         .map(([eventType, count]) => ({ eventType, count }))
         .sort((a, b) => b.count - a.count),
     };
