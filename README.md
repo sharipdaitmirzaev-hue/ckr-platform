@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.55.0-beta** (Open Beta Wave 1).  
-Обзор: [Open Beta Launch Control](./docs/open-beta-launch-control.md) · [Open Beta Readiness](./docs/open-beta-readiness.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.56.0-beta** (Open Beta Growth).  
+Обзор: [Open Beta Growth](./docs/open-beta-growth.md) · [Open Beta Launch Control](./docs/open-beta-launch-control.md) · [Open Beta Readiness](./docs/open-beta-readiness.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 

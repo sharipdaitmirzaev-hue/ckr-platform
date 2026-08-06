@@ -4,6 +4,20 @@
 
 ---
 
+## 0.56.0-beta — 2026-08-06
+
+Open Beta Growth — анализ роста и удержания после Open Beta (без новых крупных бизнес-модулей).
+
+### Изменения
+
+- Дашборд `/admin/open-beta-growth`: рост, RetentionMetrics (D1/D7/D14/D30), ценность действий
+- `RoleGrowthReport`, `GrowthEcosystemMetrics`, `UserValueFeedbackReport`
+- `OpenBetaGrowthDecision`: scale_public / continue_growth / improve_retention
+- Лия: «Почему пользователи возвращаются в ЦКР?» → `RetentionReport`
+- Документация: `open-beta-growth.md`
+
+---
+
 ## 0.55.0-beta — 2026-08-06
 
 Open Beta Wave 1 — контролируемый публичный запуск с мониторингом (без новых бизнес-направлений).

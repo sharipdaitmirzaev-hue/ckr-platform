@@ -38,6 +38,7 @@ function revalidateInvites() {
   revalidatePath("/admin/first-users");
   revalidatePath("/admin/beta-expansion");
   revalidatePath("/admin/open-beta");
+  revalidatePath("/admin/open-beta-growth");
   revalidatePath("/admin/open-beta-review");
 }
 
@@ -266,6 +267,7 @@ export async function submitFeedbackAction(input: {
   revalidatePath("/admin/first-users");
   revalidatePath("/admin/improvements");
   revalidatePath("/admin/open-beta");
+  revalidatePath("/admin/open-beta-growth");
   return { ok: true };
 }
 

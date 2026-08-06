@@ -19,6 +19,9 @@ import { PilotInsightReportCard } from "@/components/lia/pilot-insight-report";
 import { BetaExpansionReportCard } from "@/components/lia/beta-expansion-report";
 import { OpenBetaReadinessReportCard } from "@/components/lia/open-beta-readiness-report";
 import { OpenBetaReportCard } from "@/components/lia/open-beta-report";
+import { RetentionReportCard } from "@/components/lia/retention-report";
+import { RoleGrowthReportCard } from "@/components/lia/role-growth-report";
+import { UserValueFeedbackReportCard } from "@/components/lia/user-value-feedback-report";
 import { ProductFixImprovementReportCard } from "@/components/lia/product-fix-improvement-report";
 import { ProductImprovementReportCard } from "@/components/lia/product-improvement-report";
 import { ProgressReportCard } from "@/components/lia/progress-report";
@@ -106,6 +109,10 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const openBetaReadinessReport =
           message.metadata?.openBetaReadinessReport;
         const openBetaReport = message.metadata?.openBetaReport;
+        const retentionReport = message.metadata?.retentionReport;
+        const roleGrowthReport = message.metadata?.roleGrowthReport;
+        const userValueFeedbackReport =
+          message.metadata?.userValueFeedbackReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -212,6 +219,15 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && openBetaReport ? (
               <OpenBetaReportCard report={openBetaReport} />
+            ) : null}
+            {!isUser && retentionReport ? (
+              <RetentionReportCard report={retentionReport} />
+            ) : null}
+            {!isUser && roleGrowthReport ? (
+              <RoleGrowthReportCard report={roleGrowthReport} />
+            ) : null}
+            {!isUser && userValueFeedbackReport ? (
+              <UserValueFeedbackReportCard report={userValueFeedbackReport} />
             ) : null}
           </li>
         );

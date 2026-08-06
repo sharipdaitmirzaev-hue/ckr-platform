@@ -510,6 +510,16 @@
 - Лия: «Как проходит открытый запуск ЦКР?»
 - Без новых бизнес-направлений
 
-## Этап 56+ — backlog
+## Этап 56 — Open Beta Growth ✅ (код готов)
+
+Подробности: [open-beta-growth.md](./open-beta-growth.md)
+
+- `/admin/open-beta-growth`: рост, retention D1/D7/D14/D30, ценные действия, роли
+- GrowthEcosystemMetrics + UserValueFeedbackReport
+- OpenBetaGrowthDecision + RetentionReport
+- Лия: «Почему пользователи возвращаются в ЦКР?»
+- Без новых крупных бизнес-модулей
+
+## Этап 57+ — backlog
 
 В т.ч. API для мобильного приложения — см. roadmap-after-1.0.

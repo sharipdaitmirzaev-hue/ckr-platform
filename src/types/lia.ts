@@ -32,7 +32,8 @@ export type LiaScenarioId =
   | "first_users_review"
   | "beta_expansion"
   | "open_beta_readiness"
-  | "open_beta";
+  | "open_beta"
+  | "open_beta_growth";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -294,6 +295,33 @@ export type OpenBetaReport = {
   recommendations: string[];
 };
 
+/** Сценарий «Почему пользователи возвращаются в ЦКР?» (этап 56, только анализ). */
+export type RetentionReport = {
+  summary: string;
+  returning_users: string[];
+  valuable_actions: string[];
+  drop_off_points: string[];
+  recommendations: string[];
+};
+
+/** Рост и ценность по ролям Open Beta (этап 56). */
+export type RoleGrowthReport = {
+  summary: string;
+  entrepreneurs: string[];
+  experts: string[];
+  investors: string[];
+  organizations: string[];
+};
+
+/** Активные пользователи → отзывы → улучшения (этап 56). */
+export type UserValueFeedbackReport = {
+  summary: string;
+  active_users: string[];
+  feedback_themes: string[];
+  improvements: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -485,6 +513,9 @@ export type LiaMessageMetadata = {
   betaExpansionReport?: BetaExpansionReport | null;
   openBetaReadinessReport?: OpenBetaReadinessReport | null;
   openBetaReport?: OpenBetaReport | null;
+  retentionReport?: RetentionReport | null;
+  roleGrowthReport?: RoleGrowthReport | null;
+  userValueFeedbackReport?: UserValueFeedbackReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

@@ -101,6 +101,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Контроль Open Beta Wave 1: доступ, метрики, health",
   },
   {
+    label: "Open Beta Growth",
+    href: "/admin/open-beta-growth",
+    description: "Удержание, рост ролей, ценность действий после Open Beta",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

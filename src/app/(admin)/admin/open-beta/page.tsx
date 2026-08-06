@@ -66,6 +66,12 @@ export default async function AdminOpenBetaPage() {
           Open Beta Readiness
         </Link>
         <Link
+          href="/admin/open-beta-growth"
+          className="text-accent hover:underline"
+        >
+          Open Beta Growth
+        </Link>
+        <Link
           href="/admin/beta-expansion"
           className="text-accent hover:underline"
         >

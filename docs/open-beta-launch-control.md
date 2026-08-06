@@ -3,7 +3,7 @@
 Этап 55 · Версия `0.55.0-beta`  
 UI: `/admin/open-beta` · Лия: «Как проходит открытый запуск ЦКР?»
 
-Связано: [open-beta-readiness.md](./open-beta-readiness.md) · [open-beta-first-30-days.md](./open-beta-first-30-days.md) · [open-beta-launch-plan.md](./open-beta-launch-plan.md)
+Связано: [open-beta-growth.md](./open-beta-growth.md) · [open-beta-readiness.md](./open-beta-readiness.md) · [open-beta-first-30-days.md](./open-beta-first-30-days.md) · [open-beta-launch-plan.md](./open-beta-launch-plan.md)
 
 ---
 

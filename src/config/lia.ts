@@ -226,6 +226,13 @@ export const LIA_SCENARIOS: {
     description:
       "Open Beta Wave 1: пользователи, активация, Лия, экосистема → OpenBetaReport (только анализ)",
   },
+  {
+    id: "open_beta_growth",
+    label: "Почему пользователи возвращаются в ЦКР?",
+    prompt: "Почему пользователи возвращаются в ЦКР?",
+    description:
+      "Open Beta Growth: удержание, ценные действия, роли → RetentionReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -348,8 +355,11 @@ export const BETA_EXPANSION_START_PATTERN =
 export const OPEN_BETA_READINESS_START_PATTERN =
   /готов\s+ли\s+цкр\s+к\s+открытому\s+запуску|открытому\s+запуску|open\s*beta\s*readiness|готовность\s+к\s+open\s*beta/i;
 
+export const OPEN_BETA_GROWTH_START_PATTERN =
+  /почему\s+пользователи\s+возвращаются(\s+в\s+цкр)?|удержание\s+(пользователей\s+)?open\s*beta|open\s*beta\s*growth|retention\s*report|возврат\s+пользователей/i;
+
 export const OPEN_BETA_START_PATTERN =
-  /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)/i;
+  /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;
 
 /** Вопросы сценария «Аудит бизнеса» (пилот ТИНДА). */
 export const BUSINESS_AUDIT_STEPS = [
