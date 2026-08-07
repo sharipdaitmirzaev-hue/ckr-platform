@@ -80,7 +80,12 @@ export async function listPublishedInvestmentOffers(
     query = query.eq("investment_type", filters.type);
   }
   if (q) {
-    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+    const safe = q.replace(/[%_,.()]/g, " ").trim();
+    if (safe) {
+      query = query.or(
+        `title.ilike.%${safe}%,description.ilike.%${safe}%`,
+      );
+    }
   }
 
   const { data, error } = await query;
