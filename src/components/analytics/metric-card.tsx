@@ -1,6 +1,6 @@
 /**
- * UI: метрика-карточка аналитики (admin/analytics и др.).
- * Путь case-sensitive: src/components/analytics/metric-card.tsx
+ * Critical UI component — must exist at:
+ * src/components/analytics/metric-card.tsx
  */
 import { cn } from "@/lib/utils";
 
@@ -23,12 +23,7 @@ export function MetricCard({
       : value;
 
   return (
-    <div
-      className={cn(
-        "border-l border-accent/40 pl-4",
-        className,
-      )}
-    >
+    <div className={cn("border-l border-accent/40 pl-4", className)}>
       <p className="text-xs uppercase tracking-[0.16em] text-muted">{label}</p>
       <p className="mt-2 font-display text-2xl font-semibold text-foreground">
         {display}

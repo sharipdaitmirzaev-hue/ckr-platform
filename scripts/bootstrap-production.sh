@@ -120,13 +120,12 @@ log_ok "Права: ${CKR_APP_DIR} → ${CKR_APP_USER}; env root:${CKR_APP_USER}
 check_migrations_readonly
 
 # --- build ---
-run_as_app "rm -rf .next"
+assert_build_sources
+run_as_app "rm -rf .next node_modules"
 log_info "npm ci"
 run_as_app "npm ci"
 log_ok "npm ci завершён"
-
 assert_build_sources
-
 log_info "npm run build"
 run_as_app "npm run build"
 log_ok "production build готов"

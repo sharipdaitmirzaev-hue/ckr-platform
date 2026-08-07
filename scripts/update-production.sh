@@ -32,12 +32,17 @@ chmod 640 "${CKR_ENV_FILE}"
 
 check_migrations_readonly
 
-# Чистый build без протухшего .next
-run_as_app "rm -rf .next"
+assert_build_sources
+
+# Чистый build: убираем кэш и зависимости
+log_info "rm -rf .next node_modules"
+run_as_app "rm -rf .next node_modules"
+
 log_info "npm ci"
 run_as_app "npm ci"
 log_ok "npm ci"
 
+# Повторно после npm ci (на случай postinstall/clean сюрпризов)
 assert_build_sources
 
 log_info "npm run build"

@@ -1,5 +1,5 @@
-import { AnalyticsChart } from "@/components/analytics/analytics-chart";
-import { MetricCard } from "@/components/analytics/metric-card";
+import { AnalyticsChart } from "../../../../components/analytics/analytics-chart";
+import { MetricCard } from "../../../../components/analytics/metric-card";
 import { StatsCard } from "@/components/analytics/stats-card";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";

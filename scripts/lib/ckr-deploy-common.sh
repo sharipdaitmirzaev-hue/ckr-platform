@@ -143,11 +143,24 @@ app_version() {
 }
 
 run_as_app() {
+  # Без login-shell (--noprofile/--norc): иначе cd из profile может сломать cwd.
   local cmd="$*"
+  local wrapper
+  wrapper="$(cat <<EOF
+set -euo pipefail
+set -a
+# shellcheck disable=SC1091
+source '${CKR_ENV_FILE}'
+set +a
+cd '${CKR_APP_DIR}' || { echo '[ERROR] cd ${CKR_APP_DIR} failed' >&2; exit 1; }
+pwd
+${cmd}
+EOF
+)"
   if id "${CKR_APP_USER}" >/dev/null 2>&1; then
-    sudo -u "${CKR_APP_USER}" bash -lc "set -a; source '${CKR_ENV_FILE}'; set +a; cd '${CKR_APP_DIR}'; ${cmd}"
+    sudo -u "${CKR_APP_USER}" bash --noprofile --norc -c "${wrapper}"
   else
-    bash -lc "set -a; source '${CKR_ENV_FILE}'; set +a; cd '${CKR_APP_DIR}'; ${cmd}"
+    bash --noprofile --norc -c "${wrapper}"
   fi
 }
 
@@ -164,41 +177,78 @@ wait_for_health() {
   die "Health check не ответил: ${CKR_HEALTH_URL}"
 }
 
+CRITICAL_SOURCE_FILES=(
+  "src/components/ui/error-state.tsx"
+  "src/components/analytics/analytics-chart.tsx"
+  "src/components/analytics/metric-card.tsx"
+)
+
+# Принудительно восстанавливает критичные файлы из HEAD (даже если «пропали» с диска).
+restore_critical_sources() {
+  local path abs expected actual
+  mkdir -p \
+    "${CKR_APP_DIR}/src/components/ui" \
+    "${CKR_APP_DIR}/src/components/analytics"
+
+  for path in "${CRITICAL_SOURCE_FILES[@]}"; do
+    abs="${CKR_APP_DIR}/${path}"
+    if ! git -C "${CKR_APP_DIR}" cat-file -e "HEAD:${path}" 2>/dev/null; then
+      die "В Git HEAD нет объекта: ${path} (ветка/checkout неверный)"
+    fi
+    # Перезапись с диска из git object DB
+    git -C "${CKR_APP_DIR}" checkout -f HEAD -- "${path}"
+    if [[ ! -f "${abs}" ]]; then
+      # fallback: прямая выгрузка blob
+      git -C "${CKR_APP_DIR}" show "HEAD:${path}" >"${abs}"
+    fi
+    [[ -f "${abs}" ]] || die "Не удалось восстановить ${path}"
+    [[ -s "${abs}" ]] || die "Файл пуст после restore: ${path}"
+
+    expected="$(git -C "${CKR_APP_DIR}" rev-parse "HEAD:${path}")"
+    actual="$(git -C "${CKR_APP_DIR}" hash-object "${abs}")"
+    if [[ "${expected}" != "${actual}" ]]; then
+      die "hash mismatch для ${path}: git=${expected} disk=${actual}"
+    fi
+    log_ok "restored ${path} (${actual:0:12})"
+  done
+}
+
 # Критичные исходники для production build (case-sensitive Linux).
 assert_build_sources() {
-  local required=(
-    "src/components/ui/error-state.tsx"
-    "src/components/analytics/analytics-chart.tsx"
-    "src/components/analytics/metric-card.tsx"
-    "src/app/error.tsx"
-    "tsconfig.json"
-  )
-  local missing=()
-  local path
-  for path in "${required[@]}"; do
-    if [[ ! -f "${CKR_APP_DIR}/${path}" ]]; then
-      missing+=("$path")
+  local path abs
+  restore_critical_sources
+
+  for path in "${CRITICAL_SOURCE_FILES[@]}" "src/app/error.tsx" "tsconfig.json" "next.config.mjs"; do
+    abs="${CKR_APP_DIR}/${path}"
+    if [[ ! -f "${abs}" ]]; then
+      die "Нет файла: ${path}"
     fi
   done
-  if ((${#missing[@]} > 0)); then
-    log_error "В рабочем дереве нет файлов, нужных для build:"
-    for path in "${missing[@]}"; do
-      log_error "  - ${path}"
+
+  if ! grep -q 'baseUrl' "${CKR_APP_DIR}/tsconfig.json"; then
+    die "tsconfig.json без baseUrl"
+  fi
+  if ! grep -q '@/\*' "${CKR_APP_DIR}/tsconfig.json"; then
+    die "tsconfig.json не содержит paths @/*"
+  fi
+
+  # Проверка читаемости именно пользователем приложения (ckr)
+  if id "${CKR_APP_USER}" >/dev/null 2>&1; then
+    for path in "${CRITICAL_SOURCE_FILES[@]}"; do
+      if ! sudo -u "${CKR_APP_USER}" test -r "${CKR_APP_DIR}/${path}"; then
+        die "Файл не читается пользователем ${CKR_APP_USER}: ${path}"
+      fi
     done
-    log_error "Выполните: git -C ${CKR_APP_DIR} fetch origin && git -C ${CKR_APP_DIR} reset --hard origin/${CKR_DEPLOY_BRANCH}"
-    die "Остановка: исходники неполные (возможен checkout main/битое дерево)"
   fi
 
-  # Быстрая проверка aliases @/*
-  if ! grep -q '"@/\*".*"./src/\*"' "${CKR_APP_DIR}/tsconfig.json" \
-    && ! grep -q '"@/\*": \["./src/\*"\]' "${CKR_APP_DIR}/tsconfig.json"; then
-    # допускаем оба формата форматирования JSON
-    if ! grep -q '@/\*' "${CKR_APP_DIR}/tsconfig.json"; then
-      die "tsconfig.json не содержит paths @/* → ./src/*"
-    fi
-  fi
+  log_info "ls критичных файлов:"
+  ls -la \
+    "${CKR_APP_DIR}/src/components/ui/error-state.tsx" \
+    "${CKR_APP_DIR}/src/components/analytics/analytics-chart.tsx" \
+    "${CKR_APP_DIR}/src/components/analytics/metric-card.tsx" \
+    || true
 
-  log_ok "Build sources: error-state, analytics-chart, metric-card на месте"
+  log_ok "Build sources: error-state, analytics-chart, metric-card на месте и читаемы"
 }
 
 sync_git_tree() {
