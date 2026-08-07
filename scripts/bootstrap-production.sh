@@ -120,20 +120,13 @@ else
 fi
 log_ok "Git: $(git_as log -1 --oneline)"
 
-# --- env template if missing ---
+# --- secrets gate ---
 mkdir -p /etc/ckr
 if [[ ! -f "${CKR_ENV_FILE}" ]]; then
-  if [[ -f "${CKR_APP_DIR}/deploy/env/production.env.template" ]]; then
-    cp "${CKR_APP_DIR}/deploy/env/production.env.template" "${CKR_ENV_FILE}"
-    log_warn "Создан шаблон ${CKR_ENV_FILE}"
-  else
-    die "Нет шаблона deploy/env/production.env.template"
-  fi
+  die "Нет ${CKR_ENV_FILE}. Сначала: sudo ./scripts/setup-production-env.sh"
 fi
 chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"
 chmod 640 "${CKR_ENV_FILE}"
-
-# --- secrets gate ---
 ensure_env_or_stop
 DOMAIN="$(domain_from_site_url)"
 [[ -n "$DOMAIN" ]] || die "Не удалось извлечь домен из NEXT_PUBLIC_SITE_URL"
