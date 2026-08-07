@@ -5,8 +5,10 @@
 #   sudo ./scripts/update-production.sh
 #   sudo ./scripts/update-production.sh cursor/deploy-ubuntu-0.61-ff37
 #
-# Схема: fetch → hard reset к origin → npm ci → build → restart → health
+# Схема: fetch → hard reset → npm ci --include=dev → build → restart → health
 # Секреты только из /etc/ckr/ckr.env
+# npm ci всегда с --include=dev: NODE_ENV=production иначе пропускает
+# tailwindcss/postcss/typescript (нужны на этапе Next.js build).
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -38,9 +40,7 @@ assert_build_sources
 log_info "rm -rf .next node_modules"
 run_as_app "rm -rf .next node_modules"
 
-log_info "npm ci"
-run_as_app "npm ci"
-log_ok "npm ci"
+npm_ci_for_build
 
 # Повторно после npm ci (на случай postinstall/clean сюрпризов)
 assert_build_sources

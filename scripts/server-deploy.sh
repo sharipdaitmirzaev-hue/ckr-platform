@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Безопасное обновление ЦКР на Ubuntu-сервере.
 #
-# Схема: git checkout → npm ci → npm run build → systemctl restart
+# Схема: git checkout → npm ci --include=dev → npm run build → systemctl restart
 #
 # Использование:
 #   cd /var/www/ckr-platform
@@ -50,8 +50,9 @@ run_as_app() {
   fi
 }
 
-echo "==> [4/6] npm ci"
-run_as_app "cd '${APP_DIR}' && set -a && source /etc/ckr/ckr.env && set +a && npm ci"
+# NODE_ENV=production в ckr.env иначе пропускает devDependencies (tailwindcss и др.)
+echo "==> [4/6] npm ci --include=dev"
+run_as_app "cd '${APP_DIR}' && set -a && source /etc/ckr/ckr.env && set +a && npm ci --include=dev && node -e \"require.resolve('tailwindcss'); require.resolve('postcss'); require.resolve('typescript');\""
 
 echo "==> [5/6] npm run build"
 run_as_app "cd '${APP_DIR}' && set -a && source /etc/ckr/ckr.env && set +a && npm run build"

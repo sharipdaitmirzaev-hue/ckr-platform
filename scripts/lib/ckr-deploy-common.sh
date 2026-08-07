@@ -164,6 +164,18 @@ EOF
   fi
 }
 
+# /etc/ckr/ckr.env задаёт NODE_ENV=production. При этом npm ci по умолчанию
+# пропускает devDependencies, а Next.js build нуждается в них:
+# tailwindcss, postcss, typescript, eslint-config-next и т.п.
+# Runtime (systemd npm start) остаётся с NODE_ENV=production.
+npm_ci_for_build() {
+  log_info "npm ci --include=dev (build-time deps: tailwindcss/postcss/typescript)"
+  run_as_app "npm ci --include=dev"
+  # Жёсткая проверка: без этих модулей webpack/Next build падает.
+  run_as_app "node -e \"require.resolve('tailwindcss'); require.resolve('postcss'); require.resolve('typescript');\""
+  log_ok "build dependencies установлены (включая devDependencies)"
+}
+
 wait_for_health() {
   local tries="${1:-30}"
   local i

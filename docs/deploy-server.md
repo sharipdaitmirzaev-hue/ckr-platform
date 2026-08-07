@@ -38,7 +38,7 @@ grep version src/config/version.ts
 **Да.** Требования совпадают:
 
 - Node.js 20+ (на сервере 22) — OK для Next.js 14.2
-- `npm ci` + `npm run build` + `npm run start`
+- `npm ci --include=dev` + `npm run build` + `npm run start` (runtime: `NODE_ENV=production`)
 - Nginx reverse proxy → `127.0.0.1:3000`
 - Отдельный production Supabase + 44 migrations (список ниже)
 
@@ -197,15 +197,20 @@ sudo -u ckr bash -c 'set -a; source /etc/ckr/ckr.env; set +a; for k in NEXT_PUBL
 
 ### Шаг D — зависимости и production build
 
+`/etc/ckr/ckr.env` задаёт `NODE_ENV=production`. При обычном `npm ci` npm
+пропускает `devDependencies`, а Next.js build нуждается в `tailwindcss`,
+`postcss`, `typescript` и т.п. Поэтому установка всегда с `--include=dev`.
+Runtime (`npm start` / systemd) по-прежнему работает с `NODE_ENV=production`.
+
 ```bash
 cd /var/www/ckr-platform
-sudo -u ckr bash -lc 'set -a; source /etc/ckr/ckr.env; set +a; npm ci'
+sudo -u ckr bash -lc 'set -a; source /etc/ckr/ckr.env; set +a; npm ci --include=dev'
 sudo -u ckr bash -lc 'set -a; source /etc/ckr/ckr.env; set +a; npm run build'
 ```
 
 **Ожидается:**
 
-- `npm ci` завершается без ошибок, появляется `node_modules`
+- `npm ci --include=dev` завершается без ошибок, есть `node_modules/tailwindcss`
 - `npm run build` → `Compiled successfully`, папка `.next`
 
 ### Шаг E — systemd (постоянный сервис)
@@ -292,7 +297,7 @@ chmod +x scripts/server-deploy.sh scripts/server-healthcheck.sh
 1. `git fetch`
 2. checkout целевой ref
 3. показать revision / version
-4. `npm ci`
+4. `npm ci --include=dev` (build-time deps при `NODE_ENV=production`)
 5. `npm run build` (с `/etc/ckr/ckr.env`)
 6. `systemctl restart ckr` + health check
 

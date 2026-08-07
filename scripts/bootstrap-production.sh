@@ -122,11 +122,9 @@ check_migrations_readonly
 # --- build ---
 assert_build_sources
 run_as_app "rm -rf .next node_modules"
-log_info "npm ci"
-run_as_app "npm ci"
-log_ok "npm ci завершён"
+npm_ci_for_build
 assert_build_sources
-log_info "npm run build"
+log_info "npm run build (NODE_ENV из /etc/ckr/ckr.env; runtime остаётся production)"
 run_as_app "npm run build"
 log_ok "production build готов"
 

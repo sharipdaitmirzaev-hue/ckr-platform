@@ -42,7 +42,7 @@ Storage: бакет `documents` создаётся миграцией verificati
 2. Применить миграции: `supabase db push` или SQL Editor по порядку файлов в `supabase/migrations/`.  
 3. Проверить Storage bucket `documents` и RLS политик.  
 4. Задать secrets на хостинге (не коммитить `.env.local`).  
-5. `npm ci && npm run build && npm run start` (или платформенный build).  
+5. `npm ci --include=dev && npm run build && npm run start` (или `scripts/update-production.sh`).  
 6. Smoke-check: `/`, `/login`, `/dashboard`, `/lia`, admin login.  
 7. Выключить demo mode и seed.
 
