@@ -27,6 +27,12 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.production
+.env.production.local
+# server secrets (never commit)
+/etc/ckr/
+deploy/env/*.env
+!deploy/env/production.env.template
 
 # vercel
 .vercel

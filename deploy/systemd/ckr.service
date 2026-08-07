@@ -1,0 +1,31 @@
+[Unit]
+Description=CKR Platform (Next.js 0.61.0-beta)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ckr
+Group=ckr
+WorkingDirectory=/var/www/ckr-platform
+Environment=NODE_ENV=production
+EnvironmentFile=-/etc/ckr/ckr.env
+ExecStart=/usr/bin/npm run start -- --hostname 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# Безопасность
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/ckr-platform
+
+# Логи в journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ckr
+
+[Install]
+WantedBy=multi-user.target
