@@ -7,6 +7,8 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Регистрация",
+  description:
+    "Регистрация в ЦКР: выберите роль и сделайте первое действие — аудит с Лией, проект, интерес или профиль.",
 };
 
 export default function RegisterPage() {
@@ -17,23 +19,19 @@ export default function RegisterPage() {
         Регистрация
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Создайте аккаунт в экосистеме ЦКР. Путь: Главная → Лия → Регистрация →
-        Роль → Онбординг → Первое действие.
-      </p>
-
-      <ol className="mt-4 space-y-1 text-xs text-muted">
-        <li>1. Регистрация</li>
-        <li>2. Роль и профиль</li>
-        <li>3. Онбординг с подсказкой по роли</li>
-        <li>4. Первое действие (идея/проект, интерес, профиль, партнёры)</li>
-      </ol>
-      <p className="mt-3 text-xs text-muted">
-        Ещё до регистрации можно спросить Лию на{" "}
-        <Link href="/lia" className="text-accent hover:underline">
+        Три шага: регистрация → выбор роли → первое действие. До аккаунта можно
+        спросить Лию на{" "}
+        <Link href="/lia?scenario=business_audit" className="text-accent hover:underline">
           /lia
         </Link>
         .
       </p>
+
+      <ol className="mt-4 space-y-1 text-xs text-muted">
+        <li>1. Создайте аккаунт</li>
+        <li>2. Выберите роль</li>
+        <li>3. Сделайте первое действие (аудит / проект / интерес / профиль)</li>
+      </ol>
 
       <Suspense fallback={<p className="mt-8 text-sm text-muted">Загрузка формы…</p>}>
         <RegisterForm />

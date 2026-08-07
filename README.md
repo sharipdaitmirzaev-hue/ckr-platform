@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.64.0-beta** (Production Deployment & Go-Live).  
-Обзор: [Go-Live](./docs/go-live.md) · [First Deals & Revenue](./docs/first-deals-and-revenue.md) · [Partnership Network](./docs/partnership-network.md) · [Project Acquisition](./docs/project-acquisition-engine.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.65.0-beta** (Public Website Packaging).  
+Обзор: [Public website](./docs/public-website-packaging.md) · [Go-Live](./docs/go-live.md) · [First Deals & Revenue](./docs/first-deals-and-revenue.md) · [Partnership Network](./docs/partnership-network.md) · [Help center](./docs/help-center.md)
 
 ## Стек
 

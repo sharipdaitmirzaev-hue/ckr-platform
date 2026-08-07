@@ -62,14 +62,22 @@ export default async function OpportunitiesPage({
           <SectionHeading
             eyebrow="Marketplace"
             title="Возможности"
-            description="Ресурсы, партнёрства и предложения для проектов ЦКР."
+            description="Ресурсы и партнёрства: поиск, фильтры по категории и региону, карточки с CTA."
           />
-          <ButtonLink
-            href={current ? "/dashboard/opportunities/create" : "/register"}
-            variant="outline"
-          >
-            {current ? "Предложить возможность" : "Войти, чтобы предложить"}
-          </ButtonLink>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink
+              href={
+                current
+                  ? "/dashboard/opportunities/create"
+                  : "/register?next=/dashboard/opportunities/create"
+              }
+            >
+              Предложить возможность
+            </ButtonLink>
+            <ButtonLink href="/lia?scenario=business_audit" variant="outline">
+              Начать с аудита
+            </ButtonLink>
+          </div>
         </div>
 
         <div className="mt-10 space-y-6 border-t border-border pt-8">

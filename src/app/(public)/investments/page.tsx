@@ -1,4 +1,5 @@
 import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
+import { CatalogSearchForm } from "@/components/catalog/catalog-search-form";
 import { InvestmentCard } from "@/components/investments/investment-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -20,7 +21,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Инвестиции",
   description:
-    "Инвестиционные предложения ЦКР: фильтры по отрасли, сумме и типу участия.",
+    "Инвестиционные предложения ЦКР: поиск и фильтры по отрасли, сумме и типу участия.",
   openGraph: {
     title: "Инвестиции · ЦКР",
     description: "Капитал и форматы участия для проектов экосистемы.",
@@ -37,6 +38,7 @@ type InvestmentsPageProps = {
     amount?: string;
     category?: string;
     type?: string;
+    q?: string;
   };
 };
 
@@ -56,13 +58,14 @@ export default async function InvestmentsPage({
   )
     ? (searchParams?.type as InvestmentType)
     : null;
+  const q = searchParams?.q?.trim() || null;
 
   const [offers, current] = await Promise.all([
-    listPublishedInvestmentOffers({ amount, category, type }),
+    listPublishedInvestmentOffers({ amount, category, type, q }),
     getCurrentUser(),
   ]);
 
-  const preserve = { amount, category, type };
+  const preserve = { amount, category, type, q };
 
   return (
     <div className="py-14 sm:py-16">
@@ -71,17 +74,31 @@ export default async function InvestmentsPage({
           <SectionHeading
             eyebrow="Marketplace"
             title="Инвестиции"
-            description="Проект, описание, объём и формат участия — найдите капитал или разместите предложение."
+            description="Поиск, фильтры и карточки предложений — найдите капитал или разместите своё."
           />
-          <ButtonLink
-            href={current ? "/dashboard/investments/create" : "/register"}
-            variant="outline"
-          >
-            {current ? "Разместить предложение" : "Войти, чтобы разместить"}
-          </ButtonLink>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink
+              href={
+                current
+                  ? "/dashboard/investments/create"
+                  : "/register?next=/dashboard/investments/create"
+              }
+            >
+              Разместить предложение
+            </ButtonLink>
+            <ButtonLink href="/projects" variant="outline">
+              Смотреть проекты
+            </ButtonLink>
+          </div>
         </div>
 
         <div className="mt-10 space-y-6 border-t border-border pt-8">
+          <CatalogSearchForm
+            action="/investments"
+            defaultValue={q ?? ""}
+            placeholder="Поиск по названию и описанию"
+            hidden={{ amount, category, type }}
+          />
           <CatalogFilterBar
             label="Отрасль"
             basePath="/investments"

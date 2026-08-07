@@ -20,6 +20,8 @@ type LiaChatProps = {
   /** Автозапуск сценария из query (например check_reliability). */
   autoStartScenario?: LiaScenarioId | null;
   autoStartMessage?: string | null;
+  /** Куда вернуть гостя после login/register (сохраняет scenario). */
+  guestNextPath?: string;
 };
 
 export function LiaChat({
@@ -32,6 +34,7 @@ export function LiaChat({
   autoStartRealize = false,
   autoStartScenario = null,
   autoStartMessage = null,
+  guestNextPath = "/lia",
 }: LiaChatProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(activeSessionId);
@@ -83,7 +86,17 @@ export function LiaChat({
 
   async function sendMessage(message: string, scenario?: LiaScenarioId | null) {
     if (!isAuthenticated) {
-      router.push(`/login?next=${encodeURIComponent("/lia")}`);
+      const next =
+        scenario != null
+          ? `/lia?scenario=${encodeURIComponent(scenario)}${
+              message
+                ? `&message=${encodeURIComponent(message.slice(0, 2000))}`
+                : ""
+            }`
+          : guestNextPath;
+      router.push(
+        `/register?next=${encodeURIComponent(next)}`,
+      );
       return;
     }
 

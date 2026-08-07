@@ -83,13 +83,18 @@ export default async function ExpertsPage({ searchParams }: ExpertsPageProps) {
       <Container>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
-            eyebrow="Каталог"
+            eyebrow="Marketplace"
             title="Эксперты ЦКР"
-            description="Направление, регион и опыт — найдите специалиста и свяжитесь через платформу."
+            description="Поиск и фильтры по направлению, региону и опыту. Карточки с CTA к профилю."
           />
-          <ButtonLink href="/expert" variant="outline">
-            Стать экспертом
-          </ButtonLink>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href="/register?role=expert&next=/dashboard/expert">
+              Стать экспертом
+            </ButtonLink>
+            <ButtonLink href="/expert" variant="outline">
+              Для экспертов
+            </ButtonLink>
+          </div>
         </div>
 
         <div id="catalog" className="mt-10 space-y-6 border-t border-border pt-8">

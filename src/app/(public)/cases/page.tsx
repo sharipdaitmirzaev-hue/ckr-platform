@@ -1,3 +1,4 @@
+import { CaseViewTracker } from "@/components/analytics/case-view-tracker";
 import { PublicLiaEntry } from "@/components/marketing/public-lia-entry";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -11,7 +12,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Кейсы",
   description:
-    "Публичные кейсы ЦКР: ТИНДА — развитие оптового направления через платформу.",
+    "Публичные кейсы ЦКР: ТИНДА — развитие оптового направления через платформу. Реальные результаты отдельно от плана.",
   openGraph: {
     title: "Кейсы · ЦКР",
     description: TINDA_CASE_DETAIL.task,
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
 export default function CasesPage() {
   return (
     <>
+      <CaseViewTracker caseId="tinda" />
       <section className="relative overflow-hidden border-b border-border py-16 sm:py-20">
         <div
           aria-hidden
@@ -37,7 +39,8 @@ export default function CasesPage() {
           </h1>
           <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
             ЦКР — не демо в вакууме. Публичные разборы помогают новым участникам
-            понять, как проходит путь от идеи до реализации.
+            понять путь от задачи до результата. Реальные итоги отделены от
+            планируемых шагов.
           </p>
         </Container>
       </section>
@@ -50,6 +53,16 @@ export default function CasesPage() {
               {TINDA_CASE_DETAIL.title}
             </h2>
             <p className="mt-3 text-sm text-muted">{TINDA_PUBLIC_CASE.summary}</p>
+            <ol className="mt-8 flex flex-wrap items-center gap-3 text-sm text-foreground">
+              {TINDA_PUBLIC_CASE.path.map((step, index) => (
+                <li key={step} className="flex items-center gap-3">
+                  {index > 0 ? <span className="text-muted">↓</span> : null}
+                  <span className="border-l border-accent/40 pl-3 font-display text-lg">
+                    {step}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
 
           <div className="border-l border-accent/40 pl-5">
@@ -60,7 +73,7 @@ export default function CasesPage() {
           </div>
 
           <div>
-            <SectionHeading eyebrow="Контекст" title="Что было" />
+            <SectionHeading eyebrow="Контекст" title="Исходная ситуация" />
             <ul className="mt-6 space-y-4 text-sm leading-relaxed text-muted sm:text-base">
               <li>
                 <span className="font-medium text-foreground">Идея: </span>
@@ -86,46 +99,51 @@ export default function CasesPage() {
                 <li key={item}>{item}</li>
               ))}
             </ul>
-            <ol className="mt-8 flex flex-wrap items-center gap-3 text-sm text-foreground">
-              {TINDA_PUBLIC_CASE.path.map((step, index) => (
-                <li key={step} className="flex items-center gap-3">
-                  {index > 0 ? <span className="text-muted">→</span> : null}
-                  <span className="border-l border-accent/40 pl-3 font-display text-lg">
-                    {step}
-                  </span>
-                </li>
-              ))}
-            </ol>
           </div>
 
           <div>
-            <SectionHeading eyebrow="Итог" title="Результат" />
-            <p className="mt-6 text-base leading-relaxed text-muted">
+            <SectionHeading eyebrow="Итог" title="Результаты" />
+            <p className="mt-6 text-sm font-medium text-foreground">
+              Реальные результаты
+            </p>
+            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
+              {TINDA_CASE_DETAIL.resultsReal.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="mt-6 text-sm text-muted">
               <span className="font-medium text-foreground">
                 Текущий этап:{" "}
               </span>
               {TINDA_CASE_DETAIL.result.stage}
             </p>
-            <p className="mt-4 text-sm font-medium text-foreground">
-              Следующие шаги
+          </div>
+
+          <div>
+            <SectionHeading eyebrow="План" title="Следующие шаги" />
+            <p className="mt-4 text-sm text-muted">
+              Ниже — планируемые действия, не зафиксированные как итоговый
+              результат пилота.
             </p>
-            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
-              {TINDA_CASE_DETAIL.result.nextSteps.map((item) => (
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
+              {TINDA_CASE_DETAIL.resultsPlanned.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
 
           <div className="flex flex-wrap gap-3 border-t border-border pt-8">
-            <ButtonLink href="/projects">Каталог проектов</ButtonLink>
+            <ButtonLink href="/lia?scenario=business_audit">
+              Получить аудит
+            </ButtonLink>
+            <ButtonLink href="/projects" variant="outline">
+              Каталог проектов
+            </ButtonLink>
             <ButtonLink href="/trust" variant="outline">
               Доверие к ЦКР
             </ButtonLink>
             <ButtonLink href="/organization" variant="outline">
               Для организаций
-            </ButtonLink>
-            <ButtonLink href="/how-it-works" variant="outline">
-              Как работает ЦКР
             </ButtonLink>
           </div>
         </Container>

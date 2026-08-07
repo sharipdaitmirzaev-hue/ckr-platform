@@ -1,3 +1,4 @@
+import { HomepageViewTracker } from "@/components/analytics/homepage-view-tracker";
 import { Logo } from "@/components/brand/logo";
 import { ExpertCard } from "@/components/experts/expert-card";
 import { InvestmentCard } from "@/components/investments/investment-card";
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   title: siteConfig.title,
   description: MARKETPLACE_HERO.description,
   openGraph: {
-    title: MARKETPLACE_HERO.title,
+    title: MARKETPLACE_HERO.brandTitle,
     description: MARKETPLACE_HERO.description,
     url: "/",
     type: "website",
@@ -57,6 +58,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <HomepageViewTracker />
       <section className="relative overflow-hidden">
         <div
           aria-hidden
@@ -75,12 +77,12 @@ export default async function HomePage() {
           <div className="max-w-3xl">
             <div className="animate-fade-in">
               <Logo size="lg" href="" />
-              <p className="mt-4 text-sm uppercase tracking-[0.18em] text-muted">
+              <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                {MARKETPLACE_HERO.brandTitle}
+              </h1>
+              <p className="mt-3 text-sm uppercase tracking-[0.18em] text-muted">
                 {brand.name} · {brand.fullName}
               </p>
-              <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
-                {MARKETPLACE_HERO.title}
-              </h1>
             </div>
 
             <div

@@ -594,7 +594,16 @@
 - LiaProductionReport (только анализ)
 - Без новых бизнес-модулей
 
-## Этап 65+ — backlog
+## Этап 65 — Public Website Packaging & Marketplace Launch ✅ (код готов)
+
+Подробности: [public-website-packaging.md](./public-website-packaging.md)
+
+- Главная + Лия как первый вход (BusinessAuditReport)
+- Роли, marketplace CTA, `/cases` `/trust` `/services`
+- Публичная аналитика воронки + SEO
+- Без новых крупных бизнес-модулей
+
+## Этап 66+ — backlog
 
 Масштаб монетизации / платежи — см. roadmap-after-1.0.
 

@@ -63,7 +63,7 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
               title="Как работать в ЦКР"
               description="Типовой путь роли — от входа до результата."
             />
-            <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {content.scenario.map((step, index) => (
                 <li key={step} className="border-l border-accent/40 pl-4">
                   <p className="text-xs uppercase tracking-[0.16em] text-muted">
@@ -75,6 +75,38 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
                 </li>
               ))}
             </ol>
+          </Container>
+        </section>
+      ) : null}
+
+      {content.blocks && content.blocks.length > 0 ? (
+        <section className="border-b border-border py-16 sm:py-20">
+          <Container>
+            <SectionHeading
+              eyebrow="Возможности роли"
+              title="Что доступно в ЦКР"
+              description="Существующие разделы платформы — без новых модулей."
+            />
+            <ul className="mt-10 grid gap-8 sm:grid-cols-2">
+              {content.blocks.map((block) => (
+                <li key={block.title} className="border-l border-accent/40 pl-5">
+                  <h3 className="font-display text-xl text-foreground">
+                    {block.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {block.text}
+                  </p>
+                  <ButtonLink
+                    href={block.href}
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                  >
+                    Открыть
+                  </ButtonLink>
+                </li>
+              ))}
+            </ul>
           </Container>
         </section>
       ) : null}

@@ -1,14 +1,24 @@
-/** Публичный Marketplace Layer (этап 48). */
+/** Публичный Marketplace Layer (этап 48) + packaging (этап 65). */
 
 export const MARKETPLACE_HERO = {
-  title: "ЦКР — платформа, где идеи, бизнес и ресурсы находят друг друга",
+  /** Brand-level signal — имя платформы в hero. */
+  brandTitle: "ЦКР — Центр комплексных решений",
+  title: "ЦКР — Центр комплексных решений",
   description:
-    "Предприниматели, инвесторы, эксперты и организации работают в одной экосистеме.",
+    "Помогаем предпринимателям развивать проекты, находить решения, экспертов, партнёров и ресурсы.",
   ctas: [
-    { label: "Создать проект", href: "/lia?scenario=business_idea" },
-    { label: "Найти возможности", href: "/opportunities" },
-    { label: "Стать экспертом", href: "/expert" },
-    { label: "Инвестировать", href: "/investments" },
+    {
+      label: "Получить аудит бизнеса",
+      href: "/lia?scenario=business_audit",
+    },
+    {
+      label: "Разместить проект",
+      href: "/register?next=/dashboard/projects/create",
+    },
+    {
+      label: "Найти возможности",
+      href: "/opportunities",
+    },
   ],
 } as const;
 
@@ -27,25 +37,25 @@ export const MARKETPLACE_ROLE_CARDS = [
     key: "entrepreneur",
     label: "Предприниматель",
     href: "/entrepreneur",
-    text: "Оформите проект, найдите ресурсы и партнёров, доведите идею до результата.",
+    text: "Идея → анализ → проект → эксперты → партнёры → развитие.",
   },
   {
     key: "investor",
     label: "Инвестор",
     href: "/investor",
-    text: "Смотрите проекты, отмечайте интерес и выходите на сделки в прозрачном контуре.",
+    text: "Проекты, возможности, аналитика и интересы в одном контуре.",
   },
   {
     key: "expert",
     label: "Эксперт",
     href: "/expert",
-    text: "Публикуйте экспертизу, получайте запросы и сопровождайте реальные проекты.",
+    text: "Компетенции, репутация и участие в реальных проектах.",
   },
   {
     key: "organization",
     label: "Организация",
     href: "/organization",
-    text: "Ведите проекты компании, партнёрства и взаимодействие с экосистемой ЦКР.",
+    text: "Партнёрство, проекты компании и возможности экосистемы.",
   },
 ] as const;
 
@@ -53,30 +63,41 @@ export const TINDA_PUBLIC_CASE = {
   title: "ТИНДА — первый проект развития через ЦКР",
   summary:
     "ООО ТИНДА использует ЦКР как контур развития оптовой платформы: от идеи и анализа до стратегии и реализации.",
-  path: ["Идея", "Анализ", "Стратегия", "Реализация"] as const,
+  path: [
+    "Задача",
+    "Исходная ситуация",
+    "Что сделал ЦКР",
+    "Результаты",
+    "Следующие шаги",
+  ] as const,
   href: "/cases",
 } as const;
 
+/** Первый вход через Лию — главные публичные промпты. */
 export const PUBLIC_LIA_PROMPTS = [
   {
+    label: "Описать ситуацию для аудита",
+    href:
+      "/lia?scenario=business_audit&message=" +
+      encodeURIComponent("Аудит моего бизнеса"),
+  },
+  {
     label: "У меня есть идея",
-    href: "/lia?scenario=business_idea&message=" + encodeURIComponent("У меня есть идея"),
+    href:
+      "/lia?scenario=business_idea&message=" +
+      encodeURIComponent("У меня есть идея"),
   },
   {
     label: "Мне нужен ресурс",
-    href: "/lia?scenario=find_property&message=" + encodeURIComponent("Мне нужен ресурс"),
+    href:
+      "/lia?scenario=find_property&message=" +
+      encodeURIComponent("Мне нужен ресурс"),
   },
   {
     label: "Я ищу инвестиции",
-    href: "/lia?scenario=find_investments&message=" + encodeURIComponent("Я ищу инвестиции"),
-  },
-  {
-    label: "Я хочу стать экспертом",
     href:
-      "/lia?scenario=launch_guide&message=" +
-      encodeURIComponent(
-        "Я хочу стать экспертом: профиль → доверие → запросы",
-      ),
+      "/lia?scenario=find_investments&message=" +
+      encodeURIComponent("Я ищу инвестиции"),
   },
 ] as const;
 
@@ -87,7 +108,7 @@ export const HOW_IT_WORKS_SECTIONS = [
   },
   {
     title: "Как работает Лия",
-    text: "Лия — ИИ-навигатор ЦКР. До регистрации даёт консультацию; после регистрации помогает создавать проекты и искать решения. Лия рекомендует, но не действует без подтверждения.",
+    text: "Лия — главный вход для посетителя: опишите ситуацию → вопросы → BusinessAuditReport → следующий шаг. Лия рекомендует, но не действует без подтверждения.",
   },
   {
     title: "Как создаются проекты",
@@ -106,18 +127,18 @@ export const HOW_IT_WORKS_SECTIONS = [
 export const HOW_IT_WORKS_STEPS = [
   {
     step: "01",
-    title: "Идея",
-    text: "Сформулируйте задачу или бизнес-идею.",
+    title: "Ситуация",
+    text: "Опишите задачу или бизнес Лие — без длинных форм.",
   },
   {
     step: "02",
-    title: "Анализ Лии",
-    text: "Получите разбор ресурсов, gaps и следующий шаг.",
+    title: "Аудит Лии",
+    text: "Лия задаёт вопросы и собирает BusinessAuditReport.",
   },
   {
     step: "03",
     title: "Проект",
-    text: "Опубликуйте карточку проекта в экосистеме.",
+    text: "Оформите проект развития или новую идею в каталоге.",
   },
   {
     step: "04",
@@ -131,7 +152,7 @@ export const HOW_IT_WORKS_STEPS = [
   },
   {
     step: "06",
-    title: "Реализация",
+    title: "Развитие",
     text: "Ведите сделки и этапы до измеримого результата.",
   },
 ] as const;

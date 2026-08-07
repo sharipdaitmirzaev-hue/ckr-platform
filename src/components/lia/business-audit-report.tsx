@@ -47,16 +47,21 @@ export function BusinessAuditReportCard({
       </div>
       <ListBlock title="Следующие шаги" items={report.next_steps} />
       <p className="text-sm text-muted">
-        Предложение: создать проект ЦКР по шаблону business_development. Запись
-        появится только после вашего подтверждения в чате (кнопка «Создать
-        проект») или по ссылке ниже.
+        Лия предлагает следующий шаг. Подтвердите действие сами — ничего не
+        создаётся автоматически.
       </p>
       <div className="flex flex-wrap gap-2 pt-1">
         <ButtonLink
           href="/dashboard/projects/create?template=business_development"
           size="sm"
         >
-          Создать проект по шаблону
+          Создать проект
+        </ButtonLink>
+        <ButtonLink href="/services?category=consulting" size="sm" variant="outline">
+          Получить консультацию
+        </ButtonLink>
+        <ButtonLink href="/opportunities" size="sm" variant="outline">
+          Найти ресурсы
         </ButtonLink>
         <ButtonLink
           href="/lia?scenario=develop_strategy"
@@ -64,13 +69,6 @@ export function BusinessAuditReportCard({
           variant="outline"
         >
           Стратегия развития
-        </ButtonLink>
-        <ButtonLink
-          href="/admin/project-acquisition"
-          size="sm"
-          variant="outline"
-        >
-          Поток проектов
         </ButtonLink>
       </div>
     </div>

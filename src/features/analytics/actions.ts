@@ -5,7 +5,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics/track";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 
 /**
- * Публичные события воронки первых пользователей (этап 49).
+ * Публичные события воронки (этапы 49 / 65).
  * Можно вызывать с клиента; не ломает UX при ошибке.
  */
 export async function trackLaunchFunnelEventAction(input: {
@@ -14,6 +14,11 @@ export async function trackLaunchFunnelEventAction(input: {
     | "public_page_view"
     | "registration_started"
     | "lia_started"
+    | "homepage_view"
+    | "lia_started_from_public"
+    | "service_viewed"
+    | "case_viewed"
+    | "project_viewed"
   >;
   path?: string;
   metadata?: Record<string, unknown>;
@@ -26,7 +31,7 @@ export async function trackLaunchFunnelEventAction(input: {
     entityId: null,
     metadata: {
       path: input.path ?? null,
-      channel: "first_users_launch",
+      channel: "public_website",
       ...(input.metadata ?? {}),
     },
   });

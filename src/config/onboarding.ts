@@ -12,13 +12,13 @@ export type RolePath = {
 export const rolePaths: Record<AssignableRole, RolePath> = {
   entrepreneur: {
     role: "entrepreneur",
-    title: "Идея → Проект",
+    title: "Аудит → Проект",
     description:
-      "Опишите идею Лие или создайте проект — один понятный следующий шаг без лишних экранов.",
-    ctaLabel: "Начать с идеи",
+      "Опишите ситуацию Лие, получите BusinessAuditReport и оформите проект — один понятный следующий шаг.",
+    ctaLabel: "Получить аудит бизнеса",
     href:
-      "/lia?scenario=business_idea&message=" +
-      encodeURIComponent("У меня есть идея"),
+      "/lia?scenario=business_audit&message=" +
+      encodeURIComponent("Аудит моего бизнеса"),
   },
   investor: {
     role: "investor",

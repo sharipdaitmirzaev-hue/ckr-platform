@@ -12,7 +12,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Доверие",
   description:
-    "Что такое ЦКР, как работает платформа и на каких принципах строится доверие участников.",
+    "Как работает ЦКР: роли, репутация, история и прозрачность для серьёзных решений.",
   openGraph: {
     title: `Доверие · ${siteConfig.name}`,
     description: TRUST_PAGE.whatIsCkr.goal,
@@ -37,15 +37,18 @@ export default function TrustPage() {
             Почему ЦКР можно использовать для серьёзных решений
           </h1>
           <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
-            {brand.tagline} Прозрачный контур, проверка участников и понятная
+            {brand.tagline} Прозрачный контур, роли, репутация и понятная
             ответственность сторон.
           </p>
           <div className="mt-10 flex flex-wrap gap-3">
-            <ButtonLink href="/register" size="lg">
-              Начать
+            <ButtonLink href="/lia?scenario=business_audit" size="lg">
+              Начать с аудита
             </ButtonLink>
             <ButtonLink href="/how-it-works" variant="outline" size="lg">
               Как работает
+            </ButtonLink>
+            <ButtonLink href="/register" variant="outline" size="lg">
+              Регистрация
             </ButtonLink>
           </div>
         </Container>
@@ -100,10 +103,64 @@ export default function TrustPage() {
         </Container>
       </section>
 
+      <section className="border-b border-border py-16 sm:py-20">
+        <Container>
+          <SectionHeading
+            eyebrow="Роли"
+            title="Кто участвует в экосистеме"
+            description="Четыре стороны одной задачи — с понятными путями."
+          />
+          <ul className="mt-10 grid gap-8 sm:grid-cols-2">
+            {TRUST_PAGE.roles.map((role) => (
+              <li key={role.title} className="border-l border-accent/40 pl-5">
+                <h3 className="font-display text-xl text-foreground">
+                  {role.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {role.text}
+                </p>
+                <Link
+                  href={role.href}
+                  className="mt-3 inline-flex text-sm text-accent hover:underline"
+                >
+                  Подробнее →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
+
+      <section className="border-b border-border py-16 sm:py-20">
+        <Container className="grid gap-12 lg:grid-cols-2">
+          <div>
+            <SectionHeading eyebrow="Репутация" title="Как строится доверие" />
+            <ul className="mt-6 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
+              {TRUST_PAGE.reputation.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <SectionHeading eyebrow="История" title="Как развивалась платформа" />
+            <ul className="mt-6 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
+              {TRUST_PAGE.history.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <div className="mt-6">
+              <ButtonLink href="/cases" variant="outline" size="sm">
+                Кейс ТИНДА
+              </ButtonLink>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       <section className="py-16 sm:py-20">
         <Container>
           <SectionHeading
-            eyebrow="Принципы"
+            eyebrow="Прозрачность"
             title="На чём строится доверие"
           />
           <ul className="mt-10 grid gap-8 sm:grid-cols-2">
@@ -121,14 +178,6 @@ export default function TrustPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-12 flex flex-wrap gap-3">
-            <ButtonLink href="/cases" variant="outline">
-              Кейсы
-            </ButtonLink>
-            <ButtonLink href="/about" variant="outline">
-              О платформе
-            </ButtonLink>
-          </div>
         </Container>
       </section>
 

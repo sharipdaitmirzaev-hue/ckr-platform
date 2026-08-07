@@ -42,7 +42,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         : path === roleLandings.entrepreneurs.href ||
             path === roleLandings.investors.href ||
             path === roleLandings.organizations.href ||
+            path === roleLandings.experts.href ||
             path === "/experts" ||
+            path === "/projects" ||
+            path === "/opportunities" ||
+            path === "/investments" ||
+            path === "/services" ||
+            path === "/lia" ||
             path === "/how-it-works" ||
             path === "/cases" ||
             path === "/trust"

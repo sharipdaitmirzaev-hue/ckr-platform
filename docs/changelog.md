@@ -4,6 +4,21 @@
 
 ---
 
+## 0.65.0-beta — 2026-08-07
+
+Public Website Packaging & Marketplace Launch — упаковка платформы в понятный публичный сайт (без новых бизнес-модулей).
+
+### Изменения
+
+- Главная: hero «ЦКР — Центр комплексных решений» + 3 CTA (аудит / проект / возможности)
+- Лия как главный вход: BusinessAuditReport → проект / консультация / ресурсы
+- Роли `/entrepreneur` `/investor` `/expert` `/organization` — понятные пути
+- Marketplace: поиск/фильтры/CTA; `/cases` (реальные vs план); `/trust`; `/services`
+- Analytics: `homepage_view`, `lia_started_from_public`, `service_viewed`, `case_viewed`
+- Документация: `public-website-packaging.md`
+
+---
+
 ## 0.64.0-beta — 2026-08-07
 
 Production Deployment & Go-Live — подготовка и контроль перехода ЦКР в production (без новых бизнес-модулей).

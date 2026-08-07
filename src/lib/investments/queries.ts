@@ -21,6 +21,7 @@ export type InvestmentCatalogFilters = {
   amount?: AmountFilterId | null;
   category?: string | null;
   type?: string | null;
+  q?: string | null;
 };
 
 function overlapsAmount(
@@ -39,6 +40,14 @@ function overlapsAmount(
 export async function listPublishedInvestmentOffers(
   filters: InvestmentCatalogFilters = {},
 ): Promise<InvestmentOfferWithOwner[]> {
+  const q = filters.q?.trim().toLowerCase() || null;
+
+  const matchesQuery = (offer: InvestmentOffer) => {
+    if (!q) return true;
+    const hay = `${offer.title} ${offer.description}`.toLowerCase();
+    return hay.includes(q);
+  };
+
   const fromDemo = () =>
     getDemoInvestments()
       .filter((offer) =>
@@ -49,7 +58,8 @@ export async function listPublishedInvestmentOffers(
       .filter((offer) =>
         filters.type ? offer.investmentType === filters.type : true,
       )
-      .filter((offer) => overlapsAmount(offer, filters.amount));
+      .filter((offer) => overlapsAmount(offer, filters.amount))
+      .filter(matchesQuery);
 
   if (!hasSupabaseEnv()) {
     return isDemoCatalogFallbackEnabled() ? fromDemo() : [];
@@ -69,6 +79,9 @@ export async function listPublishedInvestmentOffers(
   if (filters.type) {
     query = query.eq("investment_type", filters.type);
   }
+  if (q) {
+    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+  }
 
   const { data, error } = await query;
   if (error || !data || data.length === 0) {
@@ -87,7 +100,8 @@ export async function listPublishedInvestmentOffers(
     .filter((offer) => overlapsAmount(offer, filters.amount))
     .filter((offer) =>
       filters.type ? offer.investmentType === filters.type : true,
-    );
+    )
+    .filter(matchesQuery);
 }
 
 export async function listMyInvestmentOffers(

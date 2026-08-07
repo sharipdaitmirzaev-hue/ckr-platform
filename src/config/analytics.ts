@@ -61,6 +61,10 @@ export const ANALYTICS_EVENT_TYPES = [
   "partner_activated",
   "partner_referral_created",
   "partner_result_created",
+  "homepage_view",
+  "lia_started_from_public",
+  "service_viewed",
+  "case_viewed",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -128,6 +132,10 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   partner_activated: "Партнёр активирован",
   partner_referral_created: "Реферал от партнёра",
   partner_result_created: "Результат партнёрства",
+  homepage_view: "Просмотр главной",
+  lia_started_from_public: "Лия запущена с публичной страницы",
+  service_viewed: "Просмотр услуг",
+  case_viewed: "Просмотр кейса",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

@@ -20,15 +20,21 @@ export function PublicLiaEntry({ compact = false }: Props) {
     >
       <Container>
         <div className="max-w-3xl">
-          <Badge variant="accent">Лия</Badge>
+          <Badge variant="accent">Первый вход · Лия</Badge>
           <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Расскажите, что вы хотите сделать
+            Опишите ситуацию — Лия проведёт аудит
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted sm:text-base">
-            Первый путь: Главная → Лия → Регистрация → Роль → Онбординг →
-            Действие. До входа — консультация; после — явный следующий шаг.
-            Лия только рекомендует.
+            Посетитель → описание ситуации → вопросы Лии → BusinessAuditReport →
+            следующий шаг: создать проект, получить консультацию или найти
+            ресурсы. Лия только рекомендует.
           </p>
+          <ol className="mt-6 space-y-2 text-sm text-muted">
+            <li>1. Расскажите о бизнесе или идее</li>
+            <li>2. Ответьте на короткие вопросы Лии</li>
+            <li>3. Получите BusinessAuditReport</li>
+            <li>4. Выберите следующий шаг в ЦКР</li>
+          </ol>
         </div>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           {PUBLIC_LIA_PROMPTS.map((item) => (
@@ -41,9 +47,12 @@ export function PublicLiaEntry({ compact = false }: Props) {
             </Link>
           ))}
         </div>
-        <div className="mt-8">
-          <ButtonLink href="/lia" size="lg">
-            Открыть Лию
+        <div className="mt-8 flex flex-wrap gap-3">
+          <ButtonLink href="/lia?scenario=business_audit" size="lg">
+            Получить аудит бизнеса
+          </ButtonLink>
+          <ButtonLink href="/register?next=/lia?scenario=business_audit" size="lg" variant="outline">
+            Регистрация и старт с Лией
           </ButtonLink>
         </div>
       </Container>

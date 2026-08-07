@@ -1,3 +1,4 @@
+import { LiaPublicStartTracker } from "@/components/analytics/lia-public-start-tracker";
 import { AnalysisHistory } from "@/components/lia/analysis-history";
 import { LiaImprovementNotes } from "@/components/lia/lia-improvement-notes";
 import { LiaRecommendations } from "@/components/lia/lia-recommendations";
@@ -22,7 +23,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Лия — ИИ-навигатор ЦКР",
   description:
-    "Лия помогает создавать проекты и искать решения: идея → анализ → ресурсы → комплексное решение.",
+    "Первый вход в ЦКР: опишите ситуацию → вопросы Лии → BusinessAuditReport → следующий шаг.",
 };
 
 export const dynamic = "force-dynamic";
@@ -76,19 +77,43 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
       ? await listLiaMessages(activeSessionId)
       : [];
 
+  const guestNext = `/lia${
+    autoStartScenario
+      ? `?scenario=${encodeURIComponent(autoStartScenario)}${
+          autoStartMessage
+            ? `&message=${encodeURIComponent(autoStartMessage)}`
+            : ""
+        }`
+      : ""
+  }`;
+
   return (
     <div className="py-14 sm:py-16">
+      <LiaPublicStartTracker
+        scenario={autoStartScenario}
+        fromPublic={!current || Boolean(autoStartScenario)}
+      />
       <Container>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
-            eyebrow="ИИ-навигатор ЦКР"
-            title="Лия — создание проектов и поиск решений"
-            description="Спросите, что хотите сделать. Первый ответ Лии назовёт 1–2 шага и даст переход к действию. Лия рекомендует и не действует без вашего подтверждения."
+            eyebrow="Первый вход · Лия"
+            title="Опишите ситуацию — получите аудит и следующий шаг"
+            description="Посетитель → вопросы Лии → BusinessAuditReport → создать проект, консультация или поиск ресурсов. Лия рекомендует и не действует без подтверждения."
           />
           {!current ? (
-            <ButtonLink href="/login?next=/lia" variant="outline">
-              Войти, чтобы начать диалог
-            </ButtonLink>
+            <div className="flex flex-wrap gap-3">
+              <ButtonLink
+                href={`/register?next=${encodeURIComponent(guestNext)}`}
+              >
+                Регистрация и старт
+              </ButtonLink>
+              <ButtonLink
+                href={`/login?next=${encodeURIComponent(guestNext)}`}
+                variant="outline"
+              >
+                Войти
+              </ButtonLink>
+            </div>
           ) : null}
         </div>
 
@@ -110,6 +135,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
                 !activeSessionId ? autoStartScenario : null
               }
               autoStartMessage={!activeSessionId ? autoStartMessage : null}
+              guestNextPath={guestNext}
             />
           </div>
 
@@ -119,14 +145,21 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
             ) : (
               <Card variant="surface" className="space-y-3 p-4">
                 <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
-                  Как работает Лия
+                  Путь через Лию
                 </p>
                 <ol className="space-y-2 text-sm text-muted">
-                  <li>1. Скажите, что хотите сделать (идея, ресурс, роль).</li>
-                  <li>2. Получите короткий ответ с 1–2 шагами.</li>
-                  <li>3. Подтвердите действие — проект, профиль или интерес.</li>
-                  <li>4. Продолжайте в кабинете по пути вашей роли.</li>
+                  <li>1. Опишите ситуацию или выберите «Аудит бизнеса».</li>
+                  <li>2. Ответьте на короткие вопросы Лии.</li>
+                  <li>3. Получите BusinessAuditReport.</li>
+                  <li>4. Выберите: проект, консультация или ресурсы.</li>
                 </ol>
+                <ButtonLink
+                  href={`/register?next=${encodeURIComponent("/lia?scenario=business_audit")}`}
+                  size="sm"
+                  className="mt-2"
+                >
+                  Начать аудит
+                </ButtonLink>
               </Card>
             )}
 

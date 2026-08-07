@@ -84,14 +84,22 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           <SectionHeading
             eyebrow="Marketplace"
             title="Проекты"
-            description="Список опубликованных проектов ЦКР. Поиск и фильтры помогают найти подходящий кейс по отрасли, региону и стадии."
+            description="Поиск и фильтры по отрасли, региону и стадии. Разместите проект или начните с аудита Лии."
           />
-          <ButtonLink
-            href={current ? "/dashboard/projects/create" : "/register"}
-            variant="outline"
-          >
-            {current ? "Разместить проект" : "Войти, чтобы разместить"}
-          </ButtonLink>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink
+              href={
+                current
+                  ? "/dashboard/projects/create"
+                  : "/register?next=/dashboard/projects/create"
+              }
+            >
+              Разместить проект
+            </ButtonLink>
+            <ButtonLink href="/lia?scenario=business_audit" variant="outline">
+              Аудит с Лией
+            </ButtonLink>
+          </div>
         </div>
 
         <div className="mt-10 space-y-6 border-t border-border pt-8">

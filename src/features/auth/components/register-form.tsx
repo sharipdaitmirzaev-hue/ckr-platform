@@ -28,7 +28,13 @@ export function RegisterForm() {
   const [state, formAction] = useFormState(registerAction, initialState);
   const searchParams = useSearchParams();
   const inviteFromQuery = searchParams.get("invite") ?? "";
+  const roleFromQuery = searchParams.get("role") ?? "";
   const requireInvite = isInviteRequired();
+  const defaultRole = ASSIGNABLE_ROLES.includes(
+    roleFromQuery as (typeof ASSIGNABLE_ROLES)[number],
+  )
+    ? (roleFromQuery as (typeof ASSIGNABLE_ROLES)[number])
+    : "entrepreneur";
 
   return (
     <form action={formAction} className="mt-8 space-y-4">
@@ -46,6 +52,12 @@ export function RegisterForm() {
           required={requireInvite}
           autoComplete="off"
         />
+        {!requireInvite ? (
+          <p className="text-xs text-muted">
+            Без кода можно зарегистрироваться сразу — затем выберите роль и
+            первое действие.
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -102,7 +114,7 @@ export function RegisterForm() {
                 type="radio"
                 name="role"
                 value={role}
-                defaultChecked={role === "entrepreneur"}
+                defaultChecked={role === defaultRole}
                 className="mt-1 accent-[var(--ckr-accent)]"
                 required
               />

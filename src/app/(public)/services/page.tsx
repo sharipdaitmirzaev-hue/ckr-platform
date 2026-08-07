@@ -1,3 +1,4 @@
+import { ServiceViewTracker } from "@/components/analytics/service-view-tracker";
 import { ServiceCard } from "@/components/billing/service-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -7,6 +8,7 @@ import {
   SERVICE_CATEGORIES,
   serviceCategoryLabels,
 } from "@/config/monetization";
+import { PUBLIC_SERVICE_PACKAGES } from "@/config/public-website";
 import { siteConfig } from "@/config/site";
 import { listActiveServices } from "@/lib/monetization/queries";
 import { cn } from "@/lib/utils";
@@ -17,11 +19,11 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Услуги ЦКР",
   description:
-    "Профессиональные услуги ЦКР: бизнес-план, право, маркетинг, консалтинг, поиск инвестиций и сопровождение проектов.",
+    "Услуги ЦКР: аудит бизнеса, сопровождение проектов, поиск партнёров, экспертиза и инвестиционное сопровождение. Цены фиксированные или по запросу.",
   openGraph: {
     title: `Услуги · ${siteConfig.name}`,
     description:
-      "Услуги ЦКР помогают реализовать проект — от плана до сопровождения сделки.",
+      "Упакованные услуги ЦКР на базе существующего каталога services.",
     url: "/services",
     type: "website",
     locale: siteConfig.ogLocale,
@@ -46,21 +48,57 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
 
   return (
     <div className="py-14 sm:py-16">
+      <ServiceViewTracker category={category} />
       <Container>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="Услуги ЦКР"
-            title="Профессиональная поддержка проектов"
-            description="Не объявления — экспертиза и сопровождение, которые ускоряют путь от идеи к результату."
+            title="Поддержка проектов без новых модулей"
+            description="Аудит, сопровождение, партнёры, экспертиза и инвестиции — существующий каталог services, цены фиксированные или по запросу."
           />
-          <ButtonLink href="/pricing" variant="outline">
-            Смотреть тарифы
-          </ButtonLink>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href="/lia?scenario=business_audit">
+              Получить аудит
+            </ButtonLink>
+            <ButtonLink href="/pricing" variant="outline">
+              Тарифы
+            </ButtonLink>
+          </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-8">
+        <section className="mt-12 border-t border-border pt-10">
+          <SectionHeading
+            eyebrow="Категории"
+            title="С чего начать"
+            description="Публичная упаковка существующих услуг."
+          />
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {PUBLIC_SERVICE_PACKAGES.map((pack) => (
+              <div
+                key={pack.id}
+                className="border-l border-accent/40 pl-5"
+              >
+                <h3 className="font-display text-xl text-foreground">
+                  {pack.label}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {pack.description}
+                </p>
+                <p className="mt-3 text-xs text-muted">Цена по запросу</p>
+                <Link
+                  href={pack.href}
+                  className="mt-4 inline-flex text-sm text-accent hover:underline"
+                >
+                  {pack.cta} →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="mt-12 border-t border-border pt-8">
           <p className="text-xs uppercase tracking-[0.16em] text-muted">
-            Категория
+            Каталог услуг
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
@@ -93,7 +131,8 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
 
         {services.length === 0 ? (
           <p className="mt-12 text-sm text-muted">
-            Активных услуг пока нет. Свяжитесь с командой ЦКР.
+            Активных услуг пока нет. Начните с аудита Лии или свяжитесь с
+            командой ЦКР.
           </p>
         ) : (
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -101,18 +140,27 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
               <ServiceCard
                 key={service.id}
                 service={service}
-                ctaHref="/dashboard/billing"
+                ctaHref={
+                  service.category === "consulting"
+                    ? "/lia?scenario=business_audit"
+                    : "/register?next=/dashboard/billing"
+                }
+                ctaLabel={
+                  service.category === "consulting"
+                    ? "Начать с аудита"
+                    : "Заказать"
+                }
               />
             ))}
           </div>
         )}
 
         <div className="mt-16 border-t border-border pt-10">
-          <Badge variant="soft">Связь с ценностью</Badge>
+          <Badge variant="soft">Цены</Badge>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
-            Услуги дополняют подписки и комиссии по сделкам: бизнес-план,
-            юридическая поддержка, маркетинг, поиск капитала и ведение проекта
-            в кабинете ЦКР.
+            Фиксированная цена показывается, если задана в каталоге. Иначе —
+            «по запросу». Реальных платежей на этапе packaging нет
+            (`PAYMENT_PROVIDER=mock`).
           </p>
         </div>
       </Container>
