@@ -157,8 +157,8 @@ umask 077
 install -m 640 -o root -g "${CKR_APP_USER}" "$TMP" "${CKR_ENV_FILE}"
 rm -f "$TMP"
 
-# Тихая повторная проверка (без печати секретов и лишнего вывода)
-if ! ensure_env_or_stop >/dev/null 2>&1; then
+# Тихая повторная проверка в subshell (ensure_env_or_stop делает exit при ошибке)
+if ! ( ensure_env_or_stop >/dev/null 2>&1 ); then
   die "Файл ${CKR_ENV_FILE} записан, но валидация не прошла. Запустите setup снова."
 fi
 
