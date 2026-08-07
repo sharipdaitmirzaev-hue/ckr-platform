@@ -77,9 +77,26 @@ export function ContactForm() {
           className="w-full rounded-sm border border-border bg-background px-3 py-2 text-sm text-foreground"
         />
       </div>
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      <p className="text-xs leading-relaxed text-muted">
+        Отправляя форму, вы соглашаетесь с{" "}
+        <a href="/privacy" className="text-accent hover:underline">
+          политикой конфиденциальности
+        </a>{" "}
+        и{" "}
+        <a href="/personal-data" className="text-accent hover:underline">
+          обработкой персональных данных
+        </a>
+        .
+      </p>
+      {state.error ? (
+        <p role="alert" className="text-sm text-danger">
+          {state.error}
+        </p>
+      ) : null}
       {state.success ? (
-        <p className="text-sm text-accent">{state.success}</p>
+        <p role="status" className="text-sm text-accent">
+          {state.success}
+        </p>
       ) : null}
       <SubmitButton />
     </form>

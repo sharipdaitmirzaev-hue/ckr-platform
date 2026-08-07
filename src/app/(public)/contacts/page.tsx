@@ -1,4 +1,5 @@
 import { ContactStartedTracker } from "@/components/analytics/contact-started-tracker";
+import { CompanyContacts } from "@/components/marketing/company-contacts";
 import { PageNextStep } from "@/components/marketing/page-next-step";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -6,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { CKR_CONTACTS } from "@/config/ckr-website";
+import { LEGAL_PAGES } from "@/config/legal";
 import { siteConfig } from "@/config/site";
 import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { ContactForm } from "@/features/website/components/contact-form";
@@ -43,15 +45,9 @@ export default function ContactsPage() {
           <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
             {CKR_CONTACTS.description}
           </p>
-          <p className="mt-4 text-sm text-muted">
-            Email:{" "}
-            <a
-              href={`mailto:${CKR_CONTACTS.email}`}
-              className="text-accent hover:underline"
-            >
-              {CKR_CONTACTS.email}
-            </a>
-          </p>
+          <div className="mt-6">
+            <CompanyContacts />
+          </div>
         </Container>
       </section>
 
@@ -94,6 +90,23 @@ export default function ContactsPage() {
                   Расскажите о вашей задаче
                 </ButtonLink>
               </div>
+            </div>
+            <div className="border-t border-border pt-8">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
+                Правовая информация
+              </p>
+              <ul className="mt-3 space-y-2">
+                {LEGAL_PAGES.map((page) => (
+                  <li key={page.href}>
+                    <Link
+                      href={page.href}
+                      className="text-sm text-accent hover:underline"
+                    >
+                      {page.short}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </Container>

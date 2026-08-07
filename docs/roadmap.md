@@ -621,7 +621,18 @@
 - SEO/OG/sitemap + analytics; мобильное меню
 - Без новых бизнес-модулей и админ-разделов
 
-## Этап 68+ — backlog
+## Этап 68 — CKR Website Final Completion + Domain + Production Go-Live ✅ (код готов)
+
+Подробности: [website-go-live-completion.md](./website-go-live-completion.md)
+
+- Domain/Auth/Email/Supabase production docs + env
+- Legal pages, company-details, brand asset placeholders
+- Lia unavailable UX; contact/storage hardening
+- **Следующий шаг — ручные действия владельца** (не новый программный этап)
+
+## После этапа 68 — ручной go-live с владельцем
+
+Домен → hosting → production Supabase → secrets → бренд/реквизиты → smoke → ТИНДА через UI.
 
 Масштаб монетизации / платежи — см. roadmap-after-1.0.
 

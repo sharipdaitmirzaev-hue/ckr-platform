@@ -618,6 +618,11 @@ export type LiaMessageMetadata = {
   liaProductionReport?: LiaProductionReport | null;
   disclaimer?: string;
   provider?: string;
+  /** Провайдер ИИ недоступен — показать user-friendly состояние. */
+  unavailable?: boolean;
+  providerError?: string;
+  hasApiKey?: boolean;
+  note?: string;
   [key: string]: unknown;
 };
 

@@ -4,6 +4,22 @@
 
 ---
 
+## 0.68.0-beta — 2026-08-07
+
+CKR Website Final Completion + Domain + Production Go-Live — кодовая часть сайта завершена для работы на реальном домене.
+
+### Изменения
+
+- Domain/SITE_URL helpers; Auth callback + forgot/reset password
+- Legal pages (`/privacy` `/terms` `/personal-data`) с пометкой о юр. проверке
+- `company-details.ts` + env контактов; без фиктивных телефонов/email
+- Brand placeholders, OG/icons/manifest; Lia unavailable UX
+- Contact «Обращение отправлено»; MIME validation Storage
+- Docs: domain, deployment, supabase, email, checklist, go-live manual
+- `.env.example` сгруппирован; demo/seed не нужны для обычной работы
+
+---
+
 ## 0.67.0-beta — 2026-08-07
 
 CKR Website Finalization & User Experience — публичный сайт готов к показу предпринимателю, партнёру или инвестору.

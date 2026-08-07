@@ -2,6 +2,7 @@
 
 import { DOCUMENTS_BUCKET } from "@/config/verification";
 import { assertDocumentRelatedAccess } from "@/lib/documents/assert-related-access";
+import { validateUploadFile } from "@/lib/documents/file-validation";
 import { uploadDocumentSchema } from "@/lib/documents/validations";
 import { logApiError, logSystemEvent } from "@/lib/logging/system-log";
 import { createClient } from "@/lib/supabase/server";
@@ -36,12 +37,13 @@ export async function uploadDocumentAction(
   }
 
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
+  if (!(file instanceof File)) {
     return { error: "Выберите файл для загрузки." };
   }
 
-  if (file.size > 20 * 1024 * 1024) {
-    return { error: "Максимальный размер файла — 20 МБ." };
+  const fileError = validateUploadFile(file);
+  if (fileError) {
+    return { error: fileError };
   }
 
   const supabase = createClient();

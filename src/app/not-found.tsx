@@ -22,8 +22,11 @@ export default function NotFoundPage() {
           <ButtonLink href="/projects" variant="outline">
             Проекты
           </ButtonLink>
-          <ButtonLink href="/demo" variant="outline">
-            Demo
+          <ButtonLink href="/lia" variant="outline">
+            Лия
+          </ButtonLink>
+          <ButtonLink href="/contacts" variant="outline">
+            Контакты
           </ButtonLink>
         </div>
       </Container>

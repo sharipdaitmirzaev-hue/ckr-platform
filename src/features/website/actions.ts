@@ -1,5 +1,6 @@
 "use server";
 
+import { companyDetails, hasValue } from "@/config/company-details";
 import { trackAnalyticsEvent } from "@/lib/analytics/track";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,11 +68,14 @@ export async function submitContactFormAction(
   });
 
   if (error) {
+    const emailHint = hasValue(companyDetails.email)
+      ? ` Напишите на ${companyDetails.email}.`
+      : " Попробуйте позже или повторите отправку.";
     return {
       error:
         error.code === "42P01"
-          ? "Форма временно недоступна. Напишите на hello@ckr.platform."
-          : error.message,
+          ? `Форма временно недоступна.${emailHint}`
+          : "Не удалось отправить обращение. Попробуйте ещё раз.",
     };
   }
 
@@ -84,6 +88,6 @@ export async function submitContactFormAction(
   });
 
   return {
-    success: "Обращение отправлено. Команда ЦКР ответит на указанный email.",
+    success: "Обращение отправлено",
   };
 }

@@ -30,6 +30,15 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
           Аккаунт заблокирован администратором ЦКР. Обратитесь в поддержку.
         </p>
       ) : null}
+      {searchParams?.error === "auth_callback" ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-sm border border-danger/40 bg-danger-muted px-3 py-2 text-sm text-danger"
+        >
+          Ссылка из письма недействительна или устарела. Запросите новую или
+          войдите, если аккаунт уже подтверждён.
+        </p>
+      ) : null}
 
       <Suspense fallback={<p className="mt-8 text-sm text-muted">Загрузка формы...</p>}>
         <LoginForm />

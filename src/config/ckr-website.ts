@@ -214,12 +214,11 @@ export const CKR_LIA_ENTRY = {
 export const CKR_CONTACTS = {
   title: "Контакты ЦКР",
   description:
-    "Напишите команде ЦКР: партнёрство, услуги, пилот или вопрос по платформе.",
-  email: "hello@ckr.platform",
+    "Напишите команде ЦКР: партнёрство, услуги, пилот или вопрос по платформе. Контакты и реквизиты берутся из конфигурации владельца — без фиктивных данных.",
   links: [
     { label: "Лия — задать вопрос", href: "/lia?scenario=business_audit" },
     { label: "Услуги", href: "/services" },
-    { label: "Кейс ТИНДА", href: "/cases" },
+    { label: "Кейсы", href: "/cases" },
     { label: "Доверие", href: "/trust" },
     { label: "Регистрация", href: "/register" },
   ],

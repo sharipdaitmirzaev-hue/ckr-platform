@@ -252,6 +252,20 @@ export function LiaChat({
             </p>
           ) : null}
 
+          {messages.some((item) => item.metadata?.unavailable) ? (
+            <p
+              role="status"
+              className="mt-4 rounded-sm border border-accent/40 bg-accent-muted px-3 py-2 text-sm text-foreground"
+            >
+              Лия временно недоступна. Каталоги проектов и возможностей работают
+              без ИИ —{" "}
+              <a href="/projects" className="text-accent hover:underline">
+                открыть проекты
+              </a>
+              .
+            </p>
+          ) : null}
+
           <form
             className="mt-4 space-y-3 border-t border-border pt-4"
             onSubmit={(event) => {

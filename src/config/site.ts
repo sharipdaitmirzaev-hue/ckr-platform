@@ -1,9 +1,14 @@
+import { getSiteUrl } from "@/lib/site/url";
+
+const resolvedUrl = getSiteUrl() || "http://localhost:3000";
+
 export const siteConfig = {
   name: "ЦКР",
   title: "ЦКР — Центр комплексных решений",
   description:
     "ЦКР — Центр комплексных решений. Помогаем предпринимателям развивать бизнес, находить решения, экспертов, партнёров и ресурсы.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  /** Из NEXT_PUBLIC_SITE_URL (dev fallback — localhost). */
+  url: resolvedUrl,
   locale: "ru_RU",
   ogLocale: "ru_RU",
   keywords: [

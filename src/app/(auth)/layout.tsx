@@ -18,7 +18,21 @@ export default function AuthLayout({
       <main className="relative z-10 flex flex-1 items-center justify-center px-5 pb-16">
         <div className="w-full max-w-md">{children}</div>
       </main>
-      <footer className="relative z-10 px-5 pb-8 text-center text-xs text-muted">
+      <footer className="relative z-10 space-y-2 px-5 pb-8 text-center text-xs text-muted">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <Link href="/privacy" className="transition-colors hover:text-accent">
+            Конфиденциальность
+          </Link>
+          <Link href="/terms" className="transition-colors hover:text-accent">
+            Условия
+          </Link>
+          <Link
+            href="/personal-data"
+            className="transition-colors hover:text-accent"
+          >
+            Персональные данные
+          </Link>
+        </div>
         <Link href="/" className="transition-colors hover:text-accent">
           Вернуться на главную
         </Link>

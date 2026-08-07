@@ -9,7 +9,7 @@ export async function requireAdmin(): Promise<CurrentUser> {
   }
 
   if (!current.roles.includes("admin")) {
-    redirect("/dashboard");
+    redirect("/unauthorized");
   }
 
   return current;

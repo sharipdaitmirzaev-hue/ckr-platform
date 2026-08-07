@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message";
 import { loginAction, type ActionState } from "@/features/auth/actions";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 
@@ -43,9 +44,17 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm text-muted">
-          Пароль
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="password" className="text-sm text-muted">
+            Пароль
+          </label>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-accent hover:underline"
+          >
+            Забыли пароль?
+          </Link>
+        </div>
         <Input
           id="password"
           name="password"

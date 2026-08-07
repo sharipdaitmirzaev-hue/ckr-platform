@@ -16,6 +16,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Введите пароль"),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Укажите корректный email"),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Пароль не менее 8 символов"),
+    confirmPassword: z.string().min(8, "Повторите пароль"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Пароли не совпадают",
+    path: ["confirmPassword"],
+  });
+
 export const onboardingSchema = z.object({
   fullName: z.string().trim().min(2, "Укажите имя"),
   companyName: z.string().trim().optional(),

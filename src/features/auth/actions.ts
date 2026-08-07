@@ -2,10 +2,13 @@
 
 import { mapAuthError } from "@/lib/auth/errors";
 import {
+  forgotPasswordSchema,
   loginSchema,
   onboardingSchema,
   registerSchema,
+  resetPasswordSchema,
 } from "@/lib/auth/validations";
+import { authCallbackUrl } from "@/lib/site/url";
 import { createClient } from "@/lib/supabase/server";
 import { ASSIGNABLE_ROLES, type AssignableRole } from "@/config/roles";
 import { revalidatePath } from "next/cache";
@@ -123,6 +126,7 @@ export async function registerAction(
     email,
     password,
     options: {
+      emailRedirectTo: authCallbackUrl("/onboarding"),
       data: {
         full_name: fullName,
       },
@@ -260,6 +264,70 @@ export async function loginAction(
 export async function logoutAction() {
   const supabase = createClient();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/login");
+}
+
+export async function forgotPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Проверьте форму" };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: authCallbackUrl("/reset-password"),
+  });
+
+  if (error) {
+    return { error: mapAuthError(error.message) };
+  }
+
+  return {
+    success:
+      "Если аккаунт с таким email существует, мы отправили ссылку для сброса пароля.",
+  };
+}
+
+export async function resetPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Проверьте форму" };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      error:
+        "Сессия сброса не найдена. Откройте свежую ссылку из письма ещё раз.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return { error: mapAuthError(error.message) };
+  }
+
   revalidatePath("/", "layout");
   redirect("/login");
 }

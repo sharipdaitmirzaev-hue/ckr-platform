@@ -10,6 +10,7 @@ import {
 } from "@/config/roles";
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message";
 import { registerAction, type ActionState } from "@/features/auth/actions";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 
@@ -101,6 +102,22 @@ export function RegisterForm() {
           required
         />
       </div>
+
+      <p className="text-xs leading-relaxed text-muted">
+        Создавая аккаунт, вы принимаете{" "}
+        <Link href="/terms" className="text-accent hover:underline">
+          условия
+        </Link>
+        ,{" "}
+        <Link href="/privacy" className="text-accent hover:underline">
+          политику конфиденциальности
+        </Link>{" "}
+        и правила{" "}
+        <Link href="/personal-data" className="text-accent hover:underline">
+          обработки персональных данных
+        </Link>
+        .
+      </p>
 
       <fieldset className="space-y-3">
         <legend className="text-sm text-muted">Роль</legend>

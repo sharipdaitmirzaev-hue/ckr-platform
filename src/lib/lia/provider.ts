@@ -30,21 +30,71 @@ export type LiaProvider = {
   generate: (input: LiaProviderInput) => Promise<LiaProviderOutput>;
 };
 
+const UNAVAILABLE_MESSAGE =
+  "Лия временно недоступна. Сервис ИИ не ответил — попробуйте позже. Каталоги проектов, возможностей и экспертов доступны без ИИ.";
+
+function unavailableOutput(
+  reason: string,
+  scenario: LiaScenarioId | null,
+): LiaProviderOutput {
+  return {
+    content: UNAVAILABLE_MESSAGE,
+    metadata: {
+      disclaimer: LIA_DISCLAIMER,
+      scenario,
+      unavailable: true,
+      providerError: reason,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+    provider: "unavailable",
+  };
+}
+
 /**
  * Абстракция провайдера ИИ.
- * Сейчас: mock (без ключа) или openai-compatible stub (если задан LIA_API_KEY).
- * Приватные документы пользователей во внешние модели не отправляются.
+ * mock — только если LIA_PROVIDER=mock или нет ключа в non-strict режиме.
+ * В production при настроенном openai mock не подменяется «тихо» при сбое —
+ * возвращается user-friendly unavailable.
+ * Secrets (LIA_API_KEY) никогда не отдаются клиенту.
  */
 export function getLiaProvider(): LiaProvider {
   const apiKey = process.env.LIA_API_KEY?.trim();
   const providerName = (process.env.LIA_PROVIDER || "mock").toLowerCase();
+  const isProd = process.env.NODE_ENV === "production";
 
-  if (!apiKey || providerName === "mock") {
+  if (providerName === "mock") {
+    return mockLiaProvider;
+  }
+
+  if (!apiKey) {
+    if (isProd && providerName !== "mock") {
+      return {
+        id: "misconfigured",
+        async generate(input) {
+          return unavailableOutput("LIA_API_KEY не задан", input.scenario);
+        },
+      };
+    }
     return mockLiaProvider;
   }
 
   if (providerName === "openai") {
     return createOpenAiCompatibleProvider(apiKey);
+  }
+
+  if (isProd) {
+    return {
+      id: "unknown-provider",
+      async generate(input) {
+        return unavailableOutput(
+          `Неизвестный LIA_PROVIDER: ${providerName}`,
+          input.scenario,
+        );
+      },
+    };
   }
 
   return mockLiaProvider;
@@ -56,19 +106,9 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
     async generate(input) {
       const baseUrl = process.env.LIA_API_BASE_URL?.trim();
       if (!baseUrl) {
-        const mock = await mockLiaProvider.generate(input);
-        return {
-          ...mock,
-          provider: "openai-compatible-fallback-mock",
-          metadata: {
-            ...mock.metadata,
-            note: "LIA_API_BASE_URL не задан — использован mock-ответ.",
-            hasApiKey: Boolean(apiKey),
-          },
-        };
+        return unavailableOutput("LIA_API_BASE_URL не задан", input.scenario);
       }
 
-      // В историю не передаём приватные документы и вложения.
       const messages = [
         {
           role: "system",
@@ -103,15 +143,7 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
         );
 
         if (!response.ok) {
-          const mock = await mockLiaProvider.generate(input);
-          return {
-            ...mock,
-            provider: "openai-compatible-error-fallback",
-            metadata: {
-              ...mock.metadata,
-              providerError: `HTTP ${response.status}`,
-            },
-          };
+          return unavailableOutput(`HTTP ${response.status}`, input.scenario);
         }
 
         const json = (await response.json()) as {
@@ -134,11 +166,7 @@ function createOpenAiCompatibleProvider(apiKey: string): LiaProvider {
           provider: "openai-compatible",
         };
       } catch {
-        const mock = await mockLiaProvider.generate(input);
-        return {
-          ...mock,
-          provider: "openai-compatible-network-fallback",
-        };
+        return unavailableOutput("network_error", input.scenario);
       }
     },
   };
