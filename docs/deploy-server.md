@@ -1,6 +1,11 @@
 # Deploy ЦКР 0.61.0-beta на Ubuntu 26.04 (Nginx + systemd)
 
-Инструкция для сервера, где уже установлены: **Ubuntu 26.04**, **Node.js 22**, **npm**, **git**, **nginx**, репозиторий в **`/var/www/ckr-platform`**.
+> **Короткий путь:** см. [production-bootstrap.md](./production-bootstrap.md)  
+> Первый запуск: `sudo ./scripts/bootstrap-production.sh`  
+> Обновления: `sudo ./scripts/update-production.sh`
+
+Инструкция для сервера, где уже есть репозиторий в **`/var/www/ckr-platform`**.  
+Скрипт bootstrap сам проверит/установит Node 22, nginx и зависимости.
 
 Секреты **не** хранятся в Git. Demo secrets и тестовые пароли в production **запрещены**.
 
