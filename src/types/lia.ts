@@ -40,7 +40,8 @@ export type LiaScenarioId =
   | "growth"
   | "project_acquisition"
   | "partnership_network"
-  | "revenue_opportunity";
+  | "revenue_opportunity"
+  | "lia_production";
 
 /** Отчёт сценария «Аудит бизнеса». */
 export type BusinessAuditReport = {
@@ -404,6 +405,15 @@ export type RevenueOpportunityReport = {
   recommended_actions: string[];
 };
 
+/** Сценарий production-проверки Лии (этап 64, только анализ). */
+export type LiaProductionReport = {
+  summary: string;
+  availability: string;
+  usage: string[];
+  errors: string[];
+  recommendations: string[];
+};
+
 export type LiaSession = {
   id: string;
   userId: string;
@@ -605,6 +615,7 @@ export type LiaMessageMetadata = {
   projectAcquisitionReport?: ProjectAcquisitionReport | null;
   partnershipReport?: PartnershipReport | null;
   revenueOpportunityReport?: RevenueOpportunityReport | null;
+  liaProductionReport?: LiaProductionReport | null;
   disclaimer?: string;
   provider?: string;
   [key: string]: unknown;

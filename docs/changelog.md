@@ -4,6 +4,20 @@
 
 ---
 
+## 0.64.0-beta — 2026-08-07
+
+Production Deployment & Go-Live — подготовка и контроль перехода ЦКР в production (без новых бизнес-модулей).
+
+### Изменения
+
+- `/admin/system-health`: Environment, Services (healthy/warning/error)
+- `ProductionDeploymentChecklist`, `ProductionSmokeTest`, `AccessAudit`, `RecoveryChecklist`
+- `ProductionLaunchDecision` (`go_live` / `hold` / `rollback`) + миграция `production_launch_decisions`
+- Production Analytics probe + Лия `LiaProductionReport`
+- Документация: `go-live.md`; обновлены `deployment.md`, `production-checklist.md`
+
+---
+
 ## 0.63.0-beta — 2026-08-07
 
 First Deals & Revenue — операционный контур первых коммерческих результатов (без бухгалтерии и реальных платежей).

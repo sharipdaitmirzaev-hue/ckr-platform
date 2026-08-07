@@ -33,6 +33,7 @@ import {
   PROJECT_ACQUISITION_START_PATTERN,
   PARTNERSHIP_NETWORK_START_PATTERN,
   REVENUE_OPPORTUNITY_START_PATTERN,
+  LIA_PRODUCTION_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -88,6 +89,7 @@ import type {
   ProjectAcquisitionReport,
   PartnershipReport,
   RevenueOpportunityReport,
+  LiaProductionReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -213,6 +215,9 @@ function detectScenario(
   }
   if (REVENUE_OPPORTUNITY_START_PATTERN.test(value)) {
     return "revenue_opportunity";
+  }
+  if (LIA_PRODUCTION_START_PATTERN.test(value)) {
+    return "lia_production";
   }
   if (PUBLIC_LAUNCH_START_PATTERN.test(value)) {
     return "public_launch";
@@ -1985,6 +1990,48 @@ async function handleRevenueOpportunityAnalysis(input: {
   };
 }
 
+async function handleLiaProductionAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildLiaProductionReportAsync } = await import(
+    "@/lib/production/system-health"
+  );
+  const report: LiaProductionReport = await buildLiaProductionReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "production",
+      metadata: { source: "lia", scenario: "lia_production" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий production-проверки Лии завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — LiaProductionReport. Лия только анализирует availability, usage и ошибки.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "lia_production",
+      liaProductionReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleEcosystemValueAnalysis(input: {
   userId: string;
 }): Promise<LiaEngineResult> {
@@ -3672,6 +3719,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handleRevenueOpportunityAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "lia_production") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить LiaProductionReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "lia_production",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleLiaProductionAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

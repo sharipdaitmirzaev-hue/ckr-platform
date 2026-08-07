@@ -295,6 +295,18 @@ export type PublicLaunchDecisionRow = {
   created_at: string;
 };
 
+/** Этап 64: решение Production Go-Live. */
+export type DbProductionLaunchDecisionKind = "go_live" | "hold" | "rollback";
+
+export type ProductionLaunchDecisionRow = {
+  id: string;
+  decision: DbProductionLaunchDecisionKind;
+  notes: string;
+  responsible_name: string;
+  created_by: string | null;
+  created_at: string;
+};
+
 export type DbLaunchWaveParticipantStatus =
   | "invited"
   | "joined"
@@ -1709,6 +1721,22 @@ export type Database = {
           created_by: string | null;
         }>;
       };
+      production_launch_decisions: {
+        Row: ProductionLaunchDecisionRow;
+        Insert: {
+          id?: string;
+          decision: DbProductionLaunchDecisionKind;
+          notes?: string;
+          responsible_name?: string;
+          created_by?: string | null;
+        };
+        Update: Partial<{
+          decision: DbProductionLaunchDecisionKind;
+          notes: string;
+          responsible_name: string;
+          created_by: string | null;
+        }>;
+      };
       public_launch_activations: {
         Row: PublicLaunchActivationRow;
         Insert: {
@@ -2366,6 +2394,7 @@ export type Database = {
       launch_goal_metric_type: DbLaunchGoalMetricType;
       launch_decision_kind: DbLaunchDecisionKind;
       public_launch_decision_kind: DbPublicLaunchDecisionKind;
+      production_launch_decision_kind: DbProductionLaunchDecisionKind;
       launch_ops_task_type: DbLaunchOpsTaskType;
       launch_ops_task_status: DbLaunchOpsTaskStatus;
       growth_task_type: DbGrowthTaskType;

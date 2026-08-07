@@ -1,6 +1,10 @@
 # Развёртывание ЦКР (production)
 
-Этап 26. Без новых бизнес-функций — только подготовка к реальной эксплуатации.
+Этап 26 (база) + этап 64 (Go-Live). Без новых бизнес-функций — подготовка и контроль реальной эксплуатации.
+
+Операционный дашборд: **`/admin/system-health`**.  
+Решение о запуске: **ProductionLaunchDecision** (`go_live` / `hold` / `rollback`).  
+См. [go-live.md](./go-live.md).
 
 ---
 
@@ -44,9 +48,11 @@ Storage: бакет `documents` создаётся миграцией verificati
 4. Задать secrets на хостинге (не коммитить `.env.local`).  
 5. `npm ci && npm run build && npm run start` (или платформенный build).  
 6. Smoke-check: `/`, `/login`, `/dashboard`, `/lia`, admin login.  
-7. Выключить demo mode и seed.
+7. Выключить demo mode и seed.  
+8. Открыть `/admin/system-health`: Environment, Services, DeploymentChecklist, SmokeTest.  
+9. Зафиксировать `ProductionLaunchDecision` (go_live / hold / rollback).
 
-Чеклист: [production-checklist.md](./production-checklist.md).
+Чеклист: [production-checklist.md](./production-checklist.md) · [go-live.md](./go-live.md).
 
 ---
 
@@ -61,8 +67,9 @@ Storage: бакет `documents` создаётся миграцией verificati
 
 ## 5. Мониторинг
 
+- `/admin/system-health` — Services (database, auth, storage, analytics, notifications, Lia)  
 - Таблица `system_logs` (admin/operator select)  
-- `analytics_events` для продуктовых метрик  
+- `analytics_events` для продуктовых метрик (registration, projects, lia, deals, revenue)  
 - Логи хостинга / Supabase logs  
 
 ---
@@ -71,3 +78,4 @@ Storage: бакет `documents` создаётся миграцией verificati
 
 - Откат приложения: предыдущий деплой образа/коммита  
 - Откат БД: точечный down-migration только при наличии плана; иначе restore из backup ([backup.md](./backup.md))  
+- Зафиксировать решение `rollback` в ProductionLaunchDecision на `/admin/system-health`  

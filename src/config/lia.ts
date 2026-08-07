@@ -283,6 +283,13 @@ export const LIA_SCENARIOS: {
     description:
       "First Deals & Revenue: услуги, сделки, партнёры → RevenueOpportunityReport (только анализ)",
   },
+  {
+    id: "lia_production",
+    label: "Как Лия работает в production?",
+    prompt: "Как Лия работает в production?",
+    description:
+      "Production Go-Live: availability / usage / errors → LiaProductionReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -428,6 +435,9 @@ export const PARTNERSHIP_NETWORK_START_PATTERN =
 
 export const REVENUE_OPPORTUNITY_START_PATTERN =
   /на\s+ч[её]м\s+цкр\s+сейчас\s+может\s+заработать|на\s+ч[её]м\s+цкр\s+может\s+заработать|revenue\s*opportunity|заработать\s+цкр/i;
+
+export const LIA_PRODUCTION_START_PATTERN =
+  /как\s+лия\s+работает\s+в\s+production|лия\s+production|lia\s*production(\s*report)?|production\s*check\s*лия/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

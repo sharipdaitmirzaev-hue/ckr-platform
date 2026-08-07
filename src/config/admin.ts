@@ -156,6 +156,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Pipeline / Revenue / Efficiency KPI",
   },
   {
+    label: "System Health",
+    href: "/admin/system-health",
+    description: "Production go-live: сервисы, checklist, smoke, решение",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

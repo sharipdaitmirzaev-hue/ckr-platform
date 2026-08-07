@@ -584,7 +584,17 @@
 - Staff-only коммерческий блок в workspace · RevenueOpportunityReport
 - Без реальных платежей и без фиктивной выручки
 
-## Этап 64+ — backlog
+## Этап 64 — Production Deployment & Go-Live ✅ (код готов)
+
+Подробности: [go-live.md](./go-live.md) · [deployment.md](./deployment.md) · [production-checklist.md](./production-checklist.md)
+
+- `/admin/system-health`: Environment + Services
+- ProductionDeploymentChecklist · SmokeTest · AccessAudit · RecoveryChecklist
+- ProductionLaunchDecision (`go_live` / `hold` / `rollback`)
+- LiaProductionReport (только анализ)
+- Без новых бизнес-модулей
+
+## Этап 65+ — backlog
 
 Масштаб монетизации / платежи — см. roadmap-after-1.0.
 
