@@ -53,12 +53,8 @@ load_env_file() {
 ensure_env_or_stop() {
   if [[ ! -f "$CKR_ENV_FILE" ]]; then
     log_error "Файл секретов не найден: $CKR_ENV_FILE"
-    log_info  "Создайте его из шаблона и заполните реальные значения:"
-    log_info  "  sudo mkdir -p /etc/ckr"
-    log_info  "  sudo cp ${CKR_APP_DIR}/deploy/env/production.env.template ${CKR_ENV_FILE}"
-    log_info  "  sudo chown root:${CKR_APP_USER} ${CKR_ENV_FILE}"
-    log_info  "  sudo chmod 640 ${CKR_ENV_FILE}"
-    log_info  "  sudo nano ${CKR_ENV_FILE}"
+    log_info  "Настройте env одной командой:"
+    log_info  "  cd ${CKR_APP_DIR} && sudo ./scripts/setup-production-env.sh"
     die "Остановка: сначала заполните ${CKR_ENV_FILE}"
   fi
 
