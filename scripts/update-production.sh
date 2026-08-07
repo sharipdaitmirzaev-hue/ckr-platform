@@ -25,6 +25,7 @@ log_info "TARGET=${TARGET_REF}"
 
 [[ -d "${CKR_APP_DIR}/.git" ]] || die "Нет репозитория в ${CKR_APP_DIR}"
 ensure_env_or_stop
+assert_production_site_url
 
 sync_git_tree "${TARGET_REF}"
 

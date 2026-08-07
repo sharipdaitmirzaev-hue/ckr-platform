@@ -18,16 +18,21 @@ export async function trackLaunchFunnelEventAction(input: {
   path?: string;
   metadata?: Record<string, unknown>;
 }): Promise<void> {
-  const current = await getCurrentUser();
-  await trackAnalyticsEvent({
-    eventType: input.eventType,
-    userId: current?.user.id ?? null,
-    entityType: input.path ? "page" : null,
-    entityId: null,
-    metadata: {
-      path: input.path ?? null,
-      channel: "first_users_launch",
-      ...(input.metadata ?? {}),
-    },
-  });
+  try {
+    const current = await getCurrentUser();
+    await trackAnalyticsEvent({
+      eventType: input.eventType,
+      userId: current?.user.id ?? null,
+      entityType: input.path ? "page" : null,
+      entityId: null,
+      metadata: {
+        path: input.path ?? null,
+        channel: "first_users_launch",
+        ...(input.metadata ?? {}),
+      },
+    });
+  } catch (error) {
+    // Клиентский beacon не должен ломать UX / registration form.
+    console.error("[analytics] funnel action failed:", error);
+  }
 }

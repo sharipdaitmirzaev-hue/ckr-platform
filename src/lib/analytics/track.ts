@@ -1,4 +1,5 @@
 import type { AnalyticsEventType } from "@/config/analytics";
+import { isByteStringError } from "@/lib/http/byte-string";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,6 +33,14 @@ export async function trackAnalyticsEvent(
       console.error("[analytics] track failed:", error.message);
     }
   } catch (error) {
+    // ByteString / сеть / cookies — только лог, без влияния на UX.
+    if (isByteStringError(error)) {
+      console.error(
+        "[analytics] track skipped (ByteString/header encoding):",
+        error instanceof Error ? error.message : error,
+      );
+      return;
+    }
     console.error("[analytics] track exception:", error);
   }
 }

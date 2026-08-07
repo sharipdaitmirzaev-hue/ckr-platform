@@ -8,7 +8,7 @@ CKR_APP_DIR="${CKR_APP_DIR:-/var/www/ckr-platform}"
 CKR_ENV_FILE="${CKR_ENV_FILE:-/etc/ckr/ckr.env}"
 CKR_APP_USER="${CKR_APP_USER:-ckr}"
 CKR_SERVICE_NAME="${CKR_SERVICE_NAME:-ckr}"
-CKR_DEPLOY_BRANCH="${CKR_DEPLOY_BRANCH:-cursor/deploy-ubuntu-0.61-ff37}"
+CKR_DEPLOY_BRANCH="${CKR_DEPLOY_BRANCH:-cursor/fix-register-bytestring-ff37}"
 CKR_NODE_MAJOR="${CKR_NODE_MAJOR:-22}"
 CKR_HEALTH_URL="${CKR_HEALTH_URL:-http://127.0.0.1:3000/api/health}"
 
@@ -132,6 +132,30 @@ domain_from_site_url() {
   url="${url#http://}"
   url="${url%%/*}"
   printf '%s' "$url"
+}
+
+assert_production_site_url() {
+  local url="${NEXT_PUBLIC_SITE_URL:-}"
+  if [[ -z "$url" ]]; then
+    die "NEXT_PUBLIC_SITE_URL пуст"
+  fi
+  if [[ "$url" == *localhost* ]] || [[ "$url" == *127.0.0.1* ]]; then
+    die "NEXT_PUBLIC_SITE_URL не должен указывать на localhost в production (сейчас: ${url})"
+  fi
+  if [[ "$url" != https://* ]]; then
+    die "NEXT_PUBLIC_SITE_URL должен начинаться с https://"
+  fi
+  # Ключи/URL уходят в HTTP headers — только ByteString (коды ≤255).
+  local key="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}}"
+  if [[ -n "$key" ]]; then
+    if ! node -e 'const s=process.argv[1]; for (const ch of s) { if (ch.codePointAt(0)>255) process.exit(2); }' "$key"; then
+      die "Публичный Supabase-ключ содержит не-ByteString символы — проверьте /etc/ckr/ckr.env"
+    fi
+  fi
+  if ! node -e 'const s=process.argv[1]; for (const ch of s) { if (ch.codePointAt(0)>255) process.exit(2); }' "$url"; then
+    die "NEXT_PUBLIC_SITE_URL содержит не-ByteString символы"
+  fi
+  log_ok "SITE_URL production-safe (${url})"
 }
 
 app_version() {

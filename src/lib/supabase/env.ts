@@ -7,9 +7,20 @@
  * Значения ключей никогда не логируются.
  */
 
+import { firstNonByteStringIndex, isByteString } from "@/lib/http/byte-string";
+
 function trimEnv(name: string): string | undefined {
   const value = process.env[name]?.trim();
   return value ? value : undefined;
+}
+
+/** Ключи/URL уходят в HTTP headers (apikey, Authorization) — только ByteString. */
+function assertHeaderSafeEnv(name: string, value: string): void {
+  if (isByteString(value)) return;
+  const idx = firstNonByteStringIndex(value);
+  throw new Error(
+    `${name} содержит символ вне ByteString (index ${idx}). Проверьте /etc/ckr/ckr.env — в ключах и URL не должно быть кириллицы.`,
+  );
 }
 
 /** Публичный ключ: anon (legacy) или publishable (новый). */
@@ -57,6 +68,12 @@ export function getSupabaseEnv() {
       "Не заданы NEXT_PUBLIC_SUPABASE_URL и публичный ключ (NEXT_PUBLIC_SUPABASE_ANON_KEY или NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY). См. .env.example.",
     );
   }
+
+  assertHeaderSafeEnv("NEXT_PUBLIC_SUPABASE_URL", url);
+  assertHeaderSafeEnv(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY|PUBLISHABLE_KEY",
+    anonKey,
+  );
 
   const kind = describeSupabaseKeyKind(anonKey);
   if (kind === "secret") {
