@@ -1,0 +1,354 @@
+"use server";
+
+import {
+  FEEDBACK_TYPES,
+  USER_FEEDBACK_EVENT_TYPES,
+  generateInviteCode,
+  isBetaInviteRole,
+  type FeedbackType,
+  type UserFeedbackEventType,
+} from "@/config/beta";
+import {
+  isInviteSource,
+  type InviteSource,
+} from "@/config/first-users-wave";
+import {
+  FEEDBACK_PRIORITIES,
+  type FeedbackPriority,
+} from "@/config/pilot-operations";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { trackUserFeedbackEvent } from "@/lib/beta/track-feedback-event";
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export type BetaActionState = {
+  error?: string;
+  success?: string;
+  code?: string;
+};
+
+export type BetaClientResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+function revalidateInvites() {
+  revalidatePath("/admin/invites");
+  revalidatePath("/admin/pilot");
+  revalidatePath("/admin/beta-report");
+  revalidatePath("/admin/first-users");
+  revalidatePath("/admin/beta-expansion");
+  revalidatePath("/admin/open-beta");
+  revalidatePath("/admin/open-beta-growth");
+  revalidatePath("/admin/open-beta-review");
+  revalidatePath("/admin/public-launch");
+  revalidatePath("/admin/public-launch-kpi");
+}
+
+export async function createBetaInviteAction(
+  _prev: BetaActionState,
+  formData: FormData,
+): Promise<BetaActionState> {
+  const admin = await requireAdmin();
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const roleRaw = String(formData.get("role") ?? "entrepreneur");
+  const sourceRaw = String(formData.get("source") ?? "open_beta_wave");
+  const channelRaw = String(formData.get("channel") ?? "email");
+  const markSent = formData.get("markSent") === "on";
+
+  if (!email || !email.includes("@")) {
+    return { error: "Укажите корректный email." };
+  }
+  if (!isBetaInviteRole(roleRaw)) {
+    return { error: "Некорректная роль приглашения." };
+  }
+  const source: InviteSource = isInviteSource(sourceRaw)
+    ? sourceRaw
+    : "open_beta_wave";
+
+  const { isInviteChannel } = await import("@/config/open-beta");
+  const channel = isInviteChannel(channelRaw) ? channelRaw : "email";
+
+  const code = generateInviteCode();
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("beta_invites")
+    .insert({
+      email,
+      code,
+      role: roleRaw,
+      source,
+      channel,
+      status: "invited",
+      created_by: admin.user.id,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "invite_sent",
+    userId: admin.user.id,
+    entityType: "beta_invite",
+    entityId: data?.id ?? null,
+    metadata: {
+      email,
+      role: roleRaw,
+      source,
+      channel,
+      markSent,
+    },
+  });
+
+  revalidateInvites();
+  return {
+    success: `Приглашение создано${markSent ? " (готово к отправке)" : ""}.`,
+    code,
+  };
+}
+
+export async function markInviteSentAction(
+  formData: FormData,
+): Promise<void> {
+  const admin = await requireAdmin();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+
+  const supabase = createClient();
+  // Статус участия остаётся invited; legacy sent для совместимости UI
+  await supabase
+    .from("beta_invites")
+    .update({ status: "invited" })
+    .eq("id", inviteId)
+    .in("status", ["created", "invited", "sent"]);
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "invite_sent",
+    userId: admin.user.id,
+    entityType: "beta_invite",
+    entityId: inviteId,
+    metadata: { channel: "first_users_wave", action: "mark_sent" },
+  });
+
+  revalidateInvites();
+}
+
+export async function markInviteActiveAction(
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+
+  const supabase = createClient();
+  await supabase
+    .from("beta_invites")
+    .update({ status: "active" })
+    .eq("id", inviteId)
+    .in("status", ["activated", "used", "active"]);
+
+  revalidateInvites();
+}
+
+export async function expireInviteAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+
+  const supabase = createClient();
+  await supabase
+    .from("beta_invites")
+    .update({ status: "disabled" })
+    .eq("id", inviteId)
+    .in("status", [
+      "created",
+      "sent",
+      "invited",
+      "activated",
+      "active",
+      "used",
+    ]);
+
+  revalidateInvites();
+}
+
+export async function markInviteCompletedAction(
+  formData: FormData,
+): Promise<void> {
+  await requireAdmin();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+
+  const supabase = createClient();
+  await supabase
+    .from("beta_invites")
+    .update({ status: "completed" })
+    .eq("id", inviteId)
+    .in("status", ["activated", "active", "used"]);
+
+  revalidateInvites();
+}
+
+export async function submitFeedbackAction(input: {
+  type: FeedbackType;
+  message: string;
+  rating?: number | null;
+  page?: string;
+  relatedType?: string | null;
+  relatedId?: string | null;
+  priority?: FeedbackPriority;
+  category?: string | null;
+}): Promise<BetaClientResult> {
+  const type = input.type;
+  const message = input.message.trim();
+  const page = (input.page ?? "").trim();
+  const relatedType = (input.relatedType ?? "").trim() || null;
+  const relatedId = (input.relatedId ?? "").trim() || null;
+  const priority = input.priority ?? "medium";
+  const category = (input.category ?? "").trim() || null;
+  const rating =
+    input.rating === undefined || input.rating === null
+      ? null
+      : Number(input.rating);
+
+  if (!FEEDBACK_TYPES.includes(type)) {
+    return { ok: false, error: "Некорректный тип обратной связи." };
+  }
+  if (!(FEEDBACK_PRIORITIES as readonly string[]).includes(priority)) {
+    return { ok: false, error: "Некорректный приоритет." };
+  }
+  if (message.length < 5) {
+    return { ok: false, error: "Опишите сообщение подробнее (от 5 символов)." };
+  }
+  if (
+    rating !== null &&
+    (!Number.isFinite(rating) || rating < 1 || rating > 5)
+  ) {
+    return { ok: false, error: "Оценка должна быть от 1 до 5." };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("feedback").insert({
+    user_id: user?.id ?? null,
+    type,
+    message,
+    rating,
+    page: page || "/",
+    related_type: relatedType,
+    related_id: relatedId,
+    priority,
+    category,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  const { trackAnalyticsEvent } = await import("@/lib/analytics/track");
+  await trackAnalyticsEvent({
+    eventType: "feedback_sent",
+    userId: user?.id ?? null,
+    entityType: "feedback",
+    metadata: {
+      type,
+      priority,
+      page: page || "/",
+      category,
+      channel:
+        category === "public_launch" ? "public_launch" : "open_beta_wave",
+      source: category === "public_launch" ? "public_launch" : undefined,
+    },
+  });
+
+  revalidatePath("/admin/pilot");
+  revalidatePath("/admin/pilot/report");
+  revalidatePath("/admin/first-users");
+  revalidatePath("/admin/improvements");
+  revalidatePath("/admin/open-beta");
+  revalidatePath("/admin/open-beta-growth");
+  revalidatePath("/admin/public-launch");
+  revalidatePath("/admin/public-launch-kpi");
+  revalidatePath("/admin/public-launch-operations");
+  return { ok: true };
+}
+
+/** Structured feedback First Users: liked / unclear / blockers. */
+export async function submitFirstUsersFeedbackAction(input: {
+  liked: string;
+  unclear: string;
+  blocker: string;
+}): Promise<BetaClientResult> {
+  const liked = input.liked.trim();
+  const unclear = input.unclear.trim();
+  const blocker = input.blocker.trim();
+
+  if (liked.length < 3 || unclear.length < 3 || blocker.length < 3) {
+    return {
+      ok: false,
+      error: "Заполните все три поля (от 3 символов каждое).",
+    };
+  }
+
+  const parts = [
+    { type: "review" as const, message: `Что понравилось: ${liked}` },
+    { type: "question" as const, message: `Что непонятно: ${unclear}` },
+    { type: "ux" as const, message: `Что мешает: ${blocker}` },
+  ];
+
+  for (const part of parts) {
+    const result = await submitFeedbackAction({
+      type: part.type,
+      message: part.message,
+      page: "/dashboard",
+      priority: part.type === "ux" ? "high" : "medium",
+    });
+    if (!result.ok) return result;
+  }
+
+  return { ok: true };
+}
+
+export async function submitScenarioRatingAction(input: {
+  eventType: string;
+  rating: number;
+  page?: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  comment?: string;
+}): Promise<BetaClientResult> {
+  const eventType = input.eventType as UserFeedbackEventType;
+  const rating = Number(input.rating);
+  const comment = (input.comment ?? "").trim();
+
+  if (!USER_FEEDBACK_EVENT_TYPES.includes(eventType)) {
+    return { ok: false, error: "Неизвестный тип события." };
+  }
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    return { ok: false, error: "Выберите оценку от 1 до 5." };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Войдите, чтобы оценить сценарий." };
+
+  await trackUserFeedbackEvent({
+    eventType,
+    userId: user.id,
+    entityType: input.entityType ?? null,
+    entityId: input.entityId ?? null,
+    rating,
+    comment:
+      comment ||
+      (input.page ? `Оценка сценария на ${input.page}` : "Оценка сценария"),
+  });
+
+  return { ok: true };
+}
