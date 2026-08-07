@@ -97,6 +97,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       entityType: "project",
       entityId: project.id,
     });
+    await trackAnalyticsEvent({
+      eventType: "project_view",
+      userId: current?.user.id ?? null,
+      entityType: "project",
+      entityId: project.id,
+      metadata: { channel: "ckr_website" },
+    });
   }
 
   const matchingInvestors =

@@ -9,9 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "/about",
+    "/services",
+    "/lia",
     "/how-it-works",
     "/cases",
     "/trust",
+    "/contacts",
     "/features",
     "/projects",
     "/opportunities",
@@ -19,9 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/experts",
     "/solutions",
     "/pricing",
-    "/services",
     "/demo",
-    "/lia",
     "/entrepreneur",
     "/investor",
     "/expert",
@@ -32,27 +33,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/register",
   ];
 
+  const highPriority = new Set([
+    "",
+    "/about",
+    "/services",
+    "/lia",
+    "/projects",
+    "/experts",
+    "/investments",
+    "/opportunities",
+    "/cases",
+    "/trust",
+    "/contacts",
+    roleLandings.entrepreneurs.href,
+    roleLandings.investors.href,
+    roleLandings.experts.href,
+    roleLandings.organizations.href,
+  ]);
+
   return staticRoutes.map((path) => ({
     url: `${base}${path || "/"}`,
     lastModified: now,
     changeFrequency: path === "" ? "daily" : "weekly",
-    priority:
-      path === ""
-        ? 1
-        : path === roleLandings.entrepreneurs.href ||
-            path === roleLandings.investors.href ||
-            path === roleLandings.organizations.href ||
-            path === roleLandings.experts.href ||
-            path === "/experts" ||
-            path === "/projects" ||
-            path === "/opportunities" ||
-            path === "/investments" ||
-            path === "/services" ||
-            path === "/lia" ||
-            path === "/how-it-works" ||
-            path === "/cases" ||
-            path === "/trust"
-          ? 0.9
-          : 0.7,
+    priority: path === "" ? 1 : highPriority.has(path) ? 0.9 : 0.7,
   }));
 }

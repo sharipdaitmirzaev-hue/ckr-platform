@@ -4,7 +4,7 @@ import { trackLaunchFunnelEventAction } from "@/features/analytics/actions";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-/** Клиентский beacon просмотра публичных страниц. */
+/** Клиентский beacon просмотра публичных страниц (+ website_view). */
 export function PublicPageViewTracker() {
   const pathname = usePathname();
   const lastPath = useRef<string | null>(null);
@@ -14,6 +14,10 @@ export function PublicPageViewTracker() {
     lastPath.current = pathname;
     void trackLaunchFunnelEventAction({
       eventType: "public_page_view",
+      path: pathname,
+    });
+    void trackLaunchFunnelEventAction({
+      eventType: "website_view",
       path: pathname,
     });
   }, [pathname]);

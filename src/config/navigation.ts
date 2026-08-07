@@ -26,9 +26,9 @@ export const mainNav: NavItem[] = [
     description: "Проверенные компетенции для сопровождения проектов",
   },
   {
-    label: "Как работает",
-    href: "/how-it-works",
-    description: "Путь от идеи до сделки в экосистеме ЦКР",
+    label: "Услуги",
+    href: "/services",
+    description: "Аудит, развитие проектов, партнёры и сопровождение",
   },
   {
     label: "Кейсы",
@@ -36,19 +36,19 @@ export const mainNav: NavItem[] = [
     description: "ТИНДА и публичные результаты на платформе",
   },
   {
-    label: "Доверие",
-    href: "/trust",
-    description: "Что такое ЦКР, как работает и принципы доверия",
-  },
-  {
     label: "Лия",
     href: "/lia",
-    description: "ИИ-навигатор: идея → ресурсы → решение",
+    description: "Интеллектуальный помощник ЦКР",
   },
   {
-    label: "О платформе",
+    label: "О ЦКР",
     href: "/about",
-    description: "Миссия и подход ЦКР",
+    description: "Миссия, принципы и роли",
+  },
+  {
+    label: "Контакты",
+    href: "/contacts",
+    description: "Связаться с командой ЦКР",
   },
 ];
 

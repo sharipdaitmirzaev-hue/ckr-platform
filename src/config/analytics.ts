@@ -65,6 +65,11 @@ export const ANALYTICS_EVENT_TYPES = [
   "lia_started_from_public",
   "service_viewed",
   "case_viewed",
+  "website_view",
+  "service_view",
+  "project_view",
+  "case_view",
+  "contact_started",
 ] as const;
 
 export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
@@ -136,6 +141,11 @@ export const analyticsEventLabels: Record<AnalyticsEventType, string> = {
   lia_started_from_public: "Лия запущена с публичной страницы",
   service_viewed: "Просмотр услуг",
   case_viewed: "Просмотр кейса",
+  website_view: "Просмотр сайта",
+  service_view: "Просмотр услуги",
+  project_view: "Просмотр проекта (сайт)",
+  case_view: "Просмотр кейса (сайт)",
+  contact_started: "Обращение начато",
 };
 
 export const ANALYTICS_PERIODS = ["7d", "30d", "90d"] as const;

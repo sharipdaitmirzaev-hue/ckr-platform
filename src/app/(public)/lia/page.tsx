@@ -6,7 +6,9 @@ import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
+import { CKR_LIA_ENTRY } from "@/config/ckr-website";
 import { LIA_DISCLAIMER, LIA_SCENARIOS } from "@/config/lia";
+import { siteConfig } from "@/config/site";
 import { LiaChat } from "@/features/lia/components/lia-chat";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
@@ -19,11 +21,21 @@ import { buildLiaRecommendations } from "@/lib/lia/recommendations";
 import { listCategories } from "@/lib/projects/queries";
 import type { LiaScenarioId } from "@/types/lia";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Лия — ИИ-навигатор ЦКР",
+  title: "Лия — интеллектуальный помощник ЦКР",
   description:
-    "Первый вход в ЦКР: опишите ситуацию → вопросы Лии → BusinessAuditReport → следующий шаг.",
+    "Лия — интеллектуальный помощник ЦКР: аудит бизнеса, развитие идеи, стратегия и поиск решений.",
+  openGraph: {
+    title: `Лия · ${siteConfig.name}`,
+    description: CKR_LIA_ENTRY.positioning,
+    url: "/lia",
+    type: "website",
+    locale: siteConfig.ogLocale,
+    siteName: siteConfig.name,
+  },
+  alternates: { canonical: "/lia" },
 };
 
 export const dynamic = "force-dynamic";
@@ -96,25 +108,48 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
       <Container>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
-            eyebrow="Первый вход · Лия"
-            title="Опишите ситуацию — получите аудит и следующий шаг"
-            description="Посетитель → вопросы Лии → BusinessAuditReport → создать проект, консультация или поиск ресурсов. Лия рекомендует и не действует без подтверждения."
+            eyebrow="Лия"
+            title={CKR_LIA_ENTRY.positioning}
+            description="Аудит бизнеса, развитие идеи, стратегия и поиск решений. Лия рекомендует следующий шаг и не действует без вашего подтверждения."
           />
-          {!current ? (
-            <div className="flex flex-wrap gap-3">
-              <ButtonLink
-                href={`/register?next=${encodeURIComponent(guestNext)}`}
-              >
-                Регистрация и старт
-              </ButtonLink>
-              <ButtonLink
-                href={`/login?next=${encodeURIComponent(guestNext)}`}
-                variant="outline"
-              >
-                Войти
-              </ButtonLink>
-            </div>
-          ) : null}
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href={CKR_LIA_ENTRY.promptHref} size="lg">
+              {CKR_LIA_ENTRY.promptLabel}
+            </ButtonLink>
+            {!current ? (
+              <>
+                <ButtonLink
+                  href={`/register?next=${encodeURIComponent(guestNext || "/lia?scenario=business_audit")}`}
+                  variant="outline"
+                >
+                  Регистрация
+                </ButtonLink>
+                <ButtonLink
+                  href={`/login?next=${encodeURIComponent(guestNext || "/lia?scenario=business_audit")}`}
+                  variant="outline"
+                >
+                  Войти
+                </ButtonLink>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {CKR_LIA_ENTRY.scenarios.map((item) => (
+            <Link
+              key={item.href}
+              href={
+                current
+                  ? item.href
+                  : `/register?next=${encodeURIComponent(item.href)}`
+              }
+              className="rounded-sm border border-border px-4 py-3 transition-colors hover:border-accent/50"
+            >
+              <p className="font-medium text-foreground">{item.label}</p>
+              <p className="mt-1 text-xs text-muted">{item.description}</p>
+            </Link>
+          ))}
         </div>
 
         <p className="mt-6 max-w-3xl text-sm text-muted">{LIA_DISCLAIMER}</p>
@@ -135,7 +170,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
                 !activeSessionId ? autoStartScenario : null
               }
               autoStartMessage={!activeSessionId ? autoStartMessage : null}
-              guestNextPath={guestNext}
+              guestNextPath={guestNext || "/lia?scenario=business_audit"}
             />
           </div>
 
@@ -145,11 +180,11 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
             ) : (
               <Card variant="surface" className="space-y-3 p-4">
                 <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">
-                  Путь через Лию
+                  {CKR_LIA_ENTRY.promptLabel}
                 </p>
                 <ol className="space-y-2 text-sm text-muted">
-                  <li>1. Опишите ситуацию или выберите «Аудит бизнеса».</li>
-                  <li>2. Ответьте на короткие вопросы Лии.</li>
+                  <li>1. Опишите задачу или бизнес.</li>
+                  <li>2. Ответьте на вопросы Лии.</li>
                   <li>3. Получите BusinessAuditReport.</li>
                   <li>4. Выберите: проект, консультация или ресурсы.</li>
                 </ol>
@@ -158,7 +193,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
                   size="sm"
                   className="mt-2"
                 >
-                  Начать аудит
+                  Начать
                 </ButtonLink>
               </Card>
             )}

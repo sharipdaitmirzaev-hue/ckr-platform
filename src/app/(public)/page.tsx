@@ -120,7 +120,7 @@ export default async function HomePage() {
         <Container>
           <SectionHeading
             eyebrow="Как работает ЦКР"
-            title="От идеи до реализации"
+            title="От проблемы до результата"
             description={MARKETPLACE_JOURNEY.join(" → ")}
           />
           <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -138,9 +138,12 @@ export default async function HomePage() {
               </li>
             ))}
           </ol>
-          <div className="mt-10">
-            <ButtonLink href="/how-it-works" variant="outline">
-              Подробнее о работе платформы
+          <div className="mt-10 flex flex-wrap gap-3">
+            <ButtonLink href="/lia?scenario=business_audit">
+              Расскажите о вашей задаче
+            </ButtonLink>
+            <ButtonLink href="/about" variant="outline">
+              О ЦКР
             </ButtonLink>
           </div>
         </Container>

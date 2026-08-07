@@ -4,6 +4,21 @@
 
 ---
 
+## 0.66.0-beta — 2026-08-07
+
+CKR Website Build — полноценный публичный сайт ЦКР на базе существующей платформы.
+
+### Изменения
+
+- Главная: hero + блок «Как работает» (проблема → … → результат)
+- `/about` — миссия, идея, принципы, роли; `/contacts` — форма обращения
+- `/services` — 6 категорий (описание / кому / результат / CTA)
+- `/lia` — позиционирование помощника + вход «Расскажите о вашей задаче»
+- Analytics: `website_view`, `service_view`, `project_view`, `case_view`, `contact_started`
+- SEO sitemap/nav; docs: `ckr-public-website.md`
+
+---
+
 ## 0.65.0-beta — 2026-08-07
 
 Public Website Packaging & Marketplace Launch — упаковка платформы в понятный публичный сайт (без новых бизнес-модулей).

@@ -73,10 +73,10 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/how-it-works"
+                  href="/trust"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
-                  Как работает
+                  Доверие
                 </Link>
               </li>
               <li>
@@ -89,42 +89,10 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/trust"
+                  href="/contacts"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
-                  Доверие
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  О платформе
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/demo"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Демо
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/pricing"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Тарифы
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Услуги ЦКР
+                  Контакты
                 </Link>
               </li>
               <li>

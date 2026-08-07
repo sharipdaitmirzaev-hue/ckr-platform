@@ -17,6 +17,11 @@ export function ServiceViewTracker({ category = null }: Props) {
       path: "/services",
       metadata: { category },
     });
+    void trackLaunchFunnelEventAction({
+      eventType: "service_view",
+      path: "/services",
+      metadata: { category },
+    });
   }, [category]);
 
   return null;

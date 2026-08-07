@@ -5,8 +5,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics/track";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 
 /**
- * Публичные события воронки (этапы 49 / 65).
- * Можно вызывать с клиента; не ломает UX при ошибке.
+ * Публичные события сайта ЦКР (этапы 49 / 65 / 66).
  */
 export async function trackLaunchFunnelEventAction(input: {
   eventType: Extract<
@@ -19,6 +18,11 @@ export async function trackLaunchFunnelEventAction(input: {
     | "service_viewed"
     | "case_viewed"
     | "project_viewed"
+    | "website_view"
+    | "service_view"
+    | "project_view"
+    | "case_view"
+    | "contact_started"
   >;
   path?: string;
   metadata?: Record<string, unknown>;
@@ -31,7 +35,7 @@ export async function trackLaunchFunnelEventAction(input: {
     entityId: null,
     metadata: {
       path: input.path ?? null,
-      channel: "public_website",
+      channel: "ckr_website",
       ...(input.metadata ?? {}),
     },
   });

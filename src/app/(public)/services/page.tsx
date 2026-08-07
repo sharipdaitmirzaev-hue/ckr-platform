@@ -8,7 +8,7 @@ import {
   SERVICE_CATEGORIES,
   serviceCategoryLabels,
 } from "@/config/monetization";
-import { PUBLIC_SERVICE_PACKAGES } from "@/config/public-website";
+import { CKR_SERVICE_OFFERS } from "@/config/ckr-website";
 import { siteConfig } from "@/config/site";
 import { listActiveServices } from "@/lib/monetization/queries";
 import { cn } from "@/lib/utils";
@@ -19,14 +19,15 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Услуги ЦКР",
   description:
-    "Услуги ЦКР: аудит бизнеса, сопровождение проектов, поиск партнёров, экспертиза и инвестиционное сопровождение. Цены фиксированные или по запросу.",
+    "Услуги ЦКР: аудит бизнеса, развитие проектов, партнёры, экспертиза, инвестиции и проектное управление.",
   openGraph: {
     title: `Услуги · ${siteConfig.name}`,
     description:
-      "Упакованные услуги ЦКР на базе существующего каталога services.",
+      "Публичный каталог услуг ЦКР на базе существующих services.",
     url: "/services",
     type: "website",
     locale: siteConfig.ogLocale,
+    siteName: siteConfig.name,
   },
   alternates: { canonical: "/services" },
 };
@@ -53,15 +54,15 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="Услуги ЦКР"
-            title="Поддержка проектов без новых модулей"
-            description="Аудит, сопровождение, партнёры, экспертиза и инвестиции — существующий каталог services, цены фиксированные или по запросу."
+            title="Комплексная поддержка бизнеса"
+            description="Аудит, развитие проектов, партнёры, экспертиза, инвестиции и проектное управление — без новых модулей."
           />
           <div className="flex flex-wrap gap-3">
             <ButtonLink href="/lia?scenario=business_audit">
               Получить аудит
             </ButtonLink>
-            <ButtonLink href="/pricing" variant="outline">
-              Тарифы
+            <ButtonLink href="/contacts" variant="outline">
+              Связаться
             </ButtonLink>
           </div>
         </div>
@@ -69,36 +70,43 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         <section className="mt-12 border-t border-border pt-10">
           <SectionHeading
             eyebrow="Категории"
-            title="С чего начать"
-            description="Публичная упаковка существующих услуг."
+            title="Что можно заказать"
+            description="Для каждой услуги: описание, кому подходит, результат и CTA."
           />
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {PUBLIC_SERVICE_PACKAGES.map((pack) => (
-              <div
-                key={pack.id}
-                className="border-l border-accent/40 pl-5"
+          <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {CKR_SERVICE_OFFERS.map((offer) => (
+              <article
+                key={offer.id}
+                className="flex flex-col border-l border-accent/40 pl-5"
               >
                 <h3 className="font-display text-xl text-foreground">
-                  {pack.label}
+                  {offer.label}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {pack.description}
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  {offer.description}
+                </p>
+                <p className="mt-4 text-sm text-muted">
+                  <span className="font-medium text-foreground">Кому: </span>
+                  {offer.audience}
+                </p>
+                <p className="mt-2 text-sm text-muted">
+                  <span className="font-medium text-foreground">Результат: </span>
+                  {offer.result}
                 </p>
                 <p className="mt-3 text-xs text-muted">Цена по запросу</p>
-                <Link
-                  href={pack.href}
-                  className="mt-4 inline-flex text-sm text-accent hover:underline"
-                >
-                  {pack.cta} →
-                </Link>
-              </div>
+                <div className="mt-5">
+                  <ButtonLink href={offer.href} size="sm" variant="outline">
+                    {offer.cta}
+                  </ButtonLink>
+                </div>
+              </article>
             ))}
           </div>
         </section>
 
-        <div className="mt-12 border-t border-border pt-8">
+        <div className="mt-14 border-t border-border pt-8">
           <p className="text-xs uppercase tracking-[0.16em] text-muted">
-            Каталог услуг
+            Каталог services
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
@@ -131,8 +139,8 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
 
         {services.length === 0 ? (
           <p className="mt-12 text-sm text-muted">
-            Активных услуг пока нет. Начните с аудита Лии или свяжитесь с
-            командой ЦКР.
+            Записи каталога пока пусты — используйте категории выше или аудит
+            Лии.
           </p>
         ) : (
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -143,12 +151,12 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
                 ctaHref={
                   service.category === "consulting"
                     ? "/lia?scenario=business_audit"
-                    : "/register?next=/dashboard/billing"
+                    : "/contacts"
                 }
                 ctaLabel={
                   service.category === "consulting"
                     ? "Начать с аудита"
-                    : "Заказать"
+                    : "Оставить заявку"
                 }
               />
             ))}
@@ -158,9 +166,8 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         <div className="mt-16 border-t border-border pt-10">
           <Badge variant="soft">Цены</Badge>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
-            Фиксированная цена показывается, если задана в каталоге. Иначе —
-            «по запросу». Реальных платежей на этапе packaging нет
-            (`PAYMENT_PROVIDER=mock`).
+            Фиксированная цена — если задана в каталоге. Иначе «по запросу».
+            Реальных платежей на сайте нет.
           </p>
         </div>
       </Container>

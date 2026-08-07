@@ -603,7 +603,16 @@
 - Публичная аналитика воронки + SEO
 - Без новых крупных бизнес-модулей
 
-## Этап 66+ — backlog
+## Этап 66 — CKR Website Build — Public Website ✅ (код готов)
+
+Подробности: [ckr-public-website.md](./ckr-public-website.md)
+
+- Полноценный публичный сайт: `/`, `/about`, `/services`, `/lia`, роли, marketplace
+- `/contacts` + форма обращения
+- SEO + website analytics events
+- Без новых бизнес-модулей
+
+## Этап 67+ — backlog
 
 Масштаб монетизации / платежи — см. roadmap-after-1.0.
 

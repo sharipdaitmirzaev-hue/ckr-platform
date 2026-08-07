@@ -23,6 +23,11 @@ export function LiaPublicStartTracker({
       path: "/lia",
       metadata: { scenario },
     });
+    void trackLaunchFunnelEventAction({
+      eventType: "lia_started",
+      path: "/lia",
+      metadata: { scenario, source: "public" },
+    });
   }, [fromPublic, scenario]);
 
   return null;

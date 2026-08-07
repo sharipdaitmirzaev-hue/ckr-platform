@@ -17,6 +17,11 @@ export function CaseViewTracker({ caseId }: Props) {
       path: "/cases",
       metadata: { caseId },
     });
+    void trackLaunchFunnelEventAction({
+      eventType: "case_view",
+      path: "/cases",
+      metadata: { caseId },
+    });
   }, [caseId]);
 
   return null;
