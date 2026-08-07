@@ -6,6 +6,7 @@ import {
   demoProjectsSeed,
   demoSeedMeta,
 } from "@/lib/demo/seed-data";
+import { getSupabaseSecretKey } from "@/lib/supabase/env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export type SeedResult = {
@@ -55,17 +56,17 @@ async function ensureDemoUser(
 
 /**
  * Применяет demo seed в Supabase через service role.
- * Не использует реальные ПДн. Требует SUPABASE_SERVICE_ROLE_KEY.
+ * Не использует реальные ПДн. Требует SUPABASE_SERVICE_ROLE_KEY или SUPABASE_SECRET_KEY.
  */
 export async function applyDemoSeed(): Promise<SeedResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = getSupabaseSecretKey();
 
   if (!url || !serviceKey) {
     return {
       ok: false,
       message:
-        "Нужны NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY для записи seed в БД. Каталоги доступны из встроенного demo fallback.",
+        "Нужны NEXT_PUBLIC_SUPABASE_URL и серверный ключ (SUPABASE_SERVICE_ROLE_KEY или SUPABASE_SECRET_KEY) для записи seed в БД. Каталоги доступны из встроенного demo fallback.",
     };
   }
 

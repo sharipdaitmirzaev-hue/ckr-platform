@@ -68,8 +68,6 @@ ensure_env_or_stop() {
   local required=(
     NEXT_PUBLIC_SITE_URL
     NEXT_PUBLIC_SUPABASE_URL
-    NEXT_PUBLIC_SUPABASE_ANON_KEY
-    SUPABASE_SERVICE_ROLE_KEY
   )
 
   local key
@@ -78,6 +76,22 @@ ensure_env_or_stop() {
       missing+=("$key")
     fi
   done
+
+  # Публичный ключ: anon (legacy JWT) или publishable (sb_publishable_...)
+  local public_key="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}}"
+  if is_placeholder "$public_key"; then
+    missing+=("NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+  elif [[ "$public_key" == sb_secret_* ]]; then
+    missing+=("публичный ключ не должен быть sb_secret_... (нужен publishable/anon)")
+  fi
+
+  # Серверный ключ: service_role (legacy JWT) или secret (sb_secret_...)
+  local secret_key="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SECRET_KEY:-}}"
+  if is_placeholder "$secret_key"; then
+    missing+=("SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY")
+  elif [[ "$secret_key" == sb_publishable_* ]]; then
+    missing+=("серверный ключ не должен быть sb_publishable_... (нужен secret/service_role)")
+  fi
 
   # Production safety flags
   if [[ "${NEXT_PUBLIC_DEMO_MODE:-true}" != "false" ]]; then
@@ -174,10 +188,10 @@ check_migrations_readonly() {
 
   load_env_file "$CKR_ENV_FILE"
   local base="${NEXT_PUBLIC_SUPABASE_URL%/}"
-  local key="${SUPABASE_SERVICE_ROLE_KEY:-}"
+  local key="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SECRET_KEY:-}}"
 
   if is_placeholder "$base" || is_placeholder "$key"; then
-    log_warn "Нельзя проверить БД удалённо: нет URL/service role"
+    log_warn "Нельзя проверить БД удалённо: нет URL/серверного ключа"
     log_warn "Примените migrations вручную: supabase db push (или SQL по порядку)"
     return 0
   fi
@@ -186,14 +200,18 @@ check_migrations_readonly() {
   local tables=(profiles projects opportunities analytics_events feedback)
   local missing_tables=()
   local table code
+  local curl_args=(-sS -o /tmp/ckr-table-check.json -w '%{http_code}' -H "Accept: application/json" -H "apikey: ${key}")
+
+  # Новые ключи sb_* — не JWT: не кладём их в Authorization: Bearer.
+  # Legacy JWT service_role — можно (и привычно) слать и apikey, и Bearer.
+  if [[ "$key" != sb_publishable_* && "$key" != sb_secret_* ]]; then
+    curl_args+=(-H "Authorization: Bearer ${key}")
+  fi
 
   for table in "${tables[@]}"; do
     code="$(
-      curl -sS -o /tmp/ckr-table-check.json -w '%{http_code}' \
-        "${base}/rest/v1/${table}?select=*&limit=1" \
-        -H "apikey: ${key}" \
-        -H "Authorization: Bearer ${key}" \
-        -H "Accept: application/json" || true
+      curl "${curl_args[@]}" \
+        "${base}/rest/v1/${table}?select=*&limit=1" || true
     )"
     if [[ "$code" == "200" ]]; then
       log_ok "Таблица доступна: ${table}"

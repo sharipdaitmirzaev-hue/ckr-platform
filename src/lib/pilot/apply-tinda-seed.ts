@@ -85,13 +85,14 @@ async function ensurePilotUser(
  */
 export async function applyTindaPilotSeed(): Promise<TindaSeedResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const { getSupabaseSecretKey } = await import("@/lib/supabase/env");
+  const serviceKey = getSupabaseSecretKey();
 
   if (!url || !serviceKey) {
     return {
       ok: false,
       message:
-        "Нужны NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY для seed пилота ТИНДА.",
+        "Нужны NEXT_PUBLIC_SUPABASE_URL и серверный ключ (SUPABASE_SERVICE_ROLE_KEY или SUPABASE_SECRET_KEY) для seed пилота ТИНДА.",
     };
   }
 

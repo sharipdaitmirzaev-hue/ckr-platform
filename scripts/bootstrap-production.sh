@@ -2,8 +2,9 @@
 # =============================================================================
 # CKR — bootstrap production на Ubuntu (идемпотентный)
 #
-#   cd /var/www/ckr-platform
-#   sudo ./scripts/bootstrap-production.sh
+#   cd /var/www/ckr-platform && git fetch origin && \
+#     git checkout cursor/deploy-ubuntu-0.61-ff37 && \
+#     sudo ./scripts/bootstrap-production.sh
 #
 # Секреты только в /etc/ckr/ckr.env (не в скрипте).
 # =============================================================================
@@ -106,32 +107,7 @@ git_as() {
   fi
 }
 
-# --- env template if missing (before checkout so message is clear) ---
-mkdir -p /etc/ckr
-TEMPLATE_CANDIDATES=(
-  "${CKR_APP_DIR}/deploy/env/production.env.template"
-  "${SCRIPT_DIR}/../deploy/env/production.env.template"
-)
-if [[ ! -f "${CKR_ENV_FILE}" ]]; then
-  for tpl in "${TEMPLATE_CANDIDATES[@]}"; do
-    if [[ -f "$tpl" ]]; then
-      cp "$tpl" "${CKR_ENV_FILE}"
-      log_warn "Создан шаблон ${CKR_ENV_FILE} из $(basename "$tpl")"
-      break
-    fi
-  done
-fi
-if [[ -f "${CKR_ENV_FILE}" ]]; then
-  chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"
-  chmod 640 "${CKR_ENV_FILE}"
-fi
-
-# --- secrets must be filled before build ---
-ensure_env_or_stop
-DOMAIN="$(domain_from_site_url)"
-[[ -n "$DOMAIN" ]] || die "Не удалось извлечь домен из NEXT_PUBLIC_SITE_URL"
-
-# --- git branch (credentials владельца репо / SUDO_USER) ---
+# --- git branch first (чтобы шаблон env и unit файлы были актуальны) ---
 log_info "Переключение на ${CKR_DEPLOY_BRANCH}"
 git_as fetch --all --prune
 if git_as show-ref --verify --quiet "refs/remotes/origin/${CKR_DEPLOY_BRANCH}"; then
@@ -143,6 +119,24 @@ else
   die "Ветка ${CKR_DEPLOY_BRANCH} не найдена на origin. Сначала запушьте её."
 fi
 log_ok "Git: $(git_as log -1 --oneline)"
+
+# --- env template if missing ---
+mkdir -p /etc/ckr
+if [[ ! -f "${CKR_ENV_FILE}" ]]; then
+  if [[ -f "${CKR_APP_DIR}/deploy/env/production.env.template" ]]; then
+    cp "${CKR_APP_DIR}/deploy/env/production.env.template" "${CKR_ENV_FILE}"
+    log_warn "Создан шаблон ${CKR_ENV_FILE}"
+  else
+    die "Нет шаблона deploy/env/production.env.template"
+  fi
+fi
+chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"
+chmod 640 "${CKR_ENV_FILE}"
+
+# --- secrets gate ---
+ensure_env_or_stop
+DOMAIN="$(domain_from_site_url)"
+[[ -n "$DOMAIN" ]] || die "Не удалось извлечь домен из NEXT_PUBLIC_SITE_URL"
 
 chown -R "${CKR_APP_USER}:${CKR_APP_USER}" "${CKR_APP_DIR}"
 chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"

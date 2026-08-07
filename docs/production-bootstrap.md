@@ -58,8 +58,12 @@ cd /var/www/ckr-platform && sudo ./scripts/update-production.sh
 
 - `NEXT_PUBLIC_SITE_URL` — `https://ваш-домен`
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — `sb_publishable_...` **или** legacy `anon` JWT  
+  (альтернатива: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
+- `SUPABASE_SERVICE_ROLE_KEY` — `sb_secret_...` **или** legacy `service_role` JWT  
+  (альтернатива: `SUPABASE_SECRET_KEY`)
+
+Подробнее: [supabase-api-keys.md](./supabase-api-keys.md).
 
 Рекомендуется:
 

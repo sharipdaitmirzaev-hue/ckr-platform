@@ -53,8 +53,8 @@ grep version src/config/version.ts
 |------------|-------------|---------------------|
 | `NEXT_PUBLIC_SITE_URL` | да | `https://YOUR_DOMAIN` |
 | `NEXT_PUBLIC_SUPABASE_URL` | да | URL production project |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | да | anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | да (server) | service role (не в браузер) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | да | `sb_publishable_...` или legacy anon JWT |
+| `SUPABASE_SERVICE_ROLE_KEY` | да (server) | `sb_secret_...` или legacy service_role JWT |
 | `NODE_ENV` | да | `production` |
 | `PORT` | да | `3000` |
 | `HOSTNAME` | да | `127.0.0.1` |
