@@ -615,7 +615,7 @@ function buildAccessAudit(input: {
 }): AccessAuditItem[] {
   return ACCESS_AUDIT_CHECKS.map((check) => {
     let status: ChecklistItemStatus = "manual";
-    let note = check.expectation;
+    let note: string = check.expectation;
     const rlsOk = input.dbHealthy;
 
     if (check.id === "admin") {
@@ -648,7 +648,7 @@ function buildAccessAudit(input: {
 function buildRecovery(environment: EnvironmentBlock): RecoveryItemView[] {
   return RECOVERY_CHECKLIST_ITEMS.map((item) => {
     let status: ChecklistItemStatus = "manual";
-    let note = item.detail;
+    let note: string = item.detail;
 
     if (item.id === "backup_database") {
       status = environment.isProductionReady ? "manual" : "warn";
@@ -804,13 +804,10 @@ function suggestDecision(input: {
     suggested = "rollback";
   } else if (
     readiness >= 80 &&
-    input.servicesAggregate !== "error" &&
     failItems.length === 0 &&
     input.environment.isProductionReady
   ) {
     suggested = "go_live";
-  } else {
-    suggested = "hold";
   }
 
   return {
