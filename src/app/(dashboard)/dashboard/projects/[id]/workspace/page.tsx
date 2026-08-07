@@ -6,6 +6,7 @@ import { DocumentList } from "@/components/documents/document-list";
 import { ProjectProgress } from "@/components/execution/project-progress";
 import { ProjectOutcomesPanel } from "@/components/outcomes/project-outcomes-panel";
 import { ProjectLifecycle } from "@/components/projects/project-lifecycle";
+import { ProjectCommercialResult } from "@/components/revenue/project-commercial-result";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import { CreateDealForm } from "@/features/deals/components/create-deal-form";
 import { CreateMilestoneForm } from "@/features/deals/components/create-milestone-form";
 import { getProjectAnalytics } from "@/lib/analytics/queries";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { getStaffSession } from "@/lib/auth/require-staff";
 import {
   canAccessProjectWorkspace,
   listActivityForProject,
@@ -28,6 +30,7 @@ import { listDocumentsForTarget } from "@/lib/documents/queries";
 import { getProjectProgressSummary } from "@/lib/execution/queries";
 import { getProjectOutcomeSummary } from "@/lib/outcomes/queries";
 import { getProjectById } from "@/lib/projects/queries";
+import { getProjectCommercialResult } from "@/lib/revenue/dashboard";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -60,6 +63,8 @@ export default async function ProjectWorkspacePage({
 
   const isOwner = project.ownerId === current.user.id;
 
+  const staff = await getStaffSession();
+
   const [
     deals,
     participants,
@@ -69,6 +74,7 @@ export default async function ProjectWorkspacePage({
     analytics,
     progress,
     outcomes,
+    commercial,
   ] = await Promise.all([
     listDealsForProject(project.id),
     listParticipantsForProject(project.id),
@@ -78,6 +84,7 @@ export default async function ProjectWorkspacePage({
     getProjectAnalytics(project.id),
     getProjectProgressSummary(project.id),
     getProjectOutcomeSummary(project.id),
+    staff ? getProjectCommercialResult(project.id) : Promise.resolve(null),
   ]);
 
   // Unique participants by userId for display
@@ -148,6 +155,10 @@ export default async function ProjectWorkspacePage({
 
       {outcomes ? <ProjectOutcomesPanel summary={outcomes} /> : null}
 
+      {staff && commercial ? (
+        <ProjectCommercialResult data={commercial} />
+      ) : null}
+
       <ProjectAnalytics data={analytics} />
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -192,6 +203,7 @@ export default async function ProjectWorkspacePage({
                   key={deal.id}
                   deal={deal}
                   canManage={isOwner || deal.initiatorId === current.user.id}
+                  showRevenueStatus={Boolean(staff)}
                 />
               ))}
             </div>

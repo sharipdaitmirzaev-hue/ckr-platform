@@ -575,7 +575,16 @@
 - organizations + partnerships (без отдельной системы партнёров)
 - Лия «Как развивается партнёрская сеть ЦКР?» → PartnershipReport
 
-## Этап 63+ — backlog
+## Этап 63 — First Deals & Revenue ✅ (код готов)
 
-Сделки, монетизация — см. roadmap-after-1.0.
+Подробности: [first-deals-and-revenue.md](./first-deals-and-revenue.md) · [tinda-commercial-case.md](./tinda-commercial-case.md)
+
+- `/admin/revenue` + `/admin/revenue-kpi`
+- RevenueSources · RevenuePipeline · revenue_status на deals
+- Staff-only коммерческий блок в workspace · RevenueOpportunityReport
+- Без реальных платежей и без фиктивной выручки
+
+## Этап 64+ — backlog
+
+Масштаб монетизации / платежи — см. roadmap-after-1.0.
 

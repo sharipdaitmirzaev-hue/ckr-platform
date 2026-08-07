@@ -27,7 +27,9 @@ export function ServiceCard({
       <CardTitle className="mt-4">{service.title}</CardTitle>
       <CardDescription>{service.description}</CardDescription>
       <p className="mt-5 font-display text-xl text-foreground">
-        {formatPrice(service.price)}
+        {service.priceOnRequest || service.price <= 0
+          ? "Цена по запросу"
+          : formatPrice(service.price)}
       </p>
       <div className="mt-6">
         <ButtonLink href={ctaHref} variant="outline" size="sm">

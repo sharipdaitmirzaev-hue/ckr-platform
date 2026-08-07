@@ -4,6 +4,21 @@
 
 ---
 
+## 0.63.0-beta — 2026-08-07
+
+First Deals & Revenue — операционный контур первых коммерческих результатов (без бухгалтерии и реальных платежей).
+
+### Изменения
+
+- `/admin/revenue` + `/admin/revenue-kpi`: источники, pipeline, PartnerRevenueMetrics
+- `deals.revenue_status` (potential→paid) + `services.price_on_request`
+- Стартовый набор услуг ЦКР (цены по запросу)
+- Staff-only блок «Коммерческий результат ЦКР» в workspace проекта
+- Лия: «На чём ЦКР сейчас может заработать?» → `RevenueOpportunityReport`
+- Документация: `first-deals-and-revenue.md`, `tinda-commercial-case.md`
+
+---
+
 ## 0.62.0-beta — 2026-08-06
 
 Partnership Network — развитие партнёрской сети на базе organizations / partnerships.

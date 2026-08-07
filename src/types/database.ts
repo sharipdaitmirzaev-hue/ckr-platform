@@ -141,6 +141,13 @@ export type DbCommissionType = "fixed" | "percent";
 
 export type DbCommissionStatus = "pending" | "paid" | "cancelled";
 
+export type DbDealRevenueStatus =
+  | "potential"
+  | "agreed"
+  | "invoiced"
+  | "paid"
+  | "cancelled";
+
 export type AnalyticsEventRow = {
   id: string;
   user_id: string | null;
@@ -898,6 +905,7 @@ export type DealRow = {
   commission_type?: DbCommissionType | null;
   commission_amount?: number | string | null;
   commission_status?: DbCommissionStatus | null;
+  revenue_status?: DbDealRevenueStatus;
   created_at: string;
   updated_at: string;
 };
@@ -946,6 +954,7 @@ export type ServiceRow = {
   category: DbServiceCategory;
   price: number | string;
   status: DbServiceStatus;
+  price_on_request?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -2186,6 +2195,7 @@ export type Database = {
           category: DbServiceCategory;
           price?: number;
           status?: DbServiceStatus;
+          price_on_request?: boolean;
         };
         Update: Partial<Omit<ServiceRow, "id" | "created_at">>;
       };
@@ -2205,6 +2215,7 @@ export type Database = {
           commission_type?: DbCommissionType | null;
           commission_amount?: number | null;
           commission_status?: DbCommissionStatus | null;
+          revenue_status?: DbDealRevenueStatus;
         };
         Update: Partial<{
           partner_id: string | null;
@@ -2217,6 +2228,7 @@ export type Database = {
           commission_type: DbCommissionType | null;
           commission_amount: number | null;
           commission_status: DbCommissionStatus | null;
+          revenue_status: DbDealRevenueStatus;
         }>;
       };
       investor_interests: {
@@ -2308,6 +2320,7 @@ export type Database = {
       service_status: DbServiceStatus;
       commission_type: DbCommissionType;
       commission_status: DbCommissionStatus;
+      deal_revenue_status: DbDealRevenueStatus;
       product_test_kind: DbProductTestKind;
       product_test_status: DbProductTestStatus;
       beta_invite_status: DbBetaInviteStatus;

@@ -276,6 +276,13 @@ export const LIA_SCENARIOS: {
     description:
       "Partnership Network: партнёры, referrals, результаты → PartnershipReport (только анализ)",
   },
+  {
+    id: "revenue_opportunity",
+    label: "На чём ЦКР сейчас может заработать?",
+    prompt: "На чём ЦКР сейчас может заработать?",
+    description:
+      "First Deals & Revenue: услуги, сделки, партнёры → RevenueOpportunityReport (только анализ)",
+  },
 ];
 
 export const LIA_SECURITY_NOTES = [
@@ -418,6 +425,9 @@ export const PROJECT_ACQUISITION_START_PATTERN =
 
 export const PARTNERSHIP_NETWORK_START_PATTERN =
   /как\s+развивается\s+партн[её]рск(ая|ой)\s+сеть(\s+цкр)?|партн[её]рск(ая|ой)\s+сеть\s+цкр|partnership\s*(network|report)?/i;
+
+export const REVENUE_OPPORTUNITY_START_PATTERN =
+  /на\s+ч[её]м\s+цкр\s+сейчас\s+может\s+заработать|на\s+ч[её]м\s+цкр\s+может\s+заработать|revenue\s*opportunity|заработать\s+цкр/i;
 
 export const OPEN_BETA_START_PATTERN =
   /как\s+проходит\s+открытый\s+запуск\s+цкр|открытый\s+запуск\s+цкр|open\s*beta(\s*wave)?(\s*report)?(?!\s*readiness)(?!\s*growth)/i;

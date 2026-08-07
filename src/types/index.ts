@@ -98,6 +98,13 @@ export type CommissionType = "fixed" | "percent";
 
 export type CommissionStatus = "pending" | "paid" | "cancelled";
 
+export type DealRevenueStatus =
+  | "potential"
+  | "agreed"
+  | "invoiced"
+  | "paid"
+  | "cancelled";
+
 export type AnalyticsEvent = {
   id: string;
   userId: string | null;
@@ -357,6 +364,7 @@ export type Deal = {
   commissionType: CommissionType | null;
   commissionAmount: number | null;
   commissionStatus: CommissionStatus | null;
+  revenueStatus?: DealRevenueStatus;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -405,6 +413,7 @@ export type Service = {
   category: ServiceCategory;
   price: number;
   status: ServiceStatus;
+  priceOnRequest?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };

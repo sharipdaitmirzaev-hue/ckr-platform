@@ -146,6 +146,16 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Партнёрская сеть: pipeline, outcomes, attribution",
   },
   {
+    label: "Revenue",
+    href: "/admin/revenue",
+    description: "Первые сделки и выручка ЦКР",
+  },
+  {
+    label: "Revenue KPI",
+    href: "/admin/revenue-kpi",
+    description: "Pipeline / Revenue / Efficiency KPI",
+  },
+  {
     label: "Улучшения",
     href: "/admin/improvements",
     description: "Цикл улучшений: feedback → issues → product",

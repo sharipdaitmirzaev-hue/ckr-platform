@@ -28,6 +28,7 @@ import { LiveLaunchReportCard } from "@/components/lia/live-launch-report";
 import { GrowthReportCard } from "@/components/lia/growth-report";
 import { ProjectAcquisitionReportCard } from "@/components/lia/project-acquisition-report";
 import { PartnershipReportCard } from "@/components/lia/partnership-report";
+import { RevenueOpportunityReportCard } from "@/components/lia/revenue-opportunity-report";
 import { ProductFixImprovementReportCard } from "@/components/lia/product-fix-improvement-report";
 import { ProductImprovementReportCard } from "@/components/lia/product-improvement-report";
 import { ProgressReportCard } from "@/components/lia/progress-report";
@@ -127,6 +128,8 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
         const projectAcquisitionReport =
           message.metadata?.projectAcquisitionReport;
         const partnershipReport = message.metadata?.partnershipReport;
+        const revenueOpportunityReport =
+          message.metadata?.revenueOpportunityReport;
         const progressProjectId =
           results.find((item) => item.type === "project")?.id ?? null;
 
@@ -262,6 +265,11 @@ export function LiaMessageList({ messages, categories }: LiaMessageListProps) {
             ) : null}
             {!isUser && partnershipReport ? (
               <PartnershipReportCard report={partnershipReport} />
+            ) : null}
+            {!isUser && revenueOpportunityReport ? (
+              <RevenueOpportunityReportCard
+                report={revenueOpportunityReport}
+              />
             ) : null}
           </li>
         );

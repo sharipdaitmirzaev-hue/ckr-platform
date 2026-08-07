@@ -31,6 +31,7 @@ export function mapDealRow(row: DealRow): Deal {
         ? null
         : Number(row.commission_amount),
     commissionStatus: row.commission_status ?? null,
+    revenueStatus: row.revenue_status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

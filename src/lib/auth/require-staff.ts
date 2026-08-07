@@ -32,25 +32,17 @@ async function loadOperatorRoles(userId: string): Promise<OperatorRole[]> {
 }
 
 /**
- * Admin платформы или активный operator.
- * Для CRM, модерации и операционных действий closed pilot.
+ * Admin платформы или активный operator (без redirect).
+ * Для условного UI (например, коммерческий блок в workspace).
  */
-export async function requireStaff(
-  nextPath = "/admin/crm",
-): Promise<StaffSession> {
+export async function getStaffSession(): Promise<StaffSession | null> {
   const current = await getCurrentUser();
-
-  if (!current) {
-    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
-  }
+  if (!current) return null;
 
   const isPlatformAdmin = current.roles.includes("admin");
   const operatorRoles = await loadOperatorRoles(current.user.id);
   const isOperator = operatorRoles.length > 0;
-
-  if (!isPlatformAdmin && !isOperator) {
-    redirect("/dashboard");
-  }
+  if (!isPlatformAdmin && !isOperator) return null;
 
   return {
     ...current,
@@ -58,4 +50,24 @@ export async function requireStaff(
     isPlatformAdmin,
     isOperator,
   };
+}
+
+/**
+ * Admin платформы или активный operator.
+ * Для CRM, модерации и операционных действий closed pilot.
+ */
+export async function requireStaff(
+  nextPath = "/admin/crm",
+): Promise<StaffSession> {
+  const session = await getStaffSession();
+
+  if (!session) {
+    const current = await getCurrentUser();
+    if (!current) {
+      redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+    }
+    redirect("/dashboard");
+  }
+
+  return session;
 }

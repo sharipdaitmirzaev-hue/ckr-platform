@@ -11,6 +11,7 @@ import {
   commissionStatusLabels,
   commissionTypeLabels,
 } from "@/config/monetization";
+import { dealRevenueStatusLabels } from "@/config/revenue";
 import { updateDealStatusAction } from "@/features/deals/actions";
 import type { DealWithNames } from "@/lib/deals/queries";
 import type { DealStatus } from "@/types";
@@ -20,9 +21,15 @@ import { useTransition } from "react";
 type DealCardProps = {
   deal: DealWithNames;
   canManage: boolean;
+  /** Показывать коммерческий статус (staff / admin). */
+  showRevenueStatus?: boolean;
 };
 
-export function DealCard({ deal, canManage }: DealCardProps) {
+export function DealCard({
+  deal,
+  canManage,
+  showRevenueStatus = false,
+}: DealCardProps) {
   const [pending, startTransition] = useTransition();
 
   function formatAmount() {
@@ -36,6 +43,11 @@ export function DealCard({ deal, canManage }: DealCardProps) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="accent">{dealTypeLabels[deal.dealType]}</Badge>
         <Badge variant="soft">{dealStatusLabels[deal.status]}</Badge>
+        {showRevenueStatus && deal.revenueStatus ? (
+          <Badge variant="soft">
+            {dealRevenueStatusLabels[deal.revenueStatus]}
+          </Badge>
+        ) : null}
       </div>
       <p className="text-sm text-foreground">{formatAmount()}</p>
       {deal.commissionType && deal.commissionAmount !== null ? (

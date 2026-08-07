@@ -32,6 +32,7 @@ import {
   GROWTH_START_PATTERN,
   PROJECT_ACQUISITION_START_PATTERN,
   PARTNERSHIP_NETWORK_START_PATTERN,
+  REVENUE_OPPORTUNITY_START_PATTERN,
   PRODUCT_IMPROVEMENT_START_PATTERN,
   PRODUCT_FIX_REVIEW_START_PATTERN,
   PROJECT_FLOW_START_PATTERN,
@@ -86,6 +87,7 @@ import type {
   GrowthReport,
   ProjectAcquisitionReport,
   PartnershipReport,
+  RevenueOpportunityReport,
   ProgressReport,
   ProjectDraft,
   SolutionDraft,
@@ -208,6 +210,9 @@ function detectScenario(
   }
   if (PARTNERSHIP_NETWORK_START_PATTERN.test(value)) {
     return "partnership_network";
+  }
+  if (REVENUE_OPPORTUNITY_START_PATTERN.test(value)) {
+    return "revenue_opportunity";
   }
   if (PUBLIC_LAUNCH_START_PATTERN.test(value)) {
     return "public_launch";
@@ -1937,6 +1942,49 @@ async function handlePartnershipNetworkAnalysis(input: {
   };
 }
 
+async function handleRevenueOpportunityAnalysis(input: {
+  userId: string;
+}): Promise<LiaEngineResult> {
+  const { buildRevenueOpportunityReportAsync } = await import(
+    "@/lib/revenue/dashboard"
+  );
+  const report: RevenueOpportunityReport =
+    await buildRevenueOpportunityReportAsync();
+
+  try {
+    const { trackPilotMetric } = await import("@/lib/pilot/track");
+    await trackPilotMetric({
+      eventType: "lia_used",
+      userId: input.userId,
+      entityType: "revenue",
+      metadata: { source: "lia", scenario: "revenue_opportunity" },
+    });
+  } catch {
+    // мягкий сбой
+  }
+
+  return {
+    content: [
+      "Сценарий «На чём ЦКР сейчас может заработать?» завершён.",
+      "",
+      report.summary,
+      "",
+      "Ниже — RevenueOpportunityReport. Лия только анализирует и не меняет финансовые данные.",
+      "",
+      `_${LIA_DISCLAIMER}_`,
+    ].join("\n"),
+    metadata: {
+      scenario: "revenue_opportunity",
+      revenueOpportunityReport: report,
+      disclaimer: LIA_DISCLAIMER,
+    },
+    results: [],
+    projectDraft: null,
+    solutionDraft: null,
+    catalogDraft: null,
+  };
+}
+
 async function handleEcosystemValueAnalysis(input: {
   userId: string;
 }): Promise<LiaEngineResult> {
@@ -3607,6 +3655,23 @@ export async function runLiaEngine(input: {
       };
     }
     return handlePartnershipNetworkAnalysis({ userId: input.userId });
+  }
+
+  if (scenario === "revenue_opportunity") {
+    if (!input.userId) {
+      return {
+        content: `Войдите в аккаунт, чтобы получить RevenueOpportunityReport.\n\n_${LIA_DISCLAIMER}_`,
+        metadata: {
+          scenario: "revenue_opportunity",
+          disclaimer: LIA_DISCLAIMER,
+        },
+        results: [],
+        projectDraft: null,
+        solutionDraft: null,
+        catalogDraft: null,
+      };
+    }
+    return handleRevenueOpportunityAnalysis({ userId: input.userId });
   }
 
   if (scenario === "org_find_projects") {

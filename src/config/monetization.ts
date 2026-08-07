@@ -158,56 +158,66 @@ export const defaultSubscriptionPlans = [
   },
 ];
 
+/** Стартовый набор услуг ЦКР (этап 63). Цены — по запросу, пока админ не задаст. */
 export const defaultServices = [
   {
-    id: "svc-business-plan",
-    title: "Бизнес-план под проект",
-    description: "Структура, финансы и дорожная карта под ваш проект в ЦКР.",
-    category: "business_plan" as const,
-    price: 45000,
-    status: "active" as const,
-  },
-  {
-    id: "svc-legal",
-    title: "Юридическое сопровождение",
-    description: "Договоры, корпоративная структура и проверка контрагентов.",
-    category: "legal" as const,
-    price: 35000,
-    status: "active" as const,
-  },
-  {
-    id: "svc-marketing",
-    title: "Маркетинг запуска",
+    id: "e000000e-0000-4000-8000-000000000001",
+    title: "Аудит бизнеса",
     description:
-      "Позиционирование, канал привлечения и материалы для инвесторов.",
-    category: "marketing" as const,
-    price: 40000,
-    status: "active" as const,
-  },
-  {
-    id: "svc-consulting",
-    title: "Стратегическая консультация",
-    description:
-      "Разбор идеи, ресурсов и следующего шага с экспертом ЦКР.",
+      "Диагностика действующего бизнеса: сильные/слабые стороны, риски и следующие шаги в ЦКР.",
     category: "consulting" as const,
-    price: 15000,
+    price: 0,
+    priceOnRequest: true,
     status: "active" as const,
   },
   {
-    id: "svc-investment",
+    id: "e000000e-0000-4000-8000-000000000002",
+    title: "Подготовка проекта",
+    description:
+      "Упаковка бизнес-идеи в карточку проекта ЦКР: цели, ресурсы, стадии.",
+    category: "business_plan" as const,
+    price: 0,
+    priceOnRequest: true,
+    status: "active" as const,
+  },
+  {
+    id: "e000000e-0000-4000-8000-000000000003",
+    title: "Поиск партнёров",
+    description:
+      "Подбор организаций и партнёров экосистемы под задачу проекта.",
+    category: "marketing" as const,
+    price: 0,
+    priceOnRequest: true,
+    status: "active" as const,
+  },
+  {
+    id: "e000000e-0000-4000-8000-000000000004",
     title: "Поиск инвестиций",
     description:
-      "Подбор инвесторов и подготовка к переговорам по проекту.",
+      "Подбор инвестиционных предложений и подготовка к переговорам.",
     category: "investment_search" as const,
-    price: 60000,
+    price: 0,
+    priceOnRequest: true,
     status: "active" as const,
   },
   {
-    id: "svc-support",
-    title: "Сопровождение проекта",
-    description: "Ведение этапов, сделок и коммуникаций до результата.",
+    id: "e000000e-0000-4000-8000-000000000005",
+    title: "Проектное сопровождение",
+    description:
+      "Ведение этапов, сделок и коммуникаций проекта до результата.",
     category: "project_support" as const,
-    price: 80000,
+    price: 0,
+    priceOnRequest: true,
+    status: "active" as const,
+  },
+  {
+    id: "e000000e-0000-4000-8000-000000000006",
+    title: "Юридическое / экспертное сопровождение",
+    description:
+      "Договоры, экспертиза и сопровождение коммерческих договорённостей.",
+    category: "legal" as const,
+    price: 0,
+    priceOnRequest: true,
     status: "active" as const,
   },
 ];

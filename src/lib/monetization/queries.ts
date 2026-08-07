@@ -37,7 +37,10 @@ function fallbackServices(category?: ServiceCategory | null): Service[] {
   return defaultServices
     .filter((service) => service.status === "active")
     .filter((service) => !category || service.category === category)
-    .map((service) => ({ ...service }));
+    .map((service) => ({
+      ...service,
+      priceOnRequest: Boolean(service.priceOnRequest),
+    }));
 }
 
 export async function listActivePlans(

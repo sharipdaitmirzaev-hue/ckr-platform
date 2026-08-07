@@ -50,6 +50,7 @@ export function mapServiceRow(row: ServiceRow): Service {
     category: row.category,
     price: Number(row.price),
     status: row.status,
+    priceOnRequest: Boolean(row.price_on_request),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
