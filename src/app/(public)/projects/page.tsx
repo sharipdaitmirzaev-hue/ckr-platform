@@ -1,5 +1,6 @@
 import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
 import { CatalogSearchForm } from "@/components/catalog/catalog-search-form";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -10,6 +11,7 @@ import {
   projectStageLabels,
   projectStatusLabels,
 } from "@/config/projects";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
   listCategories,
@@ -156,8 +158,8 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
             className="mt-12"
             title="Ничего не найдено"
             description="Снимите фильтры или создайте проект с Лией."
-            actionHref="/lia"
-            actionLabel="Создать проект с Лией"
+            actionHref="/lia?scenario=business_audit"
+            actionLabel="Расскажите о вашей задаче"
           />
         ) : (
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -167,11 +169,13 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
                 project={project}
                 categoryName={project.categoryName}
                 href={`/project/${project.id}`}
+                showStatus
               />
             ))}
           </div>
         )}
       </Container>
+      <PageNextStep {...PAGE_NEXT_STEPS.projects} />
     </div>
   );
 }

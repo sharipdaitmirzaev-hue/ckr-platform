@@ -1,3 +1,4 @@
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { PublicLiaEntry } from "@/components/marketing/public-lia-entry";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -6,6 +7,11 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { brand } from "@/config/brand";
 import { TRUST_PAGE } from "@/config/first-users";
 import { siteConfig } from "@/config/site";
+import {
+  PAGE_NEXT_STEPS,
+  TRUST_INTERACTION,
+  TRUST_VERIFICATION,
+} from "@/config/website-final";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -157,6 +163,33 @@ export default function TrustPage() {
         </Container>
       </section>
 
+      <section className="border-b border-border py-16 sm:py-20">
+        <Container className="grid gap-12 lg:grid-cols-2">
+          <div>
+            <SectionHeading
+              eyebrow="Проверка"
+              title={TRUST_VERIFICATION.title}
+            />
+            <ul className="mt-6 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
+              {TRUST_VERIFICATION.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <SectionHeading
+              eyebrow="Взаимодействие"
+              title={TRUST_INTERACTION.title}
+            />
+            <ul className="mt-6 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted sm:text-base">
+              {TRUST_INTERACTION.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </Container>
+      </section>
+
       <section className="py-16 sm:py-20">
         <Container>
           <SectionHeading
@@ -182,6 +215,7 @@ export default function TrustPage() {
       </section>
 
       <PublicLiaEntry compact />
+      <PageNextStep {...PAGE_NEXT_STEPS.trust} />
     </>
   );
 }

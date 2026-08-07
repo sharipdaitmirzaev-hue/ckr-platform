@@ -8,16 +8,24 @@ export const MARKETPLACE_HERO = {
     "Помогаем предпринимателям развивать бизнес, находить решения, экспертов, партнёров и ресурсы.",
   ctas: [
     {
-      label: "Получить аудит бизнеса",
-      href: "/lia?scenario=business_audit",
+      label: "У меня есть бизнес",
+      href:
+        "/lia?scenario=business_audit&message=" +
+        encodeURIComponent("У меня есть бизнес"),
     },
     {
-      label: "Разместить проект",
-      href: "/register?next=/dashboard/projects/create",
+      label: "У меня есть идея",
+      href:
+        "/lia?scenario=business_idea&message=" +
+        encodeURIComponent("У меня есть идея"),
     },
     {
-      label: "Найти возможности",
+      label: "Мне нужны ресурсы",
       href: "/opportunities",
+    },
+    {
+      label: "Я хочу стать партнёром",
+      href: "/organization",
     },
   ],
 } as const;

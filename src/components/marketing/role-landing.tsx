@@ -23,6 +23,9 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
           <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]">
             {content.title}
           </h1>
+          <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+            {content.audience}
+          </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <ButtonLink href={content.ctaPrimary.href} size="lg">
               {content.ctaPrimary.label}
@@ -41,17 +44,32 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
       <section className="border-b border-border py-16 sm:py-20">
         <Container className="grid gap-12 lg:grid-cols-2">
           <div>
+            <SectionHeading
+              eyebrow="Кому подходит"
+              title="Для кого эта страница"
+            />
+            <p className="mt-6 text-base leading-relaxed text-muted">
+              {content.audience}
+            </p>
+          </div>
+          <div>
             <SectionHeading eyebrow="Проблема" title="Что мешает сейчас" />
             <p className="mt-6 text-base leading-relaxed text-muted">
               {content.problem}
             </p>
           </div>
-          <div>
-            <SectionHeading eyebrow="Решение ЦКР" title="Как помогает платформа" />
-            <p className="mt-6 text-base leading-relaxed text-muted">
-              {content.solution}
-            </p>
-          </div>
+        </Container>
+      </section>
+
+      <section className="border-b border-border py-16 sm:py-20">
+        <Container className="max-w-3xl">
+          <SectionHeading
+            eyebrow="Как работает ЦКР"
+            title="Как помогает платформа"
+          />
+          <p className="mt-6 text-base leading-relaxed text-muted">
+            {content.solution}
+          </p>
         </Container>
       </section>
 
@@ -59,7 +77,7 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
         <section className="border-b border-border py-16 sm:py-20">
           <Container>
             <SectionHeading
-              eyebrow="Сценарий"
+              eyebrow="Путь"
               title="Как работать в ЦКР"
               description="Типовой путь роли — от входа до результата."
             />
@@ -83,9 +101,8 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
         <section className="border-b border-border py-16 sm:py-20">
           <Container>
             <SectionHeading
-              eyebrow="Возможности роли"
+              eyebrow="Возможности"
               title="Что доступно в ЦКР"
-              description="Существующие разделы платформы — без новых модулей."
             />
             <ul className="mt-10 grid gap-8 sm:grid-cols-2">
               {content.blocks.map((block) => (
@@ -114,15 +131,13 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
       <section className="border-b border-border py-16 sm:py-20">
         <Container>
           <SectionHeading
-            eyebrow="Преимущества"
-            title="Почему участники выбирают ЦКР"
+            eyebrow="Что сделать дальше"
+            title={content.nextStep.label}
+            description="Регистрация → роль → профиль → первое действие. Без тупиков."
           />
-          <ul className="mt-10 grid gap-6 sm:grid-cols-2">
+          <ul className="mt-8 grid gap-6 sm:grid-cols-2">
             {content.advantages.map((item, index) => (
-              <li
-                key={item}
-                className="border-l border-accent/40 pl-4"
-              >
+              <li key={item} className="border-l border-accent/40 pl-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-muted">
                   0{index + 1}
                 </p>
@@ -132,15 +147,15 @@ export function RoleLanding({ content, children }: RoleLandingProps) {
               </li>
             ))}
           </ul>
-          <div className="mt-12 flex flex-wrap gap-3">
-            <ButtonLink href={content.ctaPrimary.href}>
+          <div className="mt-12 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <ButtonLink href={content.nextStep.href} size="lg">
+              {content.nextStep.label}
+            </ButtonLink>
+            <ButtonLink href={content.ctaPrimary.href} variant="outline" size="lg">
               {content.ctaPrimary.label}
             </ButtonLink>
-            <ButtonLink href={content.ctaSecondary.href} variant="outline">
-              {content.ctaSecondary.label}
-            </ButtonLink>
-            <ButtonLink href="/register" variant="outline">
-              Регистрация
+            <ButtonLink href="/contacts" variant="outline" size="lg">
+              Контакты
             </ButtonLink>
           </div>
         </Container>

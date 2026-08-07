@@ -6,8 +6,8 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.66.0-beta** (CKR Public Website).  
-Обзор: [Публичный сайт](./docs/ckr-public-website.md) · [Packaging](./docs/public-website-packaging.md) · [Go-Live](./docs/go-live.md) · [Help center](./docs/help-center.md)
+Текущая версия ядра: **0.67.0-beta** (Website Finalization).  
+Обзор: [Финализация сайта](./docs/website-finalization.md) · [Публичный сайт](./docs/ckr-public-website.md) · [Packaging](./docs/public-website-packaging.md) · [Go-Live](./docs/go-live.md)
 
 ## Стек
 

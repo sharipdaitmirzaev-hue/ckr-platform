@@ -1,4 +1,5 @@
 import { CaseViewTracker } from "@/components/analytics/case-view-tracker";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { PublicLiaEntry } from "@/components/marketing/public-lia-entry";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -7,6 +8,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { TINDA_CASE_DETAIL } from "@/config/first-users";
 import { TINDA_PUBLIC_CASE } from "@/config/marketplace";
 import { siteConfig } from "@/config/site";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -150,6 +152,7 @@ export default function CasesPage() {
       </section>
 
       <PublicLiaEntry compact />
+      <PageNextStep {...PAGE_NEXT_STEPS.cases} />
     </>
   );
 }

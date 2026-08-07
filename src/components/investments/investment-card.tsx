@@ -15,6 +15,7 @@ type InvestmentCardProps = {
   href?: string;
   ownerName?: string | null;
   showStatus?: boolean;
+  actionLabel?: string;
 };
 
 function formatAmount(offer: InvestmentOffer) {
@@ -37,7 +38,8 @@ export function InvestmentCard({
   offer,
   href,
   ownerName,
-  showStatus = false,
+  showStatus = true,
+  actionLabel = "Открыть предложение",
 }: InvestmentCardProps) {
   const content = (
     <>
@@ -46,17 +48,19 @@ export function InvestmentCard({
           {investmentTypeLabels[offer.investmentType]}
         </Badge>
         <Badge variant="default">{formatAmount(offer)}</Badge>
-        <VerificationBadge status={offer.verificationStatus} />
-        <DemoBadge entityId={offer.id} />
         {showStatus ? (
           <Badge variant="soft">{investmentStatusLabels[offer.status]}</Badge>
         ) : null}
+        <VerificationBadge status={offer.verificationStatus} />
+        <DemoBadge entityId={offer.id} />
       </div>
       <CardTitle className="mt-4">{offer.title}</CardTitle>
       <CardDescription>
-        {offer.description.length > 160
-          ? `${offer.description.slice(0, 160).trimEnd()}…`
-          : offer.description}
+        {offer.description
+          ? offer.description.length > 160
+            ? `${offer.description.slice(0, 160).trimEnd()}…`
+            : offer.description
+          : "Инвестиционное предложение экосистемы ЦКР."}
       </CardDescription>
       <div className="mt-4 space-y-1 text-xs uppercase tracking-[0.14em] text-muted">
         <p>Инвестор: {ownerName || "Участник ЦКР"}</p>
@@ -66,6 +70,11 @@ export function InvestmentCard({
           {offer.categories.map(categoryLabel).join(", ") || "—"}
         </p>
       </div>
+      {href ? (
+        <p className="mt-5 text-sm font-medium text-accent">
+          {actionLabel} →
+        </p>
+      ) : null}
     </>
   );
 

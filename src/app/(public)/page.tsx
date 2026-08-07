@@ -2,6 +2,7 @@ import { HomepageViewTracker } from "@/components/analytics/homepage-view-tracke
 import { Logo } from "@/components/brand/logo";
 import { ExpertCard } from "@/components/experts/expert-card";
 import { InvestmentCard } from "@/components/investments/investment-card";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { PublicLiaEntry } from "@/components/marketing/public-lia-entry";
 import { OpportunityCard } from "@/components/opportunities/opportunity-card";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -19,6 +20,11 @@ import {
   TINDA_PUBLIC_CASE,
 } from "@/config/marketplace";
 import { siteConfig } from "@/config/site";
+import {
+  HOME_INTENT_CTAS,
+  PAGE_NEXT_STEPS,
+  USER_JOURNEY_STEPS,
+} from "@/config/website-final";
 import { maskDisplayName } from "@/lib/demo/mode";
 import { listPublishedExperts } from "@/lib/experts/queries";
 import { listPublishedInvestmentOffers } from "@/lib/investments/queries";
@@ -96,20 +102,34 @@ export default async function HomePage() {
             >
               {MARKETPLACE_HERO.description}
             </p>
+            <p
+              className="animate-fade-up mt-4 text-sm text-muted"
+              style={{ animationDelay: "160ms" }}
+            >
+              Поняли ЦКР — выберите задачу.
+            </p>
 
             <div
-              className="animate-fade-up mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+              className="animate-fade-up mt-10 grid gap-3 sm:grid-cols-2"
               style={{ animationDelay: "220ms" }}
             >
-              {MARKETPLACE_HERO.ctas.map((cta, index) => (
-                <ButtonLink
-                  key={cta.href}
+              {HOME_INTENT_CTAS.map((cta, index) => (
+                <Link
+                  key={cta.label}
                   href={cta.href}
-                  size="lg"
-                  variant={index === 0 ? "primary" : "outline"}
+                  className={
+                    index === 0
+                      ? "rounded-sm border border-accent/50 bg-accent-muted/40 px-4 py-4 transition-colors hover:border-accent"
+                      : "rounded-sm border border-border px-4 py-4 transition-colors hover:border-accent/50"
+                  }
                 >
-                  {cta.label}
-                </ButtonLink>
+                  <span className="block font-medium text-foreground">
+                    {cta.label}
+                  </span>
+                  <span className="mt-1 block text-xs text-muted">
+                    {cta.hint}
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
@@ -342,7 +362,36 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      <section className="border-t border-border py-16 sm:py-20">
+        <Container className="max-w-3xl">
+          <SectionHeading
+            eyebrow="Путь пользователя"
+            title="От посетителя к первому действию"
+            description={USER_JOURNEY_STEPS.join(" → ")}
+          />
+          <ol className="mt-8 flex flex-wrap items-center gap-3 text-sm text-foreground">
+            {USER_JOURNEY_STEPS.map((step, index) => (
+              <li key={step} className="flex items-center gap-3">
+                {index > 0 ? <span className="text-muted">↓</span> : null}
+                <span className="border-l border-accent/40 pl-3 font-display text-lg">
+                  {step}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/register" size="lg">
+              Регистрация
+            </ButtonLink>
+            <ButtonLink href="/lia?scenario=business_audit" variant="outline" size="lg">
+              Расскажите о вашей задаче
+            </ButtonLink>
+          </div>
+        </Container>
+      </section>
+
       <PublicLiaEntry />
+      <PageNextStep {...PAGE_NEXT_STEPS.home} />
     </>
   );
 }

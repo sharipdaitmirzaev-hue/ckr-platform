@@ -2,6 +2,7 @@ import { LiaPublicStartTracker } from "@/components/analytics/lia-public-start-t
 import { AnalysisHistory } from "@/components/lia/analysis-history";
 import { LiaImprovementNotes } from "@/components/lia/lia-improvement-notes";
 import { LiaRecommendations } from "@/components/lia/lia-recommendations";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ButtonLink } from "@/components/ui/button-link";
@@ -9,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { CKR_LIA_ENTRY } from "@/config/ckr-website";
 import { LIA_DISCLAIMER, LIA_SCENARIOS } from "@/config/lia";
 import { siteConfig } from "@/config/site";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { LiaChat } from "@/features/lia/components/lia-chat";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
@@ -154,6 +156,19 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
 
         <p className="mt-6 max-w-3xl text-sm text-muted">{LIA_DISCLAIMER}</p>
 
+        <ol className="mt-8 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+          <li className="font-medium text-foreground">После входа:</li>
+          <li>Аудит</li>
+          <li className="hidden sm:inline" aria-hidden>
+            →
+          </li>
+          <li>Рекомендации</li>
+          <li className="hidden sm:inline" aria-hidden>
+            →
+          </li>
+          <li>Создание проекта</li>
+        </ol>
+
         <div className="mt-10 grid gap-8 xl:grid-cols-[1fr_320px]">
           <div>
             <LiaChat
@@ -209,6 +224,7 @@ export default async function LiaPage({ searchParams }: LiaPageProps) {
           </aside>
         </div>
       </Container>
+      {!current ? <PageNextStep {...PAGE_NEXT_STEPS.lia} /> : null}
     </div>
   );
 }

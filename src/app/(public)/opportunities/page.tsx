@@ -1,10 +1,12 @@
 import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
 import { CatalogSearchForm } from "@/components/catalog/catalog-search-form";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { OpportunityCard } from "@/components/opportunities/opportunity-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
   listOpportunityCategories,
@@ -111,9 +113,9 @@ export default async function OpportunitiesPage({
           <EmptyState
             className="mt-12"
             title="Ничего не найдено"
-            description="Снимите фильтры или предложите возможность."
-            actionHref="/demo"
-            actionLabel="О демонстрации"
+            description="Снимите фильтры или начните с аудита Лии."
+            actionHref="/lia?scenario=business_audit"
+            actionLabel="Расскажите о вашей задаче"
           />
         ) : (
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -123,11 +125,13 @@ export default async function OpportunitiesPage({
                 opportunity={opportunity}
                 typeName={opportunity.typeName}
                 href={`/opportunity/${opportunity.id}`}
+                showStatus
               />
             ))}
           </div>
         )}
       </Container>
+      <PageNextStep {...PAGE_NEXT_STEPS.opportunities} />
     </div>
   );
 }

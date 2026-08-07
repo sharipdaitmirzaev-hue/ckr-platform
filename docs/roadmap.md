@@ -612,7 +612,16 @@
 - SEO + website analytics events
 - Без новых бизнес-модулей
 
-## Этап 67+ — backlog
+## Этап 67 — CKR Website Finalization & User Experience ✅ (код готов)
+
+Подробности: [website-finalization.md](./website-finalization.md)
+
+- Единый header/footer, intent CTA на главной, путь без тупиков
+- Роли, Лия, marketplace-карточки, `/trust`
+- SEO/OG/sitemap + analytics; мобильное меню
+- Без новых бизнес-модулей и админ-разделов
+
+## Этап 68+ — backlog
 
 Масштаб монетизации / платежи — см. roadmap-after-1.0.
 

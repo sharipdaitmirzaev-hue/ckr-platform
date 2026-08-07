@@ -13,12 +13,14 @@ type ExpertCardProps = {
   expert: ExpertWithUser;
   href?: string;
   showStatus?: boolean;
+  actionLabel?: string;
 };
 
 export function ExpertCard({
   expert,
   href,
-  showStatus = false,
+  showStatus = true,
+  actionLabel = "Смотреть профиль",
 }: ExpertCardProps) {
   const content = (
     <>
@@ -26,36 +28,32 @@ export function ExpertCard({
         <Badge variant="accent">
           {expertSpecializationLabels[expert.specialization]}
         </Badge>
-        <Badge variant="default">
-          Опыт: {expert.experienceYears}{" "}
-          {expert.experienceYears === 1 ? "год" : "лет"}
-        </Badge>
-        <VerificationBadge status={expert.verificationStatus} />
-        <DemoBadge entityId={expert.id} />
         {showStatus ? (
           <Badge variant="soft">{expertStatusLabels[expert.status]}</Badge>
         ) : null}
+        <VerificationBadge status={expert.verificationStatus} />
+        <DemoBadge entityId={expert.id} />
       </div>
       <CardTitle className="mt-4">
         {expert.fullName || "Эксперт ЦКР"}
       </CardTitle>
       <p className="mt-1 text-sm text-accent">{expert.headline}</p>
       <CardDescription>
-        {expert.description.length > 160
-          ? `${expert.description.slice(0, 160).trimEnd()}…`
-          : expert.description}
+        {expert.description
+          ? expert.description.length > 160
+            ? `${expert.description.slice(0, 160).trimEnd()}…`
+            : expert.description
+          : "Компетенции для сопровождения проектов ЦКР."}
       </CardDescription>
       <div className="mt-4 space-y-1 text-xs uppercase tracking-[0.14em] text-muted">
         <p>Регион: {expert.region || "—"}</p>
-        <p>
-          Услуги:{" "}
-          {expert.services.length > 80
-            ? `${expert.services.slice(0, 80).trimEnd()}…`
-            : expert.services || "—"}
-        </p>
-        <p>Проверка: {expert.verificationStatus ?? "unverified"}</p>
+        <p>Опыт: {expert.experienceYears} лет</p>
       </div>
-      {href ? <p className="mt-4 text-sm text-accent">Связаться →</p> : null}
+      {href ? (
+        <p className="mt-5 text-sm font-medium text-accent">
+          {actionLabel} →
+        </p>
+      ) : null}
     </>
   );
 

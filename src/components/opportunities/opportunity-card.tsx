@@ -14,6 +14,7 @@ type OpportunityCardProps = {
   href?: string;
   typeName?: string | null;
   showStatus?: boolean;
+  actionLabel?: string;
 };
 
 function formatPrice(opportunity: Opportunity) {
@@ -27,6 +28,7 @@ function formatPrice(opportunity: Opportunity) {
 
 function excerpt(text: string, max = 160) {
   const clean = text.trim();
+  if (!clean) return "Возможность экосистемы ЦКР.";
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max).trimEnd()}…`;
 }
@@ -35,7 +37,8 @@ export function OpportunityCard({
   opportunity,
   href,
   typeName,
-  showStatus = false,
+  showStatus = true,
+  actionLabel = "Открыть возможность",
 }: OpportunityCardProps) {
   const location = [opportunity.city, opportunity.region]
     .filter(Boolean)
@@ -48,19 +51,24 @@ export function OpportunityCard({
           {typeName ?? opportunityTypeLabels[opportunity.type]}
         </Badge>
         <Badge variant="default">{formatPrice(opportunity)}</Badge>
-        <VerificationBadge status={opportunity.verificationStatus} />
-        <DemoBadge entityId={opportunity.id} />
         {showStatus ? (
           <Badge variant="soft">
             {opportunityStatusLabels[opportunity.status]}
           </Badge>
         ) : null}
+        <VerificationBadge status={opportunity.verificationStatus} />
+        <DemoBadge entityId={opportunity.id} />
       </div>
       <CardTitle className="mt-4">{opportunity.title}</CardTitle>
       <CardDescription>{excerpt(opportunity.description)}</CardDescription>
       <p className="mt-4 text-xs uppercase tracking-[0.16em] text-muted">
         {location || opportunity.region}
       </p>
+      {href ? (
+        <p className="mt-5 text-sm font-medium text-accent">
+          {actionLabel} →
+        </p>
+      ) : null}
     </>
   );
 

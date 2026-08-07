@@ -1,6 +1,7 @@
 import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
 import { CatalogSearchForm } from "@/components/catalog/catalog-search-form";
 import { InvestmentCard } from "@/components/investments/investment-card";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,6 +13,7 @@ import {
   investmentTypeLabels,
   type AmountFilterId,
 } from "@/config/investments";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { maskDisplayName } from "@/lib/demo/mode";
 import { listPublishedInvestmentOffers } from "@/lib/investments/queries";
@@ -138,9 +140,9 @@ export default async function InvestmentsPage({
           <EmptyState
             className="mt-12"
             title="Пока нет инвестиционных предложений"
-            description="Измените фильтры или разместите предложение."
-            actionHref="/demo"
-            actionLabel="О демонстрации"
+            description="Измените фильтры или смотрите проекты."
+            actionHref="/projects"
+            actionLabel="Каталог проектов"
           />
         ) : (
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -152,11 +154,13 @@ export default async function InvestmentsPage({
                   isAuthenticated: Boolean(current),
                 })}
                 href={`/investment/${offer.id}`}
+                showStatus
               />
             ))}
           </div>
         )}
       </Container>
+      <PageNextStep {...PAGE_NEXT_STEPS.investments} />
     </div>
   );
 }

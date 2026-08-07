@@ -4,6 +4,7 @@ export type NavItem = {
   description?: string;
 };
 
+/** Компактная шапка — ключевые разделы. */
 export const mainNav: NavItem[] = [
   {
     label: "Проекты",
@@ -26,31 +27,31 @@ export const mainNav: NavItem[] = [
     description: "Проверенные компетенции для сопровождения проектов",
   },
   {
-    label: "Услуги",
-    href: "/services",
-    description: "Аудит, развитие проектов, партнёры и сопровождение",
-  },
-  {
-    label: "Кейсы",
-    href: "/cases",
-    description: "ТИНДА и публичные результаты на платформе",
-  },
-  {
     label: "Лия",
     href: "/lia",
     description: "Интеллектуальный помощник ЦКР",
   },
   {
-    label: "О ЦКР",
-    href: "/about",
-    description: "Миссия, принципы и роли",
-  },
-  {
-    label: "Контакты",
-    href: "/contacts",
-    description: "Связаться с командой ЦКР",
+    label: "Услуги",
+    href: "/services",
+    description: "Аудит, развитие проектов, партнёры и сопровождение",
   },
 ];
+
+/** Доп. пункты для мобильного меню и футера. */
+export const secondaryNav: NavItem[] = [
+  { label: "О ЦКР", href: "/about" },
+  { label: "Кейсы", href: "/cases" },
+  { label: "Доверие", href: "/trust" },
+  { label: "Контакты", href: "/contacts" },
+  { label: "Предпринимателям", href: "/entrepreneur" },
+  { label: "Инвесторам", href: "/investor" },
+  { label: "Экспертам", href: "/expert" },
+  { label: "Организациям", href: "/organization" },
+];
+
+/** Полный список для мобильного меню. */
+export const mobileNav: NavItem[] = [...mainNav, ...secondaryNav];
 
 export const dashboardNav: NavItem[] = [
   { label: "Обзор", href: "/dashboard" },
@@ -78,7 +79,6 @@ export const authNav = {
 export const adminNav: NavItem[] = [
   {
     label: "Админ-панель",
-    href: "/admin/dashboard",
-    description: "Рабочее место оператора ЦКР",
+    href: "/admin",
   },
 ];

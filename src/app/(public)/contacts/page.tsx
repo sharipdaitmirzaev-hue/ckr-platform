@@ -1,4 +1,5 @@
 import { ContactStartedTracker } from "@/components/analytics/contact-started-tracker";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { CKR_CONTACTS } from "@/config/ckr-website";
 import { siteConfig } from "@/config/site";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { ContactForm } from "@/features/website/components/contact-form";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -96,6 +98,7 @@ export default function ContactsPage() {
           </div>
         </Container>
       </section>
+      <PageNextStep {...PAGE_NEXT_STEPS.contacts} />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { CatalogFilterBar } from "@/components/catalog/catalog-filter-bar";
 import { CatalogSearchForm } from "@/components/catalog/catalog-search-form";
 import { ExpertCard } from "@/components/experts/expert-card";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,6 +11,7 @@ import {
   expertSpecializationLabels,
 } from "@/config/experts";
 import { siteConfig } from "@/config/site";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { listPublishedExperts } from "@/lib/experts/queries";
 import type { ExpertSpecialization } from "@/types";
 import type { Metadata } from "next";
@@ -147,7 +149,7 @@ export default async function ExpertsPage({ searchParams }: ExpertsPageProps) {
             className="mt-12"
             title="Эксперты не найдены"
             description="Снимите фильтры или создайте профиль эксперта."
-            actionHref="/expert"
+            actionHref="/register?role=expert"
             actionLabel="Стать экспертом"
           />
         ) : (
@@ -157,11 +159,13 @@ export default async function ExpertsPage({ searchParams }: ExpertsPageProps) {
                 key={expert.id}
                 expert={expert}
                 href={`/expert/${expert.id}`}
+                showStatus
               />
             ))}
           </div>
         )}
       </Container>
+      <PageNextStep {...PAGE_NEXT_STEPS.experts} />
     </div>
   );
 }

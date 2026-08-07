@@ -20,6 +20,7 @@ type ProjectCardProps = {
   href?: string;
   categoryName?: string | null;
   showStatus?: boolean;
+  actionLabel?: string;
 };
 
 function formatNeed(project: Project) {
@@ -34,7 +35,8 @@ export function ProjectCard({
   project,
   href,
   categoryName,
-  showStatus = false,
+  showStatus = true,
+  actionLabel = "Открыть проект",
 }: ProjectCardProps) {
   const content = (
     <>
@@ -45,21 +47,26 @@ export function ProjectCard({
           </Badge>
         ) : null}
         <Badge variant="soft">{project.region}</Badge>
-        <Badge variant="default">{formatNeed(project)}</Badge>
+        {showStatus ? (
+          <Badge variant="default">
+            {projectStatusLabels[project.status]}
+          </Badge>
+        ) : null}
         <VerificationBadge status={project.verificationStatus} />
         <DemoBadge entityId={project.id} />
-        {showStatus ? (
-          <Badge variant="soft">{projectStatusLabels[project.status]}</Badge>
-        ) : null}
       </div>
       <CardTitle className="mt-4">{project.title}</CardTitle>
-      <CardDescription>{project.summary}</CardDescription>
+      <CardDescription>
+        {project.summary || "Проект экосистемы ЦКР."}
+      </CardDescription>
       <div className="mt-4 space-y-1 text-xs uppercase tracking-[0.14em] text-muted">
         <p>Стадия: {projectStageLabels[project.stage]}</p>
         <p>Требуется: {formatNeed(project)}</p>
       </div>
       {href ? (
-        <p className="mt-4 text-sm text-accent">Подробнее →</p>
+        <p className="mt-5 text-sm font-medium text-accent">
+          {actionLabel} →
+        </p>
       ) : null}
     </>
   );

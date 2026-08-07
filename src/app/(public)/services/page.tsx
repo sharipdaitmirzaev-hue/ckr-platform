@@ -1,5 +1,6 @@
 import { ServiceViewTracker } from "@/components/analytics/service-view-tracker";
 import { ServiceCard } from "@/components/billing/service-card";
+import { PageNextStep } from "@/components/marketing/page-next-step";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -10,6 +11,7 @@ import {
 } from "@/config/monetization";
 import { CKR_SERVICE_OFFERS } from "@/config/ckr-website";
 import { siteConfig } from "@/config/site";
+import { PAGE_NEXT_STEPS } from "@/config/website-final";
 import { listActiveServices } from "@/lib/monetization/queries";
 import { cn } from "@/lib/utils";
 import type { ServiceCategory } from "@/types";
@@ -171,6 +173,7 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
           </p>
         </div>
       </Container>
+      <PageNextStep {...PAGE_NEXT_STEPS.services} />
     </div>
   );
 }
