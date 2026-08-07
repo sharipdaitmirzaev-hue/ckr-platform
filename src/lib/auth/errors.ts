@@ -3,11 +3,21 @@ import { isByteStringError } from "../http/byte-string";
 const GENERIC_AUTH_ERROR =
   "Не удалось выполнить действие. Попробуйте ещё раз или обратитесь в поддержку.";
 
+const ENV_KEY_ERROR =
+  "Ошибка конфигурации сервера авторизации. Администратору: проверьте Supabase-ключи в /etc/ckr/ckr.env (без кириллицы) и перезапустите сервис.";
+
 export function mapAuthError(message?: string) {
   if (!message) return "Произошла ошибка. Попробуйте ещё раз.";
 
-  if (isByteStringError(message)) {
-    return "Не удалось сохранить данные регистрации. Проверьте имя и попробуйте ещё раз.";
+  if (
+    isByteStringError(message) ||
+    /вне ByteString/i.test(message) ||
+    /кириллица в ключе/i.test(message) ||
+    /ANON_KEY|PUBLISHABLE_KEY/i.test(message)
+  ) {
+    // Частая причина на production: в apikey/Authorization попал символ >255
+    // (битый ключ в env). Имя пользователя тут ни при чём.
+    return ENV_KEY_ERROR;
   }
 
   const normalized = message.toLowerCase();
@@ -31,7 +41,6 @@ export function mapAuthError(message?: string) {
   ) {
     return "Нет связи с сервером авторизации. Попробуйте позже.";
   }
-  // Не показываем сырые TypeError / undici / stack-подобные сообщения.
   if (
     normalized.includes("typeerror") ||
     normalized.includes("cannot convert") ||

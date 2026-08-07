@@ -1,3 +1,4 @@
+import { createHeaderSafeFetch } from "@/lib/http/header-safe-fetch";
 import {
   filterReadableAuthCookies,
   sanitizeCookieValue,
@@ -24,10 +25,20 @@ export async function updateSession(
     return { response: supabaseResponse, user: null, supabase: null };
   }
 
-  const { url, anonKey } = getSupabaseEnv();
+  let url: string;
+  let anonKey: string;
+  try {
+    ({ url, anonKey } = getSupabaseEnv());
+  } catch (error) {
+    console.error("[supabase/middleware] env invalid:", error);
+    return { response: supabaseResponse, user: null, supabase: null };
+  }
 
   const supabase = createServerClient(url, anonKey, {
     cookieEncoding: SUPABASE_COOKIE_ENCODING,
+    global: {
+      fetch: createHeaderSafeFetch(),
+    },
     cookies: {
       encode: SUPABASE_COOKIE_ENCODE,
       getAll() {

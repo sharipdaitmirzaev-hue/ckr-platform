@@ -15,12 +15,27 @@ function trimEnv(name: string): string | undefined {
 }
 
 /** Ключи/URL уходят в HTTP headers (apikey, Authorization) — только ByteString. */
-function assertHeaderSafeEnv(name: string, value: string): void {
+export function assertHeaderSafeEnv(name: string, value: string): void {
   if (isByteString(value)) return;
   const idx = firstNonByteStringIndex(value);
   throw new Error(
     `${name} содержит символ вне ByteString (index ${idx}). Проверьте /etc/ckr/ckr.env — в ключах и URL не должно быть кириллицы.`,
   );
+}
+
+/** Диагностика без утечки секрета: safe + index первого плохого символа. */
+export function describeHeaderSafety(value: string | undefined): {
+  safe: boolean;
+  badIndex: number | null;
+  length: number;
+} {
+  if (!value) return { safe: false, badIndex: null, length: 0 };
+  const badIndex = firstNonByteStringIndex(value);
+  return {
+    safe: badIndex < 0,
+    badIndex: badIndex < 0 ? null : badIndex,
+    length: value.length,
+  };
 }
 
 /** Публичный ключ: anon (legacy) или publishable (новый). */
@@ -95,4 +110,20 @@ export function hasSupabaseSecretEnv() {
   return Boolean(
     trimEnv("NEXT_PUBLIC_SUPABASE_URL") && getSupabaseSecretKey(),
   );
+}
+
+/** Публичная диагностика для /api/health — без значений секретов. */
+export function getSupabaseHeaderSafetyReport() {
+  const url = trimEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = getSupabasePublishableKey();
+  const urlSafety = describeHeaderSafety(url);
+  const keySafety = describeHeaderSafety(anonKey);
+  return {
+    urlSafe: urlSafety.safe,
+    urlBadIndex: urlSafety.badIndex,
+    anonKeySafe: keySafety.safe,
+    anonKeyBadIndex: keySafety.badIndex,
+    anonKeyLength: keySafety.length,
+    anonKeyKind: anonKey ? describeSupabaseKeyKind(anonKey) : "missing",
+  };
 }

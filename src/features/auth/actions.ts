@@ -120,16 +120,12 @@ export async function registerAction(
       inviteId = invite.id;
     }
 
-    // full_name в user_metadata — JSON body (UTF-8 OK). В cookies сессии
-    // кириллица не попадает: supabase clients используют tokens-only + base64url.
+    // НЕ кладём full_name в user_metadata/signUp options.data:
+    // metadata попадает в session/user object и при ошибках кодирования cookie
+    // или битом apikey маскирует реальный ByteString-сбой. Имя — только в profiles.
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
     });
 
     if (error) {
@@ -140,7 +136,7 @@ export async function registerAction(
       return { error: "Не удалось создать пользователя." };
     }
 
-    // Триггер handle_new_user создаёт profiles; дублируем имя на случай гонки.
+    // Триггер handle_new_user создаёт пустой profile; записываем кириллическое имя в БД (UTF-8).
     const { error: profileError } = await supabase
       .from("profiles")
       .update({ full_name: fullName })

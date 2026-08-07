@@ -1,3 +1,4 @@
+import { createHeaderSafeFetch } from "@/lib/http/header-safe-fetch";
 import {
   filterReadableAuthCookies,
   sanitizeCookieValue,
@@ -14,6 +15,10 @@ export function createClient() {
 
   return createServerClient(url, anonKey, {
     cookieEncoding: SUPABASE_COOKIE_ENCODING,
+    global: {
+      // Не даём undici упасть на кириллице в apikey/Authorization.
+      fetch: createHeaderSafeFetch(),
+    },
     cookies: {
       encode: SUPABASE_COOKIE_ENCODE,
       getAll() {

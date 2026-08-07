@@ -145,15 +145,19 @@ assert_production_site_url() {
   if [[ "$url" != https://* ]]; then
     die "NEXT_PUBLIC_SITE_URL должен начинаться с https://"
   fi
-  # Ключи/URL уходят в HTTP headers — только ByteString (коды ≤255).
-  local key="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}}"
-  if [[ -n "$key" ]]; then
-    if ! node -e 'const s=process.argv[1]; for (const ch of s) { if (ch.codePointAt(0)>255) process.exit(2); }' "$key"; then
-      die "Публичный Supabase-ключ содержит не-ByteString символы — проверьте /etc/ckr/ckr.env"
+
+  # Ключи уходят в apikey / Authorization. Кириллица (напр. ь на index 7)
+  # даёт undici: Cannot convert argument to a ByteString ... value of 1100.
+  local check_script="${CKR_APP_DIR}/scripts/check-supabase-env-bytestring.sh"
+  if [[ -f "$check_script" ]]; then
+    bash "$check_script" || die "Supabase env не ByteString-safe — исправьте /etc/ckr/ckr.env"
+  else
+    local key="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}}"
+    if [[ -n "$key" ]]; then
+      if ! node -e 'const s=process.argv[1]; for (let i=0;i<s.length;i++){ if (s.charCodeAt(i)>255) process.exit(2);} ' "$key"; then
+        die "Публичный Supabase-ключ содержит не-ByteString символы — проверьте /etc/ckr/ckr.env"
+      fi
     fi
-  fi
-  if ! node -e 'const s=process.argv[1]; for (const ch of s) { if (ch.codePointAt(0)>255) process.exit(2); }' "$url"; then
-    die "NEXT_PUBLIC_SITE_URL содержит не-ByteString символы"
   fi
   log_ok "SITE_URL production-safe (${url})"
 }
