@@ -1,3 +1,7 @@
+/**
+ * UI: метрика-карточка аналитики (admin/analytics и др.).
+ * Путь case-sensitive: src/components/analytics/metric-card.tsx
+ */
 import { cn } from "@/lib/utils";
 
 type MetricCardProps = {

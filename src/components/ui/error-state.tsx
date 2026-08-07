@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * UI: общее состояние ошибки (используется в src/app/error.tsx).
+ * Путь case-sensitive: src/components/ui/error-state.tsx
+ */
 import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { cn } from "@/lib/utils";

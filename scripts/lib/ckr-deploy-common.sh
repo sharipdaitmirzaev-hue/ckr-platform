@@ -119,8 +119,7 @@ ensure_env_or_stop() {
     for key in "${missing[@]}"; do
       log_error "  - $key"
     done
-    log_info "Отредактируйте файл: sudo nano ${CKR_ENV_FILE}"
-    log_info "Затем повторите запуск скрипта."
+    log_info "Пересоздайте env: cd ${CKR_APP_DIR} && sudo ./scripts/setup-production-env.sh"
     die "Остановка: env не готов к production"
   fi
 
@@ -163,6 +162,79 @@ wait_for_health() {
     sleep 1
   done
   die "Health check не ответил: ${CKR_HEALTH_URL}"
+}
+
+# Критичные исходники для production build (case-sensitive Linux).
+assert_build_sources() {
+  local required=(
+    "src/components/ui/error-state.tsx"
+    "src/components/analytics/analytics-chart.tsx"
+    "src/components/analytics/metric-card.tsx"
+    "src/app/error.tsx"
+    "tsconfig.json"
+  )
+  local missing=()
+  local path
+  for path in "${required[@]}"; do
+    if [[ ! -f "${CKR_APP_DIR}/${path}" ]]; then
+      missing+=("$path")
+    fi
+  done
+  if ((${#missing[@]} > 0)); then
+    log_error "В рабочем дереве нет файлов, нужных для build:"
+    for path in "${missing[@]}"; do
+      log_error "  - ${path}"
+    done
+    log_error "Выполните: git -C ${CKR_APP_DIR} fetch origin && git -C ${CKR_APP_DIR} reset --hard origin/${CKR_DEPLOY_BRANCH}"
+    die "Остановка: исходники неполные (возможен checkout main/битое дерево)"
+  fi
+
+  # Быстрая проверка aliases @/*
+  if ! grep -q '"@/\*".*"./src/\*"' "${CKR_APP_DIR}/tsconfig.json" \
+    && ! grep -q '"@/\*": \["./src/\*"\]' "${CKR_APP_DIR}/tsconfig.json"; then
+    # допускаем оба формата форматирования JSON
+    if ! grep -q '@/\*' "${CKR_APP_DIR}/tsconfig.json"; then
+      die "tsconfig.json не содержит paths @/* → ./src/*"
+    fi
+  fi
+
+  log_ok "Build sources: error-state, analytics-chart, metric-card на месте"
+}
+
+sync_git_tree() {
+  local target_ref="${1:-${CKR_DEPLOY_BRANCH}}"
+  git config --global --add safe.directory "${CKR_APP_DIR}" || true
+
+  local git_user="${SUDO_USER:-}"
+  git_as() {
+    if [[ -n "${git_user}" ]] && id "${git_user}" >/dev/null 2>&1; then
+      sudo -u "${git_user}" -H git -C "${CKR_APP_DIR}" "$@"
+    else
+      git -C "${CKR_APP_DIR}" "$@"
+    fi
+  }
+
+  log_info "git fetch --all --prune"
+  git_as fetch --all --prune
+
+  if git_as show-ref --verify --quiet "refs/remotes/origin/${target_ref}"; then
+    log_info "hard sync → origin/${target_ref}"
+    git_as checkout -B "${target_ref}" "origin/${target_ref}"
+    # Гарантированно восстанавливает удалённые/битые файлы на Linux
+    git_as reset --hard "origin/${target_ref}"
+    git_as clean -fd
+  elif git_as rev-parse --verify "${target_ref}^{commit}" >/dev/null 2>&1; then
+    log_info "hard sync → ${target_ref} (detached)"
+    git_as checkout --detach "${target_ref}"
+    git_as reset --hard "${target_ref}"
+    git_as clean -fd
+  else
+    die "Ref ${target_ref} не найден. Сначала: git push origin ${target_ref}"
+  fi
+
+  log_ok "Git: $(git_as log -1 --oneline)"
+  log_ok "version: $(app_version)"
+  assert_build_sources
 }
 
 check_migrations_readonly() {

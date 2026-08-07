@@ -5,7 +5,7 @@
 #   sudo ./scripts/update-production.sh
 #   sudo ./scripts/update-production.sh cursor/deploy-ubuntu-0.61-ff37
 #
-# Схема: fetch → checkout → pull --ff-only → npm ci → build → restart → health
+# Схема: fetch → hard reset к origin → npm ci → build → restart → health
 # Секреты только из /etc/ckr/ckr.env
 # =============================================================================
 
@@ -24,49 +24,26 @@ log_info "TARGET=${TARGET_REF}"
 [[ -d "${CKR_APP_DIR}/.git" ]] || die "Нет репозитория в ${CKR_APP_DIR}"
 ensure_env_or_stop
 
-git config --global --add safe.directory "${CKR_APP_DIR}" || true
-
-git_as() {
-  if [[ -n "${SUDO_USER:-}" ]] && id "${SUDO_USER}" >/dev/null 2>&1; then
-    sudo -u "${SUDO_USER}" -H git -C "${CKR_APP_DIR}" "$@"
-  else
-    git -C "${CKR_APP_DIR}" "$@"
-  fi
-}
-
-log_info "git fetch"
-git_as fetch --all --prune
-log_ok "fetch завершён"
-
-log_info "git checkout ${TARGET_REF}"
-if git_as show-ref --verify --quiet "refs/remotes/origin/${TARGET_REF}"; then
-  git_as checkout -B "${TARGET_REF}" "origin/${TARGET_REF}"
-elif git_as show-ref --verify --quiet "refs/heads/${TARGET_REF}"; then
-  git_as checkout "${TARGET_REF}"
-  git_as pull --ff-only origin "${TARGET_REF}"
-else
-  # SHA
-  git_as checkout --detach "${TARGET_REF}"
-fi
-log_ok "revision: $(git_as log -1 --oneline)"
-log_ok "version: $(app_version)"
+sync_git_tree "${TARGET_REF}"
 
 chown -R "${CKR_APP_USER}:${CKR_APP_USER}" "${CKR_APP_DIR}"
-# env остаётся root:ckr
 chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"
 chmod 640 "${CKR_ENV_FILE}"
 
 check_migrations_readonly
 
+# Чистый build без протухшего .next
+run_as_app "rm -rf .next"
 log_info "npm ci"
 run_as_app "npm ci"
 log_ok "npm ci"
+
+assert_build_sources
 
 log_info "npm run build"
 run_as_app "npm run build"
 log_ok "build"
 
-# обновить unit/nginx из репо (идемпотентно)
 if [[ -f "${CKR_APP_DIR}/deploy/systemd/ckr.service" ]]; then
   NPM_BIN="$(command -v npm)"
   cp "${CKR_APP_DIR}/deploy/systemd/ckr.service" "/etc/systemd/system/${CKR_SERVICE_NAME}.service"

@@ -97,30 +97,7 @@ if [[ ! -d "${CKR_APP_DIR}/.git" ]]; then
   die "Репозиторий не найден в ${CKR_APP_DIR}. Сначала клонируйте проект туда."
 fi
 
-git config --global --add safe.directory "${CKR_APP_DIR}" || true
-
-git_as() {
-  if [[ -n "${SUDO_USER:-}" ]] && id "${SUDO_USER}" >/dev/null 2>&1; then
-    sudo -u "${SUDO_USER}" -H git -C "${CKR_APP_DIR}" "$@"
-  else
-    git -C "${CKR_APP_DIR}" "$@"
-  fi
-}
-
-# --- git branch first (чтобы шаблон env и unit файлы были актуальны) ---
-log_info "Переключение на ${CKR_DEPLOY_BRANCH}"
-git_as fetch --all --prune
-if git_as show-ref --verify --quiet "refs/remotes/origin/${CKR_DEPLOY_BRANCH}"; then
-  git_as checkout -B "${CKR_DEPLOY_BRANCH}" "origin/${CKR_DEPLOY_BRANCH}"
-elif git_as show-ref --verify --quiet "refs/heads/${CKR_DEPLOY_BRANCH}"; then
-  git_as checkout "${CKR_DEPLOY_BRANCH}"
-  git_as pull --ff-only origin "${CKR_DEPLOY_BRANCH}" || true
-else
-  die "Ветка ${CKR_DEPLOY_BRANCH} не найдена на origin. Сначала запушьте её."
-fi
-log_ok "Git: $(git_as log -1 --oneline)"
-
-# --- secrets gate ---
+# --- secrets gate (до build; git sync ниже восстановит дерево) ---
 mkdir -p /etc/ckr
 if [[ ! -f "${CKR_ENV_FILE}" ]]; then
   die "Нет ${CKR_ENV_FILE}. Сначала: sudo ./scripts/setup-production-env.sh"
@@ -131,19 +108,24 @@ ensure_env_or_stop
 DOMAIN="$(domain_from_site_url)"
 [[ -n "$DOMAIN" ]] || die "Не удалось извлечь домен из NEXT_PUBLIC_SITE_URL"
 
+# --- git: hard sync к deploy-ветке (восстанавливает отсутствующие файлы) ---
+sync_git_tree "${CKR_DEPLOY_BRANCH}"
+
 chown -R "${CKR_APP_USER}:${CKR_APP_USER}" "${CKR_APP_DIR}"
 chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"
 chmod 640 "${CKR_ENV_FILE}"
 log_ok "Права: ${CKR_APP_DIR} → ${CKR_APP_USER}; env root:${CKR_APP_USER} 640"
-log_ok "Версия приложения: $(app_version)"
 
 # --- migrations check (read-only) ---
 check_migrations_readonly
 
 # --- build ---
+run_as_app "rm -rf .next"
 log_info "npm ci"
 run_as_app "npm ci"
 log_ok "npm ci завершён"
+
+assert_build_sources
 
 log_info "npm run build"
 run_as_app "npm run build"

@@ -1,3 +1,7 @@
+/**
+ * UI: бар-диаграмма аналитики (admin/analytics и др.).
+ * Путь case-sensitive: src/components/analytics/analytics-chart.tsx
+ */
 import { cn } from "@/lib/utils";
 
 export type AnalyticsChartItem = {
