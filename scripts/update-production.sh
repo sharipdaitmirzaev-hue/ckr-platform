@@ -59,33 +59,10 @@ if [[ -f "${CKR_APP_DIR}/deploy/systemd/ckr.service" ]]; then
   log_ok "systemd unit обновлён"
 fi
 
-DOMAIN="$(domain_from_site_url)"
-if [[ -n "$DOMAIN" ]]; then
-  NGINX_HTTP_SRC="${CKR_APP_DIR}/deploy/nginx/ckr.conf"
-  NGINX_HTTPS_SRC="${CKR_APP_DIR}/deploy/nginx/ckr.https.conf"
-  CERT_FULLCHAIN="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
-  CERT_PRIVKEY="/etc/letsencrypt/live/${DOMAIN}/privkey.pem"
-
-  if [[ -f "$CERT_FULLCHAIN" && -f "$CERT_PRIVKEY" && -f "$NGINX_HTTPS_SRC" ]]; then
-    NGINX_SRC="$NGINX_HTTPS_SRC"
-    log_info "nginx: найден Let's Encrypt для ${DOMAIN} → HTTPS-конфиг"
-  elif [[ -f "$NGINX_HTTP_SRC" ]]; then
-    NGINX_SRC="$NGINX_HTTP_SRC"
-    log_warn "nginx: сертификата нет — HTTP-only (${DOMAIN})"
-  else
-    NGINX_SRC=""
-  fi
-
-  if [[ -n "$NGINX_SRC" ]]; then
-    TMP_NGINX="$(mktemp)"
-    sed "s/YOUR_DOMAIN/${DOMAIN}/g" "$NGINX_SRC" >"$TMP_NGINX"
-    cp "$TMP_NGINX" /etc/nginx/sites-available/ckr
-    rm -f "$TMP_NGINX"
-    ln -sfn /etc/nginx/sites-available/ckr /etc/nginx/sites-enabled/ckr
-    nginx -t
-    systemctl reload nginx || systemctl restart nginx
-    log_ok "nginx обновлён (${DOMAIN})"
-  fi
+# Важно: применяем nginx ОТДЕЛЬНЫМ скриптом с диска после git reset,
+# иначе при первом деплое новой версии в памяти остаётся старая HTTP-only логика.
+if [[ -x "${CKR_APP_DIR}/scripts/apply-nginx-production.sh" ]] || [[ -f "${CKR_APP_DIR}/scripts/apply-nginx-production.sh" ]]; then
+  bash "${CKR_APP_DIR}/scripts/apply-nginx-production.sh"
 fi
 
 log_info "systemctl restart ${CKR_SERVICE_NAME}"
