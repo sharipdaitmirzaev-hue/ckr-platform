@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/ckr-deploy-common.sh"
 
 require_root "$@"
+load_env_file "${CKR_ENV_FILE}"
 
 DOMAIN="$(domain_from_site_url)"
 [[ -n "$DOMAIN" ]] || die "Не удалось определить DOMAIN из NEXT_PUBLIC_SITE_URL"
