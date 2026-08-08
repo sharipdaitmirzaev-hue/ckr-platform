@@ -1,10 +1,13 @@
 "use server";
 
 import { mapAuthError } from "@/lib/auth/errors";
+import { getAuthCallbackUrl, getPasswordRecoveryUrl } from "@/lib/auth/redirects";
 import {
+  forgotPasswordSchema,
   loginSchema,
   onboardingSchema,
   registerSchema,
+  resetPasswordSchema,
 } from "@/lib/auth/validations";
 import { createClient } from "@/lib/supabase/server";
 import { ASSIGNABLE_ROLES, type AssignableRole } from "@/config/roles";
@@ -123,9 +126,14 @@ export async function registerAction(
     // НЕ кладём full_name в user_metadata/signUp options.data:
     // metadata попадает в session/user object и при ошибках кодирования cookie
     // или битом apikey маскирует реальный ByteString-сбой. Имя — только в profiles.
+    // initial_role — ASCII, безопасен для headers/cookies; нужен bootstrap после email-confirm.
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: getAuthCallbackUrl("/onboarding"),
+        data: { initial_role: role },
+      },
     });
 
     if (error) {
@@ -303,6 +311,98 @@ export async function loginAction(
     console.error("[auth] loginAction failed:", error);
     return {
       error: mapAuthError(error instanceof Error ? error.message : undefined),
+    };
+  }
+}
+
+export async function forgotPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const parsed = forgotPasswordSchema.safeParse({
+      email: formData.get("email"),
+    });
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Проверьте email" };
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      parsed.data.email,
+      { redirectTo: getPasswordRecoveryUrl() },
+    );
+
+    if (error) {
+      console.error("[auth] resetPasswordForEmail:", error.message);
+      // Не раскрываем, существует ли email.
+    }
+
+    return {
+      success:
+        "Если аккаунт с таким email есть, мы отправили ссылку для сброса пароля. Проверьте почту.",
+    };
+  } catch (error) {
+    console.error("[auth] forgotPasswordAction failed:", error);
+    return {
+      error: mapAuthError(
+        error instanceof Error ? error.message : undefined,
+      ),
+    };
+  }
+}
+
+export async function resetPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const parsed = resetPasswordSchema.safeParse({
+      password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
+    });
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Проверьте форму" };
+    }
+
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return {
+        error:
+          "Ссылка для сброса пароля недействительна или устарела. Запросите новую.",
+      };
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: parsed.data.password,
+    });
+
+    if (error) {
+      return { error: mapAuthError(error.message) };
+    }
+
+    revalidatePath("/", "layout");
+    redirect("/login?reset=1");
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof (error as { digest?: unknown }).digest === "string" &&
+      String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
+    console.error("[auth] resetPasswordAction failed:", error);
+    return {
+      error: mapAuthError(
+        error instanceof Error ? error.message : undefined,
+      ),
     };
   }
 }
