@@ -6,7 +6,7 @@
 
 Логика платформы: **Идея → анализ → поиск ресурсов → партнёры → реализация.**
 
-Текущая версия ядра: **0.61.0-beta** (Project Acquisition Engine).  
+Текущая версия: **1.0.0** (production).  
 Обзор: [Project Acquisition](./docs/project-acquisition-engine.md) · [Growth Engine](./docs/growth-engine.md) · [Public Launch Operations](./docs/public-launch-operations.md) · [Help center](./docs/help-center.md)
 
 ## Стек
