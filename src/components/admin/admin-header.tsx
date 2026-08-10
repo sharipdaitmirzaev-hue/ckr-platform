@@ -25,10 +25,10 @@ export function AdminHeader({ fullName, email }: AdminHeaderProps) {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/dashboard"
+            href="/admin/owner"
             className="hidden text-sm text-accent transition-colors hover:text-foreground sm:inline"
           >
-            Обзор
+            Кабинет владельца
           </Link>
           <Link
             href="/operator"

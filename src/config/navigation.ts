@@ -77,8 +77,8 @@ export const authNav = {
 
 export const adminNav: NavItem[] = [
   {
-    label: "Админ-панель",
-    href: "/admin/dashboard",
-    description: "Рабочее место оператора ЦКР",
+    label: "Кабинет владельца",
+    href: "/admin/owner",
+    description: "Сводка владельца платформы ЦКР",
   },
 ];
