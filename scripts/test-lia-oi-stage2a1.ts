@@ -57,9 +57,13 @@ console.log("\nLIA OI Stage 2A.1 — quality checks\n");
   }
   assert.equal(geographyToken(["Россия"]), "Россия");
   assert.equal(geographyToken(["Москва"]), "Москва");
-  // broad intent mixes directions
+  // broad intent mixes directions + prefers specific lots over catalogs
   const joined = plan.hypotheses.join(" | ");
-  assert.ok(/инвест|торги|господдерж|франшиз|производ|недвижим|бизнес/i.test(joined));
+  assert.ok(/инвест|торги|франшиз|производ|недвижим|бизнес/i.test(joined));
+  assert.ok(
+    plan.queries.some((q) => /-каталог/i.test(q)),
+    "expected negative catalog operator in at least one query",
+  );
   ok("Search Planner: clean geo + mixed hypotheses");
 }
 

@@ -1,4 +1,4 @@
-import { isCatalogPageType } from "@/lib/lia/oi/page-type";
+import { isCatalogPageType, isSeoArticlePage } from "@/lib/lia/oi/page-type";
 import type {
   LiaOiCandidate,
   LiaOiPriority,
@@ -90,6 +90,14 @@ export function scoreCandidate(
   else relevance -= 5;
   if (isCatalog) relevance -= 12;
 
+  const sourceUrl = candidate.sources[0]?.url ?? "";
+  const isSeoArticle = isSeoArticlePage({
+    url: sourceUrl,
+    title: candidate.title,
+    snippet: candidate.description,
+  });
+  if (isSeoArticle) relevance -= 18;
+
   // --- quality ---
   let quality = 30;
   if (pageType === "DETAIL") {
@@ -106,9 +114,18 @@ export function scoreCandidate(
     explanation.push("Homepage каталога — низкое качество сигнала.");
   }
 
-  if (price != null) {
+  if (isSeoArticle) {
+    quality -= 20;
+    explanation.push("SEO-статья без конкретного предложения — quality снижен.");
+  }
+
+  // Цена на каталоге/статье часто «от N млн» — слабый сигнал
+  if (price != null && !isCatalog && !isSeoArticle) {
     quality += 15;
     whyTop.push("есть цена");
+  } else if (price != null && (isCatalog || isSeoArticle)) {
+    quality += 4;
+    explanation.push("Цена найдена в тексте, но страница не DETAIL.");
   } else {
     explanation.push("Цена/инвестиции не указаны (UNKNOWN).");
   }
@@ -218,7 +235,14 @@ export function scoreCandidate(
   let opportunity = avg * 10;
   if (pageType === "DETAIL") opportunity += 8;
   if (isCatalog) opportunity -= 18;
-  if (price != null && plan?.budgetMax && price <= plan.budgetMax) {
+  if (isSeoArticle) opportunity -= 22;
+  if (
+    price != null &&
+    plan?.budgetMax &&
+    price <= plan.budgetMax &&
+    !isCatalog &&
+    !isSeoArticle
+  ) {
     opportunity += 6;
   }
 

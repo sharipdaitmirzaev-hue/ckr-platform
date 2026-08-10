@@ -69,8 +69,36 @@ export function classifyPageType(input: {
     return "DETAIL";
   }
 
+  // Editorial / SEO articles — не конкретная возможность (оставляем UNKNOWN,
+  // scoring понизит как SEO без предложения).
+  if (
+    /\/(blog|blogs|article|articles|news|stories|nezhiloe)\b/i.test(path) ||
+    /\b(как я|гид по|что такое|инвестиции в\b.*\bнедвижимость\b)/i.test(blob)
+  ) {
+    return "UNKNOWN";
+  }
+
   if (LIST_TITLE.test(blob)) return "LIST";
   return "UNKNOWN";
+}
+
+/** SEO/статья без конкретного предложения объекта. */
+export function isSeoArticlePage(input: {
+  url: string;
+  title: string;
+  snippet?: string;
+}): boolean {
+  let path = "/";
+  try {
+    path = new URL(input.url).pathname || "/";
+  } catch {
+    path = input.url.split("?")[0] || "/";
+  }
+  const blob = `${input.title} ${input.snippet ?? ""}`;
+  return (
+    /\/(blog|blogs|article|articles|news|stories|nezhiloe)\b/i.test(path) ||
+    /\b(как я|гид по|что такое|личный опыт|разбор кейса)\b/i.test(blob)
+  );
 }
 
 export function isCatalogPageType(pageType: LiaOiPageType): boolean {

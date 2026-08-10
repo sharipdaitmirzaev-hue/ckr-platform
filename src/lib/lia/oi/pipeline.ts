@@ -85,15 +85,9 @@ export async function runOwnerSearchPipeline(input: {
 }): Promise<LiaOiSearchPipelineResult> {
   const modeInfo = resolveOiSearchMode();
   const plan = buildSearchPlan(input.query);
-  const perQueryLimit = Math.min(
-    LIA_OI_BUDGETS.maxResultsPerQuery,
-    Math.max(
-      2,
-      Math.ceil(
-        LIA_OI_BUDGETS.maxCandidatesPerRun / Math.max(plan.queries.length, 1),
-      ),
-    ),
-  );
+  // Берём полный лимит Serper на query (не сжимать до 2): иначе в TOP SERP
+  // остаются только каталоги, а DETAIL-объявления уходят глубже.
+  const perQueryLimit = LIA_OI_BUDGETS.maxResultsPerQuery;
 
   const { hits: rawHits, errors, fatal } = await searchAllQueries(plan.queries, {
     limit: perQueryLimit,
