@@ -105,6 +105,7 @@ fi
 chown "root:${CKR_APP_USER}" "${CKR_ENV_FILE}"
 chmod 640 "${CKR_ENV_FILE}"
 ensure_env_or_stop
+assert_production_site_url
 DOMAIN="$(domain_from_site_url)"
 [[ -n "$DOMAIN" ]] || die "Не удалось извлечь домен из NEXT_PUBLIC_SITE_URL"
 

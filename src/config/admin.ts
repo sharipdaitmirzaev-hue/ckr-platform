@@ -6,6 +6,11 @@ export type AdminNavItem = {
 
 export const adminNavItems: AdminNavItem[] = [
   {
+    label: "Кабинет владельца",
+    href: "/admin/owner",
+    description: "Сводка владельца: заявки, предложения, Лия, CRM",
+  },
+  {
     label: "Обзор",
     href: "/admin/dashboard",
     description: "Сводка по платформе",

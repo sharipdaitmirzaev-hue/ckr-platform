@@ -11,6 +11,8 @@ type AdminSidebarProps = {
 };
 
 function canShowNavItem(href: string, isPlatformAdmin: boolean) {
+  // Кабинет владельца — только platform admin.
+  if (href === "/admin/owner") return isPlatformAdmin;
   if (isPlatformAdmin) return true;
   if (href === "/operator" || href === "/partner") return true;
   return isStaffAdminPath(href);
@@ -30,11 +32,15 @@ export function AdminSidebar({ isPlatformAdmin = false }: AdminSidebarProps) {
       <nav className="flex flex-col gap-1" aria-label="Админ-навигация">
         {items.map((item) => {
           const active =
-            item.href === "/admin/dashboard"
+            item.href === "/admin/owner"
               ? pathname === "/admin" ||
-                pathname === "/admin/dashboard" ||
-                pathname.startsWith("/admin/dashboard/")
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                pathname === "/admin/owner" ||
+                pathname.startsWith("/admin/owner/")
+              : item.href === "/admin/dashboard"
+                ? pathname === "/admin/dashboard" ||
+                  pathname.startsWith("/admin/dashboard/")
+                : pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
 
           return (
             <Link

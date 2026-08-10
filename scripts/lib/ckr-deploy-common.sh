@@ -8,7 +8,7 @@ CKR_APP_DIR="${CKR_APP_DIR:-/var/www/ckr-platform}"
 CKR_ENV_FILE="${CKR_ENV_FILE:-/etc/ckr/ckr.env}"
 CKR_APP_USER="${CKR_APP_USER:-ckr}"
 CKR_SERVICE_NAME="${CKR_SERVICE_NAME:-ckr}"
-CKR_DEPLOY_BRANCH="${CKR_DEPLOY_BRANCH:-cursor/deploy-ubuntu-0.61-ff37}"
+CKR_DEPLOY_BRANCH="${CKR_DEPLOY_BRANCH:-cursor/fix-register-bytestring-ff37}"
 CKR_NODE_MAJOR="${CKR_NODE_MAJOR:-22}"
 CKR_HEALTH_URL="${CKR_HEALTH_URL:-http://127.0.0.1:3000/api/health}"
 
@@ -132,6 +132,34 @@ domain_from_site_url() {
   url="${url#http://}"
   url="${url%%/*}"
   printf '%s' "$url"
+}
+
+assert_production_site_url() {
+  local url="${NEXT_PUBLIC_SITE_URL:-}"
+  if [[ -z "$url" ]]; then
+    die "NEXT_PUBLIC_SITE_URL пуст"
+  fi
+  if [[ "$url" == *localhost* ]] || [[ "$url" == *127.0.0.1* ]]; then
+    die "NEXT_PUBLIC_SITE_URL не должен указывать на localhost в production (сейчас: ${url})"
+  fi
+  if [[ "$url" != https://* ]]; then
+    die "NEXT_PUBLIC_SITE_URL должен начинаться с https://"
+  fi
+
+  # Ключи уходят в apikey / Authorization. Кириллица (напр. ь на index 7)
+  # даёт undici: Cannot convert argument to a ByteString ... value of 1100.
+  local check_script="${CKR_APP_DIR}/scripts/check-supabase-env-bytestring.sh"
+  if [[ -f "$check_script" ]]; then
+    bash "$check_script" || die "Supabase env не ByteString-safe — исправьте /etc/ckr/ckr.env"
+  else
+    local key="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}}"
+    if [[ -n "$key" ]]; then
+      if ! node -e 'const s=process.argv[1]; for (let i=0;i<s.length;i++){ if (s.charCodeAt(i)>255) process.exit(2);} ' "$key"; then
+        die "Публичный Supabase-ключ содержит не-ByteString символы — проверьте /etc/ckr/ckr.env"
+      fi
+    fi
+  fi
+  log_ok "SITE_URL production-safe (${url})"
 }
 
 app_version() {

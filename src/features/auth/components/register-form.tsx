@@ -10,6 +10,7 @@ import {
 } from "@/config/roles";
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message";
 import { registerAction, type ActionState } from "@/features/auth/actions";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 
@@ -118,6 +119,26 @@ export function RegisterForm() {
           ))}
         </div>
       </fieldset>
+
+      <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-muted">
+        <input
+          type="checkbox"
+          name="acceptTerms"
+          value="on"
+          required
+          className="mt-1 accent-[var(--ckr-accent)]"
+        />
+        <span>
+          Я принимаю{" "}
+          <Link href="/terms" className="text-accent hover:underline">
+            пользовательское соглашение
+          </Link>{" "}
+          и{" "}
+          <Link href="/privacy" className="text-accent hover:underline">
+            политику конфиденциальности
+          </Link>
+        </span>
+      </label>
 
       <SubmitButton />
     </form>

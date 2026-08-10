@@ -9,12 +9,29 @@ export const registerSchema = z.object({
     error: "Выберите роль",
   }),
   inviteCode: z.string().trim().optional(),
+  acceptTerms: z.literal(true, {
+    error: "Нужно принять условия использования и политику конфиденциальности",
+  }),
 });
 
 export const loginSchema = z.object({
   email: z.string().email("Укажите корректный email"),
   password: z.string().min(1, "Введите пароль"),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Укажите корректный email"),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Пароль не менее 8 символов"),
+    confirmPassword: z.string().min(1, "Повторите пароль"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Пароли не совпадают",
+    path: ["confirmPassword"],
+  });
 
 export const onboardingSchema = z.object({
   fullName: z.string().trim().min(2, "Укажите имя"),
@@ -43,4 +60,6 @@ export const onboardingSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type OnboardingInput = z.infer<typeof onboardingSchema>;

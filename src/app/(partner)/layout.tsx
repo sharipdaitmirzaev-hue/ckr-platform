@@ -2,7 +2,6 @@ import { Logo } from "@/components/brand/logo";
 import { PartnerSidebar } from "@/components/partners/partner-sidebar";
 import { Container } from "@/components/ui/container";
 import { LogoutButton } from "@/features/auth/components/logout-button";
-import { BetaBadge } from "@/features/beta/components/beta-badge";
 import { requirePartnerUser } from "@/lib/auth/require-partner";
 import Link from "next/link";
 
@@ -22,7 +21,6 @@ export default async function PartnerLayout({
         <Container className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Logo size="sm" />
-            <BetaBadge />
             <p className="hidden text-sm text-muted sm:block">
               {orgName || "Партнёрская сеть ЦКР"}
             </p>

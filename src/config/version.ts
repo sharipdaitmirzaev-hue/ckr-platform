@@ -1,7 +1,7 @@
-/** Версия платформы для beta badge и changelog. */
+/** Версия платформы для health, changelog и внутренних отчётов. */
 export const platformVersion = {
-  version: "0.61.0-beta",
-  label: "Beta",
-  releasedAt: "2026-08-06",
-  channel: "project-acquisition",
+  version: "1.0.0",
+  label: "Stable",
+  releasedAt: "2026-08-10",
+  channel: "production",
 } as const;

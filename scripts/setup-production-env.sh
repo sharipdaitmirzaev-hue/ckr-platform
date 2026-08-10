@@ -85,6 +85,19 @@ if [[ "$LIA_PROVIDER" != "mock" ]]; then
   LIA_API_BASE_URL="$(ask_visible "6b) LIA_API_BASE_URL (например https://api.openai.com/v1)")"
 fi
 
+# ByteString: ключи уходят в HTTP headers (apikey / Authorization).
+assert_bytestring_value() {
+  local label="$1"
+  local value="$2"
+  if ! node -e 'const s=process.argv[1]; for (let i=0;i<s.length;i++){ if (s.charCodeAt(i)>255) { console.error(String(i)); process.exit(2);} }' "$value" 2>/tmp/ckr-bs-idx; then
+    local idx
+    idx="$(tr -d '\n' </tmp/ckr-bs-idx 2>/dev/null || true)"
+    log_error "${label}: символ вне ByteString (index ${idx:-?}). Кириллица в ключе/URL ломает регистрацию."
+    return 1
+  fi
+  return 0
+}
+
 # Валидация без печати секретов
 fail=0
 if is_placeholder "$SITE_URL" || [[ "$SITE_URL" != https://* ]]; then
@@ -103,6 +116,10 @@ if is_placeholder "$SERVICE_KEY" || [[ "$SERVICE_KEY" == sb_publishable_* ]]; th
   log_error "SUPABASE_SERVICE_ROLE_KEY некорректен (нужен secret/service_role)"
   fail=1
 fi
+assert_bytestring_value "NEXT_PUBLIC_SITE_URL" "$SITE_URL" || fail=1
+assert_bytestring_value "NEXT_PUBLIC_SUPABASE_URL" "$SUPABASE_URL" || fail=1
+assert_bytestring_value "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$ANON_KEY" || fail=1
+assert_bytestring_value "SUPABASE_SERVICE_ROLE_KEY" "$SERVICE_KEY" || fail=1
 if [[ "$LIA_PROVIDER" != "mock" ]]; then
   if is_placeholder "$LIA_API_KEY"; then
     log_error "LIA_API_KEY обязателен при LIA_PROVIDER=${LIA_PROVIDER}"

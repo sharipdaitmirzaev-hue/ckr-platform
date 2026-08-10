@@ -1,4 +1,4 @@
-# Deploy ЦКР 0.61.0-beta на Ubuntu 26.04 (Nginx + systemd)
+# Deploy ЦКР 1.0.0 на Ubuntu (Nginx + systemd)
 
 > **Короткий путь:** см. [production-bootstrap.md](./production-bootstrap.md)  
 > Первый запуск: `sudo ./scripts/bootstrap-production.sh`  

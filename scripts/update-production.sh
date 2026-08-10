@@ -25,6 +25,7 @@ log_info "TARGET=${TARGET_REF}"
 
 [[ -d "${CKR_APP_DIR}/.git" ]] || die "Нет репозитория в ${CKR_APP_DIR}"
 ensure_env_or_stop
+assert_production_site_url
 
 sync_git_tree "${TARGET_REF}"
 
@@ -58,16 +59,10 @@ if [[ -f "${CKR_APP_DIR}/deploy/systemd/ckr.service" ]]; then
   log_ok "systemd unit обновлён"
 fi
 
-DOMAIN="$(domain_from_site_url)"
-if [[ -n "$DOMAIN" && -f "${CKR_APP_DIR}/deploy/nginx/ckr.conf" ]]; then
-  TMP_NGINX="$(mktemp)"
-  sed "s/YOUR_DOMAIN/${DOMAIN}/g" "${CKR_APP_DIR}/deploy/nginx/ckr.conf" >"$TMP_NGINX"
-  cp "$TMP_NGINX" /etc/nginx/sites-available/ckr
-  rm -f "$TMP_NGINX"
-  ln -sfn /etc/nginx/sites-available/ckr /etc/nginx/sites-enabled/ckr
-  nginx -t
-  systemctl reload nginx || systemctl restart nginx
-  log_ok "nginx обновлён (${DOMAIN})"
+# Важно: применяем nginx ОТДЕЛЬНЫМ скриптом с диска после git reset,
+# иначе при первом деплое новой версии в памяти остаётся старая HTTP-only логика.
+if [[ -x "${CKR_APP_DIR}/scripts/apply-nginx-production.sh" ]] || [[ -f "${CKR_APP_DIR}/scripts/apply-nginx-production.sh" ]]; then
+  bash "${CKR_APP_DIR}/scripts/apply-nginx-production.sh"
 fi
 
 log_info "systemctl restart ${CKR_SERVICE_NAME}"
