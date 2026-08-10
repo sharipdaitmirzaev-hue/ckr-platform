@@ -87,6 +87,14 @@ console.log("\nLIA OI Stage 2A.1 — quality checks\n");
     }),
     "DETAIL",
   );
+  assert.equal(
+    classifyPageType({
+      url: "https://rusinvestproject.ru/katalog-investorov/",
+      title: "Каталог инвесторов — поиск партнёра",
+      snippet: "База инвесторов России",
+    }),
+    "LIST",
+  );
   assert.ok(isCatalogPageType("LIST"));
   assert.ok(!isCatalogPageType("DETAIL"));
   ok("page_type DETAIL/LIST/HOMEPAGE");

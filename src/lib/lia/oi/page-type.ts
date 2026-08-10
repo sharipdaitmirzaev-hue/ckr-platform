@@ -5,13 +5,13 @@
 import type { LiaOiPageType } from "@/types/lia-oi";
 
 const LIST_PATH =
-  /\/(catalog|katalog|category|categories|search|list|listings|products|offers|all|filter|tag|tags|rubric)(\/|$)/i;
+  /\/(catalog|katalog|category|categories|search|list|listings|products|offers|all|filter|tag|tags|rubric|investors?|investorov)([-_/]|$)/i;
 const HOME_PATH = /^\/?$/;
 const DETAIL_HINT =
   /\/(offer|product|item|lot|object|project|biznes|business|obyavlenie|advert|view|id[-_]?\d|\d{3,})(\/|$)/i;
 
 const LIST_TITLE =
-  /каталог|объявлени|подборк|список|все предлож|купить бизнес в|продажа готового бизнеса|франшиз[аы] каталог/i;
+  /каталог|объявлени|подборк|список|все предлож|купить бизнес в|продажа готового бизнеса|франшиз[аы] каталог|база инвесторов|каталог инвесторов|каталог проектов/i;
 const DETAIL_TITLE =
   /прода(ётся|ется|жа)\b|лот\b|участок\b|завод\b|гостиниц|отель|склад\s|цех\b|инвестпроект|требуется инвестор|ищу инвестора/i;
 
