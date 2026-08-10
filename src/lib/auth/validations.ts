@@ -9,6 +9,9 @@ export const registerSchema = z.object({
     error: "Выберите роль",
   }),
   inviteCode: z.string().trim().optional(),
+  acceptTerms: z.literal(true, {
+    error: "Нужно принять условия использования и политику конфиденциальности",
+  }),
 });
 
 export const loginSchema = z.object({

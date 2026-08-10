@@ -19,6 +19,8 @@ export const siteConfig = {
   url: resolveSiteUrl(),
   locale: "ru_RU",
   ogLocale: "ru_RU",
+  /** Публичный контакт поддержки (не для секретов). */
+  supportEmail: "support@ckr-center.ru",
   keywords: [
     "ЦКР",
     "Центр комплексных решений",

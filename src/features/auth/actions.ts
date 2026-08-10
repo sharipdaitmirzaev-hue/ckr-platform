@@ -74,6 +74,7 @@ export async function registerAction(
       fullName: formData.get("fullName"),
       role: formData.get("role"),
       inviteCode: formData.get("inviteCode") || undefined,
+      acceptTerms: formData.get("acceptTerms") === "on",
     });
 
     if (!parsed.success) {

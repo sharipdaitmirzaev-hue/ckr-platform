@@ -149,9 +149,28 @@ export function SiteFooter() {
       </Container>
 
       <div className="border-t border-border">
-        <Container className="flex flex-col gap-2 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+        <Container className="flex flex-col gap-3 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} {brand.name}. Все права защищены.</p>
-          <p>Подготовка к интеграциям: Auth · Storage · API · Лия</p>
+          <nav
+            aria-label="Правовая информация"
+            className="flex flex-wrap items-center gap-x-4 gap-y-2"
+          >
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-accent"
+            >
+              Конфиденциальность
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-accent">
+              Соглашение
+            </Link>
+            <Link
+              href="/trust"
+              className="transition-colors hover:text-accent"
+            >
+              Доверие
+            </Link>
+          </nav>
         </Container>
       </div>
     </footer>
