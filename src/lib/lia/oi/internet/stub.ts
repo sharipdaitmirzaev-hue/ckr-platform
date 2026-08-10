@@ -182,8 +182,3 @@ export class StubInternetSearchProvider implements InternetSearchProvider {
     }));
   }
 }
-
-export function getInternetSearchProvider(): InternetSearchProvider {
-  // Этап 1: только stub. Этап 2 — ветка live поверх WebSearchProvider.
-  return new StubInternetSearchProvider();
-}

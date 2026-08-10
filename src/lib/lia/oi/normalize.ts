@@ -1,9 +1,9 @@
 import { oiHash, oiId } from "@/lib/lia/oi/id";
 import type { InternetSearchHit } from "@/lib/lia/oi/internet/types";
-import type { LiaOiCandidate, LiaOiSourceRef } from "@/types/lia-oi";
+import type { LiaOiCandidate, LiaOiClaim, LiaOiSourceRef } from "@/types/lia-oi";
 import { emptyScore } from "@/lib/lia/oi/score";
 
-function canonicalUrl(url: string): string {
+export function canonicalUrl(url: string): string {
   try {
     const u = new URL(url);
     u.hash = "";
@@ -18,19 +18,84 @@ function canonicalUrl(url: string): string {
 /** Hit → черновик OpportunityCandidate (без финального анализа/score). */
 export function normalizeHit(hit: InternetSearchHit): LiaOiCandidate {
   const now = new Date().toISOString();
+  const discoveredAt = hit.discoveredAt || now;
   const canonical = canonicalUrl(hit.url);
+  const isStub = hit.isStub === true;
+
   const source: LiaOiSourceRef = {
     id: oiId("src"),
     category: hit.sourceCategory,
     name: hit.sourceName,
     url: hit.url,
     publishedAt: hit.publishedAt,
-    isStub: true,
+    discoveredAt,
+    isStub,
   };
+
+  const claims: LiaOiClaim[] = [
+    {
+      field: "title",
+      value: hit.title,
+      kind: "FACT",
+      sourceName: hit.sourceName,
+      sourceUrl: hit.url,
+      note: isStub
+        ? "Заголовок из stub-источника (demo)."
+        : "Заголовок из выдачи поисковика (FACT относительно сниппета; не верификация объекта).",
+    },
+    {
+      field: "source_url",
+      value: hit.url,
+      kind: "FACT",
+      sourceName: hit.sourceName,
+      sourceUrl: hit.url,
+      note: "URL первоисточника.",
+    },
+  ];
+
+  if (hit.askingPrice != null) {
+    claims.push({
+      field: "asking_price",
+      value: String(hit.askingPrice),
+      kind: "FACT",
+      sourceName: hit.sourceName,
+      sourceUrl: hit.url,
+      note: isStub
+        ? "Цена из stub-карточки."
+        : "Число извлечено из текста сниппета/заголовка. Проверьте на странице источника.",
+    });
+  } else {
+    claims.push({
+      field: "asking_price",
+      value: "не указано",
+      kind: "UNKNOWN",
+      sourceName: hit.sourceName,
+      sourceUrl: hit.url,
+      note: "Цена/инвестиции не найдены в доступном тексте.",
+    });
+  }
+
+  if (hit.region) {
+    claims.push({
+      field: "region",
+      value: hit.region,
+      kind: "FACT",
+      sourceName: hit.sourceName,
+      sourceUrl: hit.url,
+      note: "Локация упомянута в тексте результата.",
+    });
+  } else {
+    claims.push({
+      field: "region",
+      value: "не указано",
+      kind: "UNKNOWN",
+      note: "Регион не извлечён из сниппета.",
+    });
+  }
 
   return {
     id: oiId("cand"),
-    type: hit.tags?.[0] ?? "opportunity_signal",
+    type: hit.tags?.[0] ?? (isStub ? "opportunity_signal" : "web_opportunity"),
     title: hit.title,
     description: hit.snippet,
     summary: "",
@@ -44,35 +109,19 @@ export function normalizeHit(hit: InternetSearchHit): LiaOiCandidate {
     industry: hit.industry,
     askingPrice: hit.askingPrice ?? null,
     investmentRequired: hit.investmentRequired ?? null,
+    contactPhone: hit.contactPhone,
+    contactEmail: hit.contactEmail,
     sources: [source],
-    claims: [
-      {
-        field: "title",
-        value: hit.title,
-        kind: "FACT",
-        sourceName: hit.sourceName,
-        sourceUrl: hit.url,
-        note: "Заголовок из stub-источника (demo).",
-      },
-      {
-        field: "asking_price",
-        value:
-          hit.askingPrice != null
-            ? String(hit.askingPrice)
-            : "не указано",
-        kind: hit.askingPrice != null ? "FACT" : "UNKNOWN",
-        sourceName: hit.sourceName,
-        sourceUrl: hit.url,
-      },
-    ],
+    claims,
     risks: [],
     unknowns: [],
     toVerify: [],
     score: emptyScore(),
     matchHints: [],
-    firstSeenAt: now,
+    firstSeenAt: discoveredAt,
     lastSeenAt: now,
     canonicalKey: oiHash(canonical.toLowerCase()),
-    rawStubIds: [hit.id],
+    rawStubIds: isStub ? [hit.id] : [],
+    isStub,
   };
 }

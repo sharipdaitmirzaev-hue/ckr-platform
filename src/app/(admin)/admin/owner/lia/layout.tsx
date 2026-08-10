@@ -1,5 +1,5 @@
 import { LiaOiNav } from "@/components/lia/oi/lia-oi-nav";
-import { LiaOiStubBanner } from "@/components/lia/oi/stub-banner";
+import { LiaOiModeBanner } from "@/components/lia/oi/mode-banner";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
 import { ensureLiaOiSeed } from "@/lib/lia/oi/pipeline";
 
@@ -25,7 +25,7 @@ export default async function LiaOiLayout({
           Обычные пользователи этот раздел не видят.
         </p>
       </div>
-      <LiaOiStubBanner />
+      <LiaOiModeBanner />
       <LiaOiNav />
       {children}
     </div>

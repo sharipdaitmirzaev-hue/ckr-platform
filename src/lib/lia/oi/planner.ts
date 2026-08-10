@@ -22,46 +22,118 @@ function detectIntent(query: string): LiaOiSearchIntent {
   if (/земл|участ|площадк|завод/.test(q)) return "land_or_site";
   if (/гостиниц|отел|глэмп|туризм/.test(q)) return "hotel_or_tourism";
   if (/оборудован/.test(q)) return "equipment";
-  if (/бизнес|прода/.test(q)) return "business_for_sale";
+  if (/бизнес|прода|франшиз/.test(q)) return "business_for_sale";
   return "general_opportunity";
 }
 
+/**
+ * Регионы: вся Россия по умолчанию.
+ * Конкретный регион добавляется только если явно упомянут в запросе.
+ * Не ограничиваем Дагестаном/СКФО.
+ */
 function detectRegions(query: string): string[] {
   const map: Array<[RegExp, string]> = [
     [/дагестан/i, "Дагестан"],
-    [/краснодар/i, "Краснодарский край"],
+    [/краснодар|сочи/i, "Краснодарский край"],
     [/скфо|северо.?кавказ/i, "СКФО"],
     [/москв/i, "Москва"],
+    [/санкт[-\s]?петербург|спб\b/i, "Санкт-Петербург"],
     [/ростов/i, "Ростовская область"],
+    [/татарстан|казан/i, "Татарстан"],
+    [/новосибир/i, "Новосибирская область"],
+    [/екатеринбург|свердлов/i, "Свердловская область"],
   ];
   const found = map.filter(([re]) => re.test(query)).map(([, name]) => name);
   return found.length ? found : ["Россия"];
 }
 
+const HYPOTHESIS_BANK: Record<LiaOiSearchIntent, string[]> = {
+  investment_search: [
+    "инвестиционный проект поиск инвестора",
+    "готовый бизнес продажа",
+    "производство продажа бизнес",
+    "коммерческая недвижимость инвестиция",
+    "франшиза купить",
+    "предприятие ищет инвестора",
+    "торги имущество бизнес",
+    "господдержка МСП инвестиции",
+  ],
+  business_for_sale: [
+    "готовый бизнес продажа Россия",
+    "продажа действующего бизнеса",
+    "франшиза купить Россия",
+    "производство продажа",
+    "коммерческая недвижимость продажа",
+    "оборудование бизнес продажа",
+  ],
+  land_or_site: [
+    "земельный участок под производство Россия",
+    "промышленная площадка продажа",
+    "завод продажа",
+    "складской комплекс продажа",
+    "торги земельные участки",
+  ],
+  hotel_or_tourism: [
+    "гостиница продажа бизнес Россия",
+    "отель инвестиционный проект",
+    "глэмпинг продажа",
+    "туристический объект инвестиции",
+  ],
+  equipment: [
+    "оборудование продажа бизнес Россия",
+    "производственная линия продажа",
+    "станки б/у продажа партия",
+  ],
+  buyers_or_demand: [
+    "оптовый спрос покупатели Россия",
+    "тендер закупка",
+    "дистрибьютор ищет поставщика",
+  ],
+  general_opportunity: [
+    "готовый бизнес продажа Россия",
+    "инвестиционный проект Россия",
+    "производство продажа",
+    "коммерческая недвижимость",
+    "франшиза",
+    "торги бизнес активы",
+    "господдержка МСП",
+  ],
+};
+
 /**
- * Search Planner: запрос владельца → структурированный план + гипотезы поиска.
+ * Search Planner: один запрос владельца → несколько поисковых направлений.
  */
 export function buildSearchPlan(rawQuery: string): LiaOiSearchPlan {
   const intent = detectIntent(rawQuery);
   const budgetMax = parseBudgetMax(rawQuery);
   const regions = detectRegions(rawQuery);
   const budgetLabel = budgetMax
-    ? `до ${Math.round(budgetMax / 1_000_000)} млн ₽`
-    : "бюджет не ограничен явно";
+    ? `до ${Math.round(budgetMax / 1_000_000)} млн рублей`
+    : "";
 
-  const hypotheses = [
-    "готовый бизнес",
-    "производство / площадка",
-    "недвижимость / земля",
-    "инвестиционный проект",
-    "проблемные / торги (сигнал)",
-    "господдержка рядом с активом",
-  ].slice(0, LIA_OI_BUDGETS.maxQueriesPerPlan);
+  const bank = HYPOTHESIS_BANK[intent] ?? HYPOTHESIS_BANK.general_opportunity;
+  const hypotheses = bank.slice(0, LIA_OI_BUDGETS.maxQueriesPerPlan);
 
-  const regionPart = regions.join(", ");
-  const queries = hypotheses.map(
-    (h) => `${h} ${regionPart} ${budgetLabel}`.trim(),
+  const regionPart =
+    regions[0] === "Россия" ? "Россия РФ" : `${regions.join(" ")} Россия`;
+
+  const queries = hypotheses.map((h) =>
+    [h, regionPart, budgetLabel].filter(Boolean).join(" ").replace(/\s+/g, " ").trim(),
   );
+
+  // Всегда добавляем близкий к исходному формулировке query (если есть место)
+  const direct = [rawQuery.trim(), regionPart, budgetLabel]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (
+    queries.length < LIA_OI_BUDGETS.maxQueriesPerPlan &&
+    !queries.some((q) => q.includes(rawQuery.trim().slice(0, 24)))
+  ) {
+    queries.unshift(direct);
+    queries.splice(LIA_OI_BUDGETS.maxQueriesPerPlan);
+  }
 
   return {
     id: oiId("plan"),
@@ -77,7 +149,7 @@ export function buildSearchPlan(rawQuery: string): LiaOiSearchPlan {
         ? ["land", "industrial_site"]
         : intent === "hotel_or_tourism"
           ? ["hotel", "tourism"]
-          : ["business", "production", "real_estate", "project"],
+          : ["business", "production", "real_estate", "project", "franchise"],
     hypotheses,
     queries,
     createdAt: new Date().toISOString(),

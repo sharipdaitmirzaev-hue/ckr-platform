@@ -5,17 +5,34 @@ import type {
   LiaOiStatus,
 } from "@/types/lia-oi";
 
-/** Бюджеты этапа 1 (stub / demo). */
+/**
+ * Лимиты OI (cost / quota control).
+ * Stage 2A: применяются к LIVE Serper и к stub одинаково.
+ */
 export const LIA_OI_BUDGETS = {
-  maxCandidatesPerRun: 12,
-  maxAiAnalysesPerRun: 8,
-  maxDeepAnalysesPerRun: 3,
-  maxFetchesPerSource: 10,
+  /** max_queries_per_search — поисковых гипотез на один запрос владельца */
   maxQueriesPerPlan: 6,
+  /** max_results_per_query — результатов Serper на один query */
+  maxResultsPerQuery: 8,
+  /** max_candidates_per_request — карточек в ленту за один run */
+  maxCandidatesPerRun: 12,
+  /** max analyses (cheap) */
+  maxAiAnalysesPerRun: 8,
+  /** max_deep_analysis */
+  maxDeepAnalysesPerRun: 3,
+  /**
+   * Page fetches к первоисточникам (safe-fetch).
+   * Stage 2A: 0 по умолчанию — достаточно Serper snippet; fetch готов, но выключен.
+   */
+  maxFetchesPerSource: 0,
+  maxFetchesPerRun: 0,
 } as const;
 
 export const LIA_OI_STUB_BANNER =
   "Внешний поиск работает в demo/stub режиме. Результаты не являются живыми данными из интернета.";
+
+export const LIA_OI_LIVE_UNAVAILABLE =
+  "Внешний поиск временно недоступен. Показан безопасный stub/пустой результат; техническая ошибка записана в server log.";
 
 export const liaOiStatusLabels: Record<LiaOiStatus, string> = {
   NEW: "Новая",

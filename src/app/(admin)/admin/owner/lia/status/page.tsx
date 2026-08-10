@@ -1,5 +1,6 @@
 import { LIA_OI_BUDGETS } from "@/config/lia-oi";
-import { getInternetSearchProvider } from "@/lib/lia/oi/internet/stub";
+import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
+import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
 import { getTodayStats } from "@/lib/lia/oi/pipeline";
 import {
   listAssignments,
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Состояние разведки"
 
 export default async function LiaOiStatusPage() {
   const provider = getInternetSearchProvider();
+  const mode = resolveOiSearchMode();
   const today = getTodayStats();
 
   return (
@@ -22,9 +24,13 @@ export default async function LiaOiStatusPage() {
       </h2>
       <dl className="grid gap-4 text-sm sm:grid-cols-2">
         <div className="rounded-sm border border-border p-4">
+          <dt className="text-muted">Режим</dt>
+          <dd className="mt-1 text-foreground">{mode.bannerTitle}</dd>
+        </div>
+        <div className="rounded-sm border border-border p-4">
           <dt className="text-muted">Провайдер</dt>
           <dd className="mt-1 text-foreground">
-            {provider.id} · {provider.mode}
+            {provider.id} · {provider.mode} · {provider.label}
           </dd>
         </div>
         <div className="rounded-sm border border-border p-4">
@@ -44,18 +50,24 @@ export default async function LiaOiStatusPage() {
           <dd className="mt-1 text-foreground">{listSearchRequests().length}</dd>
         </div>
         <div className="rounded-sm border border-border p-4">
-          <dt className="text-muted">High priority сегодня</dt>
+          <dt className="text-muted">High priority</dt>
           <dd className="mt-1 text-foreground">{today.highPriority}</dd>
+        </div>
+        <div className="rounded-sm border border-border p-4">
+          <dt className="text-muted">LIVE доступен</dt>
+          <dd className="mt-1 text-foreground">
+            {mode.liveAvailable ? "да" : "нет (нужен API key)"}
+          </dd>
         </div>
       </dl>
       <div className="rounded-sm border border-border p-4 text-sm text-muted">
-        <p className="text-foreground">Бюджеты этапа 1</p>
+        <p className="text-foreground">Лимиты / quota (Stage 2A)</p>
         <pre className="mt-2 whitespace-pre-wrap">
           {JSON.stringify(LIA_OI_BUDGETS, null, 2)}
         </pre>
         <p className="mt-3">
-          Автономные циклы 3–4×/сутки (scheduler) — этап 5. Сейчас: seed + поиск
-          по запросу владельца. Store — in-memory (без apply SQL к production).
+          Persistence: in-memory. SQL Stage 1 не применяется (этап 2B). Matching /
+          Synthesis / Scheduler — позже.
         </p>
       </div>
     </div>

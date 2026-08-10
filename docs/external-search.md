@@ -161,6 +161,16 @@ LIA_WEB_SEARCH_METHOD=POST
 
 ---
 
+## Owner Opportunity Intelligence (Stage 2A)
+
+Закрытый кабинет владельца использует тот же `WebSearchProvider` / Serper
+через тонкий адаптер OI (`src/lib/lia/oi/internet/live.ts`).
+
+Подробности: режимы STUB/LIVE, лимиты, SSRF, как включить ключ — в
+[`docs/lia-oi.md`](./lia-oi.md).
+
+---
+
 ## Безопасность и ограничения
 
 | Правило | Реализация |

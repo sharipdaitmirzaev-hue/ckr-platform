@@ -41,7 +41,8 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
         {item.industry ? <span>{item.industry}</span> : null}
         <span>
           Источников: {item.sources.length}
-          {item.sources.every((s) => s.isStub) ? " · stub" : ""}
+          {" · "}
+          {item.isStub || item.sources.every((s) => s.isStub) ? "STUB" : "LIVE"}
         </span>
         {(item.investmentRequired ?? item.askingPrice) != null ? (
           <span>

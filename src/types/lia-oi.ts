@@ -1,4 +1,4 @@
-/** LIA Opportunity Intelligence — domain types (stage 1). */
+/** LIA Opportunity Intelligence — domain types (stage 1 + 2A). */
 
 export const LIA_OI_PROVENANCE_KINDS = [
   "FACT",
@@ -108,6 +108,8 @@ export type LiaOiSourceRef = {
   name: string;
   url: string;
   publishedAt?: string;
+  /** Когда источник обнаружен OI. */
+  discoveredAt?: string;
   isStub: boolean;
 };
 
@@ -149,6 +151,8 @@ export type LiaOiCandidate = {
   lastSeenAt: string;
   canonicalKey: string;
   rawStubIds: string[];
+  /** true, если карточка собрана только из stub-источников. */
+  isStub: boolean;
   searchRequestId?: string;
 };
 
@@ -183,7 +187,11 @@ export type LiaOiSearchRequest = {
   createdAt: string;
   createdBy: string;
   candidateIds: string[];
-  stubMode: true;
+  /** true = STUB, false = LIVE */
+  stubMode: boolean;
+  searchMode: "stub" | "live";
+  providerLabel?: string;
+  stats?: LiaOiPipelineStats;
 };
 
 export type LiaOiFeedback = {
@@ -222,7 +230,18 @@ export type LiaOiReport = {
   stats: Record<string, number>;
   candidateIds: string[];
   createdAt: string;
-  stubMode: true;
+  stubMode: boolean;
+};
+
+export type LiaOiPipelineStats = {
+  queriesRun: number;
+  signalsRaw: number;
+  filteredOut: number;
+  duplicatesRemoved: number;
+  afterDedup: number;
+  analyzed: number;
+  providerErrors: number;
+  providerUnavailable: boolean;
 };
 
 export type LiaOiHypothesis = {
@@ -243,6 +262,8 @@ export type LiaOiTodayStats = {
   worthAttention: number;
   highPriority: number;
   newHypotheses: number;
-  stubMode: true;
+  stubMode: boolean;
+  searchMode: "stub" | "live";
+  providerLabel: string;
   generatedAt: string;
 };

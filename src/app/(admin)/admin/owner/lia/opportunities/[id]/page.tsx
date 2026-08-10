@@ -102,15 +102,23 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
           {item.sources.map((s) => (
             <li key={s.id} className="rounded-sm border border-border px-3 py-2">
               <p className="text-foreground">
-                {s.name} {s.isStub ? "· STUB" : ""}
+                {s.name} {s.isStub ? "· STUB" : "· LIVE"}
               </p>
               <a
                 href={s.url}
                 className="break-all text-accent hover:underline"
-                rel="noreferrer"
+                target="_blank"
+                rel="noreferrer noopener"
               >
                 {s.url}
               </a>
+              <p className="mt-1 text-xs text-muted">
+                Обнаружено:{" "}
+                {s.discoveredAt
+                  ? new Date(s.discoveredAt).toLocaleString("ru-RU")
+                  : new Date(item.firstSeenAt).toLocaleString("ru-RU")}
+                {s.publishedAt ? ` · публикация: ${s.publishedAt}` : ""}
+              </p>
             </li>
           ))}
         </ul>

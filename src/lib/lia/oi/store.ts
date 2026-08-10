@@ -8,9 +8,9 @@ import type {
 } from "@/types/lia-oi";
 
 /**
- * In-memory store этапа 1 (без production DB).
- * Когда миграции будут применены — можно заменить на Supabase-репозиторий
- * с тем же интерфейсом.
+ * InMemoryLiaOiStore — активное хранилище Stage 1 / 2A (без production DB).
+ * Интерфейс: `store-types.ts` → LiaOiStore.
+ * SupabaseLiaOiStore — Stage 2B (не активировать; SQL не apply).
  */
 type LiaOiStoreState = {
   candidates: Map<string, LiaOiCandidate>;

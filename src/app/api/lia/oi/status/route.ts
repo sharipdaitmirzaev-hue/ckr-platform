@@ -1,5 +1,6 @@
 import { withOiOwner } from "@/lib/lia/oi/http";
-import { getInternetSearchProvider } from "@/lib/lia/oi/internet/stub";
+import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
+import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
 import { ensureLiaOiSeed, getTodayStats } from "@/lib/lia/oi/pipeline";
 import {
   listAssignments,
@@ -16,8 +17,11 @@ export async function GET() {
   return withOiOwner(async (userId) => {
     await ensureLiaOiSeed(userId);
     const provider = getInternetSearchProvider();
+    const mode = resolveOiSearchMode();
     return {
       provider: { id: provider.id, label: provider.label, mode: provider.mode },
+      searchMode: mode.mode,
+      liveAvailable: mode.liveAvailable,
       budgets: LIA_OI_BUDGETS,
       today: getTodayStats(),
       counts: {
@@ -26,8 +30,8 @@ export async function GET() {
         assignments: listAssignments().length,
         searches: listSearchRequests().length,
       },
-      stubMode: true as const,
-      note: "Автономные циклы разведки (scheduler) — этап 5. Сейчас только поиск по запросу + seed.",
+      stubMode: mode.mode === "stub",
+      note: "Stage 2A: STUB|LIVE Serper. Persistence in-memory. Scheduler/Matching — позже.",
     };
   });
 }

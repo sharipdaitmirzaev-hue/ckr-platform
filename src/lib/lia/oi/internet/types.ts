@@ -14,9 +14,13 @@ export type InternetSearchHit = {
   askingPrice?: number | null;
   investmentRequired?: number | null;
   publishedAt?: string;
-  /** Всегда true для Stub — UI не должен выдавать за live. */
-  isStub: true;
+  /** Когда hit обнаружен OI (ISO). */
+  discoveredAt?: string;
+  /** true = stub/demo; false = live web. Не смешивать без маркировки. */
+  isStub: boolean;
   tags?: string[];
+  contactPhone?: string;
+  contactEmail?: string;
 };
 
 export type InternetSearchOptions = {
@@ -27,8 +31,7 @@ export type InternetSearchOptions = {
 
 /**
  * Абстракция интернет-поиска для OI.
- * Этап 1: только StubInternetSearchProvider.
- * Этап 2: адаптер над существующим WebSearchProvider (Serper и др.).
+ * Stage 1/2A: StubInternetSearchProvider | LiveInternetSearchProvider (WebSearchProvider).
  */
 export type InternetSearchProvider = {
   id: string;

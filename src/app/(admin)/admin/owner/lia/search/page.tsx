@@ -1,10 +1,12 @@
 import { LiaOiSearchForm } from "@/components/lia/oi/search-form";
+import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
 import { listSearchRequests } from "@/lib/lia/oi/store";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Поиск Лии" };
 
 export default async function LiaOiSearchPage() {
+  const mode = resolveOiSearchMode();
   const history = listSearchRequests().slice(0, 10);
 
   return (
@@ -12,11 +14,12 @@ export default async function LiaOiSearchPage() {
       <div>
         <h2 className="font-display text-xl text-foreground">Поиск по запросу</h2>
         <p className="mt-2 text-sm text-muted">
-          Режим A: Search Plan → StubInternetSearchProvider → normalize → dedup →
-          analyze → score → лента владельца.
+          Search Plan →{" "}
+          {mode.mode === "live" ? "Serper (LIVE)" : "StubInternetSearchProvider"}{" "}
+          → filter → normalize → dedup → analyze → score → лента владельца.
         </p>
       </div>
-      <LiaOiSearchForm />
+      <LiaOiSearchForm initialMode={mode.mode} />
       <section className="space-y-3">
         <h3 className="font-display text-lg text-foreground">История запросов</h3>
         {history.length === 0 ? (
@@ -28,7 +31,11 @@ export default async function LiaOiSearchPage() {
                 <p className="text-foreground">{r.query}</p>
                 <p className="text-xs text-muted">
                   {r.plan.intent} · {r.plan.regions.join(", ")} · карточек{" "}
-                  {r.candidateIds.length} · stub
+                  {r.candidateIds.length} ·{" "}
+                  {(r.searchMode ?? (r.stubMode ? "stub" : "live")).toUpperCase()}
+                  {r.stats
+                    ? ` · raw ${r.stats.signalsRaw} / dedup ${r.stats.afterDedup}`
+                    : ""}
                 </p>
               </li>
             ))}

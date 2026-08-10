@@ -1,6 +1,6 @@
 import { StatsCard } from "@/components/admin/stats-card";
 import { OpportunityCard } from "@/components/lia/oi/opportunity-card";
-import { LiaOiStubBanner } from "@/components/lia/oi/stub-banner";
+import { LiaOiModeBanner } from "@/components/lia/oi/mode-banner";
 import type { LiaOiCandidate, LiaOiTodayStats } from "@/types/lia-oi";
 import Link from "next/link";
 
@@ -30,10 +30,13 @@ export function LiaTodayWidget({
         </Link>
       </div>
 
-      <LiaOiStubBanner />
+      <LiaOiModeBanner />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <StatsCard label="Сигналов (stub)" value={stats.signalsScanned} />
+        <StatsCard
+          label={stats.searchMode === "live" ? "Сигналов (live/store)" : "Сигналов (stub)"}
+          value={stats.signalsScanned}
+        />
         <StatsCard label="После dedup" value={stats.newAfterDedup} />
         <StatsCard label="Проанализировано" value={stats.analyzed} />
         <StatsCard label="Заслуживают внимания" value={stats.worthAttention} />

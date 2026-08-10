@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { analyzeCandidate } from "../src/lib/lia/oi/analyze";
 import { dedupeCandidates } from "../src/lib/lia/oi/dedup";
-import { getInternetSearchProvider } from "../src/lib/lia/oi/internet/stub";
+import { getInternetSearchProvider } from "../src/lib/lia/oi/internet";
 import { normalizeHit } from "../src/lib/lia/oi/normalize";
 import { buildSearchPlan } from "../src/lib/lia/oi/planner";
 import { runOwnerSearchPipeline } from "../src/lib/lia/oi/pipeline";

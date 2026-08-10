@@ -56,11 +56,19 @@ export function scoreCandidate(
     strategicFit: 5,
   };
 
-  // Stub sources → низкая sourceConfidence
-  if (candidate.sources.every((s) => s.isStub)) {
+  const isStub =
+    candidate.isStub || candidate.sources.every((s) => s.isStub);
+
+  // Stub → ниже; live snippet → умеренно (не due diligence)
+  if (isStub) {
     b.sourceConfidence = 3;
     explanation.push(
       "Источник stub/demo: уверенность в данных ограничена (не live-интернет).",
+    );
+  } else {
+    b.sourceConfidence = 5;
+    explanation.push(
+      "Источник live (поисковая выдача): выше stub, но не равно проверке объекта.",
     );
   }
 
@@ -69,7 +77,9 @@ export function scoreCandidate(
     b.dataCompleteness = clamp(b.dataCompleteness + 2);
     b.economics = clamp(6 + (price >= 100_000 && price <= 100_000_000 ? 2 : 0));
     explanation.push(
-      `Указан ориентир цены/инвестиций: ${price.toLocaleString("ru-RU")} ₽ (FACT из stub).`,
+      isStub
+        ? `Указан ориентир цены/инвестиций: ${price.toLocaleString("ru-RU")} ₽ (FACT из stub).`
+        : `В тексте результата есть сумма ${price.toLocaleString("ru-RU")} ₽ (FACT относительно сниппета).`,
     );
   } else {
     b.economics = 4;
@@ -115,7 +125,7 @@ export function scoreCandidate(
     b.demand = 6;
   }
 
-  // Legal всегда осторожно на stub
+  // Legal всегда осторожно без due diligence
   b.legal = 4;
   explanation.push(
     "Юридическая чистота не проверена — требуется due diligence (UNKNOWN).",
