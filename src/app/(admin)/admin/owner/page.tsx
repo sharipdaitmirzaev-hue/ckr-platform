@@ -1,8 +1,14 @@
 import { StatsCard } from "@/components/admin/stats-card";
 import { MetricCard } from "@/components/analytics/metric-card";
 import { AnalyticsChart } from "@/components/analytics/analytics-chart";
+import { LiaTodayWidget } from "@/components/lia/oi/today-widget";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import {
+  ensureLiaOiSeed,
+  getRecommendedCandidates,
+  getTodayStats,
+} from "@/lib/lia/oi/pipeline";
 import { getOwnerDashboard } from "@/lib/owner/dashboard";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -23,8 +29,13 @@ function formatWhen(iso: string) {
 }
 
 export default async function OwnerCabinetPage() {
-  await requireAdmin();
-  const data = await getOwnerDashboard();
+  const current = await requireAdmin();
+  await ensureLiaOiSeed(current.user.id);
+  const [data, oiStats, oiRecommended] = await Promise.all([
+    getOwnerDashboard(),
+    Promise.resolve(getTodayStats()),
+    Promise.resolve(getRecommendedCandidates(3)),
+  ]);
 
   const demandChart = [
     {
@@ -62,6 +73,8 @@ export default async function OwnerCabinetPage() {
         Версия {data.version.version} · канал {data.version.channel} · обновлено{" "}
         {formatWhen(data.generatedAt)}
       </p>
+
+      <LiaTodayWidget stats={oiStats} recommended={oiRecommended} />
 
       <section className="space-y-4">
         <h3 className="font-display text-xl text-foreground">Платформа сейчас</h3>
@@ -300,6 +313,9 @@ export default async function OwnerCabinetPage() {
       <section className="space-y-3">
         <h3 className="font-display text-xl text-foreground">Быстрые переходы</h3>
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <Link href="/admin/owner/lia" className="text-accent hover:underline">
+            Лия — Центр возможностей
+          </Link>
           <Link href="/admin/project-acquisition" className="text-accent hover:underline">
             Привлечение проектов
           </Link>

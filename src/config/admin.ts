@@ -11,6 +11,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Сводка владельца: заявки, предложения, Лия, CRM",
   },
   {
+    label: "Лия — Центр возможностей",
+    href: "/admin/owner/lia",
+    description: "Opportunity Intelligence: лента, поиск, дайджест",
+  },
+  {
     label: "Обзор",
     href: "/admin/dashboard",
     description: "Сводка по платформе",
