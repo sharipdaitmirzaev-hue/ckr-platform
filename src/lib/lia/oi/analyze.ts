@@ -3,19 +3,21 @@ import type { LiaOiCandidate, LiaOiSearchPlan } from "@/types/lia-oi";
 
 /**
  * Analyzer + provenance. Не выдумывает недостающие факты.
- * Snippet поисковика ≠ подтверждённый факт об объекте без маркировки.
  */
 export function analyzeCandidate(
   candidate: LiaOiCandidate,
   plan?: LiaOiSearchPlan,
 ): LiaOiCandidate {
   const isStub = candidate.isStub || candidate.sources.every((s) => s.isStub);
+  const isCatalog = candidate.isCatalogSource;
   const price = candidate.investmentRequired ?? candidate.askingPrice;
   const whyInteresting: string[] = [];
   const risks: string[] = [
     isStub
       ? "Данные из stub/demo — нельзя принимать инвестиционное решение без проверки первоисточника."
-      : "Данные из поискового сниппета — не due diligence. Обязательно откройте URL первоисточника.",
+      : candidate.enrichedFromFetch
+        ? "Данные частично с detail-страницы (safe-fetch). HTML untrusted — проверьте первоисточник."
+        : "Данные из поискового сниппета — не due diligence. Обязательно откройте URL первоисточника.",
   ];
   const unknowns: string[] = [];
   const toVerify: string[] = [
@@ -24,11 +26,20 @@ export function analyzeCandidate(
     "Реальные финансовые показатели",
   ];
 
+  if (isCatalog) {
+    whyInteresting.push(
+      "Это источник для дальнейшего поиска, а не конкретная возможность (LIST/CATEGORY/HOMEPAGE).",
+    );
+    risks.push("Каталожная страница — нет одного проверяемого объекта.");
+  } else if (candidate.pageType === "DETAIL") {
+    whyInteresting.push("Конкретная detail-страница объекта (INFERENCE по URL/title).");
+  }
+
   if (price != null) {
     whyInteresting.push(
       isStub
         ? `Ориентир вложений ${price.toLocaleString("ru-RU")} ₽ (FACT из stub-карточки).`
-        : `В тексте источника встречается сумма ${price.toLocaleString("ru-RU")} ₽ (FACT относительно сниппета; подтвердите на странице).`,
+        : `В тексте встречается сумма ${price.toLocaleString("ru-RU")} ₽ (FACT относительно доступного текста).`,
     );
   } else {
     unknowns.push("Цена / требуемые инвестиции");
@@ -36,19 +47,25 @@ export function analyzeCandidate(
 
   if (candidate.region) {
     whyInteresting.push(
-      `Локация: ${candidate.region}${candidate.city ? `, ${candidate.city}` : ""} (из текста результата).`,
+      `Локация: ${candidate.region}${candidate.city ? `, ${candidate.city}` : ""}.`,
     );
   } else {
     unknowns.push("Точный регион / адрес");
   }
 
   if (candidate.industry) {
-    whyInteresting.push(`Отраслевой контур: ${candidate.industry} (INFERENCE по ключевым словам).`);
+    whyInteresting.push(
+      `Отраслевой контур: ${candidate.industry} (INFERENCE по ключевым словам).`,
+    );
   }
 
-  if (plan?.intent === "investment_search") {
+  if (
+    plan?.intent === "investment_search" ||
+    plan?.intent === "investment_opportunities" ||
+    plan?.intent === "business_opportunities"
+  ) {
     whyInteresting.push(
-      "Совпадает с инвест-запросом владельца (INFERENCE по Search Plan).",
+      `Совпадает с запросом владельца (intent=${plan.intent}, INFERENCE по Search Plan).`,
     );
   }
 
@@ -83,7 +100,7 @@ export function analyzeCandidate(
     toVerify.push("Найти и верифицировать контакт");
   } else {
     whyInteresting.push(
-      "В тексте найден публичный контакт (FACT относительно сниппета).",
+      "В тексте найден публичный контакт (FACT относительно доступного текста).",
     );
   }
 
@@ -100,37 +117,29 @@ export function analyzeCandidate(
     plan,
   );
 
-  const recommendation =
-    score.priority === "HIGH_PRIORITY"
-      ? isStub
-        ? "Стоит разобрать подробнее: потенциал заметный, но stub-данные требуют проверки."
-        : "Высокий приоритет по эвристике — откройте первоисточник и решите, давать ли поручение Лие."
+  const recommendation = isCatalog
+    ? "Каталог: используйте как точку входа для ручного поиска конкретных лотов, не как сделку."
+    : score.priority === "HIGH_PRIORITY"
+      ? "Высокий приоритет — откройте первоисточник и решите, давать ли поручение Лие."
       : score.overall >= 55
         ? "Можно оставить в шорт-листе и дать Лие поручение на углубление."
         : "Пока слабый приоритет — смотреть только если тема стратегически важна.";
 
-  const nextStep =
-    score.confidence < 50
-      ? isStub
-        ? "Для live-данных настройте Serper (LIA_WEB_SEARCH_*) или откройте карточку для stub-разбора."
-        : "Откройте URL источника, подтвердите цену/статус, затем сохраните или поручите глубокую проверку."
+  const nextStep = isCatalog
+    ? "Открыть каталог и выбрать 1–2 конкретных объекта для повторного анализа."
+    : score.confidence < 50
+      ? "Откройте URL источника, подтвердите цену/статус, затем сохраните или поручите глубокую проверку."
       : "Открыть карточку, сохранить или поручить Лие глубокую проверку.";
 
   const cleanTitle = candidate.title.replace(/^\[STUB\]\s*/, "");
   const summary = [
-    isStub
-      ? `Предварительный анализ stub-сигнала «${cleanTitle}».`
-      : `Предварительный анализ live-сигнала «${cleanTitle}».`,
-    `Потенциал ${score.overall}/100, уверенность ${score.confidence}/100.`,
-    score.confidence < 50
-      ? "Возможность выглядит интересной, но данных недостаточно (UNKNOWN/ESTIMATE)."
-      : "Данных достаточно для первичного решения владельца — с проверкой первоисточника.",
+    isCatalog
+      ? `Каталог/листинг «${cleanTitle}» — не конкретная возможность.`
+      : isStub
+        ? `Предварительный анализ stub-сигнала «${cleanTitle}».`
+        : `Предварительный анализ live-сигнала «${cleanTitle}».`,
+    `quality ${score.quality}% · opportunity ${score.opportunity}/100 · confidence ${score.confidence}/100.`,
   ].join(" ");
-
-  const matchHints = [
-    "Сопоставить с инвесторами ЦКР (matching — отдельный этап)",
-    "Проверить проекты/заявки в каталоге ЦКР с похожим профилем",
-  ];
 
   return {
     ...candidate,
@@ -144,6 +153,9 @@ export function analyzeCandidate(
     toVerify,
     claims,
     score,
-    matchHints,
+    matchHints: [
+      "Сопоставить с инвесторами ЦКР (matching — отдельный этап)",
+      "Проверить проекты/заявки в каталоге ЦКР с похожим профилем",
+    ],
   };
 }

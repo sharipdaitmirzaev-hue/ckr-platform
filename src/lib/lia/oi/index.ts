@@ -1,4 +1,4 @@
-export { buildSearchPlan } from "@/lib/lia/oi/planner";
+export { buildSearchPlan, detectIntent, geographyToken } from "@/lib/lia/oi/planner";
 export {
   getInternetSearchProvider,
   StubInternetSearchProvider,
@@ -9,6 +9,8 @@ export { dedupeCandidates } from "@/lib/lia/oi/dedup";
 export { analyzeCandidate } from "@/lib/lia/oi/analyze";
 export { scoreCandidate } from "@/lib/lia/oi/score";
 export { cheapFilterHits } from "@/lib/lia/oi/filter";
+export { classifyPageType, isCatalogPageType } from "@/lib/lia/oi/page-type";
+export { enrichTopDetailCandidates } from "@/lib/lia/oi/enrich";
 export { resolveOiSearchMode, isOiLiveConfigured } from "@/lib/lia/oi/mode";
 export {
   runOwnerSearchPipeline,

@@ -25,11 +25,21 @@ type SearchResultView = {
     duplicatesRemoved: number;
     afterDedup: number;
     analyzed: number;
+    detailPages?: number;
+    catalogPagesDemoted?: number;
+    pagesFetched?: number;
   };
   candidates: Array<{
     id: string;
     title: string;
-    score: { overall: number; confidence: number };
+    pageType?: string;
+    isCatalogSource?: boolean;
+    score: {
+      overall: number;
+      confidence: number;
+      quality?: number;
+      opportunity?: number;
+    };
     isStub: boolean;
   }>;
 };
@@ -143,6 +153,20 @@ export function LiaOiSearchForm({
               <dt className="text-muted">Проанализировано</dt>
               <dd className="text-foreground">{result.stats.analyzed}</dd>
             </div>
+            <div>
+              <dt className="text-muted">DETAIL</dt>
+              <dd className="text-foreground">{result.stats.detailPages ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Каталогов (понижены)</dt>
+              <dd className="text-foreground">
+                {result.stats.catalogPagesDemoted ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted">safe-fetch</dt>
+              <dd className="text-foreground">{result.stats.pagesFetched ?? 0}</dd>
+            </div>
           </dl>
 
           <div>
@@ -161,7 +185,11 @@ export function LiaOiSearchForm({
                     </Link>
                     <span className="text-muted">
                       {" "}
-                      · {c.isStub ? "STUB" : "LIVE"} · {c.score.overall}/100
+                      · {c.pageType ?? "?"}
+                      {c.isCatalogSource ? " · каталог" : ""} ·{" "}
+                      {c.isStub ? "STUB" : "LIVE"} · quality{" "}
+                      {c.score.quality ?? "—"}% · opp{" "}
+                      {c.score.opportunity ?? c.score.overall}/100
                     </span>
                   </li>
                 ))}

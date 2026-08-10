@@ -22,10 +22,18 @@ export const LIA_OI_BUDGETS = {
   maxDeepAnalysesPerRun: 3,
   /**
    * Page fetches к первоисточникам (safe-fetch).
-   * Stage 2A: 0 по умолчанию — достаточно Serper snippet; fetch готов, но выключен.
+   * Stage 2A.1: только TOP DETAIL, ограниченно.
    */
-  maxFetchesPerSource: 0,
-  maxFetchesPerRun: 0,
+  maxFetchesPerSource: 1,
+  maxFetchesPerRun: 5,
+} as const;
+
+export const liaOiPageTypeLabels = {
+  DETAIL: "DETAIL",
+  LIST: "LIST",
+  CATEGORY: "CATEGORY",
+  HOMEPAGE: "HOMEPAGE",
+  UNKNOWN: "UNKNOWN",
 } as const;
 
 export const LIA_OI_STUB_BANNER =

@@ -1,4 +1,4 @@
-/** LIA Opportunity Intelligence — domain types (stage 1 + 2A). */
+/** LIA Opportunity Intelligence — domain types (stage 1 + 2A + 2A.1). */
 
 export const LIA_OI_PROVENANCE_KINDS = [
   "FACT",
@@ -7,6 +7,15 @@ export const LIA_OI_PROVENANCE_KINDS = [
   "UNKNOWN",
 ] as const;
 export type LiaOiProvenanceKind = (typeof LIA_OI_PROVENANCE_KINDS)[number];
+
+export const LIA_OI_PAGE_TYPES = [
+  "DETAIL",
+  "LIST",
+  "CATEGORY",
+  "HOMEPAGE",
+  "UNKNOWN",
+] as const;
+export type LiaOiPageType = (typeof LIA_OI_PAGE_TYPES)[number];
 
 export const LIA_OI_STATUSES = [
   "NEW",
@@ -95,10 +104,20 @@ export type LiaOiScoreBreakdown = {
 };
 
 export type LiaOiScore = {
+  /** Итоговый opportunity score (для сортировки ленты). */
   overall: number;
+  /** confidence_score */
   confidence: number;
+  /** relevance_score — совпадение с запросом/планом */
+  relevance: number;
+  /** quality_score — качество данных карточки */
+  quality: number;
+  /** opportunity_score — потенциал как бизнес-возможность */
+  opportunity: number;
   breakdown: LiaOiScoreBreakdown;
   explanation: string[];
+  /** Краткие причины попадания в TOP. */
+  whyTop: string[];
   priority: LiaOiPriority;
 };
 
@@ -108,7 +127,6 @@ export type LiaOiSourceRef = {
   name: string;
   url: string;
   publishedAt?: string;
-  /** Когда источник обнаружен OI. */
   discoveredAt?: string;
   isStub: boolean;
 };
@@ -151,16 +169,29 @@ export type LiaOiCandidate = {
   lastSeenAt: string;
   canonicalKey: string;
   rawStubIds: string[];
-  /** true, если карточка собрана только из stub-источников. */
   isStub: boolean;
   searchRequestId?: string;
+  /** Классификация страницы источника. */
+  pageType: LiaOiPageType;
+  /** true = каталог/листинг, не конкретная возможность. */
+  isCatalogSource: boolean;
+  /** Было ли обогащение через safe-fetch. */
+  enrichedFromFetch?: boolean;
 };
 
 export type LiaOiSearchIntent =
+  | "business_opportunities"
+  | "investment_opportunities"
   | "investment_search"
   | "business_for_sale"
+  | "assets"
+  | "real_estate"
   | "land_or_site"
+  | "suppliers"
+  | "buyers"
   | "buyers_or_demand"
+  | "support_programs"
+  | "tenders"
   | "hotel_or_tourism"
   | "equipment"
   | "general_opportunity";
@@ -187,7 +218,6 @@ export type LiaOiSearchRequest = {
   createdAt: string;
   createdBy: string;
   candidateIds: string[];
-  /** true = STUB, false = LIVE */
   stubMode: boolean;
   searchMode: "stub" | "live";
   providerLabel?: string;
@@ -242,6 +272,11 @@ export type LiaOiPipelineStats = {
   analyzed: number;
   providerErrors: number;
   providerUnavailable: boolean;
+  catalogPagesSeen?: number;
+  catalogPagesDemoted?: number;
+  detailPages?: number;
+  pagesFetched?: number;
+  pagesFetchFailed?: number;
 };
 
 export type LiaOiHypothesis = {

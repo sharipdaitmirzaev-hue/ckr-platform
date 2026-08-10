@@ -1,5 +1,6 @@
 import { OpportunityActions } from "@/components/lia/oi/opportunity-actions";
 import {
+  liaOiPageTypeLabels,
   liaOiPriorityLabels,
   liaOiStatusLabels,
 } from "@/config/lia-oi";
@@ -18,6 +19,7 @@ export function generateMetadata({ params }: Props): Metadata {
 export default function LiaOiOpportunityDetailPage({ params }: Props) {
   const item = getCandidate(params.id);
   if (!item) notFound();
+  const pageType = item.pageType ?? "UNKNOWN";
 
   return (
     <div className="space-y-8">
@@ -30,7 +32,8 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
         </Link>
         <p className="mt-4 text-xs uppercase tracking-[0.14em] text-muted">
           {liaOiStatusLabels[item.status]} ·{" "}
-          {liaOiPriorityLabels[item.score.priority]}
+          {liaOiPriorityLabels[item.score.priority]} ·{" "}
+          {liaOiPageTypeLabels[pageType]}
         </p>
         <h2 className="mt-2 font-display text-3xl text-foreground">
           {item.title}
@@ -38,13 +41,36 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
         <p className="mt-4 text-base leading-relaxed text-muted">
           {item.summary}
         </p>
+        {item.isCatalogSource ? (
+          <p className="mt-3 text-sm text-accent">
+            Это источник для дальнейшего поиска, а не конкретная возможность.
+          </p>
+        ) : null}
       </div>
 
       <OpportunityActions candidateId={item.id} />
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
-          <h3 className="font-display text-lg text-foreground">Почему интересно</h3>
+          <h3 className="font-display text-lg text-foreground">
+            Почему в TOP
+          </h3>
+          {item.score.whyTop?.length ? (
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
+              {item.score.whyTop.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
+              {item.whyInteresting.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+          <h3 className="pt-4 font-display text-lg text-foreground">
+            Почему интересно
+          </h3>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
             {item.whyInteresting.map((line) => (
               <li key={line}>{line}</li>
@@ -53,10 +79,34 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
         </div>
         <div className="space-y-3">
           <h3 className="font-display text-lg text-foreground">Оценка Лии</h3>
-          <p className="text-sm text-foreground">
-            Потенциал <strong>{item.score.overall}</strong>/100 · Уверенность{" "}
-            <strong>{item.score.confidence}</strong>/100
-          </p>
+          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-muted">Тип страницы</dt>
+              <dd className="text-foreground">{liaOiPageTypeLabels[pageType]}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Качество данных</dt>
+              <dd className="text-foreground">{item.score.quality ?? 0}%</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Relevance</dt>
+              <dd className="text-foreground">{item.score.relevance ?? 0}/100</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Opportunity</dt>
+              <dd className="text-foreground">
+                {item.score.opportunity ?? item.score.overall}/100
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted">Confidence</dt>
+              <dd className="text-foreground">{item.score.confidence}/100</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Overall</dt>
+              <dd className="text-foreground">{item.score.overall}/100</dd>
+            </div>
+          </dl>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
             {item.score.explanation.map((line) => (
               <li key={line}>{line}</li>

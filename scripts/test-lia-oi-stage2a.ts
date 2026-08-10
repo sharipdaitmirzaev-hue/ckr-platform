@@ -155,7 +155,8 @@ async function main() {
     assert.equal(plan.budgetMax, 30_000_000);
     assert.ok(plan.regions.includes("Россия"));
     assert.ok(plan.queries.length >= 3);
-    assert.ok(plan.queries.every((q) => /росси|рф/i.test(q)));
+    assert.ok(plan.queries.every((q) => /росси/i.test(q)));
+    assert.ok(plan.queries.every((q) => !/россия\s+россия|россия\s+рф/i.test(q)));
     ok("Search Planner: several Russia queries");
   }
 

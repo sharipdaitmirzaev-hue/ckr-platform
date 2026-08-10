@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test scripts/test-register-bytestring.mjs && npx --yes tsx scripts/test-lia-oi-stage1.ts && npx --yes tsx scripts/test-lia-oi-stage2a.ts",
+    "test": "node --test scripts/test-register-bytestring.mjs && npx --yes tsx scripts/test-lia-oi-stage1.ts && npx --yes tsx scripts/test-lia-oi-stage2a.ts && npx --yes tsx scripts/test-lia-oi-stage2a1.ts",
     "seed:demo": "node scripts/seed-demo.mjs",
     "seed:tinda": "node scripts/seed-tinda.mjs"
   },

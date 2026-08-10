@@ -1,5 +1,6 @@
 import { oiHash, oiId } from "@/lib/lia/oi/id";
 import type { InternetSearchHit } from "@/lib/lia/oi/internet/types";
+import { classifyPageType, isCatalogPageType } from "@/lib/lia/oi/page-type";
 import type { LiaOiCandidate, LiaOiClaim, LiaOiSourceRef } from "@/types/lia-oi";
 import { emptyScore } from "@/lib/lia/oi/score";
 
@@ -21,6 +22,14 @@ export function normalizeHit(hit: InternetSearchHit): LiaOiCandidate {
   const discoveredAt = hit.discoveredAt || now;
   const canonical = canonicalUrl(hit.url);
   const isStub = hit.isStub === true;
+  const pageType = isStub
+    ? ("DETAIL" as const)
+    : classifyPageType({
+        url: hit.url,
+        title: hit.title,
+        snippet: hit.snippet,
+      });
+  const isCatalogSource = !isStub && isCatalogPageType(pageType);
 
   const source: LiaOiSourceRef = {
     id: oiId("src"),
@@ -50,6 +59,13 @@ export function normalizeHit(hit: InternetSearchHit): LiaOiCandidate {
       sourceName: hit.sourceName,
       sourceUrl: hit.url,
       note: "URL первоисточника.",
+    },
+    {
+      field: "page_type",
+      value: pageType,
+      kind: "INFERENCE",
+      sourceUrl: hit.url,
+      note: "Эвристика по URL/title/snippet.",
     },
   ];
 
@@ -123,5 +139,7 @@ export function normalizeHit(hit: InternetSearchHit): LiaOiCandidate {
     canonicalKey: oiHash(canonical.toLowerCase()),
     rawStubIds: isStub ? [hit.id] : [],
     isStub,
+    pageType,
+    isCatalogSource,
   };
 }

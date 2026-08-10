@@ -1,6 +1,7 @@
 import { LIA_OI_BUDGETS, LIA_OI_LIVE_UNAVAILABLE } from "@/config/lia-oi";
 import { analyzeCandidate } from "@/lib/lia/oi/analyze";
 import { dedupeCandidates } from "@/lib/lia/oi/dedup";
+import { enrichTopDetailCandidates } from "@/lib/lia/oi/enrich";
 import { cheapFilterHits } from "@/lib/lia/oi/filter";
 import { oiId } from "@/lib/lia/oi/id";
 import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
@@ -120,9 +121,32 @@ export async function runOwnerSearchPipeline(input: {
   );
   const duplicatesRemoved = Math.max(0, beforeDedup - deduped.length);
 
-  const analyzed = deduped
+  const catalogPagesSeen = deduped.filter((c) => c.isCatalogSource).length;
+
+  // Предварительный score → выбор TOP DETAIL для safe-fetch
+  const working = deduped
     .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun)
-    .map((c) => analyzeCandidate(c, plan));
+    .map((c) => analyzeCandidate(c, plan))
+    .sort((a, b) => b.score.overall - a.score.overall);
+
+  const enrich =
+    modeInfo.mode === "live"
+      ? await enrichTopDetailCandidates(working)
+      : { candidates: working, stats: { pagesFetched: 0, pagesFetchFailed: 0 } };
+
+  // После enrichment — пересчёт анализа/score
+  const analyzed = enrich.candidates
+    .map((c) => analyzeCandidate(c, plan))
+    .sort((a, b) => {
+      // DETAIL выше каталогов при близком overall
+      if (a.isCatalogSource !== b.isCatalogSource) {
+        return a.isCatalogSource ? 1 : -1;
+      }
+      return b.score.overall - a.score.overall;
+    });
+
+  const detailPages = analyzed.filter((c) => c.pageType === "DETAIL").length;
+  const catalogPagesDemoted = analyzed.filter((c) => c.isCatalogSource).length;
 
   const stats: LiaOiPipelineStats = {
     queriesRun: Math.min(plan.queries.length, LIA_OI_BUDGETS.maxQueriesPerPlan),
@@ -137,6 +161,11 @@ export async function runOwnerSearchPipeline(input: {
     analyzed: analyzed.length,
     providerErrors: errors,
     providerUnavailable,
+    catalogPagesSeen,
+    catalogPagesDemoted,
+    detailPages,
+    pagesFetched: enrich.stats.pagesFetched,
+    pagesFetchFailed: enrich.stats.pagesFetchFailed,
   };
 
   const request: LiaOiSearchRequest = {
@@ -175,13 +204,15 @@ export async function runOwnerSearchPipeline(input: {
       `Гипотез/запросов: ${stats.queriesRun}.`,
       `Интернет-результатов: ${stats.signalsRaw}. Отброшено фильтром: ${stats.filteredOut}. Дублей: ${stats.duplicatesRemoved}.`,
       `После dedup: ${stats.afterDedup}. Проанализировано: ${stats.analyzed}.`,
+      `DETAIL: ${stats.detailPages ?? 0}. Каталогов (понижены): ${stats.catalogPagesDemoted ?? 0}.`,
+      `safe-fetch: ok=${stats.pagesFetched ?? 0}, fail=${stats.pagesFetchFailed ?? 0}.`,
       "",
       "Search Plan queries:",
       ...plan.queries.map((q, i) => `  ${i + 1}. ${q}`),
       "",
       ...analyzed.slice(0, 5).map(
         (c, i) =>
-          `${i + 1}. ${c.title} — потенциал ${c.score.overall}/100, уверенность ${c.score.confidence}/100 · ${c.isStub ? "STUB" : "LIVE"}`,
+          `${i + 1}. [${c.pageType}] ${c.title} — opp ${c.score.opportunity}/100, quality ${c.score.quality}% · ${c.isStub ? "STUB" : "LIVE"}`,
       ),
     ]
       .filter(Boolean)
@@ -195,6 +226,9 @@ export async function runOwnerSearchPipeline(input: {
       highPriority: analyzed.filter((c) => c.score.priority === "HIGH_PRIORITY")
         .length,
       providerErrors: stats.providerErrors,
+      detailPages: stats.detailPages ?? 0,
+      catalogPagesDemoted: stats.catalogPagesDemoted ?? 0,
+      pagesFetched: stats.pagesFetched ?? 0,
     },
     candidateIds: analyzed.map((c) => c.id),
     createdAt: new Date().toISOString(),
