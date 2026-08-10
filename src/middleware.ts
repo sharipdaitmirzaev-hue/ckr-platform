@@ -12,6 +12,59 @@ const protectedPrefixes = [
   "/messages",
 ];
 
+const PRODUCTION_ORIGIN = "https://ckr-center.ru";
+
+/**
+ * Next.js behind nginx on 127.0.0.1:3000 may build nextUrl with host
+ * localhost:3000. Never send users there in production.
+ */
+function appOrigin(request: NextRequest): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (
+    fromEnv &&
+    !/localhost/i.test(fromEnv) &&
+    !/127\.0\.0\.1/.test(fromEnv)
+  ) {
+    return fromEnv;
+  }
+
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]
+    ?.trim();
+  const host = forwardedHost || request.headers.get("host")?.trim();
+  const proto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    request.nextUrl.protocol.replace(":", "") ||
+    "https";
+
+  if (
+    host &&
+    !/localhost/i.test(host) &&
+    !/127\.0\.0\.1/.test(host)
+  ) {
+    return `${proto}://${host}`;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return PRODUCTION_ORIGIN;
+  }
+
+  return request.nextUrl.origin;
+}
+
+function redirectPath(
+  request: NextRequest,
+  pathname: string,
+  searchParams?: Record<string, string>,
+) {
+  const url = new URL(pathname, `${appOrigin(request)}/`);
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      url.searchParams.set(key, value);
+    }
+  }
+  return NextResponse.redirect(url);
+}
+
 export async function middleware(request: NextRequest) {
   const { response, user, supabase } = await updateSession(request);
   const { pathname } = request.nextUrl;
@@ -28,10 +81,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/operator" || pathname.startsWith("/operator/");
 
   if (!user && isProtected) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return redirectPath(request, "/login", { next: pathname });
   }
 
   if (user && supabase) {
@@ -43,10 +93,7 @@ export async function middleware(request: NextRequest) {
 
     if (profile?.is_blocked) {
       await supabase.auth.signOut();
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("error", "blocked");
-      return NextResponse.redirect(url);
+      return redirectPath(request, "/login", { error: "blocked" });
     }
 
     if (isAdminRoute) {
@@ -73,15 +120,14 @@ export async function middleware(request: NextRequest) {
           isOperator &&
           (pathname === "/admin" || pathname === "/admin/")
         ) {
-          const url = request.nextUrl.clone();
-          url.pathname = "/admin/crm";
-          return NextResponse.redirect(url);
+          return redirectPath(request, "/admin/crm");
         }
 
         if (!(isOperator && isStaffAdminPath(pathname))) {
-          const url = request.nextUrl.clone();
-          url.pathname = isOperator ? "/operator" : "/dashboard";
-          return NextResponse.redirect(url);
+          return redirectPath(
+            request,
+            isOperator ? "/operator" : "/dashboard",
+          );
         }
       }
     }
@@ -103,17 +149,13 @@ export async function middleware(request: NextRequest) {
       ]);
 
       if (!adminRoles?.length && !operatorRoles?.length) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
+        return redirectPath(request, "/dashboard");
       }
     }
   }
 
   if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return redirectPath(request, "/dashboard");
   }
 
   return response;
