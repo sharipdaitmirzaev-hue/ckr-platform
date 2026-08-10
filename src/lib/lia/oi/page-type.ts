@@ -44,6 +44,18 @@ export function classifyPageType(input: {
     return /category|rubric|tag/i.test(path) ? "CATEGORY" : "LIST";
   }
 
+  // Editorial / SEO — раньше DETAIL (иначе /articles/887322/ ловится как id)
+  if (
+    /\/(blog|blogs|article|articles|news|stories|nezhiloe|post|posts)\b/i.test(
+      path,
+    ) ||
+    /\b(как (я|продать|купить)|гид по|что такое|инвестиции в\b.*\bнедвижимость\b|быстро и дорого|не продешевить)\b/i.test(
+      blob,
+    )
+  ) {
+    return "UNKNOWN";
+  }
+
   if (LIST_TITLE.test(input.title) && !DETAIL_HINT.test(path)) {
     return "LIST";
   }
@@ -58,6 +70,14 @@ export function classifyPageType(input: {
     ) {
       return "CATEGORY";
     }
+    // «Продажа N объектов» без object-path — скорее витрина/подборка
+    if (
+      !DETAIL_HINT.test(path) &&
+      /\b\d+\s+объект/i.test(blob) &&
+      !/\/(obekt|object|offer|lot|item)\b/i.test(path)
+    ) {
+      return "LIST";
+    }
     return "DETAIL";
   }
 
@@ -66,16 +86,11 @@ export function classifyPageType(input: {
     if (/products?\/\d+\/?$/i.test(path) && LIST_TITLE.test(input.title)) {
       return "CATEGORY";
     }
+    // /obekty/345/ — detail object; /cat-biznes/ — not
+    if (/\/(cat-|category|katalog|catalog|search|tag)\b/i.test(path)) {
+      return "LIST";
+    }
     return "DETAIL";
-  }
-
-  // Editorial / SEO articles — не конкретная возможность (оставляем UNKNOWN,
-  // scoring понизит как SEO без предложения).
-  if (
-    /\/(blog|blogs|article|articles|news|stories|nezhiloe)\b/i.test(path) ||
-    /\b(как я|гид по|что такое|инвестиции в\b.*\bнедвижимость\b)/i.test(blob)
-  ) {
-    return "UNKNOWN";
   }
 
   if (LIST_TITLE.test(blob)) return "LIST";

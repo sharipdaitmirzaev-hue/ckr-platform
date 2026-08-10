@@ -99,6 +99,20 @@ console.log("\nLIA OI Stage 2A.1 — quality checks\n");
     }),
     "LIST",
   );
+  assert.equal(
+    classifyPageType({
+      url: "https://habr.com/ru/articles/887322/",
+      title: "Как продать свой бизнес быстро и дорого",
+    }),
+    "UNKNOWN",
+  );
+  assert.equal(
+    classifyPageType({
+      url: "https://optima-invest.ru/obekty/345/",
+      title: "Продажа объекта оптовой торговли",
+    }),
+    "DETAIL",
+  );
   assert.ok(isCatalogPageType("LIST"));
   assert.ok(!isCatalogPageType("DETAIL"));
   ok("page_type DETAIL/LIST/HOMEPAGE");
