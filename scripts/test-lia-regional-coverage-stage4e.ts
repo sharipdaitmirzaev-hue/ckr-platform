@@ -139,7 +139,7 @@ async function main() {
     }
     const dag = listRegionalSources({ region: "Дагестан", enabledOnly: true });
     assert.ok(dag.some((s) => s.domain === "zakupki.gov.ru"));
-    assert.ok(dag.some((s) => s.domain === "mbdag.ru"));
+    assert.ok(dag.some((s) => s.domain === "mb05.ru" || s.domain === "mbdag.ru"));
     const domains = domainsForNeed({
       regions: ["Дагестан"],
       intentType: "SEEK_CONTRACT",

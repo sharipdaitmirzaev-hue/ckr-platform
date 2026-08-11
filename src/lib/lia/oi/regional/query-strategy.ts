@@ -117,7 +117,7 @@ export function buildRegionalQueryStrategies(input: {
 
     if (input.intentType === "SEEK_SUPPORT") {
       for (const domain of domains.filter((d) =>
-        /mbdag|minec|minprom|mcxrd|corpmsp|e-dag/i.test(d),
+        /mb05|cppdag|minec|minprom|mcxrd|corpmsp|e-dag|mspinvestrd/i.test(d),
       )) {
         push({
           id: `support_${domain}`,
@@ -140,7 +140,7 @@ export function buildRegionalQueryStrategies(input: {
 
     if (input.intentType === "INVEST" || input.intentType === "SEEK_PROJECT") {
       for (const domain of domains.filter((d) =>
-        /invest|krd|minec|stavregion|investstav/i.test(d),
+        /dagestaninvest|mspinvestrd|minec|stavregion|investstav|invest/i.test(d),
       )) {
         push({
           id: `invest_${domain}`,

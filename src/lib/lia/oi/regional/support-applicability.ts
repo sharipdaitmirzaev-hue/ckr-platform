@@ -10,7 +10,7 @@ const FEDERAL_DOMAINS =
   /corpmsp\.ru|мсп\.рф|xn--|economy\.gov\.ru|minpromtorg\.gov\.ru|mcx\.gov\.ru|smb\.gov\.ru|фрп\.рф|rftr\.ru/i;
 
 const REGIONAL_DAGESTAN =
-  /e-dag\.ru|mbdag\.ru|mcxrd\.ru|investindagestan\.ru|krd-rd\.ru|minec\.|minprom\./i;
+  /e-dag\.ru|mb05\.ru|cppdag\.ru|mcxrd\.ru|dagestaninvest\.ru|mspinvestrd\.ru|krd-rd\.ru|minec\.|minprom\./i;
 
 export type SupportApplicability = {
   regionApplicability: string;
