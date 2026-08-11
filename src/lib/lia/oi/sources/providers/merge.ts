@@ -86,7 +86,7 @@ export function mergeSerperWithOfficial(
     ? left
     : isOfficialChannel(right)
       ? right
-      : left.sourceConfidence >= (right.sourceConfidence ?? 0)
+      : (left.sourceConfidence ?? 0) >= (right.sourceConfidence ?? 0)
         ? left
         : right;
   const discovery = official === left ? right : left;
