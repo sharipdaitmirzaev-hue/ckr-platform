@@ -1,9 +1,10 @@
 -- =============================================================================
 -- Business Graph — Stage 3A Foundation (PREPARED ONLY)
 -- =============================================================================
--- DO NOT apply to production without explicit owner confirmation.
 -- Additive only. Does NOT alter lia_oi_* or marketplace core tables.
 -- Matching / Synthesis / Scheduler are OUT OF SCOPE.
+-- Apply via scripts/apply-business-graph-stage3a-production.sh
+-- (requires CKR_CONFIRM_BUSINESS_GRAPH_APPLY=YES) after local dry-run.
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------

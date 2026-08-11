@@ -1,6 +1,12 @@
+import { EdgeOwnerActions } from "@/components/business-graph/edge-owner-actions";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
 import { loadStage3aFixtureScenario } from "@/lib/business-graph/fixtures/stage3a-scenario";
-import { getBusinessGraphService } from "@/lib/business-graph/service";
+import { resolveBusinessGraphStoreMode } from "@/lib/business-graph/mode";
+import {
+  createMemoryBusinessGraphService,
+  getBusinessGraphService,
+  setBusinessGraphServiceForTests,
+} from "@/lib/business-graph/service";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -18,19 +24,42 @@ export default async function OwnerBusinessGraphPage({
   const q = (sp.q || "").trim();
   const nodeId = (sp.node || "").trim();
 
-  // Stage 3A: in-memory fixture until migration is applied.
-  loadStage3aFixtureScenario();
-  const svc = getBusinessGraphService();
+  let storeMode: "memory" | "supabase" = "memory";
+  let usingFixture = false;
+
+  try {
+    storeMode = resolveBusinessGraphStoreMode();
+  } catch {
+    storeMode = "memory";
+  }
+
+  const svc =
+    storeMode === "supabase"
+      ? getBusinessGraphService("supabase")
+      : getBusinessGraphService("memory");
+
+  if (storeMode === "memory") {
+    const existing = await svc.findNodes({ limit: 1 });
+    if (existing.length === 0) {
+      const seeded = await loadStage3aFixtureScenario(
+        createMemoryBusinessGraphService(),
+      );
+      setBusinessGraphServiceForTests(seeded.service);
+    }
+    usingFixture = true;
+  }
+
+  const graph = getBusinessGraphService(storeMode === "supabase" ? "supabase" : "memory");
 
   const nodes = q
-    ? svc.findNodes({ q, limit: 40 })
-    : svc.findNodes({ limit: 40 });
+    ? await graph.findNodes({ q, limit: 40 })
+    : await graph.findNodes({ limit: 40 });
   const selected =
-    (nodeId ? svc.getNode(nodeId) : null) || nodes[0] || null;
-  const neighbors = selected ? svc.getNeighbors(selected.id) : null;
-  const aliases = selected ? svc.listAliases(selected.id) : [];
-  const history = selected ? svc.getNodeHistory(selected.id) : [];
-  const sources = selected ? svc.listNodeSources(selected.id) : [];
+    (nodeId ? await graph.getNode(nodeId) : null) || nodes[0] || null;
+  const neighbors = selected ? await graph.getNeighbors(selected.id) : null;
+  const aliases = selected ? await graph.listAliases(selected.id) : [];
+  const history = selected ? await graph.getNodeHistory(selected.id) : [];
+  const sources = selected ? await graph.listNodeSources(selected.id) : [];
 
   return (
     <div className="space-y-8">
@@ -42,9 +71,9 @@ export default async function OwnerBusinessGraphPage({
           Graph Viewer
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
-          Stage 3A foundation: поиск узлов, карточка, связи, provenance и
-          история. Данные сейчас из in-memory fixture — migration в production
-          не применена. Matching Engine не активен.
+          Поиск узлов, карточка, связи, provenance и история. Matching Engine не
+          активен. Store: <span className="text-foreground">{storeMode}</span>
+          {usingFixture ? " · fixture scenario" : ""}.
         </p>
         <p className="mt-2 text-sm">
           <Link href="/admin/owner" className="text-accent hover:underline">
@@ -167,6 +196,7 @@ export default async function OwnerBusinessGraphPage({
                   items={neighbors?.outgoing || []}
                   direction="out"
                   q={q}
+                  selectedNodeId={selected.id}
                 />
               </div>
 
@@ -178,6 +208,7 @@ export default async function OwnerBusinessGraphPage({
                   items={neighbors?.incoming || []}
                   direction="in"
                   q={q}
+                  selectedNodeId={selected.id}
                 />
               </div>
 
@@ -199,12 +230,6 @@ export default async function OwnerBusinessGraphPage({
                   </ul>
                 )}
               </div>
-
-              <p className="text-xs text-muted">
-                Owner actions (confirm/reject/comment) доступны через
-                BusinessGraphService; server actions подключим после apply
-                migration.
-              </p>
             </>
           )}
         </section>
@@ -217,6 +242,7 @@ function EdgeList({
   items,
   direction,
   q,
+  selectedNodeId,
 }: {
   items: Array<{
     edge: {
@@ -229,11 +255,13 @@ function EdgeList({
       createdByKind: string;
       createdAt: string;
       status: string;
+      ownerComment?: string | null;
     };
     node: { id: string; title: string; nodeType: string };
   }>;
   direction: "in" | "out";
   q: string;
+  selectedNodeId: string;
 }) {
   if (items.length === 0) {
     return <p className="text-sm text-muted">Нет связей.</p>;
@@ -265,10 +293,16 @@ function EdgeList({
           {edge.reasoningSummary ? (
             <p className="mt-1 text-muted">{edge.reasoningSummary}</p>
           ) : null}
+          {edge.ownerComment ? (
+            <p className="mt-1 text-xs text-foreground">
+              Owner: {edge.ownerComment}
+            </p>
+          ) : null}
           {edge.source ? (
             <p className="mt-1 text-xs text-muted">source: {edge.source}</p>
           ) : null}
           <p className="mt-1 text-xs text-muted">{edge.createdAt}</p>
+          <EdgeOwnerActions edgeId={edge.id} nodeId={selectedNodeId} />
         </li>
       ))}
     </ul>

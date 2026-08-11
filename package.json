@@ -12,6 +12,7 @@
     "test:lia-oi-stage2c1": "npx --yes tsx scripts/test-lia-oi-stage2c1.ts",
     "test:lia-oi-stage2c3": "npx --yes tsx scripts/test-lia-oi-stage2c3.ts",
     "test:business-graph-stage3a": "npx --yes tsx scripts/test-business-graph-stage3a.ts",
+    "test:business-graph-dryrun": "bash scripts/business-graph-dryrun/run.sh",
     "test:lia-oi-dryrun": "npx --yes tsx scripts/test-lia-oi-stage2b1-dryrun.ts",
     "test:lia-oi-dryrun:restart": "npx --yes tsx scripts/test-lia-oi-stage2b1-dryrun.ts --restart-check",
     "seed:demo": "node scripts/seed-demo.mjs",

@@ -1,12 +1,12 @@
 /**
- * BusinessGraphService — Stage 3A foundation (memory store).
- * Supabase backend activates only after migration apply (not done).
+ * BusinessGraphService — Stage 3A foundation.
+ * memory (default) | supabase via BUSINESS_GRAPH_STORE.
  */
 
 import {
+  investmentOfferToNodeInput,
   oiCandidateToNodeInput,
   projectToNodeInput,
-  investmentOfferToNodeInput,
 } from "@/lib/business-graph/bridge";
 import { bgId, normalizeAlias } from "@/lib/business-graph/id";
 import {
@@ -14,10 +14,14 @@ import {
   resolveIdentity,
   shouldMerge,
 } from "@/lib/business-graph/identity";
+import { MemoryBusinessGraphRepository } from "@/lib/business-graph/memory-repository";
 import {
-  getBusinessGraphMemoryStore,
-  resetBusinessGraphMemoryStore,
-} from "@/lib/business-graph/memory-store";
+  resolveBusinessGraphStoreMode,
+  type BusinessGraphStoreMode,
+} from "@/lib/business-graph/mode";
+import type { BusinessGraphRepository } from "@/lib/business-graph/repository";
+import { createBusinessGraphAdminClient } from "@/lib/business-graph/supabase-client";
+import { SupabaseBusinessGraphRepository } from "@/lib/business-graph/supabase-repository";
 import type {
   BusinessAlias,
   BusinessEdge,
@@ -33,148 +37,115 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function pushEvent(
-  partial: Omit<BusinessGraphEvent, "id" | "createdAt">,
-): BusinessGraphEvent {
-  const store = getBusinessGraphMemoryStore();
-  const event: BusinessGraphEvent = {
-    id: bgId(),
-    createdAt: now(),
-    ...partial,
-  };
-  store.events.push(event);
-  return event;
-}
-
 export class BusinessGraphService {
-  resetForTests(): void {
-    resetBusinessGraphMemoryStore();
+  constructor(private readonly repo: BusinessGraphRepository) {}
+
+  get modeHint(): string {
+    return this.repo instanceof SupabaseBusinessGraphRepository
+      ? "supabase"
+      : "memory";
   }
 
-  getNode(id: string): BusinessNode | null {
-    return getBusinessGraphMemoryStore().nodes.get(id) ?? null;
+  async resetForTests(): Promise<void> {
+    await this.repo.resetForTests?.();
   }
 
-  findNodes(filter: {
+  async getNode(id: string): Promise<BusinessNode | null> {
+    return this.repo.getNode(id);
+  }
+
+  async findNodes(filter: {
     nodeType?: string;
     region?: string;
     q?: string;
+    visibility?: string;
     limit?: number;
-  }): BusinessNode[] {
-    const store = getBusinessGraphMemoryStore();
-    let list = Array.from(store.nodes.values()).filter(
-      (n) => n.status !== "MERGED",
-    );
-    if (filter.nodeType) {
-      list = list.filter((n) => n.nodeType === filter.nodeType);
-    }
-    if (filter.region) {
-      list = list.filter(
-        (n) => (n.region || "").toLowerCase() === filter.region!.toLowerCase(),
-      );
-    }
-    if (filter.q) {
-      const q = filter.q.toLowerCase();
-      list = list.filter(
-        (n) =>
-          n.title.toLowerCase().includes(q) ||
-          n.description.toLowerCase().includes(q),
-      );
-    }
-    return list.slice(0, filter.limit ?? 50);
+  }): Promise<BusinessNode[]> {
+    return this.repo.findNodes(filter);
   }
 
-  getEdges(filter?: {
+  async getEdges(filter?: {
     nodeId?: string;
     relationshipType?: string;
     currentOnly?: boolean;
-  }): BusinessEdge[] {
-    const store = getBusinessGraphMemoryStore();
-    let list = Array.from(store.edges.values());
-    if (filter?.nodeId) {
-      list = list.filter(
-        (e) =>
-          e.sourceNodeId === filter.nodeId || e.targetNodeId === filter.nodeId,
-      );
-    }
-    if (filter?.relationshipType) {
-      list = list.filter((e) => e.relationshipType === filter.relationshipType);
-    }
-    if (filter?.currentOnly !== false) {
-      list = list.filter((e) => e.isCurrent);
-    }
-    return list;
+  }): Promise<BusinessEdge[]> {
+    return this.repo.findEdges({
+      nodeId: filter?.nodeId,
+      relationshipType: filter?.relationshipType,
+      currentOnly: filter?.currentOnly,
+    });
   }
 
-  getNeighbors(nodeId: string): {
+  async getNeighbors(nodeId: string): Promise<{
     outgoing: Array<{ edge: BusinessEdge; node: BusinessNode }>;
     incoming: Array<{ edge: BusinessEdge; node: BusinessNode }>;
-  } {
-    const store = getBusinessGraphMemoryStore();
-    const edges = this.getEdges({ nodeId, currentOnly: true });
+  }> {
+    const edges = await this.repo.findEdges({ nodeId, currentOnly: true });
     const outgoing = [];
     const incoming = [];
     for (const edge of edges) {
       if (edge.sourceNodeId === nodeId) {
-        const node = store.nodes.get(edge.targetNodeId);
+        const node = await this.repo.getNode(edge.targetNodeId);
         if (node) outgoing.push({ edge, node });
       } else if (edge.targetNodeId === nodeId) {
-        const node = store.nodes.get(edge.sourceNodeId);
+        const node = await this.repo.getNode(edge.sourceNodeId);
         if (node) incoming.push({ edge, node });
       }
     }
     return { outgoing, incoming };
   }
 
-  createOrUpdateNode(input: CreateNodeInput): {
+  private async pushEvent(
+    partial: Omit<BusinessGraphEvent, "id" | "createdAt">,
+  ): Promise<BusinessGraphEvent> {
+    const event: BusinessGraphEvent = {
+      id: bgId(),
+      createdAt: now(),
+      ...partial,
+    };
+    await this.repo.appendEvent(event);
+    return event;
+  }
+
+  async createOrUpdateNode(input: CreateNodeInput): Promise<{
     node: BusinessNode;
     created: boolean;
-  } {
-    const store = getBusinessGraphMemoryStore();
-    const existing = Array.from(store.nodes.values());
-    const match = resolveIdentity(existing, input);
+  }> {
     const fingerprint = buildGraphFingerprint(input);
     const ts = now();
 
-    if (shouldMerge(match) && match) {
-      const prev = match.node;
-      const updated: BusinessNode = {
-        ...prev,
-        title: input.title || prev.title,
-        description: input.description ?? prev.description,
-        sourceUrl: input.sourceUrl ?? prev.sourceUrl,
-        region: input.region ?? prev.region,
-        city: input.city ?? prev.city,
-        structuredData: {
-          ...prev.structuredData,
-          ...(input.structuredData || {}),
-        },
-        dataConfidence: Math.max(
-          prev.dataConfidence,
-          input.dataConfidence ?? 0,
-        ),
-        dataQualityScore: Math.max(
-          prev.dataQualityScore,
-          input.dataQualityScore ?? 0,
-        ),
-        opportunityAttractiveness:
-          input.opportunityAttractiveness ?? prev.opportunityAttractiveness,
-      fingerprint: prev.fingerprint || fingerprint || null,
-      sourceType: input.sourceType ?? prev.sourceType,
-      sourceId: input.sourceId ?? prev.sourceId,
-      internalEntityType: input.internalEntityType ?? prev.internalEntityType,
-      internalEntityId: input.internalEntityId ?? prev.internalEntityId,
-      lastSeenAt: ts,
-      updatedAt: ts,
-    };
-    store.nodes.set(updated.id, updated);
-      pushEvent({
-        eventType: "NODE_UPDATED",
-        nodeId: updated.id,
-        payload: { reason: match.reason },
-        actorKind: "SYSTEM",
+    // Fast path: exact source / internal / fingerprint lookups
+    if (input.sourceType && input.sourceId) {
+      const bySource = await this.repo.findNodes({
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        limit: 1,
       });
-      return { node: updated, created: false };
+      if (bySource[0]) {
+        return this.updateExistingNode(bySource[0], input, fingerprint, ts);
+      }
+    }
+    if (input.internalEntityType && input.internalEntityId) {
+      const byInternal = await this.repo.findNodes({
+        internalEntityType: input.internalEntityType,
+        internalEntityId: input.internalEntityId,
+        limit: 1,
+      });
+      if (byInternal[0]) {
+        return this.updateExistingNode(byInternal[0], input, fingerprint, ts);
+      }
+    }
+    if (fingerprint) {
+      const byFp = await this.repo.findNodes({ fingerprint, limit: 1 });
+      if (byFp[0]) {
+        return this.updateExistingNode(byFp[0], input, fingerprint, ts);
+      }
+    }
+
+    const existing = await this.repo.listNodesForIdentity(500);
+    const match = resolveIdentity(existing, input);
+    if (shouldMerge(match) && match) {
+      return this.updateExistingNode(match.node, input, fingerprint, ts, match.reason);
     }
 
     const node: BusinessNode = {
@@ -204,8 +175,8 @@ export class BusinessGraphService {
       firstSeenAt: ts,
       lastSeenAt: ts,
     };
-    store.nodes.set(node.id, node);
-    pushEvent({
+    await this.repo.upsertNode(node);
+    await this.pushEvent({
       eventType: "NODE_CREATED",
       nodeId: node.id,
       payload: { nodeType: node.nodeType },
@@ -214,28 +185,68 @@ export class BusinessGraphService {
     return { node, created: true };
   }
 
-  createOrUpdateEdge(input: CreateEdgeInput): {
+  private async updateExistingNode(
+    prev: BusinessNode,
+    input: CreateNodeInput,
+    fingerprint: string | null,
+    ts: string,
+    reason = "update",
+  ): Promise<{ node: BusinessNode; created: boolean }> {
+    const updated: BusinessNode = {
+      ...prev,
+      title: input.title || prev.title,
+      description: input.description ?? prev.description,
+      sourceUrl: input.sourceUrl ?? prev.sourceUrl,
+      region: input.region ?? prev.region,
+      city: input.city ?? prev.city,
+      structuredData: {
+        ...prev.structuredData,
+        ...(input.structuredData || {}),
+      },
+      dataConfidence: Math.max(prev.dataConfidence, input.dataConfidence ?? 0),
+      dataQualityScore: Math.max(
+        prev.dataQualityScore,
+        input.dataQualityScore ?? 0,
+      ),
+      opportunityAttractiveness:
+        input.opportunityAttractiveness ?? prev.opportunityAttractiveness,
+      fingerprint: prev.fingerprint || fingerprint || null,
+      sourceType: input.sourceType ?? prev.sourceType,
+      sourceId: input.sourceId ?? prev.sourceId,
+      internalEntityType: input.internalEntityType ?? prev.internalEntityType,
+      internalEntityId: input.internalEntityId ?? prev.internalEntityId,
+      lastSeenAt: ts,
+      updatedAt: ts,
+    };
+    await this.repo.upsertNode(updated);
+    await this.pushEvent({
+      eventType: "NODE_UPDATED",
+      nodeId: updated.id,
+      payload: { reason },
+      actorKind: "SYSTEM",
+    });
+    return { node: updated, created: false };
+  }
+
+  async createOrUpdateEdge(input: CreateEdgeInput): Promise<{
     edge: BusinessEdge;
     created: boolean;
-  } {
-    const store = getBusinessGraphMemoryStore();
-    if (!store.nodes.has(input.sourceNodeId) || !store.nodes.has(input.targetNodeId)) {
-      throw new Error("source_or_target_node_missing");
-    }
+  }> {
+    const source = await this.repo.getNode(input.sourceNodeId);
+    const target = await this.repo.getNode(input.targetNodeId);
+    if (!source || !target) throw new Error("source_or_target_node_missing");
     if (input.sourceNodeId === input.targetNodeId) {
       throw new Error("self_edge_forbidden");
     }
 
-    const existing = Array.from(store.edges.values()).find(
-      (e) =>
-        e.isCurrent &&
-        e.sourceNodeId === input.sourceNodeId &&
-        e.targetNodeId === input.targetNodeId &&
-        e.relationshipType === input.relationshipType &&
-        (e.status === "PROPOSED" ||
-          e.status === "ACTIVE" ||
-          e.status === "CONFIRMED"),
-    );
+    const existingList = await this.repo.findEdges({
+      sourceNodeId: input.sourceNodeId,
+      targetNodeId: input.targetNodeId,
+      relationshipType: input.relationshipType,
+      currentOnly: true,
+      statuses: ["PROPOSED", "ACTIVE", "CONFIRMED"],
+    });
+    const existing = existingList[0];
     const ts = now();
 
     if (existing) {
@@ -251,7 +262,6 @@ export class BusinessGraphService {
         sourceUrl: input.sourceUrl ?? existing.sourceUrl,
         updatedAt: ts,
       };
-      // Never upgrade UNKNOWN/INFERENCE to FACT silently via merge of weaker
       if (
         existing.provenanceType === "FACT" &&
         input.provenanceType &&
@@ -259,8 +269,8 @@ export class BusinessGraphService {
       ) {
         updated.provenanceType = "FACT";
       }
-      store.edges.set(updated.id, updated);
-      pushEvent({
+      await this.repo.upsertEdge(updated);
+      await this.pushEvent({
         eventType: "EDGE_UPDATED",
         edgeId: updated.id,
         nodeId: updated.sourceNodeId,
@@ -292,8 +302,8 @@ export class BusinessGraphService {
       createdAt: ts,
       updatedAt: ts,
     };
-    store.edges.set(edge.id, edge);
-    pushEvent({
+    await this.repo.upsertEdge(edge);
+    await this.pushEvent({
       eventType: "EDGE_CREATED",
       edgeId: edge.id,
       nodeId: edge.sourceNodeId,
@@ -303,13 +313,14 @@ export class BusinessGraphService {
     return { edge, created: true };
   }
 
-  addAlias(nodeId: string, alias: string, source?: string): BusinessAlias {
-    const store = getBusinessGraphMemoryStore();
-    if (!store.nodes.has(nodeId)) throw new Error("node_missing");
+  async addAlias(
+    nodeId: string,
+    alias: string,
+    source?: string,
+  ): Promise<BusinessAlias> {
+    if (!(await this.repo.getNode(nodeId))) throw new Error("node_missing");
     const normalizedAlias = normalizeAlias(alias);
-    const existing = Array.from(store.aliases.values()).find(
-      (a) => a.nodeId === nodeId && a.normalizedAlias === normalizedAlias,
-    );
+    const existing = await this.repo.findAlias(nodeId, normalizedAlias);
     if (existing) return existing;
     const row: BusinessAlias = {
       id: bgId(),
@@ -320,8 +331,8 @@ export class BusinessGraphService {
       confidence: 70,
       createdAt: now(),
     };
-    store.aliases.set(row.id, row);
-    pushEvent({
+    await this.repo.upsertAlias(row);
+    await this.pushEvent({
       eventType: "ALIAS_ADDED",
       nodeId,
       payload: { alias },
@@ -330,56 +341,81 @@ export class BusinessGraphService {
     return row;
   }
 
-  addNodeSource(
+  async addNodeSource(
     nodeId: string,
     source: Omit<BusinessNodeSource, "id" | "nodeId" | "createdAt">,
-  ): BusinessNodeSource {
-    const store = getBusinessGraphMemoryStore();
-    if (!store.nodes.has(nodeId)) throw new Error("node_missing");
+  ): Promise<BusinessNodeSource> {
+    if (!(await this.repo.getNode(nodeId))) throw new Error("node_missing");
     const row: BusinessNodeSource = {
       id: bgId(),
       nodeId,
       createdAt: now(),
       ...source,
     };
-    store.nodeSources.set(row.id, row);
+    await this.repo.upsertNodeSource(row);
     return row;
   }
 
-  getNodeHistory(nodeId: string): BusinessGraphEvent[] {
-    return getBusinessGraphMemoryStore()
-      .events.filter((e) => e.nodeId === nodeId)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  async getNodeHistory(nodeId: string): Promise<BusinessGraphEvent[]> {
+    return this.repo.getNodeHistory(nodeId);
   }
 
-  listAliases(nodeId: string): BusinessAlias[] {
-    return Array.from(getBusinessGraphMemoryStore().aliases.values()).filter(
-      (a) => a.nodeId === nodeId,
-    );
+  async listAliases(nodeId: string): Promise<BusinessAlias[]> {
+    return this.repo.listAliases(nodeId);
   }
 
-  listNodeSources(nodeId: string): BusinessNodeSource[] {
-    return Array.from(
-      getBusinessGraphMemoryStore().nodeSources.values(),
-    ).filter((s) => s.nodeId === nodeId);
+  async listNodeSources(nodeId: string): Promise<BusinessNodeSource[]> {
+    return this.repo.listNodeSources(nodeId);
   }
 
-  confirmEdge(edgeId: string, userId?: string, comment?: string): BusinessEdge {
+  async confirmEdge(
+    edgeId: string,
+    userId?: string,
+    comment?: string,
+  ): Promise<BusinessEdge> {
     return this.setEdgeOwnerStatus(edgeId, "CONFIRMED", userId, comment);
   }
 
-  rejectEdge(edgeId: string, userId?: string, comment?: string): BusinessEdge {
+  async rejectEdge(
+    edgeId: string,
+    userId?: string,
+    comment?: string,
+  ): Promise<BusinessEdge> {
     return this.setEdgeOwnerStatus(edgeId, "REJECTED", userId, comment);
   }
 
-  private setEdgeOwnerStatus(
+  async commentEdge(
+    edgeId: string,
+    userId: string,
+    comment: string,
+  ): Promise<BusinessEdge> {
+    const edge = await this.repo.getEdge(edgeId);
+    if (!edge) throw new Error("edge_missing");
+    const updated: BusinessEdge = {
+      ...edge,
+      ownerComment: comment,
+      updatedAt: now(),
+      createdByUserId: userId || edge.createdByUserId,
+    };
+    await this.repo.upsertEdge(updated);
+    await this.pushEvent({
+      eventType: "OWNER_COMMENT",
+      edgeId,
+      nodeId: edge.sourceNodeId,
+      payload: { comment },
+      actorKind: "OWNER",
+      actorUserId: userId,
+    });
+    return updated;
+  }
+
+  private async setEdgeOwnerStatus(
     edgeId: string,
     status: "CONFIRMED" | "REJECTED",
     userId?: string,
     comment?: string,
-  ): BusinessEdge {
-    const store = getBusinessGraphMemoryStore();
-    const edge = store.edges.get(edgeId);
+  ): Promise<BusinessEdge> {
+    const edge = await this.repo.getEdge(edgeId);
     if (!edge) throw new Error("edge_missing");
     const updated: BusinessEdge = {
       ...edge,
@@ -388,8 +424,8 @@ export class BusinessGraphService {
       updatedAt: now(),
       createdByUserId: userId ?? edge.createdByUserId,
     };
-    store.edges.set(edgeId, updated);
-    pushEvent({
+    await this.repo.upsertEdge(updated);
+    await this.pushEvent({
       eventType: status === "CONFIRMED" ? "EDGE_CONFIRMED" : "EDGE_REJECTED",
       edgeId,
       nodeId: edge.sourceNodeId,
@@ -400,10 +436,8 @@ export class BusinessGraphService {
     return updated;
   }
 
-  /** Close temporal edge without deleting history. */
-  archiveEdge(edgeId: string, validTo?: string): BusinessEdge {
-    const store = getBusinessGraphMemoryStore();
-    const edge = store.edges.get(edgeId);
+  async archiveEdge(edgeId: string, validTo?: string): Promise<BusinessEdge> {
+    const edge = await this.repo.getEdge(edgeId);
     if (!edge) throw new Error("edge_missing");
     const updated: BusinessEdge = {
       ...edge,
@@ -412,8 +446,8 @@ export class BusinessGraphService {
       validTo: validTo || now(),
       updatedAt: now(),
     };
-    store.edges.set(edgeId, updated);
-    pushEvent({
+    await this.repo.upsertEdge(updated);
+    await this.pushEvent({
       eventType: "EDGE_UPDATED",
       edgeId,
       nodeId: edge.sourceNodeId,
@@ -423,10 +457,10 @@ export class BusinessGraphService {
     return updated;
   }
 
-  bridgeFromOiCandidate(c: LiaOiCandidate): BusinessNode {
-    const { node } = this.createOrUpdateNode(oiCandidateToNodeInput(c));
+  async bridgeFromOiCandidate(c: LiaOiCandidate): Promise<BusinessNode> {
+    const { node } = await this.createOrUpdateNode(oiCandidateToNodeInput(c));
     for (const s of c.sources || []) {
-      this.addNodeSource(node.id, {
+      await this.addNodeSource(node.id, {
         sourceType: "lia_oi_source",
         sourceId: s.id,
         sourceUrl: s.url,
@@ -439,7 +473,7 @@ export class BusinessGraphService {
     return node;
   }
 
-  bridgeFromProject(project: {
+  async bridgeFromProject(project: {
     id: string;
     title: string;
     summary?: string | null;
@@ -447,29 +481,58 @@ export class BusinessGraphService {
     region?: string | null;
     city?: string | null;
     status?: string | null;
-  }): BusinessNode {
-    return this.createOrUpdateNode(projectToNodeInput(project)).node;
+  }): Promise<BusinessNode> {
+    return (await this.createOrUpdateNode(projectToNodeInput(project))).node;
   }
 
-  bridgeFromInvestmentOffer(offer: {
+  async bridgeFromInvestmentOffer(offer: {
     id: string;
     title: string;
     description?: string | null;
     budgetMax?: number | null;
     regions?: string[] | null;
-  }): BusinessNode {
-    return this.createOrUpdateNode(investmentOfferToNodeInput(offer)).node;
+  }): Promise<BusinessNode> {
+    return (await this.createOrUpdateNode(investmentOfferToNodeInput(offer)))
+      .node;
   }
 
-  resolveIdentity(input: CreateNodeInput) {
-    const existing = Array.from(getBusinessGraphMemoryStore().nodes.values());
+  async resolveIdentity(input: CreateNodeInput) {
+    const existing = await this.repo.listNodesForIdentity(500);
     return resolveIdentity(existing, input);
   }
 }
 
-let singleton: BusinessGraphService | null = null;
+function createRepository(
+  mode: BusinessGraphStoreMode,
+): BusinessGraphRepository {
+  if (mode === "supabase") {
+    return new SupabaseBusinessGraphRepository(createBusinessGraphAdminClient());
+  }
+  return new MemoryBusinessGraphRepository();
+}
 
-export function getBusinessGraphService(): BusinessGraphService {
-  if (!singleton) singleton = new BusinessGraphService();
+let singleton: BusinessGraphService | null = null;
+let singletonMode: BusinessGraphStoreMode | null = null;
+
+export function getBusinessGraphService(
+  modeOverride?: BusinessGraphStoreMode,
+): BusinessGraphService {
+  const mode = modeOverride ?? resolveBusinessGraphStoreMode();
+  if (!singleton || singletonMode !== mode) {
+    singleton = new BusinessGraphService(createRepository(mode));
+    singletonMode = mode;
+  }
   return singleton;
+}
+
+/** Test helper: force a fresh memory service. */
+export function createMemoryBusinessGraphService(): BusinessGraphService {
+  return new BusinessGraphService(new MemoryBusinessGraphRepository());
+}
+
+export function setBusinessGraphServiceForTests(
+  service: BusinessGraphService | null,
+): void {
+  singleton = service;
+  singletonMode = service ? "memory" : null;
 }

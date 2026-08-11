@@ -350,13 +350,14 @@ OPPORTUNITY → DERIVED_FROM → {CAPITAL, PROPERTY, EQUIPMENT, SUPPORT, DEMAND,
 Migration файл подготовлен с баннером **DO NOT APPLY**.  
 Apply только после отдельного подтверждения владельца.
 
-## 20. Implementation plan (после подтверждения)
+## 20. Implementation status (после подтверждения)
 
-1. Local dry-run: apply migration to staging/local Supabase.  
-2. Подключить Supabase adapter в `BusinessGraphService` (memory остаётся для tests).  
-3. Server actions: confirm/reject/comment на `/admin/owner/graph`.  
-4. Опциональный batch bridge: published projects + recent OI candidates → nodes (без Matching).  
-5. RLS smoke tests с anon/authenticated/admin.  
-6. Только затем — production apply.
+1. ✅ Local dry-run: `npm run test:business-graph-dryrun` (Docker Postgres).  
+2. ✅ Supabase adapter: `SupabaseBusinessGraphRepository` + `BUSINESS_GRAPH_STORE`.  
+3. ✅ Server actions: confirm/reject/comment на `/admin/owner/graph`.  
+4. ✅ Batch bridge helpers: `src/lib/business-graph/sync.ts` (без Matching / scheduler).  
+5. ✅ RLS в migration + dry-run validate.  
+6. Production apply: `scripts/apply-business-graph-stage3a-production.sh`  
+   с `CKR_CONFIRM_BUSINESS_GRAPH_APPLY=YES` — **не включает** `BUSINESS_GRAPH_STORE=supabase` автоматически.
 
-**Сейчас: СТОП — ждём подтверждения владельца.**
+Default runtime: `BUSINESS_GRAPH_STORE=memory` (fixture UI).
