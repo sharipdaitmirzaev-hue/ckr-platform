@@ -330,6 +330,14 @@ export type LiaOiCandidate = {
   matchingReadiness?: LiaOiMatchingReadiness;
   confirmedFields?: string[];
   unknownFields?: string[];
+  /** Stage 4D — publishability (not matching). Computed; not a DB migration. */
+  publishabilityScore?: number;
+  publishabilityTier?:
+    | "READY_TO_REVIEW"
+    | "NEEDS_ENRICHMENT"
+    | "WEAK_SOURCE"
+    | "EXPIRED"
+    | "REJECTED";
   sourcePublishedAt?: string | null;
   auctionStatus?: string | null;
   procurementStage?: string | null;

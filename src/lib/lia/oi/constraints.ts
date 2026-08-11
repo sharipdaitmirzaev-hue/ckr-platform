@@ -8,6 +8,7 @@ import type {
   LiaOiPriceStatus,
   LiaOiSoftPreferences,
 } from "@/types/lia-oi";
+import { detectCanonicalRegions } from "@/lib/geo/region-normalize";
 
 function parseBudgetMax(query: string): number | null {
   const lower = query.toLowerCase();
@@ -33,19 +34,8 @@ function parseBudgetMin(query: string): number | null {
  * Конкретный регион — только если явно в запросе.
  */
 export function detectRegions(query: string): string[] {
-  const map: Array<[RegExp, string]> = [
-    [/дагестан/i, "Дагестан"],
-    [/краснодар|сочи/i, "Краснодарский край"],
-    [/скфо|северо.?кавказ/i, "СКФО"],
-    [/москв/i, "Москва"],
-    [/санкт[-\s]?петербург|спб\b/i, "Санкт-Петербург"],
-    [/ростов/i, "Ростовская область"],
-    [/татарстан|казан/i, "Татарстан"],
-    [/новосибир/i, "Новосибирская область"],
-    [/екатеринбург|свердлов/i, "Свердловская область"],
-  ];
-  const found = map.filter(([re]) => re.test(query)).map(([, name]) => name);
-  return found.length ? found : ["Россия"];
+  // Stage 4D — canonical region layer (no naive substring traps).
+  return detectCanonicalRegions(query);
 }
 
 export function parseHardConstraints(query: string): LiaOiHardConstraints {

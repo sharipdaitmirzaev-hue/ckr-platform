@@ -153,16 +153,5 @@ export function allIntentMappings(): IntentMapping[] {
   return MAP.slice();
 }
 
-/** Industry aliases between need industries and marketplace categories/types. */
-export const INDUSTRY_ALIASES: Record<string, string[]> = {
-  manufacturing: ["production", "manufacturing", "equipment", "industry"],
-  production: ["production", "manufacturing"],
-  hospitality: ["tourism", "hospitality", "hotel", "ready_business"],
-  tourism: ["tourism", "hospitality"],
-  beverage: ["production", "trade", "beverage", "agriculture"],
-  construction: ["construction", "real-estate", "premises", "land"],
-  "real-estate": ["real-estate", "land", "premises", "construction"],
-  it: ["it", "technology", "services"],
-  agriculture: ["agriculture"],
-  energy: ["energy"],
-};
+/** Industry aliases — Stage 4D shared catalog (re-export). */
+export { INDUSTRY_ALIASES } from "@/lib/catalog/industry-aliases";

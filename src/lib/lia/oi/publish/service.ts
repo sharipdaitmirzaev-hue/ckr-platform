@@ -18,6 +18,8 @@ import type {
 import { CRITICAL_PUBLIC_FIELDS } from "@/types/lia-controlled-publish";
 import { getCandidate, listCandidates } from "@/lib/lia/oi/store";
 import { passesPublicationQualityGate } from "@/lib/lia/oi/publish/quality-gate";
+import { computePublishability } from "@/lib/lia/oi/publishability";
+import { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
 import {
   applyOwnerOverrides,
   enforceSafeProjection,
@@ -340,32 +342,38 @@ export class ControlledPublishService {
     for (const meta of metas) {
       const c = await getCandidate(meta.liaOiId);
       if (!c) continue;
-      const draft = buildMergedDraft(c, meta);
-      items.push({
-        liaOiId: c.id,
-        publicationState: meta.publicationState,
-        marketplaceOpportunityId: meta.marketplaceOpportunityId,
-        draft,
-        lockedFields: meta.lockedFields,
-        pendingChanges: meta.pendingChanges,
-        opportunityType: c.opportunityType || null,
-        status: c.status,
-        firstSeenAt: c.firstSeenAt,
-        lastSeenAt: c.lastSeenAt,
-        sourcesSummary: (c.sources || [])
-          .map((s) => s.name || s.url || "source")
-          .slice(0, 5),
-        officialUrl: draft.officialUrl,
-      });
+      items.push(this.toQueueItem(c, meta));
     }
-    return items.sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
+    // Stage 4D — best quality first, then newest
+    const tierRank: Record<string, number> = {
+      READY_TO_REVIEW: 0,
+      NEEDS_ENRICHMENT: 1,
+      WEAK_SOURCE: 2,
+      EXPIRED: 3,
+      REJECTED: 4,
+    };
+    return items.sort((a, b) => {
+      const ta = tierRank[a.publishabilityTier || ""] ?? 9;
+      const tb = tierRank[b.publishabilityTier || ""] ?? 9;
+      if (ta !== tb) return ta - tb;
+      const sa = b.publishabilityScore ?? 0;
+      const sb = a.publishabilityScore ?? 0;
+      if (sa !== sb) return sa - sb;
+      return b.lastSeenAt.localeCompare(a.lastSeenAt);
+    });
   }
 
-  async getQueueItem(liaOiId: string): Promise<PublicationQueueItem | null> {
-    const meta = await this.hydrateMeta(liaOiId);
-    const c = await getCandidate(liaOiId);
-    if (!c) return null;
+  private toQueueItem(
+    c: LiaOiCandidate,
+    meta: PublicationMeta,
+  ): PublicationQueueItem {
     const draft = buildMergedDraft(c, meta);
+    const q = computeDataQualityV2({ candidate: c });
+    const pub = computePublishability({
+      ...c,
+      dataQualityScore: q.dataQualityScore,
+      matchingReadiness: q.matchingReadiness,
+    });
     return {
       liaOiId: c.id,
       publicationState: meta.publicationState,
@@ -381,7 +389,20 @@ export class ControlledPublishService {
         .map((s) => s.name || s.url || "source")
         .slice(0, 5),
       officialUrl: draft.officialUrl,
+      publishabilityTier: pub.tier,
+      publishabilityScore: pub.score,
+      qualityLabelRu: pub.labelRu,
+      pageType: c.pageType || null,
+      region: c.region || draft.region || null,
+      industry: c.industry || draft.industry || null,
     };
+  }
+
+  async getQueueItem(liaOiId: string): Promise<PublicationQueueItem | null> {
+    const meta = await this.hydrateMeta(liaOiId);
+    const c = await getCandidate(liaOiId);
+    if (!c) return null;
+    return this.toQueueItem(c, meta);
   }
 
   async editDraft(
@@ -469,6 +490,29 @@ export class ControlledPublishService {
       after: { publicationState: "rejected" },
     });
     return meta;
+  }
+
+  /**
+   * Stage 4D — bulk mark reviewed/reject only.
+   * NEVER bulk publish (each publish remains individual owner action).
+   */
+  async rejectMany(
+    ids: string[],
+    actorUserId: string,
+    reason?: string,
+  ): Promise<{ rejected: number; skipped: string[] }> {
+    let rejected = 0;
+    const skipped: string[] = [];
+    for (const id of ids.slice(0, 50)) {
+      const meta = await this.hydrateMeta(id);
+      if (meta.publicationState === "published") {
+        skipped.push(id);
+        continue;
+      }
+      await this.reject(id, actorUserId, reason || "bulk_reject");
+      rejected += 1;
+    }
+    return { rejected, skipped };
   }
 
   async requestRecheck(liaOiId: string, actorUserId: string, reason?: string) {

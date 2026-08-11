@@ -104,7 +104,7 @@ console.log("\nLIA OI Stage 2A.1 — quality checks\n");
       url: "https://habr.com/ru/articles/887322/",
       title: "Как продать свой бизнес быстро и дорого",
     }),
-    "UNKNOWN",
+    "GUIDE", // Stage 4D — editorial surfaces are GUIDE/NEWS, not UNKNOWN
   );
   assert.equal(
     classifyPageType({

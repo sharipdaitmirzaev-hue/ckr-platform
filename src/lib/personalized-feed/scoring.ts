@@ -8,7 +8,9 @@ import type {
   FeedCandidate,
   ScoreBreakdown,
 } from "@/types/personalized-feed";
-import { getIntentMapping, INDUSTRY_ALIASES } from "@/lib/personalized-feed/mapping";
+import { getIntentMapping } from "@/lib/personalized-feed/mapping";
+import { regionsCompatible } from "@/lib/geo/region-normalize";
+import { expandIndustry as expandIndustryCatalog } from "@/lib/catalog/industry-aliases";
 
 function norm(s: string): string {
   return s.trim().toLowerCase();
@@ -20,26 +22,21 @@ function regionMatch(
 ): { score: number; matched: string | null; unknown: boolean } {
   if (!needRegions.length) return { score: 8, matched: null, unknown: false };
   if (!candidateRegions.length) return { score: 0, matched: null, unknown: true };
-  for (const nr of needRegions) {
-    const n = norm(nr);
-    for (const cr of candidateRegions) {
-      const c = norm(cr);
-      if (!c) continue;
-      if (c.includes(n) || n.includes(c)) {
-        return { score: 15, matched: cr, unknown: false };
-      }
-      // federal / russia soft
-      if (n.includes("росси") || c.includes("росси") || c.includes("фо")) {
-        return { score: 6, matched: cr, unknown: false };
-      }
+  for (const cr of candidateRegions) {
+    if (!cr?.trim()) continue;
+    if (regionsCompatible(needRegions, cr)) {
+      return { score: 15, matched: cr, unknown: false };
     }
+  }
+  // federal / russia soft (canonical)
+  if (needRegions.some((r) => /росси/i.test(r))) {
+    return { score: 6, matched: candidateRegions[0] || null, unknown: false };
   }
   return { score: 0, matched: null, unknown: false };
 }
 
 function expandIndustry(ind: string): string[] {
-  const key = norm(ind);
-  return [key, ...(INDUSTRY_ALIASES[key] || []).map(norm)];
+  return expandIndustryCatalog(ind).map(norm);
 }
 
 function industryMatch(

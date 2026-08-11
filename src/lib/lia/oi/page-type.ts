@@ -53,7 +53,14 @@ export function classifyPageType(input: {
       blob,
     )
   ) {
-    return "UNKNOWN";
+    if (/\/news\b/i.test(path) || /новост/i.test(blob)) return "NEWS";
+    if (
+      /\b(как (я|продать|купить)|гид по|что такое|инструкц)/i.test(blob) ||
+      /\/(blog|article|articles|guide)\b/i.test(path)
+    ) {
+      return "GUIDE";
+    }
+    return "NEWS";
   }
 
   if (LIST_TITLE.test(input.title) && !DETAIL_HINT.test(path)) {

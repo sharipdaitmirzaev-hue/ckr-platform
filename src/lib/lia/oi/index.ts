@@ -1,4 +1,19 @@
 export { buildSearchPlan, detectIntent, geographyToken } from "@/lib/lia/oi/planner";
+export { buildSearchPlanV2 } from "@/lib/lia/oi/planner-v2";
+export { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
+export {
+  computePublishability,
+  isQueueWorthy,
+} from "@/lib/lia/oi/publishability";
+export {
+  evaluateContentGaps,
+  DEFAULT_GAP_SCENARIOS,
+  buildTargetedDiscoveryQuery,
+} from "@/lib/lia/oi/content-gap";
+export {
+  getSourceHealthRows,
+  getDiscoveryBudgetSnapshot,
+} from "@/lib/lia/oi/source-health";
 export {
   getInternetSearchProvider,
   StubInternetSearchProvider,

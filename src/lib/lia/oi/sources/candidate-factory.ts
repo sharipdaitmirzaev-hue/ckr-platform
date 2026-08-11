@@ -222,16 +222,42 @@ export function extractOfficialIdFromUrl(
   }
 }
 
+/** Extract official id from title/snippet when present — never invent. */
+export function extractOfficialIdFromText(
+  text: string,
+  kind: "lot" | "procurement" | "program",
+): string | null {
+  const t = text || "";
+  if (kind === "procurement") {
+    const m =
+      t.match(
+        /(?:№|N|рег\.?\s*номер|извещени[еия]\s*№?)\s*([0-9]{10,20})/i,
+      ) || t.match(/\b([0-9]{18,19})\b/);
+    return m?.[1] ?? null;
+  }
+  if (kind === "lot") {
+    const m =
+      t.match(/(?:лот|lot)\s*№?\s*([A-Za-z0-9_-]{6,})/i) ||
+      t.match(/\b([0-9]{10,})\b/);
+    return m?.[1] ?? null;
+  }
+  const m = t.match(/(?:программ[аы]|measure|id)\s*[:№]?\s*([A-Za-z0-9_-]{4,})/i);
+  return m?.[1] ?? null;
+}
+
 export function extractPriceFromText(text: string): number | null {
   const m = text.match(
-    /(\d{1,3}(?:[ \u00a0]\d{3})+|\d+)\s*(?:млн|million)?\s*(?:₽|руб)/i,
+    /(\d{1,3}(?:[ \u00a0]\d{3})+|\d+(?:[.,]\d+)?)\s*(млрд|млн|миллион(?:ов|а)?|тыс(?:яч(?:и|а)?)?|million|thousand)?\s*(?:₽|руб\.?|RUB)?/i,
   );
   if (!m) return null;
-  const digits = m[1].replace(/\s|\u00a0/g, "");
+  const digits = m[1].replace(/\s|\u00a0/g, "").replace(",", ".");
   let n = Number(digits);
-  if (Number.isNaN(n)) return null;
-  if (/млн|million/i.test(m[0])) n *= 1_000_000;
-  return n > 0 ? n : null;
+  if (Number.isNaN(n) || n <= 0) return null;
+  const scale = (m[2] || "").toLowerCase();
+  if (/млрд|billion/.test(scale)) n *= 1_000_000_000;
+  else if (/млн|миллион|million/.test(scale)) n *= 1_000_000;
+  else if (/тыс|thousand/.test(scale)) n *= 1_000;
+  return Math.round(n) > 0 ? Math.round(n) : null;
 }
 
 export function hitToSpecializedCandidate(
@@ -245,10 +271,11 @@ export function hitToSpecializedCandidate(
     idKind: "lot" | "procurement" | "program";
   },
 ): LiaOiCandidate {
+  const text = `${hit.title} ${hit.description || ""}`;
   const objectId =
     extractOfficialIdFromUrl(hit.url, meta.idKind) ||
+    extractOfficialIdFromText(text, meta.idKind) ||
     oiHash(hit.url).slice(0, 16);
-  const text = `${hit.title} ${hit.description || ""}`;
   const price = extractPriceFromText(text);
   return buildSpecializedCandidate({
     adapterId: meta.adapterId,

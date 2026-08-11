@@ -3,7 +3,7 @@
  * Official fields win conflicts; both provenances are kept.
  */
 
-import { computeDataQuality } from "@/lib/lia/oi/enrichment/quality";
+import { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
 import { canonicalUrl } from "@/lib/lia/oi/normalize";
 import type { LiaOiCandidate, LiaOiStructuredField } from "@/types/lia-oi";
 
@@ -243,7 +243,7 @@ export function mergeSerperWithOfficial(
     ).slice(0, 8),
   };
 
-  const q = computeDataQuality({
+  const q = computeDataQualityV2({
     candidate: merged,
     structuredFields: merged.structuredFields || [],
   });
@@ -253,6 +253,8 @@ export function mergeSerperWithOfficial(
     matchingReadiness: q.matchingReadiness,
     confirmedFields: q.confirmedFields,
     unknownFields: q.unknownFields,
+    publishabilityScore: q.publishabilityScore,
+    publishabilityTier: q.publishabilityTier as LiaOiCandidate["publishabilityTier"],
     score: {
       ...merged.score,
       quality: Math.max(merged.score.quality, q.dataQualityScore),

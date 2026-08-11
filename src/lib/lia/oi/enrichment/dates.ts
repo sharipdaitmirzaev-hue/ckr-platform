@@ -47,15 +47,20 @@ export function normalizeAnyDate(raw?: string | null, now = Date.now()): string 
 
 export function extractDeadlineFromOfficialText(text: string): string | null {
   const patterns = [
-    /(?:окончание(?:\s+при[её]ма\s+заявок)?|завершение|срок подачи|при[её]м заявок|дедлайн|дата окончания)[:\s]+(\d{1,2}[./]\d{1,2}[./]\d{4}(?:\s+\d{1,2}:\d{2})?)/i,
+    /(?:окончание(?:\s+при[её]ма\s+заявок)?|завершение|срок\s+подачи(?:\s+заявок)?|при[её]м\s+заявок|дедлайн|дата\s+окончания|дата\s+проведения|дата\s+аукциона)[:\s]+(\d{1,2}[./]\d{1,2}[./]\d{4}(?:\s+\d{1,2}:\d{2})?)/i,
     /(?:до)\s+(\d{1,2}[./]\d{1,2}[./]\d{4}(?:\s+\d{1,2}:\d{2})?)/i,
   ];
   for (const re of patterns) {
     const m = text.match(re);
-    if (m?.[1]) {
-      const parsed = parseDeadline(m[1]);
-      if (parsed) return parsed;
+    if (!m?.[1]) continue;
+    const idx = m.index ?? 0;
+    const ctx = text.slice(Math.max(0, idx - 48), idx + (m[0]?.length || 0) + 8);
+    // publication / article date ≠ application deadline
+    if (/опубликован|дата публикац|дата статьи|обновлен[оа]/i.test(ctx)) {
+      continue;
     }
+    const parsed = parseDeadline(m[1]);
+    if (parsed) return parsed;
   }
   return null;
 }
