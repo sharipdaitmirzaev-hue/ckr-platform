@@ -14,6 +14,8 @@ import {
 } from "@/lib/lia/oi/regional/source-performance";
 import { MARKETPLACE_MANUAL_CONTENT_TYPES } from "@/lib/lia/oi/regional/marketplace-content";
 import { summarizeInventory } from "@/lib/lia/oi/regional/test-data-inventory";
+import { countOrganizationsByRegion } from "@/lib/company-intelligence/catalog";
+import { listVerifiedOrganizations } from "@/lib/partners/queries";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -24,8 +26,35 @@ export default async function OwnerRegionalPage() {
   const current = await requireLiaOiOwner();
   await ensureLiaOiSeed(current.user.id);
   const candidates = await listCandidates();
-  const dag = dagestanCoverageFromCandidates(candidates);
-  const skfo = buildRegionalCoverageCard({ region: "СКФО", candidates });
+  const orgs = await listVerifiedOrganizations(200);
+  const companiesDag = countOrganizationsByRegion(orgs, "Дагестан");
+  const companiesSkfo = orgs.filter((o) =>
+    /дагестан|ставропол|чечн|ингуш|кабардин|осети|карачаев|скфо/i.test(
+      o.region || "",
+    ),
+  ).length;
+  const dag = dagestanCoverageFromCandidates(candidates, {
+    projects: 0,
+    opportunities: 0,
+    investmentOffers: 0,
+    expertProfiles: 0,
+    publicNeeds: 0,
+    companies: companiesDag,
+    byType: {},
+  });
+  const skfo = buildRegionalCoverageCard({
+    region: "СКФО",
+    candidates,
+    marketplace: {
+      projects: 0,
+      opportunities: 0,
+      investmentOffers: 0,
+      expertProfiles: 0,
+      publicNeeds: 0,
+      companies: companiesSkfo,
+      byType: {},
+    },
+  });
   const sources = listRegionalSources({ enabledOnly: false });
   const perf = evaluateSourcePerformance(candidates);
   const inventory = summarizeInventory();
@@ -58,18 +87,24 @@ export default async function OwnerRegionalPage() {
           <Badge>WEAK {dag.weak}</Badge>
         </div>
         <ul className="grid gap-1 text-sm text-muted sm:grid-cols-2">
+          <li>Companies (verified): {companiesDag}</li>
           <li>Contracts (PROCUREMENT): {dag.contracts}</li>
           <li>Support: {dag.support}</li>
           <li>Investment-like: {dag.investmentLike}</li>
           <li>Confirmed demand: {dag.confirmedDemand}</li>
           <li>Potential buyers: {dag.potentialBuyers}</li>
           <li>
-            Marketplace (если передано): projects{" "}
-            {dag.marketplace?.projects ?? "—"} · businesses{" "}
-            {dag.marketplace?.opportunities ?? "—"} · properties — · experts{" "}
+            Marketplace slice: companies {dag.marketplace?.companies ?? "—"} ·
+            projects {dag.marketplace?.projects ?? "—"} · opportunities{" "}
+            {dag.marketplace?.opportunities ?? "—"} · experts{" "}
             {dag.marketplace?.expertProfiles ?? "—"}
           </li>
         </ul>
+        <p className="text-sm">
+          <Link href="/admin/owner/companies" className="text-accent hover:underline">
+            Owner company seed →
+          </Link>
+        </p>
         <div className="space-y-2">
           <h3 className="text-sm font-medium">Content gaps (Дагестан/СКФО)</h3>
           {dag.gaps.map((g) => (

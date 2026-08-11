@@ -39,9 +39,18 @@ export async function createOrganizationAction(
   const website = String(formData.get("website") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const industry = String(formData.get("industry") ?? "").trim();
+  const legalName = String(formData.get("legalName") ?? "").trim();
+  const inn = String(formData.get("inn") ?? "").replace(/\D/g, "");
+  const ogrn = String(formData.get("ogrn") ?? "").replace(/\D/g, "");
+  const offersSummary = String(formData.get("offersSummary") ?? "").trim();
+  const seeksSummary = String(formData.get("seeksSummary") ?? "").trim();
 
   if (name.length < 2) return { error: "Укажите название организации." };
   if (!isOrganizationType(type)) return { error: "Некорректный тип." };
+  if (inn && !(inn.length === 10 || inn.length === 12)) {
+    return { error: "ИНН: 10 или 12 цифр, либо оставьте пустым (UNKNOWN)." };
+  }
 
   const supabase = createClient();
   const { data, error } = await supabase
@@ -53,6 +62,12 @@ export async function createOrganizationAction(
       website,
       region,
       city,
+      industry,
+      legal_name: legalName,
+      inn,
+      ogrn,
+      offers_summary: offersSummary,
+      seeks_summary: seeksSummary,
       created_by: session.user.id,
       verification_status: "unverified",
     })
@@ -122,10 +137,26 @@ export async function updateOrganizationAction(
   const website = String(formData.get("website") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const industry = String(formData.get("industry") ?? "").trim();
+  const subindustry = String(formData.get("subindustry") ?? "").trim();
+  const legalName = String(formData.get("legalName") ?? "").trim();
+  const legalForm = String(formData.get("legalForm") ?? "").trim();
+  const inn = String(formData.get("inn") ?? "").replace(/\D/g, "");
+  const ogrn = String(formData.get("ogrn") ?? "").replace(/\D/g, "");
+  const publicEmail = String(formData.get("publicEmail") ?? "").trim();
+  const publicPhone = String(formData.get("publicPhone") ?? "").trim();
+  const productsServices = String(formData.get("productsServices") ?? "").trim();
+  const offersSummary = String(formData.get("offersSummary") ?? "").trim();
+  const seeksSummary = String(formData.get("seeksSummary") ?? "").trim();
+  const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
+  const sourceLabel = String(formData.get("sourceLabel") ?? "").trim();
   const requestVerification = formData.get("requestVerification") === "on";
 
   if (name.length < 2) return { error: "Укажите название организации." };
   if (!isOrganizationType(type)) return { error: "Некорректный тип." };
+  if (inn && !(inn.length === 10 || inn.length === 12)) {
+    return { error: "ИНН: 10 или 12 цифр, либо пусто (UNKNOWN)." };
+  }
 
   const supabase = createClient();
   const { error } = await supabase
@@ -137,6 +168,19 @@ export async function updateOrganizationAction(
       website,
       region,
       city,
+      industry,
+      subindustry,
+      legal_name: legalName,
+      legal_form: legalForm,
+      inn,
+      ogrn,
+      public_email: publicEmail,
+      public_phone: publicPhone,
+      products_services: productsServices,
+      offers_summary: offersSummary,
+      seeks_summary: seeksSummary,
+      source_url: sourceUrl,
+      source_label: sourceLabel,
       verification_status: requestVerification
         ? "pending"
         : session.primary.organization.verificationStatus,

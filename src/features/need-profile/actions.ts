@@ -62,10 +62,24 @@ export async function createNeedProfileAction(
       "ACTIVE") as NeedStatus;
     const ownerType = (String(formData.get("ownerType") || "user") ||
       "user") as NeedOwnerType;
-    const ownerId =
+    let ownerId =
       String(formData.get("ownerId") || "").trim() || current.user.id;
 
     if (!intentType) return { error: "Выберите тип потребности" };
+
+    if (ownerType === "organization") {
+      const { data: mem } = await supabase
+        .from("organization_members")
+        .select("id,role")
+        .eq("organization_id", ownerId)
+        .eq("user_id", current.user.id)
+        .maybeSingle();
+      if (!mem) {
+        return { error: "Нет доступа к организации для Need Profile." };
+      }
+    } else {
+      ownerId = current.user.id;
+    }
 
     const input = {
       intentType,

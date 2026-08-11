@@ -22,6 +22,22 @@ export function mapOrganizationRow(row: OrganizationRow): Organization {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    legalName: row.legal_name || "",
+    inn: row.inn || "",
+    ogrn: row.ogrn || "",
+    legalForm: row.legal_form || "",
+    industry: row.industry || "",
+    subindustry: row.subindustry || "",
+    publicEmail: row.public_email || "",
+    publicPhone: row.public_phone || "",
+    productsServices: row.products_services || "",
+    offersSummary: row.offers_summary || "",
+    seeksSummary: row.seeks_summary || "",
+    sourceUrl: row.source_url || "",
+    sourceLabel: row.source_label || "",
+    ownerNotes: row.owner_notes || "",
+    liaEnrichmentDraft: row.lia_enrichment_draft ?? null,
+    isListed: row.is_listed !== false,
   };
 }
 

@@ -111,6 +111,10 @@ export default async function OwnerCabinetPage() {
           <Link href="/admin/owner/content-gap" className="text-accent hover:underline">
             Content Gap
           </Link>
+          {" · "}
+          <Link href="/admin/owner/companies" className="text-accent hover:underline">
+            Companies
+          </Link>
         </p>
       </section>
 
