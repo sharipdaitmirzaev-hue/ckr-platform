@@ -316,6 +316,9 @@ export default async function OwnerCabinetPage() {
           <Link href="/admin/owner/lia" className="text-accent hover:underline">
             Лия — Центр возможностей
           </Link>
+          <Link href="/admin/owner/graph" className="text-accent hover:underline">
+            Business Graph
+          </Link>
           <Link href="/admin/project-acquisition" className="text-accent hover:underline">
             Привлечение проектов
           </Link>
