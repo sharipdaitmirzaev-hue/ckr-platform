@@ -89,6 +89,22 @@ export default async function OwnerCabinetPage() {
         </Link>
       </section>
 
+      <section className="space-y-2">
+        <h3 className="font-display text-xl text-foreground">
+          Controlled Publish
+        </h3>
+        <p className="text-sm text-muted">
+          Очередь «К публикации»: LIA OI → owner review → user-safe marketplace
+          opportunity. Без автоматической публикации.
+        </p>
+        <Link
+          href="/admin/owner/publishing"
+          className="text-sm text-accent hover:underline"
+        >
+          Открыть очередь публикации →
+        </Link>
+      </section>
+
       <section className="space-y-4">
         <h3 className="font-display text-xl text-foreground">Платформа сейчас</h3>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -62,7 +62,7 @@ export function explainRecommendation(
   }
 
   if (candidate.sourceChannel === "external") {
-    notes.push("Лия нашла этот вариант во внешнем источнике.");
+    notes.push("Найдено Лией · внешняя возможность");
   }
 
   if (candidate.unknownFields.includes("profit")) {

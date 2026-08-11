@@ -31,7 +31,10 @@ export type OpportunityType =
   | "ready_business"
   | "technology"
   | "service"
-  | "partner";
+  | "partner"
+  | "support_program"
+  | "procurement"
+  | "auction_asset";
 
 export type SolutionType =
   | "find_investor"
@@ -307,6 +310,16 @@ export type Opportunity = {
   verificationStatus?: VerificationStatus;
   createdAt?: string;
   updatedAt?: string;
+  /** Stage 4C — provenance for LIA-controlled publish (optional). */
+  sourceType?: "manual" | "lia_oi" | "import";
+  sourceId?: string | null;
+  sourceUrl?: string | null;
+  canonicalUrl?: string | null;
+  sourceLabel?: string | null;
+  fingerprint?: string | null;
+  amountKind?: string | null;
+  deadlineAt?: string | null;
+  ownerEditedFields?: string[];
 };
 
 /** Комплексное решение (набор потребностей / услуг). */

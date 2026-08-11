@@ -87,9 +87,15 @@ async function main() {
     assert.ok(getIntentMapping("INVEST").itemTypes.includes("project"));
   });
 
-  await test("intent mapping SEEK_SUPPORT UNSUPPORTED for user feed", () => {
-    assert.equal(getIntentMapping("SEEK_SUPPORT").coverage, "UNSUPPORTED");
-    assert.equal(getIntentMapping("SEEK_CONTRACT").coverage, "UNSUPPORTED");
+  await test("intent mapping SEEK_SUPPORT/CONTRACT PARTIAL via published marketplace", () => {
+    assert.equal(getIntentMapping("SEEK_SUPPORT").coverage, "PARTIAL");
+    assert.equal(getIntentMapping("SEEK_CONTRACT").coverage, "PARTIAL");
+    assert.deepEqual(getIntentMapping("SEEK_SUPPORT").opportunityTypes, [
+      "support_program",
+    ]);
+    assert.deepEqual(getIntentMapping("SEEK_CONTRACT").opportunityTypes, [
+      "procurement",
+    ]);
   });
 
   await test("coverage map includes PARTIAL intents", () => {
@@ -320,7 +326,7 @@ async function main() {
     assert.ok(feed.recommendations[0]?.explanation.why.length);
   });
 
-  await test("scenario C SEEK_SUPPORT unsupported user feed", async () => {
+  await test("scenario C SEEK_SUPPORT uses published support_program not raw LIA OI", async () => {
     const svc = createMemoryPersonalizedFeedService();
     svc.resetForTests();
     const needC = need({
@@ -331,18 +337,38 @@ async function main() {
       industries: ["manufacturing"],
     });
     svc.setTestNeeds([needC]);
+    // Raw LIA OI must not appear in user feed mapping (itemTypes=opportunity only)
     svc.setTestCandidates([
       cand({
-        id: "sup",
+        id: "raw-oi",
         itemType: "lia_oi",
-        title: "Субсидия",
+        title: "Скрытая субсидия OI",
         sourceChannel: "external",
         sourceLabel: "Лия · господдержка",
+        region: "Дагестан",
+        industries: ["manufacturing"],
+      }),
+      cand({
+        id: "pub-sup",
+        itemType: "opportunity",
+        title: "Опубликованная господдержка",
+        region: "Дагестан",
+        industry: "support_program",
+        industries: ["support_program", "manufacturing"],
+        rawType: "support_program",
+        price: 3_000_000,
+        priceKnown: true,
+        sourceChannel: "external",
+        sourceLabel: "Господдержка",
       }),
     ]);
     const feed = await svc.getFeedForNeedProfile({ need: needC, ownerId: "u1" });
-    assert.equal(feed.recommendations.length, 0);
-    assert.equal(feed.diagnostics.coverage, "UNSUPPORTED");
+    assert.equal(feed.diagnostics.coverage, "PARTIAL");
+    assert.ok(feed.recommendations.length >= 1);
+    assert.equal(feed.recommendations[0]?.candidate.id, "pub-sup");
+    assert.ok(
+      !feed.recommendations.some((r) => r.candidate.itemType === "lia_oi"),
+    );
   });
 
   await test("scenario D multiple intents separate", async () => {

@@ -103,15 +103,19 @@ const MAP: IntentMapping[] = [
   },
   {
     intentType: "SEEK_SUPPORT",
-    coverage: "UNSUPPORTED",
-    itemTypes: [],
-    notes: "SUPPORT_PROGRAM есть в LIA OI, но RLS admin-only — не в user Feed.",
+    coverage: "PARTIAL",
+    itemTypes: ["opportunity"],
+    opportunityTypes: ["support_program"],
+    notes:
+      "Stage 4C: только PUBLISHED marketplace support_program после owner approve. LIA OI остаётся OWNER_ONLY.",
   },
   {
     intentType: "SEEK_CONTRACT",
-    coverage: "UNSUPPORTED",
-    itemTypes: [],
-    notes: "PROCUREMENT в LIA OI owner-only — не в user Feed.",
+    coverage: "PARTIAL",
+    itemTypes: ["opportunity"],
+    opportunityTypes: ["procurement"],
+    notes:
+      "Stage 4C: только PUBLISHED marketplace procurement после owner approve. LIA OI остаётся OWNER_ONLY.",
   },
   {
     intentType: "SUPPLY",

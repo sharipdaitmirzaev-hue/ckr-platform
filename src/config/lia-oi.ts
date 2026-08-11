@@ -163,6 +163,7 @@ export const liaOiAssignmentLabels: Record<LiaOiAssignmentKind, string> = {
 export const liaOiOwnerNav = [
   { href: "/admin/owner/lia", label: "Обзор" },
   { href: "/admin/owner/lia/opportunities", label: "Возможности" },
+  { href: "/admin/owner/publishing", label: "К публикации" },
   { href: "/admin/owner/lia/hypotheses", label: "Гипотезы" },
   { href: "/admin/owner/lia/search", label: "Поиск" },
   { href: "/admin/owner/lia/digest", label: "Дайджест" },

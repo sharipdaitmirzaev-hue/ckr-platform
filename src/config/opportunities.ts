@@ -8,6 +8,9 @@ export const OPPORTUNITY_TYPES = [
   "technology",
   "service",
   "partner",
+  "support_program",
+  "procurement",
+  "auction_asset",
 ] as const satisfies readonly OpportunityType[];
 
 export const OPPORTUNITY_STATUSES = [
@@ -25,6 +28,9 @@ export const opportunityTypeLabels: Record<OpportunityType, string> = {
   technology: "Технологии",
   service: "Услуги",
   partner: "Партнёры",
+  support_program: "Господдержка",
+  procurement: "Закупки / тендеры",
+  auction_asset: "Активы на торгах",
 };
 
 export const opportunityStatusLabels: Record<PublishStatus, string> = {
