@@ -19,6 +19,7 @@ import {
   addReport,
   getLiaOiStore,
   listCandidates,
+  listCandidatesPage,
   listHypotheses,
   saveSearchRequest,
   setHypotheses,
