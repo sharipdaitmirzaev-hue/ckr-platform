@@ -1,6 +1,7 @@
 import { Logo } from "@/components/brand/logo";
 import { ExpertCard } from "@/components/experts/expert-card";
 import { InvestmentCard } from "@/components/investments/investment-card";
+import { ProjectIdentityBlock } from "@/components/marketing/project-identity-block";
 import { PublicLiaEntry } from "@/components/marketing/public-lia-entry";
 import { OpportunityCard } from "@/components/opportunities/opportunity-card";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -338,6 +339,7 @@ export default async function HomePage() {
       </section>
 
       <PublicLiaEntry />
+      <ProjectIdentityBlock />
     </>
   );
 }

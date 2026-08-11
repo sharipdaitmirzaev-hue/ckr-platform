@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { brand } from "@/config/brand";
+import { legalConfig } from "@/config/legal";
 import {
   aboutJourneyExtended,
   aboutRoles,
@@ -13,11 +14,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "О платформе",
-  description: brand.positioning,
+  title: "О Центре комплексных решений",
+  description:
+    "ЦКР — платформа для соединения предпринимателей, проектов, инвесторов, капитала, активов, экспертов и партнёров. Основатель — Дайитмирзаев Шарип Абдурахманович.",
   openGraph: {
     title: `${brand.name} — ${brand.fullName}`,
-    description: brand.positioning,
+    description:
+      "Платформа для поиска, развития и объединения бизнес-возможностей.",
     url: "/about",
     type: "website",
     locale: siteConfig.ogLocale,
@@ -25,6 +28,17 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: "/about" },
 };
+
+const connects = [
+  "предпринимателей",
+  "проекты",
+  "инвесторов",
+  "капитал",
+  "активы",
+  "экспертов",
+  "партнёров",
+  "деловые возможности",
+] as const;
 
 export default function AboutPage() {
   return (
@@ -42,7 +56,7 @@ export default function AboutPage() {
           <div className="max-w-3xl">
             <Logo size="lg" href="" />
             <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              {brand.name} — {brand.fullName}
+              О Центре комплексных решений
             </h1>
             <div
               aria-hidden
@@ -52,20 +66,17 @@ export default function AboutPage() {
               {brand.tagline}
             </p>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-              {brand.positioning}
+              {legalConfig.copy.homeSupport}
+            </p>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted">
+              {legalConfig.copy.projectDefinition}
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="/how-it-works" size="lg">
                 Как работает ЦКР
               </ButtonLink>
-              <ButtonLink href="/cases" variant="outline" size="lg">
-                Кейсы
-              </ButtonLink>
-              <ButtonLink href="/lia" variant="outline" size="lg">
-                Начать с Лией
-              </ButtonLink>
-              <ButtonLink href="/features" variant="outline" size="lg">
-                Функции платформы
+              <ButtonLink href="/requisites" variant="outline" size="lg">
+                Реквизиты
               </ButtonLink>
               <ButtonLink href="/register" variant="outline" size="lg">
                 Регистрация
@@ -79,18 +90,54 @@ export default function AboutPage() {
         <Container className="max-w-3xl">
           <SectionHeading
             eyebrow="Что такое ЦКР"
-            title="Не доска объявлений — путь к результату"
-            description="Платформа соединяет предпринимателей, инвесторов, экспертов и организации вокруг реальных бизнес-задач."
+            title="Платформа деловых возможностей"
+            description="ЦКР помогает соединять участников вокруг реальных бизнес-задач — от идеи до реализации."
           />
           <div className="mt-8 space-y-4 text-base leading-relaxed text-muted">
             <p>
-              ЦКР помогает пройти путь от идеи до реализации: оформить проект,
-              получить анализ, найти ресурсы и партнёров, провести сделку и
-              измерить результат.
+              ЦКР — платформа, которая помогает соединять:
+            </p>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {connects.map((item) => (
+                <li key={item} className="border-l border-accent/40 pl-3">
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p>
+              Платформа помогает оформить проект, найти ресурсы и партнёров,
+              провести переговоры и измерить результат. Лия — ИИ-навигатор —
+              рекомендует следующий шаг, но не действует без подтверждения
+              пользователя.
+            </p>
+          </div>
+        </Container>
+      </section>
+
+      <section
+        id="founder"
+        className="scroll-mt-24 border-t border-border py-16 sm:py-20"
+      >
+        <Container className="max-w-3xl">
+          <SectionHeading
+            eyebrow="Основатель"
+            title={legalConfig.founderFullName}
+            description="Спокойная деловая идентичность проекта без отдельного юридического лица «ЦКР»."
+          />
+          <div className="mt-8 space-y-4 text-base leading-relaxed text-muted">
+            <p className="text-foreground">{legalConfig.founderStatement}</p>
+            <p>{legalConfig.copy.activityLine}</p>
+            <p>
+              Публичные реквизиты и правовые документы собраны на отдельной
+              странице.
             </p>
             <p>
-              Лия — ИИ-навигатор платформы — рекомендует следующий шаг, но не
-              действует без подтверждения пользователя.
+              <Link
+                href="/requisites"
+                className="text-accent transition-colors hover:underline"
+              >
+                Реквизиты и правовая информация →
+              </Link>
             </p>
           </div>
         </Container>

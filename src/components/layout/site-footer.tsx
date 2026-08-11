@@ -1,19 +1,44 @@
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/container";
 import { brand } from "@/config/brand";
+import { legalConfig } from "@/config/legal";
 import { mainNav } from "@/config/navigation";
 import Link from "next/link";
+
+const legalNav = [
+  { href: "/about", label: "О ЦКР" },
+  { href: "/about#founder", label: "Основатель" },
+  { href: "/requisites", label: "Реквизиты" },
+  { href: "/terms", label: "Пользовательское соглашение" },
+  { href: "/privacy", label: "Политика конфиденциальности" },
+  { href: "/contacts", label: "Контакты" },
+] as const;
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-surface">
-      <Container className="grid gap-10 py-14 md:grid-cols-[1.2fr_1fr]">
-        <div>
+      <Container className="grid gap-10 py-14 md:grid-cols-[1.15fr_1fr]">
+        <div className="space-y-5">
           <Logo size="md" />
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
+          <p className="max-w-md text-sm leading-relaxed text-muted">
             {brand.fullName}. {brand.positioning}
           </p>
-          <p className="mt-5 text-sm text-accent">{brand.tagline}</p>
+          <div className="max-w-md space-y-2 border-t border-border pt-5 text-sm leading-relaxed">
+            <p className="text-foreground">
+              {legalConfig.projectShortName} — {legalConfig.projectFullName}
+            </p>
+            <p className="text-muted">{legalConfig.copy.activityLine}</p>
+            <p className="text-muted">{legalConfig.founderStatement}</p>
+            <p className="pt-1">
+              <Link
+                href="/requisites"
+                className="text-accent transition-colors hover:underline"
+              >
+                Реквизиты и правовая информация →
+              </Link>
+            </p>
+          </div>
+          <p className="text-sm text-accent">{brand.tagline}</p>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2">
@@ -36,6 +61,21 @@ export function SiteFooter() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
+              Правовая информация
+            </p>
+            <ul className="mt-4 space-y-2.5">
+              {legalNav.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-xs font-medium uppercase tracking-[0.18em] text-muted">
               Для участников
             </p>
             <ul className="mt-4 space-y-2.5">
@@ -65,82 +105,10 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
-                  href="/organization"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Организациям
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/how-it-works"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Как работает
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/cases"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Кейсы
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/trust"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Доверие
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  О платформе
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/demo"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Демо
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/pricing"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Тарифы
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Услуги ЦКР
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/register"
                   className="text-sm text-foreground/90 transition-colors hover:text-accent"
                 >
                   Регистрация
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/dashboard"
-                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                >
-                  Личный кабинет
                 </Link>
               </li>
             </ul>
@@ -150,7 +118,10 @@ export function SiteFooter() {
 
       <div className="border-t border-border">
         <Container className="flex flex-col gap-3 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {brand.name}. Все права защищены.</p>
+          <p>
+            © {new Date().getFullYear()} {legalConfig.operator.shortLabel}.{" "}
+            {legalConfig.projectShortName} — {legalConfig.projectKindLabel}.
+          </p>
           <nav
             aria-label="Правовая информация"
             className="flex flex-wrap items-center gap-x-4 gap-y-2"
@@ -165,10 +136,16 @@ export function SiteFooter() {
               Соглашение
             </Link>
             <Link
-              href="/trust"
+              href="/requisites"
               className="transition-colors hover:text-accent"
             >
-              Доверие
+              Реквизиты
+            </Link>
+            <Link
+              href="/contacts"
+              className="transition-colors hover:text-accent"
+            >
+              Контакты
             </Link>
           </nav>
         </Container>

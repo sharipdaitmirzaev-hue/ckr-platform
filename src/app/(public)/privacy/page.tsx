@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { brand } from "@/config/brand";
+import { legalConfig } from "@/config/legal";
 import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -8,7 +9,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Политика конфиденциальности",
   description:
-    "Как ЦКР обрабатывает персональные данные пользователей платформы.",
+    "Как оператор платформы ЦКР обрабатывает персональные данные пользователей.",
   openGraph: {
     title: `Политика конфиденциальности · ${siteConfig.name}`,
     description:
@@ -24,7 +25,8 @@ const sections = [
   {
     title: "1. Общие положения",
     body: [
-      `Настоящая Политика описывает, как ${brand.fullName} («ЦКР», «мы») обрабатывает персональные данные пользователей сайта ${siteConfig.url} и связанных сервисов платформы.`,
+      `Настоящая Политика описывает, как индивидуальный предприниматель ${legalConfig.operator.fullName} (оператор персональных данных; «мы») обрабатывает персональные данные пользователей сайта ${siteConfig.url} и связанных сервисов платформы «${brand.name}» (${brand.fullName}).`,
+      `«${brand.name}» / «${brand.fullName}» — название проекта (бренда) платформы. Отдельного юридического лица с наименованием «ЦКР» на текущем этапе нет.`,
       "Используя платформу, вы подтверждаете, что ознакомились с этой Политикой. Если вы не согласны с условиями, пожалуйста, не регистрируйтесь и не передавайте нам персональные данные.",
     ],
   },
@@ -88,7 +90,8 @@ const sections = [
   {
     title: "10. Контакты и изменения",
     body: [
-      `По вопросам обработки персональных данных: ${siteConfig.supportEmail}.`,
+      `Оператор персональных данных: ${legalConfig.operator.shortLabel}.`,
+      `По вопросам обработки персональных данных: ${siteConfig.supportEmail}. Реквизиты и правовая информация: раздел «Реквизиты» на сайте.`,
       "Мы можем обновлять Политику. Актуальная версия всегда доступна на этой странице; дата обновления указана ниже. Существенные изменения мы по возможности отражаем в интерфейсе платформы.",
     ],
   },
@@ -112,9 +115,13 @@ export default function PrivacyPage() {
             платформы.
           </p>
           <p className="mt-4 text-sm text-muted">
-            Редакция от 10 августа 2026 г. ·{" "}
+            Редакция от 11 августа 2026 г. ·{" "}
             <Link href="/terms" className="text-accent hover:underline">
               Пользовательское соглашение
+            </Link>
+            {" · "}
+            <Link href="/requisites" className="text-accent hover:underline">
+              Реквизиты
             </Link>
           </p>
         </Container>

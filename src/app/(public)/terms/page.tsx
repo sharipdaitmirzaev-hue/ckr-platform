@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { brand } from "@/config/brand";
+import { legalConfig } from "@/config/legal";
 import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -23,7 +24,8 @@ const sections = [
   {
     title: "1. Предмет соглашения",
     body: [
-      `Настоящее Пользовательское соглашение (оферта) регулирует доступ к сайту и сервисам ${brand.fullName} («ЦКР», «Платформа») по адресу ${siteConfig.url}.`,
+      `Настоящее Пользовательское соглашение (оферта) регулирует доступ к сайту и сервисам платформы «${brand.name}» (${brand.fullName}; «Платформа») по адресу ${siteConfig.url}.`,
+      `Платформа ведётся ${legalConfig.operator.shortLabel}. «${brand.name}» — название проекта (бренда); отдельного юридического лица с таким наименованием на текущем этапе нет.`,
       "Регистрация аккаунта, вход или иное использование Платформы означает принятие условий соглашения. Если вы действуете от имени организации, вы подтверждаете наличие полномочий.",
     ],
   },
@@ -87,7 +89,7 @@ const sections = [
     title: "10. Изменения и контакты",
     body: [
       "Мы можем обновлять соглашение. Продолжение использования Платформы после публикации новой редакции означает согласие с изменениями, если иное не требуется законом.",
-      `Вопросы по условиям: ${siteConfig.supportEmail}.`,
+      `Оператор Платформы: ${legalConfig.operator.shortLabel}. Вопросы по условиям: ${siteConfig.supportEmail}. Реквизиты: раздел «Реквизиты» на сайте.`,
     ],
   },
 ] as const;
@@ -110,9 +112,13 @@ export default function TermsPage() {
             платформе.
           </p>
           <p className="mt-4 text-sm text-muted">
-            Редакция от 10 августа 2026 г. ·{" "}
+            Редакция от 11 августа 2026 г. ·{" "}
             <Link href="/privacy" className="text-accent hover:underline">
               Политика конфиденциальности
+            </Link>
+            {" · "}
+            <Link href="/requisites" className="text-accent hover:underline">
+              Реквизиты
             </Link>
           </p>
         </Container>
