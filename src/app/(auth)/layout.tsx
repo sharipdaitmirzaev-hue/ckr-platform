@@ -28,6 +28,12 @@ export default function AuthLayout({
         <Link href="/terms" className="transition-colors hover:text-accent">
           Соглашение
         </Link>
+        <Link
+          href="/requisites"
+          className="transition-colors hover:text-accent"
+        >
+          Реквизиты
+        </Link>
       </footer>
     </div>
   );

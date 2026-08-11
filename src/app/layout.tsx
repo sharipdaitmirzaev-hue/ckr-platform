@@ -28,7 +28,9 @@ export const metadata: Metadata = {
   keywords: [...siteConfig.keywords],
   metadataBase: new URL(siteConfig.url),
   applicationName: siteConfig.name,
-  authors: [{ name: siteConfig.name }],
+  authors: [{ name: "Дайитмирзаев Шарип Абдурахманович" }],
+  creator: "ИП Дайитмирзаев Шарип Абдурахманович",
+  publisher: "ИП Дайитмирзаев Шарип Абдурахманович",
   openGraph: {
     title: siteConfig.title,
     description: siteConfig.description,
