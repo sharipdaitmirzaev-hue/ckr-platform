@@ -103,6 +103,15 @@ export default async function OwnerCabinetPage() {
         >
           Открыть очередь публикации →
         </Link>
+        <p className="mt-2 text-sm">
+          <Link href="/admin/owner/regional" className="text-accent hover:underline">
+            Региональное покрытие (Дагестан / СКФО)
+          </Link>
+          {" · "}
+          <Link href="/admin/owner/content-gap" className="text-accent hover:underline">
+            Content Gap
+          </Link>
+        </p>
       </section>
 
       <section className="space-y-4">

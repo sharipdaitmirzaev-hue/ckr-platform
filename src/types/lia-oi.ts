@@ -338,6 +338,15 @@ export type LiaOiCandidate = {
     | "WEAK_SOURCE"
     | "EXPIRED"
     | "REJECTED";
+  /** Stage 4E — demand signal (compute-only). */
+  demandClassification?: "CONFIRMED_DEMAND" | "POTENTIAL_BUYER" | "UNKNOWN";
+  demandProvenance?: LiaOiProvenanceKind;
+  demandConfidence?: number;
+  /**
+   * Stage 4E — support applicability (e.g. Russia applicable in Dagestan).
+   * Do not invent region=Dagestan FACT for federal programs.
+   */
+  regionApplicability?: string | null;
   sourcePublishedAt?: string | null;
   auctionStatus?: string | null;
   procurementStage?: string | null;

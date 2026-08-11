@@ -31,8 +31,12 @@ export function ContentGapActions(props: {
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "error");
       const d = json.data;
+      const perf =
+        Array.isArray(d?.sourcePerformanceRu) && d.sourcePerformanceRu.length
+          ? ` ${d.sourcePerformanceRu.slice(0, 3).join("; ")}.`
+          : "";
       setMsg(
-        `Запуск: queries ${d?.queriesUsed ?? "—"}, results ${d?.results ?? "—"}, enriched ${d?.enriched ?? "—"}, publishable ${d?.publishable ?? "—"}. Без автопубликации.`,
+        `Запуск (${d?.plannerVersion ?? "v2"}): queries ${d?.queriesUsed ?? "—"}, results ${d?.results ?? "—"}, enriched ${d?.enriched ?? "—"}, publishable ${d?.publishable ?? "—"}.${perf} Без автопубликации.`,
       );
       router.refresh();
     } catch (e) {

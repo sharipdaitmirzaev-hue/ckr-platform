@@ -9,11 +9,34 @@ export {
   evaluateContentGaps,
   DEFAULT_GAP_SCENARIOS,
   buildTargetedDiscoveryQuery,
+  strategiesForGapScenario,
+  getGapScenario,
+  resolveGapScenarioId,
 } from "@/lib/lia/oi/content-gap";
 export {
   getSourceHealthRows,
   getDiscoveryBudgetSnapshot,
 } from "@/lib/lia/oi/source-health";
+export { listRegionalSources, domainsForNeed } from "@/lib/lia/oi/regional/source-registry";
+export { buildRegionalQueryStrategies } from "@/lib/lia/oi/regional/query-strategy";
+export {
+  classifyDemandSignal,
+  attachDemandClassification,
+} from "@/lib/lia/oi/regional/demand-classify";
+export {
+  buildRegionalCoverageCard,
+  dagestanCoverageFromCandidates,
+} from "@/lib/lia/oi/regional/coverage";
+export {
+  evaluateSourcePerformance,
+  formatSourcePerformanceRu,
+} from "@/lib/lia/oi/regional/source-performance";
+export { computeSupportApplicability } from "@/lib/lia/oi/regional/support-applicability";
+export {
+  KNOWN_TEST_DATA_INVENTORY,
+  summarizeInventory,
+} from "@/lib/lia/oi/regional/test-data-inventory";
+export { MARKETPLACE_MANUAL_CONTENT_TYPES } from "@/lib/lia/oi/regional/marketplace-content";
 export {
   getInternetSearchProvider,
   StubInternetSearchProvider,

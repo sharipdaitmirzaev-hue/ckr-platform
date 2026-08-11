@@ -1,6 +1,7 @@
 /**
- * Stage 4D — Content Gap diagnostics for owner.
+ * Stage 4D/4E — Content Gap diagnostics for owner.
  * Shows where ЦКР lacks publishable / feedable opportunities.
+ * Regional source strategies for targeted discovery.
  * Not Matching Engine.
  */
 
@@ -10,6 +11,8 @@ import { regionsCompatible } from "@/lib/geo/region-normalize";
 import { industriesOverlap } from "@/lib/catalog/industry-aliases";
 import { computePublishability } from "@/lib/lia/oi/publishability";
 import { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
+import { buildRegionalQueryStrategies } from "@/lib/lia/oi/regional/query-strategy";
+import { classifyDemandSignal } from "@/lib/lia/oi/regional/demand-classify";
 
 export type ContentGapScenario = {
   id: string;
@@ -48,14 +51,21 @@ export const DEFAULT_GAP_SCENARIOS: ContentGapScenario[] = [
     industries: ["food", "beverage"],
   },
   {
-    id: "b_support_mfg_dag",
-    label: "SEEK_SUPPORT · manufacturing · Дагестан",
+    id: "b_buyer_food_nc",
+    label: "SEEK_BUYER · food/beverage · Дагестан/СКФО",
+    intentType: "SEEK_BUYER",
+    regions: ["Дагестан", "СКФО"],
+    industries: ["food", "beverage"],
+  },
+  {
+    id: "c_support_mfg_dag",
+    label: "SEEK_SUPPORT · manufacturing · Дагестан/СКФО",
     intentType: "SEEK_SUPPORT",
-    regions: ["Дагестан"],
+    regions: ["Дагестан", "СКФО"],
     industries: ["manufacturing"],
   },
   {
-    id: "c_invest_30_nc",
+    id: "d_invest_30_nc",
     label: "INVEST · до 30 млн · Дагестан/СКФО",
     intentType: "INVEST",
     regions: ["Дагестан", "СКФО"],
@@ -63,21 +73,22 @@ export const DEFAULT_GAP_SCENARIOS: ContentGapScenario[] = [
     budgetMax: 30_000_000,
   },
   {
-    id: "d_buyer_food_nc",
-    label: "SEEK_BUYER · food/beverage · Дагестан/СКФО",
-    intentType: "SEEK_BUYER",
-    regions: ["Дагестан", "СКФО"],
-    industries: ["food", "beverage"],
-  },
-  {
-    id: "e_project_30_ru",
-    label: "SEEK_PROJECT · до 30 млн · Россия",
+    id: "e_project_30_nc",
+    label: "SEEK_PROJECT · до 30 млн · Дагестан/СКФО",
     intentType: "SEEK_PROJECT",
-    regions: ["Россия"],
+    regions: ["Дагестан", "СКФО"],
     industries: [],
     budgetMax: 30_000_000,
   },
 ];
+
+/** Backward-compatible aliases used by older Stage 4D scripts/UI. */
+export const LEGACY_GAP_SCENARIO_IDS: Record<string, string> = {
+  b_support_mfg_dag: "c_support_mfg_dag",
+  c_invest_30_nc: "d_invest_30_nc",
+  d_buyer_food_nc: "b_buyer_food_nc",
+  e_project_30_ru: "e_project_30_nc",
+};
 
 function intentMatchesCandidate(
   intent: string,
@@ -97,8 +108,26 @@ function intentMatchesCandidate(
         t === "WEB_LISTING" ||
         /инвест|бизнес|лот|проект/i.test(`${c.title} ${c.description}`)
       );
-    case "SEEK_BUYER":
-      return /спрос|покупател|опт|закуп/i.test(`${c.title} ${c.description}`);
+    case "SEEK_BUYER": {
+      const dem =
+        c.demandClassification ||
+        classifyDemandSignal({
+          title: c.title,
+          description: c.description,
+          url: c.canonicalUrl,
+          pageType: c.pageType,
+          opportunityType: c.opportunityType,
+        }).classification;
+      // Count confirmed demand + procurement; potential buyers tracked separately in coverage
+      return (
+        dem === "CONFIRMED_DEMAND" ||
+        dem === "POTENTIAL_BUYER" ||
+        c.opportunityType === "PROCUREMENT" ||
+        /спрос|покупател|опт|закуп|тендер|нмцк/i.test(
+          `${c.title} ${c.description}`,
+        )
+      );
+    }
     default:
       return true;
   }
@@ -208,8 +237,36 @@ export function scenarioFromNeed(
   };
 }
 
+export function resolveGapScenarioId(id: string): string {
+  return LEGACY_GAP_SCENARIO_IDS[id] || id;
+}
+
+export function getGapScenario(scenarioId: string): ContentGapScenario | null {
+  const id = resolveGapScenarioId(scenarioId);
+  return DEFAULT_GAP_SCENARIOS.find((s) => s.id === id) || null;
+}
+
+/** Regional strategies attached to a gap scenario (for owner UI / planner). */
+export function strategiesForGapScenario(s: ContentGapScenario, maxQueries = 4) {
+  return buildRegionalQueryStrategies({
+    intentType: String(s.intentType),
+    regions: s.regions,
+    industries: s.industries,
+    budgetMax: s.budgetMax ?? null,
+    maxQueries,
+  });
+}
+
 /** Build manual discovery query seed from gap/need (owner trigger). */
 export function buildTargetedDiscoveryQuery(s: ContentGapScenario): string {
+  const strat = buildRegionalQueryStrategies({
+    intentType: String(s.intentType),
+    regions: s.regions,
+    industries: s.industries,
+    budgetMax: s.budgetMax ?? null,
+    maxQueries: 1,
+  });
+  if (strat[0]?.query) return strat[0].query;
   const parts = [
     s.intentType === "SEEK_CONTRACT"
       ? "закупки тендеры"

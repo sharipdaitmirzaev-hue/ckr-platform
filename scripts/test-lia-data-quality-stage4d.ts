@@ -342,10 +342,14 @@ async function main() {
         title: "Контракты напитки",
       },
     });
-    assert.equal(plan.plannerVersion, "v2");
+    // Stage 4E: Dagestan/SKFO needs use regional site strategies
+    assert.equal(plan.plannerVersion, "v2-regional");
     assert.ok(plan.queries.length <= LIA_OI_BUDGETS.maxQueriesPass1);
-    assert.ok(plan.queries.some((q) => /закуп|zakupki|нмцк/i.test(q)));
-    assert.ok(plan.strategies.includes("procurement_sites"));
+    assert.ok(plan.queries.some((q) => /закуп|zakupki|нмцк|site:/i.test(q)));
+    assert.ok(
+      plan.strategies.includes("regional_site_strategies") ||
+        plan.strategies.includes("procurement_sites"),
+    );
   });
 
   await test("dedup strong official id; weak title does not merge", () => {
@@ -412,8 +416,9 @@ async function main() {
     assert.equal(rows.length, DEFAULT_GAP_SCENARIOS.length);
     assert.ok(rows.every((r) => r.gapSeverity));
     const q = buildTargetedDiscoveryQuery(DEFAULT_GAP_SCENARIOS[0]!);
-    assert.ok(/закуп/i.test(q));
-    assert.ok(/дагестан/i.test(q));
+    // Stage 4E: first strategy is site-restricted EIS geo (may use city token)
+    assert.ok(/zakupki\.gov\.ru|закуп|извещени/i.test(q));
+    assert.ok(/дагестан|махачкал/i.test(q));
   });
 
   await test("source health + budget snapshot (no secrets)", () => {
