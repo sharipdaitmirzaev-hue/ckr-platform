@@ -215,6 +215,7 @@ export async function runOwnerSearchPipeline(input: {
     opportunityType: c.opportunityType || ("WEB_LISTING" as const),
     isOfficialSource: c.isOfficialSource ?? false,
     sourceConfidence: c.sourceConfidence ?? c.score.confidence ?? 40,
+    dataChannel: c.dataChannel || ("SERPER_DISCOVERY" as const),
   }));
 
   // Stage 2C — specialized adapters (owner-commanded, failure-isolated)

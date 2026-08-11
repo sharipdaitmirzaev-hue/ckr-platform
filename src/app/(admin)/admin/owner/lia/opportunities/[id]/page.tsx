@@ -1,8 +1,10 @@
 import { DataQualityPanel } from "@/components/lia/oi/data-quality-panel";
+import { DataSourcePanel } from "@/components/lia/oi/data-source-panel";
 import { OpportunityActions } from "@/components/lia/oi/opportunity-actions";
 import {
   liaOiBudgetFitLabels,
   liaOiContentIntentLabels,
+  liaOiOfficialSourceLabel,
   liaOiPageTypeLabels,
   liaOiPriorityLabels,
   liaOiStatusLabels,
@@ -58,6 +60,17 @@ export default async function LiaOiOpportunityDetailPage({ params }: Props) {
               Официальный источник
             </span>
           ) : null}
+          {liaOiOfficialSourceLabel({
+            dataChannel: item.dataChannel,
+            officialApiProvider: item.officialApiProvider,
+          }) ? (
+            <span className="border border-accent/40 px-2 py-0.5 text-accent">
+              {liaOiOfficialSourceLabel({
+                dataChannel: item.dataChannel,
+                officialApiProvider: item.officialApiProvider,
+              })}
+            </span>
+          ) : null}
           {item.opportunityType ? (
             <span className="border border-border px-2 py-0.5 text-muted">
               {LIA_OI_OPPORTUNITY_TYPE_LABELS[item.opportunityType] ||
@@ -91,6 +104,8 @@ export default async function LiaOiOpportunityDetailPage({ params }: Props) {
       </div>
 
       <OpportunityActions candidateId={item.id} />
+
+      <DataSourcePanel item={item} />
 
       <DataQualityPanel
         candidateId={item.id}

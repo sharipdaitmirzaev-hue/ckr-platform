@@ -181,8 +181,69 @@ export function mergeRediscovery(
       new Set([...(existing.rawStubIds || []), ...(incoming.rawStubIds || [])]),
     ),
     sources: mergeSources(existing.sources, incoming.sources),
-    claims: incoming.claims?.length ? incoming.claims : existing.claims,
+    claims: [
+      ...(existing.claims || []),
+      ...(incoming.claims || []).filter(
+        (c) =>
+          !(existing.claims || []).some(
+            (e) => e.field === c.field && e.value === c.value && e.kind === c.kind,
+          ),
+      ),
+    ],
+    structuredFields: mergeStructuredPreferIncomingOfficial(
+      existing.structuredFields,
+      incoming.structuredFields,
+    ),
+    dataChannel: pickDataChannel(existing, incoming),
+    officialApiProvider:
+      incoming.officialApiProvider || existing.officialApiProvider,
+    officialApiStatus:
+      incoming.officialApiStatus || existing.officialApiStatus,
+    customer: incoming.customer ?? existing.customer,
+    organizer: incoming.organizer ?? existing.organizer,
+    nmck: incoming.nmck ?? existing.nmck,
+    startingPrice: incoming.startingPrice ?? existing.startingPrice,
+    currentPrice: incoming.currentPrice ?? existing.currentPrice,
+    procurementStage: incoming.procurementStage ?? existing.procurementStage,
+    auctionStatus: incoming.auctionStatus ?? existing.auctionStatus,
+    matchingReadiness: incoming.matchingReadiness ?? existing.matchingReadiness,
+    dataQualityScore: Math.max(
+      existing.dataQualityScore ?? 0,
+      incoming.dataQualityScore ?? 0,
+    ),
   };
+}
+
+function pickDataChannel(
+  existing: LiaOiCandidate,
+  incoming: LiaOiCandidate,
+): LiaOiCandidate["dataChannel"] {
+  const rank = (c?: string) =>
+    c === "OFFICIAL_API" ? 3 : c === "FIXTURE_DEMO" ? 2 : c === "SERPER_DISCOVERY" ? 1 : 0;
+  return rank(incoming.dataChannel) >= rank(existing.dataChannel)
+    ? incoming.dataChannel || existing.dataChannel
+    : existing.dataChannel || incoming.dataChannel;
+}
+
+function mergeStructuredPreferIncomingOfficial(
+  a: LiaOiCandidate["structuredFields"],
+  b: LiaOiCandidate["structuredFields"],
+): LiaOiCandidate["structuredFields"] {
+  const rank: Record<string, number> = {
+    official_api: 100,
+    official_page: 80,
+    fixture: 70,
+    search_snippet: 40,
+    unknown: 10,
+  };
+  const map = new Map<string, NonNullable<LiaOiCandidate["structuredFields"]>[0]>();
+  for (const f of [...(a || []), ...(b || [])]) {
+    const prev = map.get(f.field);
+    const score = (rank[f.source] ?? 0) + f.confidence;
+    const prevScore = prev ? (rank[prev.source] ?? 0) + prev.confidence : -1;
+    if (!prev || score >= prevScore) map.set(f.field, f);
+  }
+  return [...map.values()];
 }
 
 function mergeSources(

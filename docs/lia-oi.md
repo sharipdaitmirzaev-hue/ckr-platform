@@ -284,3 +284,21 @@ C. DB: таблицы `lia_oi_*` можно оставить — они не л�
 Скрипт: `scripts/diagnose-official-sources.sh`
 
 **Вывод:** READY=0 из‑за сетевого/access блока на ЕИС/ГИС Торги + отсутствия API credentials, не из‑за extractors.
+
+---
+
+## Stage 2C.3 — Official API Readiness
+
+Код готов к официальным API **без production credentials**:
+
+- `ProcurementOfficialProvider` (ЕИС SOAP/XML) + fixtures
+- `FedresursOfficialProvider` (ЕФРСБ REST + JWT refresh mock) + fixtures
+- Fallback: Official API → primary; Serper → discovery; soft-fail
+- Merge по `procurement_id` / `lot_id` (official fields win)
+- Owner UI: канал OFFICIAL_API / SERPER_DISCOVERY / FIXTURE/DEMO; статус CONNECTED / NOT_CONFIGURED / UNAVAILABLE
+- Документация для владельца: `docs/lia-official-data-access.md`
+- Тесты: `npm run test:lia-oi-stage2c3`
+
+Env (пустые имена): `LIA_EIS_*`, `LIA_FEDRESURS_*` — см. `.env.example`.
+
+**Стоп-линия:** Matching / Synthesis / Scheduler / CAPTCHA bypass / destructive migrations / платные сервисы.

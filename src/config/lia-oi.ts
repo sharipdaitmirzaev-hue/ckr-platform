@@ -57,6 +57,36 @@ export const liaOiMatchingReadinessLabels = {
   NOT_READY: "NOT_READY",
 } as const;
 
+export const liaOiDataChannelLabels = {
+  OFFICIAL_API: "OFFICIAL_API",
+  SERPER_DISCOVERY: "SERPER_DISCOVERY",
+  FIXTURE_DEMO: "FIXTURE/DEMO",
+} as const;
+
+export const liaOiOfficialApiStatusLabels = {
+  CONNECTED: "CONNECTED",
+  NOT_CONFIGURED: "NOT_CONFIGURED",
+  UNAVAILABLE: "UNAVAILABLE",
+} as const;
+
+export function liaOiOfficialSourceLabel(input: {
+  dataChannel?: string | null;
+  officialApiProvider?: "eis" | "fedresurs" | null;
+}): string | null {
+  if (input.dataChannel === "SERPER_DISCOVERY") return "Serper discovery";
+  if (input.dataChannel === "FIXTURE_DEMO") {
+    if (input.officialApiProvider === "eis") return "ЕИС (fixture / demo)";
+    if (input.officialApiProvider === "fedresurs") return "ЕФРСБ (fixture / demo)";
+    return "FIXTURE/DEMO";
+  }
+  if (input.dataChannel === "OFFICIAL_API" || input.officialApiProvider) {
+    if (input.officialApiProvider === "eis") return "Официальный API ЕИС";
+    if (input.officialApiProvider === "fedresurs") return "Официальный API ЕФРСБ";
+    return "Официальный API";
+  }
+  return null;
+}
+
 export const liaOiContentIntentLabels: Record<LiaOiContentIntent, string> = {
   OPPORTUNITY: "Возможность",
   CATALOG: "Каталог",

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fixture: EIS notice export shape (44-FZ). Not a live response. -->
+<export>
+  <fcsNotificationEF schemeVersion="14.2">
+    <id>1234567890</id>
+    <purchaseNumber>0373100043226000123</purchaseNumber>
+    <docPublishDate>2026-08-01T10:00:00+03:00</docPublishDate>
+    <href>https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0373100043226000123</href>
+    <purchaseObjectInfo>Поставка воды питьевой и безалкогольных напитков</purchaseObjectInfo>
+    <purchaseResponsible>
+      <responsibleOrg>
+        <fullName>ГБУ Московской области</fullName>
+        <INN>5024000001</INN>
+        <KPP>502401001</KPP>
+        <factAddress>Московская область, г. Красногорск</factAddress>
+      </responsibleOrg>
+    </purchaseResponsible>
+    <placingWay>
+      <code>EA20</code>
+      <name>Электронный аукцион</name>
+    </placingWay>
+    <lot>
+      <lotNumber>1</lotNumber>
+      <maxPrice>12500000.00</maxPrice>
+      <currency>
+        <code>RUB</code>
+      </currency>
+      <customerRequirements>
+        <customerRequirement>
+          <kladrPlaces>
+            <kladrPlace>
+              <kladrCode>50000000000</kladrCode>
+              <fullName>Московская область</fullName>
+            </kladrPlace>
+          </kladrPlaces>
+          <deliveryTerm>Поставка по спецификации</deliveryTerm>
+        </customerRequirement>
+      </customerRequirements>
+    </lot>
+    <procedureInfo>
+      <collecting>
+        <startDate>2026-08-02T00:00:00+03:00</startDate>
+        <endDate>2026-08-18T09:00:00+03:00</endDate>
+      </collecting>
+      <bidding>
+        <date>2026-08-20T10:00:00+03:00</date>
+      </bidding>
+    </procedureInfo>
+    <purchaseStage>Подача заявок</purchaseStage>
+  </fcsNotificationEF>
+  <fcsNotificationEF schemeVersion="14.2">
+    <id>1234567891</id>
+    <purchaseNumber>0322100004526000456</purchaseNumber>
+    <docPublishDate>2026-08-05T12:00:00+03:00</docPublishDate>
+    <href>https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0322100004526000456</href>
+    <purchaseObjectInfo>Поставка продуктов питания, включая воду и соки</purchaseObjectInfo>
+    <purchaseResponsible>
+      <responsibleOrg>
+        <fullName>МКУ Централизованная бухгалтерия</fullName>
+        <factAddress>Республика Башкортостан, г. Уфа</factAddress>
+      </responsibleOrg>
+    </purchaseResponsible>
+    <lot>
+      <lotNumber>1</lotNumber>
+      <maxPrice>8700000.00</maxPrice>
+    </lot>
+    <procedureInfo>
+      <collecting>
+        <endDate>2026-08-25T18:00:00+03:00</endDate>
+      </collecting>
+    </procedureInfo>
+    <purchaseStage>Определение поставщика</purchaseStage>
+  </fcsNotificationEF>
+</export>

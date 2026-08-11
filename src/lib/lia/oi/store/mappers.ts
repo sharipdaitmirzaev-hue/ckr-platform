@@ -121,7 +121,11 @@ export function candidateToRow(c: LiaOiCandidate): OppRow {
     support_amount: c.supportAmount ?? null,
     address: c.address ?? null,
     eligibility: c.eligibility ?? null,
-    discovery_json: {},
+    discovery_json: {
+      dataChannel: c.dataChannel ?? null,
+      officialApiProvider: c.officialApiProvider ?? null,
+      officialApiStatus: c.officialApiStatus ?? null,
+    },
     normalized_json: {
       // retention: compact meta only — no HTML
       sourceCount: c.sources.length,
@@ -129,6 +133,9 @@ export function candidateToRow(c: LiaOiCandidate): OppRow {
       structuredFields: c.structuredFields ?? [],
       matchingReadiness: c.matchingReadiness ?? null,
       dataQualityScore: c.dataQualityScore ?? null,
+      dataChannel: c.dataChannel ?? null,
+      officialApiProvider: c.officialApiProvider ?? null,
+      officialApiStatus: c.officialApiStatus ?? null,
     },
     updated_at: new Date().toISOString(),
   };
@@ -257,6 +264,21 @@ export function rowToCandidate(
     structuredFields:
       ((row.normalized_json as { structuredFields?: LiaOiCandidate["structuredFields"] })
         ?.structuredFields as LiaOiCandidate["structuredFields"]) ?? undefined,
+    dataChannel:
+      ((row.normalized_json as { dataChannel?: LiaOiCandidate["dataChannel"] })
+        ?.dataChannel as LiaOiCandidate["dataChannel"]) ??
+      ((row.discovery_json as { dataChannel?: LiaOiCandidate["dataChannel"] })
+        ?.dataChannel as LiaOiCandidate["dataChannel"]) ??
+      undefined,
+    officialApiProvider:
+      ((row.normalized_json as {
+        officialApiProvider?: LiaOiCandidate["officialApiProvider"];
+      })?.officialApiProvider as LiaOiCandidate["officialApiProvider"]) ??
+      null,
+    officialApiStatus:
+      ((row.normalized_json as {
+        officialApiStatus?: LiaOiCandidate["officialApiStatus"];
+      })?.officialApiStatus as LiaOiCandidate["officialApiStatus"]) ?? null,
   };
 }
 

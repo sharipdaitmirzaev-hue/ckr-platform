@@ -1,5 +1,6 @@
 import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
 import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
+import { getOfficialAndDiscoveryStatusRows } from "@/lib/lia/oi/sources/providers/status";
 import {
   getSourceHealthSnapshot,
   LIA_OI_SOURCE_FILTER_OPTIONS,
@@ -19,12 +20,14 @@ export default async function LiaOiSourcesPage() {
   const provider = getInternetSearchProvider();
   const mode = resolveOiSearchMode();
   const health = await getSourceHealthSnapshot();
+  const officialStatus = getOfficialAndDiscoveryStatusRows();
   const sources = (await listCandidates()).flatMap((c) =>
     c.sources.map((s) => ({
       ...s,
       candidateTitle: c.title,
       adapter: c.sourceAdapterId,
       official: c.isOfficialSource,
+      channel: c.dataChannel,
     })),
   );
 
@@ -35,13 +38,35 @@ export default async function LiaOiSourcesPage() {
         <p className="mt-2 text-sm text-muted">
           {mode.bannerTitle}. General discovery:{" "}
           <strong>{provider.label}</strong> ({provider.mode}). Специализированные
-          adapters запускаются по команде владельца.
+          adapters запускаются по команде владельца. Секреты не отображаются.
         </p>
       </div>
 
       <section className="space-y-3">
         <h3 className="font-display text-lg text-foreground">
-          Состояние источников
+          Official / discovery status
+        </h3>
+        <ul className="space-y-2 text-sm">
+          {officialStatus.map((row) => (
+            <li
+              key={row.id}
+              className="rounded-sm border border-border px-3 py-2"
+            >
+              <p className="text-foreground">
+                {row.label}
+              </p>
+              <p className="text-xs text-muted">
+                Статус: {row.statusMessage}
+                {row.status !== row.statusMessage ? ` · ${row.status}` : ""}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="font-display text-lg text-foreground">
+          Состояние adapters
         </h3>
         <ul className="space-y-2 text-sm">
           <li className="rounded-sm border border-border px-3 py-2">
@@ -83,6 +108,7 @@ export default async function LiaOiSourcesPage() {
                 {s.name} {s.isStub ? "· STUB" : "· LIVE"} · {s.category}
                 {s.official ? " · официальный" : ""}
                 {s.adapter ? ` · ${s.adapter}` : ""}
+                {s.channel ? ` · ${s.channel}` : ""}
               </p>
               <p className="text-xs text-muted">{s.candidateTitle}</p>
               <a

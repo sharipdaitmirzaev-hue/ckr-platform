@@ -1,7 +1,9 @@
 import {
   liaOiBudgetFitLabels,
   liaOiContentIntentLabels,
+  liaOiDataChannelLabels,
   liaOiMatchingReadinessLabels,
+  liaOiOfficialSourceLabel,
   liaOiPageTypeLabels,
   liaOiPriorityLabels,
   liaOiStatusLabels,
@@ -16,12 +18,19 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
   const quality = item.score.quality ?? 0;
   const budgetFit = item.budgetFit ?? "UNKNOWN";
   const contentIntent = item.contentIntent ?? "UNKNOWN";
-  const price = item.askingPrice ?? item.investmentRequired;
+  const price = item.askingPrice ?? item.investmentRequired ?? item.nmck;
   const sourceUrl = item.sources[0]?.url;
   const typeLabel =
     LIA_OI_OPPORTUNITY_TYPE_LABELS[item.opportunityType || "WEB_LISTING"] ||
     item.opportunityType;
   const deadlineText = deadlineLabel(item.daysRemaining ?? null);
+  const dataSourceLabel = liaOiOfficialSourceLabel({
+    dataChannel: item.dataChannel,
+    officialApiProvider: item.officialApiProvider,
+  });
+  const channelLabel = item.dataChannel
+    ? liaOiDataChannelLabels[item.dataChannel]
+    : null;
 
   return (
     <article className="rounded-sm border border-border bg-surface p-5 transition-colors hover:border-accent/40">
@@ -46,6 +55,16 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
             {item.isOfficialSource ? (
               <span className="border border-accent/40 px-2 py-0.5 text-accent">
                 Официальный источник
+              </span>
+            ) : null}
+            {dataSourceLabel ? (
+              <span className="border border-accent/40 px-2 py-0.5 text-accent">
+                {dataSourceLabel}
+              </span>
+            ) : null}
+            {channelLabel ? (
+              <span className="border border-border px-2 py-0.5 text-muted">
+                {channelLabel}
               </span>
             ) : null}
             {deadlineText ? (

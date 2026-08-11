@@ -58,6 +58,7 @@ export const LIA_OI_MATCHING_READINESS = [
 export type LiaOiMatchingReadiness = (typeof LIA_OI_MATCHING_READINESS)[number];
 
 export const LIA_OI_STRUCTURED_FIELD_SOURCES = [
+  "official_api",
   "official_page",
   "search_snippet",
   "fixture",
@@ -65,6 +66,22 @@ export const LIA_OI_STRUCTURED_FIELD_SOURCES = [
 ] as const;
 export type LiaOiStructuredFieldSource =
   (typeof LIA_OI_STRUCTURED_FIELD_SOURCES)[number];
+
+/** Stage 2C.3 — how the card's primary structured data was obtained. */
+export const LIA_OI_DATA_CHANNELS = [
+  "OFFICIAL_API",
+  "SERPER_DISCOVERY",
+  "FIXTURE_DEMO",
+] as const;
+export type LiaOiDataChannel = (typeof LIA_OI_DATA_CHANNELS)[number];
+
+export const LIA_OI_OFFICIAL_API_STATUSES = [
+  "CONNECTED",
+  "NOT_CONFIGURED",
+  "UNAVAILABLE",
+] as const;
+export type LiaOiOfficialApiStatus =
+  (typeof LIA_OI_OFFICIAL_API_STATUSES)[number];
 
 /** Structured field with explicit provenance (Stage 2C.1). */
 export type LiaOiStructuredField = {
@@ -325,6 +342,12 @@ export type LiaOiCandidate = {
   supportAmount?: number | null;
   address?: string | null;
   eligibility?: string | null;
+  /** Stage 2C.3 — OFFICIAL_API | SERPER_DISCOVERY | FIXTURE_DEMO */
+  dataChannel?: LiaOiDataChannel;
+  /** eis | fedresurs when official provider contributed */
+  officialApiProvider?: "eis" | "fedresurs" | null;
+  /** Connection state snapshot at card build time */
+  officialApiStatus?: LiaOiOfficialApiStatus | null;
 };
 
 export type LiaOiSearchIntent =

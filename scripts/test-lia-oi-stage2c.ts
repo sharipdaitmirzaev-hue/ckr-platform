@@ -78,7 +78,15 @@ async function main() {
     assert.ok(candidates.some((c) => c.opportunityType === "PROCUREMENT"));
     assert.ok(
       candidates.some((c) =>
-        (c.claims || []).some((x) => x.field === "procurementId"),
+        (c.claims || []).some(
+          (x) => x.field === "procurementId" || x.field === "procurement_id",
+        ),
+      ),
+    );
+    assert.ok(
+      candidates.some(
+        (c) =>
+          c.dataChannel === "FIXTURE_DEMO" || c.officialApiProvider === "eis",
       ),
     );
     ok("procurement adapter normalization");

@@ -1,10 +1,14 @@
 /**
  * Auction / bankruptcy / government asset lots.
- * Transport: fixture (stub) or legal Serper site-restricted discovery (live).
- * Direct torgi/fedresurs REST requires registration — not wired without credentials.
+ * Stage 2C.3: FedresursOfficialProvider (REST fixtures without credentials) → primary;
+ * Serper site discovery (torgi/fedresurs) → fallback. Soft-fail if API unavailable.
  */
 
-import auctionFixtures from "@/lib/lia/oi/sources/fixtures/auction.json";
+import {
+  fedresursOfficialProvider,
+  mergeCandidatePool,
+  officialObjectToCandidate,
+} from "@/lib/lia/oi/sources/providers";
 import {
   buildSpecializedCandidate,
   hitToSpecializedCandidate,
@@ -12,9 +16,9 @@ import {
 import { searchOfficialSites } from "@/lib/lia/oi/sources/serper-site";
 import type {
   LiaOiSourceAdapterQuery,
-  LiaOiSourceAdapterResult,
   OpportunitySourceAdapter,
 } from "@/lib/lia/oi/sources/types";
+import type { LiaOiCandidate } from "@/types/lia-oi";
 
 const SITES = ["torgi.gov.ru", "bankrot.fedresurs.ru"];
 
@@ -30,68 +34,13 @@ function matchQuery(q: LiaOiSourceAdapterQuery): boolean {
   );
 }
 
-function fromFixtures(q: LiaOiSourceAdapterQuery): LiaOiSourceAdapterResult {
-  const started = Date.now();
-  const budget = q.plan.budgetMax;
-  const rows = (auctionFixtures as Array<Record<string, unknown>>).filter(
-    (row) => {
-      const price = Number(row.startPrice ?? row.currentPrice ?? 0);
-      if (budget != null && price > 0 && price > budget) return false;
-      return true;
-    },
-  );
-  const candidates = rows.map((row) =>
-    buildSpecializedCandidate({
-      adapterId: "auction_assets",
-      opportunityType: "AUCTION_ASSET",
-      sourceClass: "AUCTIONS_ASSETS",
-      category: "AUCTIONS",
-      sourceName: "ГИС Торги / ЕФРСБ (fixture)",
-      official: true,
-      sourceConfidence: 88,
-      title: String(row.title),
-      description: String(row.description),
-      url: String(row.url),
-      region: (row.region as string) || null,
-      city: null,
-      askingPrice: (row.currentPrice as number) ?? (row.startPrice as number),
-      assetType: (row.assetType as string) || null,
-      objectId: String(row.lotId),
-      deadlineRaw: (row.deadline as string) || null,
-      isStub: true,
-      extraClaims: [
-        {
-          field: "lotId",
-          value: String(row.lotId),
-          kind: "FACT",
-          sourceName: "fixture",
-          sourceUrl: String(row.url),
-        },
-        {
-          field: "organizer",
-          value: String(row.organizer || ""),
-          kind: "FACT",
-          sourceName: "fixture",
-          sourceUrl: String(row.url),
-        },
-      ],
-      whyInteresting: [
-        "Официальный источник торгов/активов",
-        row.organizer ? `Организатор: ${row.organizer}` : "Лот на торгах",
-      ],
-    }),
-  );
+function tagSerper(c: LiaOiCandidate): LiaOiCandidate {
   return {
-    adapterId: "auction_assets",
-    label: "Торги / активы",
-    health: "OK",
-    durationMs: Date.now() - started,
-    rawCount: rows.length,
-    normalizedCount: candidates.length,
-    candidates,
-    error: null,
-    official: true,
-    transport: "fixture",
+    ...c,
+    dataChannel: "SERPER_DISCOVERY",
+    officialApiProvider: "fedresurs",
+    officialApiStatus: fedresursOfficialProvider.getConnectionStatus(),
+    sourceConfidence: c.sourceConfidence ?? 82,
   };
 }
 
@@ -110,12 +59,75 @@ export const auctionSourceAdapter: OpportunitySourceAdapter = {
   },
   matches: matchQuery,
   async healthcheck() {
-    return "OK";
+    try {
+      fedresursOfficialProvider.getConnectionStatus();
+      return "OK";
+    } catch {
+      return "UNAVAILABLE";
+    }
   },
   async search(q) {
-    if (q.mode !== "live") return fromFixtures(q);
-
     const started = Date.now();
+    const connectionStatus = fedresursOfficialProvider.getConnectionStatus();
+    let officialCandidates: LiaOiCandidate[] = [];
+    let officialTransport: "fixture" | "http_api" | "serper_site" = "fixture";
+    let officialError: string | null = null;
+
+    const wantOfficialPrimary =
+      q.mode !== "live" || connectionStatus === "CONNECTED";
+    if (wantOfficialPrimary) {
+      try {
+        const official = await fedresursOfficialProvider.search({
+          rawQuery: q.rawQuery,
+          limit: this.budgets.maxResultsPerRun,
+          allowLive: q.mode === "live" && connectionStatus === "CONNECTED",
+          useFixtures: q.mode !== "live" || connectionStatus !== "CONNECTED",
+        });
+        officialTransport = official.transport;
+        officialError = official.error || null;
+        const budget = q.plan.budgetMax;
+        officialCandidates = official.objects
+          .filter((o) => {
+            const price = o.currentPrice ?? o.startingPrice ?? 0;
+            if (budget != null && price > 0 && price > budget) return false;
+            return true;
+          })
+          .map((o) =>
+            officialObjectToCandidate(o, {
+              adapterId: "auction_assets",
+              opportunityType: "AUCTION_ASSET",
+              sourceClass: "AUCTIONS_ASSETS",
+              category: "AUCTIONS",
+            }),
+          )
+          .map((c) => ({
+            ...c,
+            officialApiStatus:
+              official.connectionStatus === "UNAVAILABLE"
+                ? "UNAVAILABLE"
+                : c.officialApiStatus,
+          }));
+      } catch (error) {
+        officialError =
+          error instanceof Error ? error.message : "fedresurs_provider_error";
+      }
+    }
+
+    if (q.mode !== "live") {
+      return {
+        adapterId: "auction_assets",
+        label: this.label,
+        health: "OK",
+        durationMs: Date.now() - started,
+        rawCount: officialCandidates.length,
+        normalizedCount: officialCandidates.length,
+        candidates: officialCandidates,
+        error: officialError,
+        official: true,
+        transport: "fixture",
+      };
+    }
+
     const keywords = q.rawQuery
       .replace(/найди|найти|пожалуйста/gi, "")
       .trim()
@@ -126,48 +138,135 @@ export const auctionSourceAdapter: OpportunitySourceAdapter = {
       `производственные активы торги Россия`,
     ].slice(0, this.budgets.maxRequestsPerRun);
 
-    const { results, errors } = await searchOfficialSites({
-      queries,
-      sites: SITES,
-      limitPerQuery: 5,
-      timeoutMs: this.budgets.timeoutMs,
-    });
-
-    if (!results.length) {
-      // Soft degrade: fixtures marked stub so owner sees structure without claiming live
-      const fallback = fromFixtures(q);
-      return {
-        ...fallback,
-        health: errors.length ? "DEGRADED" : "UNAVAILABLE",
-        error: errors[0] || "no live results from official domains",
-        durationMs: Date.now() - started,
-      };
+    let serperCandidates: LiaOiCandidate[] = [];
+    let serperErrors: string[] = [];
+    try {
+      const { results, errors } = await searchOfficialSites({
+        queries,
+        sites: SITES,
+        limitPerQuery: 5,
+        timeoutMs: this.budgets.timeoutMs,
+      });
+      serperErrors = errors;
+      serperCandidates = results
+        .slice(0, this.budgets.maxResultsPerRun)
+        .map((hit) =>
+          tagSerper(
+            hitToSpecializedCandidate(hit, {
+              adapterId: "auction_assets",
+              opportunityType: "AUCTION_ASSET",
+              sourceClass: "AUCTIONS_ASSETS",
+              category: "AUCTIONS",
+              sourceName: "ГИС Торги / ЕФРСБ (Serper discovery)",
+              idKind: "lot",
+            }),
+          ),
+        );
+    } catch (error) {
+      serperErrors.push(
+        error instanceof Error ? error.message : "serper_site_error",
+      );
     }
 
-    const candidates = results
-      .slice(0, this.budgets.maxResultsPerRun)
-      .map((hit) =>
-        hitToSpecializedCandidate(hit, {
+    const merged = mergeCandidatePool([
+      ...officialCandidates,
+      ...serperCandidates,
+    ]).slice(0, this.budgets.maxResultsPerRun);
+
+    if (!merged.length) {
+      try {
+        const fixtures = await fedresursOfficialProvider.search({
+          rawQuery: q.rawQuery,
+          limit: this.budgets.maxResultsPerRun,
+          allowLive: false,
+          useFixtures: true,
+        });
+        const candidates = fixtures.objects.map((o) =>
+          officialObjectToCandidate(o, {
+            adapterId: "auction_assets",
+            opportunityType: "AUCTION_ASSET",
+            sourceClass: "AUCTIONS_ASSETS",
+            category: "AUCTIONS",
+          }),
+        );
+        return {
           adapterId: "auction_assets",
-          opportunityType: "AUCTION_ASSET",
-          sourceClass: "AUCTIONS_ASSETS",
-          category: "AUCTIONS",
-          sourceName: "ГИС Торги / ЕФРСБ",
-          idKind: "lot",
-        }),
-      );
+          label: this.label,
+          health: "DEGRADED",
+          durationMs: Date.now() - started,
+          rawCount: candidates.length,
+          normalizedCount: candidates.length,
+          candidates,
+          error:
+            officialError ||
+            serperErrors[0] ||
+            "official API unavailable; fixture fallback",
+          official: true,
+          transport: "fixture",
+        };
+      } catch {
+        return {
+          adapterId: "auction_assets",
+          label: this.label,
+          health: "UNAVAILABLE",
+          durationMs: Date.now() - started,
+          rawCount: 0,
+          normalizedCount: 0,
+          candidates: [],
+          error: officialError || serperErrors[0] || "auction unavailable",
+          official: true,
+          transport: "serper_site",
+        };
+      }
+    }
+
+    const transport =
+      officialCandidates.some((c) => c.dataChannel === "OFFICIAL_API") &&
+      officialTransport === "http_api"
+        ? "http_api"
+        : serperCandidates.length
+          ? "serper_site"
+          : "fixture";
 
     return {
       adapterId: "auction_assets",
       label: this.label,
-      health: errors.length ? "DEGRADED" : "OK",
+      health:
+        officialError && !serperCandidates.length
+          ? "DEGRADED"
+          : serperErrors.length
+            ? "DEGRADED"
+            : "OK",
       durationMs: Date.now() - started,
-      rawCount: results.length,
-      normalizedCount: candidates.length,
-      candidates,
-      error: errors[0] || null,
+      rawCount: officialCandidates.length + serperCandidates.length,
+      normalizedCount: merged.length,
+      candidates: merged,
+      error: officialError || serperErrors[0] || null,
       official: true,
-      transport: "serper_site",
+      transport,
     };
   },
 };
+
+export function buildAuctionFixtureCandidate(
+  row: Record<string, unknown>,
+): LiaOiCandidate {
+  return buildSpecializedCandidate({
+    adapterId: "auction_assets",
+    opportunityType: "AUCTION_ASSET",
+    sourceClass: "AUCTIONS_ASSETS",
+    category: "AUCTIONS",
+    sourceName: "ГИС Торги / ЕФРСБ (fixture)",
+    official: true,
+    sourceConfidence: 88,
+    title: String(row.title),
+    description: String(row.description),
+    url: String(row.url),
+    region: (row.region as string) || null,
+    askingPrice: (row.currentPrice as number) ?? (row.startPrice as number),
+    assetType: (row.assetType as string) || null,
+    objectId: String(row.lotId),
+    deadlineRaw: (row.deadline as string) || null,
+    isStub: true,
+  });
+}
