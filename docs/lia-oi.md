@@ -235,6 +235,8 @@ C. DB: таблицы `lia_oi_*` можно оставить — они не л�
 - Deadline повышает **priority**, не `opportunity_score`.
 - Ошибка одного adapter не ломает поиск.
 - Миграция additive: `20260811130000_lia_oi_stage2c_sources.sql`
+- Production apply (после Stage 2B): `sudo ./scripts/apply-lia-oi-stage2c-production.sh`
+- Tests: `npm run test:lia-oi-stage2c` (+ `scripts/test-lia-oi-stage2c-live.ts --live`)
 
 ### Стоп-линия Stage 2C
 
@@ -243,3 +245,5 @@ C. DB: таблицы `lia_oi_*` можно оставить — они не л�
 - CAPTCHA/auth bypass / запрещённый scraping
 - Destructive migrations
 - Автопубликация / автоконтакт
+
+**Matching Engine:** не начинать — Stage 2C даёт specialized discovery + persistence; качество лотов/НМЦК/дедлайнов из site-search ещё ограничено snippets.

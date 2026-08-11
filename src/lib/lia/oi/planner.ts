@@ -29,8 +29,18 @@ export function geographyToken(regions: string[]): string {
 export function detectIntent(query: string): LiaOiSearchIntent {
   const q = query.toLowerCase();
 
-  if (/тендер|закупк|аукцион|торги/.test(q) && !/бизнес.?возможност/i.test(q)) {
+  // Закупки/тендеры отдельно от торгов/активов (Stage 2C).
+  if (
+    /закупк|тендер|нмцк|44-?\s*фз|223-?\s*фз|zakupki/.test(q) &&
+    !/бизнес.?возможност/i.test(q)
+  ) {
     return "tenders";
+  }
+  if (
+    /торг|аукцион|банкрот|федресурс|torgi|росимуществ/.test(q) &&
+    !/бизнес.?возможност/i.test(q)
+  ) {
+    return "assets";
   }
   if (/господдерж|льгот|субсид|грант|мсп/.test(q) && !/бизнес.?возможност/i.test(q)) {
     return "support_programs";
@@ -115,6 +125,11 @@ const BROAD_SOURCE_BANK: SourceTemplate[] = [
     sites: ["torgi.gov.ru"],
   },
   {
+    sourceClass: "TENDERS",
+    hypothesis: "закупка тендер извещение НМЦК поставка",
+    sites: ["zakupki.gov.ru"],
+  },
+  {
     sourceClass: "LAND_SITES",
     hypothesis: "земельный участок под производство продажа цена",
   },
@@ -164,7 +179,7 @@ const INTENT_SOURCE_MAP: Partial<Record<LiaOiSearchIntent, LiaOiSourceClass[]>> 
     business_for_sale: ["READY_BUSINESS", "FRANCHISE", "PRODUCTION_ASSETS"],
     real_estate: ["COMMERCIAL_REAL_ESTATE", "LAND_SITES"],
     land_or_site: ["LAND_SITES", "AUCTIONS_ASSETS"],
-    tenders: ["TENDERS", "AUCTIONS_ASSETS"],
+    tenders: ["TENDERS"],
     support_programs: ["SUPPORT_PROGRAMS"],
     hotel_or_tourism: ["READY_BUSINESS", "OTHER"],
     assets: ["AUCTIONS_ASSETS", "PRODUCTION_ASSETS"],
