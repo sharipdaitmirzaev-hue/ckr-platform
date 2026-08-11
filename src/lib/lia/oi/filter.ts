@@ -60,6 +60,8 @@ export function cheapFilterHits(
       continue;
     }
 
+    // Stage 2A.2: over-budget не выбрасываем здесь — уходит в REJECTED/OVER_BUDGET
+    // в buckets. Режем только абсурдные суммы (>> hard budget).
     const budgetMax = options?.budgetMax ?? null;
     if (budgetMax != null) {
       const money =
@@ -67,7 +69,7 @@ export function cheapFilterHits(
         hit.askingPrice ??
         extractMoneyFromText(blob)?.amount ??
         null;
-      if (money != null && money > budgetMax * 1.8) {
+      if (money != null && money > budgetMax * 10) {
         stats.droppedBudget += 1;
         continue;
       }

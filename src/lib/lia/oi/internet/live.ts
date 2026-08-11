@@ -36,6 +36,7 @@ export function mapExternalResultToHit(
   const industry = extractIndustryHint(text);
   const contacts = extractPublicContacts(text);
   const category = classifySourceCategory(result.url, text);
+  const isInvest = money?.priceKind === "INVESTMENT_REQUIRED";
 
   return {
     id: `live_${oiHash(result.url || result.id)}`,
@@ -47,8 +48,8 @@ export function mapExternalResultToHit(
     region: location?.region,
     city: location?.city,
     industry,
-    askingPrice: money?.amount ?? null,
-    investmentRequired: money?.amount ?? null,
+    askingPrice: money && !isInvest ? money.amount : null,
+    investmentRequired: money && isInvest ? money.amount : money?.amount ?? null,
     publishedAt: result.published_at || undefined,
     discoveredAt: new Date().toISOString(),
     isStub: false,

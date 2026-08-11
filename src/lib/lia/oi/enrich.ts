@@ -5,6 +5,12 @@
 
 import { LIA_OI_BUDGETS } from "@/config/lia-oi";
 import {
+  resolveBudgetFit,
+  resolvePriceStatus,
+} from "@/lib/lia/oi/constraints";
+import { classifyContentIntent } from "@/lib/lia/oi/content-intent";
+import { validateDetailOpportunity } from "@/lib/lia/oi/detail-validate";
+import {
   extractIndustryHint,
   extractLocationFromText,
   extractMoneyFromText,
@@ -12,7 +18,7 @@ import {
 } from "@/lib/lia/oi/extract";
 import { classifyPageType, isCatalogPageType } from "@/lib/lia/oi/page-type";
 import { safeFetch } from "@/lib/http/safe-fetch";
-import type { LiaOiCandidate, LiaOiClaim } from "@/types/lia-oi";
+import type { LiaOiCandidate, LiaOiClaim, LiaOiSearchPlan } from "@/types/lia-oi";
 
 function stripHtml(html: string): string {
   return html
@@ -83,6 +89,7 @@ export type EnrichRunStats = {
  */
 export async function enrichTopDetailCandidates(
   candidates: LiaOiCandidate[],
+  plan?: LiaOiSearchPlan,
 ): Promise<{ candidates: LiaOiCandidate[]; stats: EnrichRunStats }> {
   const max = LIA_OI_BUDGETS.maxFetchesPerRun;
   const stats: EnrichRunStats = { pagesFetched: 0, pagesFetchFailed: 0 };
@@ -249,7 +256,17 @@ export async function enrichTopDetailCandidates(
         ? text.slice(0, 600)
         : c.description;
 
-    out[i] = {
+    const priceAmt = askingPrice ?? investmentRequired ?? null;
+    const priceStatus = resolvePriceStatus(priceAmt);
+    const budgetFit = resolveBudgetFit(priceAmt, plan?.budgetMax);
+    const contentIntent = classifyContentIntent({
+      url: fetched.finalUrl || url,
+      title,
+      snippet: description.slice(0, 400),
+      pageType: refinedType,
+    });
+
+    let next: LiaOiCandidate = {
       ...c,
       title,
       description,
@@ -267,6 +284,10 @@ export async function enrichTopDetailCandidates(
       pageType: refinedType,
       isCatalogSource: isCatalogPageType(refinedType),
       enrichedFromFetch: true,
+      priceStatus,
+      budgetFit,
+      priceKind: money?.priceKind ?? c.priceKind,
+      contentIntent,
       claims,
       sources: c.sources.map((s, idx) =>
         idx === 0
@@ -274,6 +295,20 @@ export async function enrichTopDetailCandidates(
           : s,
       ),
     };
+
+    const detail = validateDetailOpportunity(next);
+    next = {
+      ...next,
+      pageType: detail.effectivePageType,
+      isCatalogSource:
+        isCatalogPageType(detail.effectivePageType) ||
+        contentIntent === "CATALOG",
+      detailConfidence: detail.detailConfidence,
+      detailSignals: detail.signals,
+      missingFields: detail.missing,
+    };
+
+    out[i] = next;
   }
 
   return { candidates: out, stats };

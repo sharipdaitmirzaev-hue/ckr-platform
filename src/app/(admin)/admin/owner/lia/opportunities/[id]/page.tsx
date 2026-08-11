@@ -1,5 +1,7 @@
 import { OpportunityActions } from "@/components/lia/oi/opportunity-actions";
 import {
+  liaOiBudgetFitLabels,
+  liaOiContentIntentLabels,
   liaOiPageTypeLabels,
   liaOiPriorityLabels,
   liaOiStatusLabels,
@@ -20,6 +22,8 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
   const item = getCandidate(params.id);
   if (!item) notFound();
   const pageType = item.pageType ?? "UNKNOWN";
+  const contentIntent = item.contentIntent ?? "UNKNOWN";
+  const budgetFit = item.budgetFit ?? "UNKNOWN";
 
   return (
     <div className="space-y-8">
@@ -33,7 +37,8 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
         <p className="mt-4 text-xs uppercase tracking-[0.14em] text-muted">
           {liaOiStatusLabels[item.status]} ·{" "}
           {liaOiPriorityLabels[item.score.priority]} ·{" "}
-          {liaOiPageTypeLabels[pageType]}
+          {liaOiPageTypeLabels[pageType]} ·{" "}
+          {liaOiContentIntentLabels[contentIntent]}
         </p>
         <h2 className="mt-2 font-display text-3xl text-foreground">
           {item.title}
@@ -44,6 +49,11 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
         {item.isCatalogSource ? (
           <p className="mt-3 text-sm text-accent">
             Это источник для дальнейшего поиска, а не конкретная возможность.
+          </p>
+        ) : null}
+        {item.priceStatus === "UNKNOWN" ? (
+          <p className="mt-3 text-sm text-accent">
+            Подтверждённая цена отсутствует (price_status=UNKNOWN).
           </p>
         ) : null}
       </div>
@@ -83,6 +93,14 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
             <div>
               <dt className="text-muted">Тип страницы</dt>
               <dd className="text-foreground">{liaOiPageTypeLabels[pageType]}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Budget fit</dt>
+              <dd className="text-foreground">{liaOiBudgetFitLabels[budgetFit]}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">detail_confidence</dt>
+              <dd className="text-foreground">{item.detailConfidence ?? 0}/100</dd>
             </div>
             <div>
               <dt className="text-muted">Качество данных</dt>

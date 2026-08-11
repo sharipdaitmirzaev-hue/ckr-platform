@@ -1,5 +1,6 @@
 import { LIA_OI_BUDGETS, LIA_OI_LIVE_UNAVAILABLE } from "@/config/lia-oi";
 import { analyzeCandidate } from "@/lib/lia/oi/analyze";
+import { applyBuckets } from "@/lib/lia/oi/buckets";
 import { dedupeCandidates } from "@/lib/lia/oi/dedup";
 import { enrichTopDetailCandidates } from "@/lib/lia/oi/enrich";
 import { cheapFilterHits } from "@/lib/lia/oi/filter";
@@ -10,7 +11,10 @@ import {
   safeProviderErrorMessage,
 } from "@/lib/lia/oi/mode";
 import { normalizeHit } from "@/lib/lia/oi/normalize";
-import { buildSearchPlan } from "@/lib/lia/oi/planner";
+import {
+  buildPass2Queries,
+  buildSearchPlan,
+} from "@/lib/lia/oi/planner";
 import {
   addReport,
   getLiaOiStore,
@@ -35,6 +39,11 @@ export type LiaOiSearchPipelineResult = {
   signalsScanned: number;
   afterDedup: number;
   candidates: LiaOiCandidate[];
+  /** Stage 2A.2 buckets */
+  topOpportunities: LiaOiCandidate[];
+  needsResearch: LiaOiCandidate[];
+  sourceCatalogs: LiaOiCandidate[];
+  rejected: LiaOiCandidate[];
   stubMode: boolean;
   searchMode: "stub" | "live";
   providerLabel: string;
@@ -51,7 +60,7 @@ async function searchAllQueries(
   let errors = 0;
   const hits: InternetSearchHit[] = [];
 
-  for (const q of queries.slice(0, LIA_OI_BUDGETS.maxQueriesPerPlan)) {
+  for (const q of queries) {
     try {
       const chunk = await provider.search(q, {
         limit: options.limit,
@@ -61,7 +70,6 @@ async function searchAllQueries(
       hits.push(...chunk);
     } catch (error) {
       errors += 1;
-      // Не логируем API key / body
       console.error(
         "[lia-oi] internet search query failed:",
         safeProviderErrorMessage(error),
@@ -76,8 +84,37 @@ async function searchAllQueries(
   };
 }
 
+function processHits(
+  rawHits: InternetSearchHit[],
+  plan: ReturnType<typeof buildSearchPlan>,
+): {
+  filteredOut: number;
+  duplicatesRemoved: number;
+  deduped: LiaOiCandidate[];
+} {
+  const { hits: filtered, stats: filterStats } = cheapFilterHits(rawHits, {
+    budgetMax: plan.budgetMax,
+  });
+  const normalized = filtered.map((h) => normalizeHit(h, plan));
+  const beforeDedup = normalized.length;
+  const deduped = dedupeCandidates(normalized).slice(
+    0,
+    LIA_OI_BUDGETS.maxCandidatesPerRun,
+  );
+  return {
+    filteredOut:
+      filterStats.droppedEmpty +
+      filterStats.droppedUrl +
+      filterStats.droppedJunk +
+      filterStats.droppedBudget,
+    duplicatesRemoved: Math.max(0, beforeDedup - deduped.length),
+    deduped,
+  };
+}
+
 /**
- * Запрос владельца → plan → (stub|live) search → filter → normalize → dedup → analyze → score.
+ * Запрос владельца → plan → multi-pass search → filter → normalize →
+ * dedup → analyze → enrich → buckets.
  */
 export async function runOwnerSearchPipeline(input: {
   query: string;
@@ -85,81 +122,142 @@ export async function runOwnerSearchPipeline(input: {
 }): Promise<LiaOiSearchPipelineResult> {
   const modeInfo = resolveOiSearchMode();
   const plan = buildSearchPlan(input.query);
-  // Берём полный лимит Serper на query (не сжимать до 2): иначе в TOP SERP
-  // остаются только каталоги, а DETAIL-объявления уходят глубже.
   const perQueryLimit = LIA_OI_BUDGETS.maxResultsPerQuery;
 
-  const { hits: rawHits, errors, fatal } = await searchAllQueries(plan.queries, {
+  // --- Pass 1 ---
+  const pass1 = plan.pass1Queries?.length
+    ? plan.pass1Queries
+    : plan.queries.slice(0, LIA_OI_BUDGETS.maxQueriesPass1);
+
+  const search1 = await searchAllQueries(pass1, {
     limit: perQueryLimit,
     budgetMax: plan.budgetMax ?? null,
     region: plan.regions[0],
   });
 
-  const providerUnavailable = fatal && modeInfo.mode === "live";
+  let allHits = [...search1.hits];
+  let providerErrors = search1.errors;
+  let searchPasses = 1;
+  let queriesRun = pass1.length;
+
+  let { filteredOut, duplicatesRemoved, deduped } = processHits(allHits, plan);
+
+  let working = deduped
+    .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun)
+    .map((c) => analyzeCandidate(c, plan))
+    .sort((a, b) => b.score.overall - a.score.overall);
+
+  // Preliminary bucket peek for pass-2 decision
+  const peek = applyBuckets(working);
+  const needPass2 =
+    modeInfo.mode === "live" &&
+    peek.counts.TOP_OPPORTUNITIES < LIA_OI_BUDGETS.minTopForPass2Skip &&
+    queriesRun < LIA_OI_BUDGETS.maxQueriesPerRun;
+
+  if (needPass2) {
+    const remaining = LIA_OI_BUDGETS.maxQueriesPerRun - queriesRun;
+    const pass2 = buildPass2Queries(
+      plan,
+      {
+        topCount: peek.counts.TOP_OPPORTUNITIES,
+        detailCount: working.filter((c) => c.pageType === "DETAIL").length,
+        fitCount: working.filter((c) => c.budgetFit === "FIT").length,
+        unknownPriceCount: working.filter((c) => c.priceStatus === "UNKNOWN")
+          .length,
+        opportunityCount: working.filter((c) => c.contentIntent === "OPPORTUNITY")
+          .length,
+      },
+      Math.min(remaining, LIA_OI_BUDGETS.maxQueriesPass2),
+    );
+
+    if (pass2.length) {
+      plan.pass2Queries = pass2;
+      plan.queries = [...pass1, ...pass2];
+      const search2 = await searchAllQueries(pass2, {
+        limit: perQueryLimit,
+        budgetMax: plan.budgetMax ?? null,
+        region: plan.regions[0],
+      });
+      allHits = [...allHits, ...search2.hits];
+      providerErrors += search2.errors;
+      searchPasses = 2;
+      queriesRun += pass2.length;
+
+      ({ filteredOut, duplicatesRemoved, deduped } = processHits(allHits, plan));
+      working = deduped
+        .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun)
+        .map((c) => analyzeCandidate(c, plan))
+        .sort((a, b) => b.score.overall - a.score.overall);
+    }
+  }
+
+  const providerUnavailable =
+    search1.fatal &&
+    allHits.length === 0 &&
+    modeInfo.mode === "live";
   if (providerUnavailable) {
     console.error(
       "[lia-oi] external search unavailable for owner run; mode=live",
     );
   }
 
-  const { hits: filtered, stats: filterStats } = cheapFilterHits(rawHits, {
-    budgetMax: plan.budgetMax,
-  });
-
-  const normalized = filtered.map(normalizeHit);
-  // Не смешиваем stub и live в одном run без маркировки — provider один на run.
-  const beforeDedup = normalized.length;
-  const deduped = dedupeCandidates(normalized).slice(
-    0,
-    LIA_OI_BUDGETS.maxCandidatesPerRun,
-  );
-  const duplicatesRemoved = Math.max(0, beforeDedup - deduped.length);
-
-  const catalogPagesSeen = deduped.filter((c) => c.isCatalogSource).length;
-
-  // Предварительный score → выбор TOP DETAIL для safe-fetch
-  const working = deduped
-    .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun)
-    .map((c) => analyzeCandidate(c, plan))
-    .sort((a, b) => b.score.overall - a.score.overall);
+  const catalogPagesSeen = working.filter((c) => c.isCatalogSource).length;
 
   const enrich =
     modeInfo.mode === "live"
-      ? await enrichTopDetailCandidates(working)
+      ? await enrichTopDetailCandidates(working, plan)
       : { candidates: working, stats: { pagesFetched: 0, pagesFetchFailed: 0 } };
 
-  // После enrichment — пересчёт анализа/score
   const analyzed = enrich.candidates
     .map((c) => analyzeCandidate(c, plan))
     .sort((a, b) => {
-      // DETAIL выше каталогов при близком overall
+      if (a.budgetFit === "OVER_BUDGET" && b.budgetFit !== "OVER_BUDGET") return 1;
+      if (b.budgetFit === "OVER_BUDGET" && a.budgetFit !== "OVER_BUDGET") return -1;
       if (a.isCatalogSource !== b.isCatalogSource) {
         return a.isCatalogSource ? 1 : -1;
       }
       return b.score.overall - a.score.overall;
     });
 
-  const detailPages = analyzed.filter((c) => c.pageType === "DETAIL").length;
-  const catalogPagesDemoted = analyzed.filter((c) => c.isCatalogSource).length;
+  const bucketed = applyBuckets(analyzed);
+  const top = bucketed.top.slice(0, LIA_OI_BUDGETS.maxTopOpportunities);
+  // Не добиваем TOP мусором — честно меньше 10
+  const feed = [
+    ...top,
+    ...bucketed.needsResearch,
+    ...bucketed.catalogs,
+    ...bucketed.rejected,
+  ];
+
+  const detailPages = feed.filter((c) => c.pageType === "DETAIL").length;
+  const opportunityCount = feed.filter(
+    (c) => c.contentIntent === "OPPORTUNITY",
+  ).length;
+  const overBudget = feed.filter((c) => c.budgetFit === "OVER_BUDGET").length;
+  const unknownPrice = feed.filter((c) => c.priceStatus === "UNKNOWN").length;
 
   const stats: LiaOiPipelineStats = {
-    queriesRun: Math.min(plan.queries.length, LIA_OI_BUDGETS.maxQueriesPerPlan),
-    signalsRaw: rawHits.length,
-    filteredOut:
-      filterStats.droppedEmpty +
-      filterStats.droppedUrl +
-      filterStats.droppedJunk +
-      filterStats.droppedBudget,
+    queriesRun,
+    signalsRaw: allHits.length,
+    filteredOut,
     duplicatesRemoved,
     afterDedup: deduped.length,
-    analyzed: analyzed.length,
-    providerErrors: errors,
+    analyzed: feed.length,
+    providerErrors,
     providerUnavailable,
     catalogPagesSeen,
-    catalogPagesDemoted,
+    catalogPagesDemoted: bucketed.counts.SOURCE_CATALOGS,
     detailPages,
     pagesFetched: enrich.stats.pagesFetched,
     pagesFetchFailed: enrich.stats.pagesFetchFailed,
+    searchPasses,
+    opportunityCount,
+    topOpportunities: top.length,
+    needsResearch: bucketed.counts.NEEDS_RESEARCH,
+    sourceCatalogs: bucketed.counts.SOURCE_CATALOGS,
+    rejected: bucketed.counts.REJECTED,
+    overBudget,
+    unknownPrice,
   };
 
   const request: LiaOiSearchRequest = {
@@ -168,18 +266,18 @@ export async function runOwnerSearchPipeline(input: {
     plan,
     createdAt: new Date().toISOString(),
     createdBy: input.userId,
-    candidateIds: analyzed.map((c) => c.id),
+    candidateIds: feed.map((c) => c.id),
     stubMode: modeInfo.mode === "stub",
     searchMode: modeInfo.mode,
     providerLabel: modeInfo.providerLabel,
     stats,
   };
 
-  for (const c of analyzed) {
+  for (const c of feed) {
     c.searchRequestId = request.id;
   }
 
-  upsertCandidates(analyzed);
+  upsertCandidates(feed);
   saveSearchRequest(request);
 
   const modeLine =
@@ -195,49 +293,54 @@ export async function runOwnerSearchPipeline(input: {
       modeLine,
       providerUnavailable ? LIA_OI_LIVE_UNAVAILABLE : null,
       `План: intent=${plan.intent}, регионы=${plan.regions.join(", ")}, бюджет_max=${plan.budgetMax ?? "—"}.`,
-      `Гипотез/запросов: ${stats.queriesRun}.`,
-      `Интернет-результатов: ${stats.signalsRaw}. Отброшено фильтром: ${stats.filteredOut}. Дублей: ${stats.duplicatesRemoved}.`,
-      `После dedup: ${stats.afterDedup}. Проанализировано: ${stats.analyzed}.`,
-      `DETAIL: ${stats.detailPages ?? 0}. Каталогов (понижены): ${stats.catalogPagesDemoted ?? 0}.`,
+      `HARD: geo=${plan.hardConstraints?.geography}, max_budget=${plan.hardConstraints?.maxBudgetRub ?? "—"}.`,
+      `Serper queries: ${stats.queriesRun} (passes=${stats.searchPasses}).`,
+      `Raw: ${stats.signalsRaw}. TOP: ${stats.topOpportunities}. Research: ${stats.needsResearch}. Catalogs: ${stats.sourceCatalogs}. Rejected: ${stats.rejected}.`,
+      `OVER_BUDGET: ${stats.overBudget}. UNKNOWN_PRICE: ${stats.unknownPrice}. DETAIL: ${stats.detailPages}.`,
       `safe-fetch: ok=${stats.pagesFetched ?? 0}, fail=${stats.pagesFetchFailed ?? 0}.`,
       "",
       "Search Plan queries:",
       ...plan.queries.map((q, i) => `  ${i + 1}. ${q}`),
       "",
-      ...analyzed.slice(0, 5).map(
+      ...top.slice(0, 5).map(
         (c, i) =>
-          `${i + 1}. [${c.pageType}] ${c.title} — opp ${c.score.opportunity}/100, quality ${c.score.quality}% · ${c.isStub ? "STUB" : "LIVE"}`,
+          `${i + 1}. [${c.contentIntent}/${c.pageType}] ${c.title} — ${c.budgetFit} · opp ${c.score.opportunity}/100`,
       ),
     ]
       .filter(Boolean)
       .join("\n"),
     stats: {
-      signals: stats.signalsRaw,
-      filteredOut: stats.filteredOut,
-      duplicatesRemoved: stats.duplicatesRemoved,
       afterDedup: stats.afterDedup,
       analyzed: stats.analyzed,
-      highPriority: analyzed.filter((c) => c.score.priority === "HIGH_PRIORITY")
+      highPriority: top.filter((c) => c.score.priority === "HIGH_PRIORITY")
         .length,
       providerErrors: stats.providerErrors,
       detailPages: stats.detailPages ?? 0,
-      catalogPagesDemoted: stats.catalogPagesDemoted ?? 0,
+      topOpportunities: stats.topOpportunities ?? 0,
+      needsResearch: stats.needsResearch ?? 0,
+      rejected: stats.rejected ?? 0,
+      overBudget: stats.overBudget ?? 0,
       pagesFetched: stats.pagesFetched ?? 0,
+      queriesRun: stats.queriesRun,
     },
-    candidateIds: analyzed.map((c) => c.id),
+    candidateIds: feed.map((c) => c.id),
     createdAt: new Date().toISOString(),
     stubMode: modeInfo.mode === "stub",
   };
   addReport(report);
 
-  maybeBuildHypotheses(analyzed);
+  maybeBuildHypotheses(feed);
 
   return {
     request,
     plan,
     signalsScanned: stats.signalsRaw,
     afterDedup: stats.afterDedup,
-    candidates: analyzed,
+    candidates: feed,
+    topOpportunities: top,
+    needsResearch: bucketed.needsResearch,
+    sourceCatalogs: bucketed.catalogs,
+    rejected: bucketed.rejected,
     stubMode: modeInfo.mode === "stub",
     searchMode: modeInfo.mode,
     providerLabel: modeInfo.providerLabel,
@@ -379,5 +482,7 @@ export function getTodayStats(): LiaOiTodayStats {
 }
 
 export function getRecommendedCandidates(limit = 5): LiaOiCandidate[] {
-  return listCandidates().slice(0, limit);
+  return listCandidates()
+    .filter((c) => c.resultBucket === "TOP_OPPORTUNITIES" || !c.resultBucket)
+    .slice(0, limit);
 }

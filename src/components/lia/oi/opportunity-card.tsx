@@ -1,4 +1,6 @@
 import {
+  liaOiBudgetFitLabels,
+  liaOiContentIntentLabels,
   liaOiPageTypeLabels,
   liaOiPriorityLabels,
   liaOiStatusLabels,
@@ -9,6 +11,10 @@ import Link from "next/link";
 export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
   const pageType = item.pageType ?? "UNKNOWN";
   const quality = item.score.quality ?? 0;
+  const budgetFit = item.budgetFit ?? "UNKNOWN";
+  const contentIntent = item.contentIntent ?? "UNKNOWN";
+  const price = item.askingPrice ?? item.investmentRequired;
+  const sourceUrl = item.sources[0]?.url;
 
   return (
     <article className="rounded-sm border border-border bg-surface p-5 transition-colors hover:border-accent/40">
@@ -17,7 +23,8 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
           <p className="text-xs uppercase tracking-[0.14em] text-muted">
             {liaOiStatusLabels[item.status]} ·{" "}
             {liaOiPriorityLabels[item.score.priority]} ·{" "}
-            {liaOiPageTypeLabels[pageType]}
+            {liaOiPageTypeLabels[pageType]} ·{" "}
+            {liaOiContentIntentLabels[contentIntent]}
           </p>
           <h3 className="mt-2 font-display text-xl text-foreground">
             <Link
@@ -30,28 +37,50 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
           <p className="mt-2 text-sm leading-relaxed text-muted">
             {item.summary || item.description}
           </p>
-          {item.isCatalogSource ? (
+          {item.isCatalogSource || item.resultBucket === "SOURCE_CATALOGS" ? (
             <p className="mt-2 text-sm text-accent">
               Это источник для дальнейшего поиска, а не конкретная возможность.
             </p>
           ) : null}
-          {item.score.whyTop?.length ? (
+          {item.priceStatus === "UNKNOWN" ? (
+            <p className="mt-2 text-sm text-accent">
+              Подтверждённая цена отсутствует (price_status=UNKNOWN).
+            </p>
+          ) : null}
+          {item.budgetFit === "OVER_BUDGET" ? (
+            <p className="mt-2 text-sm text-accent">
+              Отсеяно по бюджету: цена выше hard max_budget.
+            </p>
+          ) : null}
+          {(item.whyRecommend?.length || item.score.whyTop?.length) ? (
             <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-muted">
-              {item.score.whyTop.slice(0, 4).map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
+              {(item.whyRecommend ?? item.score.whyTop)
+                .slice(0, 4)
+                .map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
             </ul>
+          ) : null}
+          {item.missingFields?.length ? (
+            <p className="mt-2 text-xs text-muted">
+              Не хватает: {item.missingFields.slice(0, 4).join(", ")}
+            </p>
           ) : null}
         </div>
         <div className="text-right text-sm">
           <p className="text-foreground">
             Opportunity{" "}
-            <span className="font-semibold">{item.score.opportunity ?? item.score.overall}</span>
+            <span className="font-semibold">
+              {item.score.opportunity ?? item.score.overall}
+            </span>
             /100
           </p>
           <p className="text-muted">Качество данных {quality}%</p>
           <p className="text-muted">
             Уверенность {item.score.confidence}/100
+          </p>
+          <p className="mt-1 text-muted">
+            Бюджет: {liaOiBudgetFitLabels[budgetFit]}
           </p>
         </div>
       </div>
@@ -59,18 +88,34 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
         {item.region ? <span>{item.region}</span> : null}
         {item.industry ? <span>{item.industry}</span> : null}
         <span>
-          Источников: {item.sources.length}
+          {item.sources[0]?.name ?? "источник"}
           {" · "}
           {item.isStub || item.sources.every((s) => s.isStub) ? "STUB" : "LIVE"}
           {item.enrichedFromFetch ? " · fetch" : ""}
         </span>
-        {(item.investmentRequired ?? item.askingPrice) != null ? (
+        {price != null ? (
           <span>
-            {(item.investmentRequired ?? item.askingPrice)!.toLocaleString(
-              "ru-RU",
-            )}{" "}
-            ₽
+            {price.toLocaleString("ru-RU")} ₽
+            {item.priceKind ? ` · ${item.priceKind}` : ""}
           </span>
+        ) : (
+          <span>цена UNKNOWN</span>
+        )}
+        {item.firstSeenAt ? (
+          <span>
+            найдено{" "}
+            {new Date(item.firstSeenAt).toLocaleDateString("ru-RU")}
+          </span>
+        ) : null}
+        {sourceUrl ? (
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent hover:underline"
+          >
+            источник
+          </a>
         ) : null}
       </div>
     </article>

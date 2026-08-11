@@ -268,11 +268,25 @@ async function main() {
       }),
     );
     const hits = external.map(mapExternalResultToHit);
-    const { hits: filtered, stats } = cheapFilterHits(hits, {
+    // Stage 2A.2: умеренный over-budget не дропаем в cheap filter (→ REJECTED bucket).
+    // Абсурдные суммы (>>10× budget) по-прежнему отсекаются.
+    const absurd = [
+      ...hits,
+      {
+        ...hits[0],
+        id: "absurd",
+        title: "Завод 400 млн рублей",
+        snippet: "Цена 400 млн рублей",
+        askingPrice: 400_000_000,
+        investmentRequired: 400_000_000,
+        url: "https://example.ru/absurd-400m",
+      },
+    ];
+    const { hits: filtered, stats } = cheapFilterHits(absurd, {
       budgetMax: 30_000_000,
     });
-    assert.ok(stats.droppedBudget >= 1, "55млн should drop on budget filter");
-    const normalized = filtered.map(normalizeHit);
+    assert.ok(stats.droppedBudget >= 1, "400млн should drop as absurd over-budget");
+    const normalized = filtered.map((h) => normalizeHit(h));
     assert.ok(normalized.every((c) => c.isStub === false));
     assert.ok(
       normalized.every((c) =>
@@ -368,7 +382,7 @@ async function main() {
     );
     const raw = hitChunks.flat();
     const { hits } = cheapFilterHits(raw, { budgetMax: plan.budgetMax });
-    const analyzed = dedupeCandidates(hits.map(normalizeHit))
+    const analyzed = dedupeCandidates(hits.map((h) => normalizeHit(h)))
       .slice(0, 8)
       .map((c) => analyzeCandidate(c, plan));
     assert.ok(analyzed.length >= 1);

@@ -6,6 +6,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+type CandView = {
+  id: string;
+  title: string;
+  pageType?: string;
+  contentIntent?: string;
+  budgetFit?: string;
+  priceStatus?: string;
+  isCatalogSource?: boolean;
+  resultBucket?: string;
+  askingPrice?: number | null;
+  investmentRequired?: number | null;
+  region?: string;
+  score: {
+    overall: number;
+    confidence: number;
+    quality?: number;
+    opportunity?: number;
+  };
+  isStub: boolean;
+};
+
 type SearchResultView = {
   searchMode: "stub" | "live";
   providerLabel: string;
@@ -17,6 +38,7 @@ type SearchResultView = {
     budgetMax: number | null;
     hypotheses: string[];
     queries: string[];
+    hardConstraints?: { geography: string; maxBudgetRub: number | null };
   };
   stats: {
     queriesRun: number;
@@ -28,21 +50,25 @@ type SearchResultView = {
     detailPages?: number;
     catalogPagesDemoted?: number;
     pagesFetched?: number;
+    searchPasses?: number;
+    opportunityCount?: number;
+    topOpportunities?: number;
+    needsResearch?: number;
+    sourceCatalogs?: number;
+    rejected?: number;
+    overBudget?: number;
+    unknownPrice?: number;
   };
-  candidates: Array<{
-    id: string;
-    title: string;
-    pageType?: string;
-    isCatalogSource?: boolean;
-    score: {
-      overall: number;
-      confidence: number;
-      quality?: number;
-      opportunity?: number;
-    };
-    isStub: boolean;
-  }>;
+  candidates: CandView[];
+  topOpportunities?: CandView[];
+  needsResearch?: CandView[];
+  sourceCatalogs?: CandView[];
+  rejected?: CandView[];
 };
+
+function priceOf(c: CandView) {
+  return c.askingPrice ?? c.investmentRequired ?? null;
+}
 
 export function LiaOiSearchForm({
   initialMode = "stub",
@@ -51,7 +77,7 @@ export function LiaOiSearchForm({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(
-    "Найди интересные бизнес-возможности до 30 млн рублей по России",
+    "Найди 10 перспективных бизнес-возможностей до 30 млн ₽ по России",
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +107,9 @@ export function LiaOiSearchForm({
   }
 
   const modeLabel = result?.searchMode ?? initialMode;
+  const top = result?.topOpportunities ?? result?.candidates.filter((c) => c.resultBucket === "TOP_OPPORTUNITIES") ?? [];
+  const research = result?.needsResearch ?? [];
+  const catalogs = result?.sourceCatalogs ?? [];
 
   return (
     <div className="space-y-6">
@@ -124,10 +153,13 @@ export function LiaOiSearchForm({
             <p className="font-medium text-foreground">Search Plan</p>
             <p className="mt-1 text-muted">
               intent={result.plan.intent} · регионы={result.plan.regions.join(", ")} ·
-              бюджет_max=
+              HARD max=
               {result.plan.budgetMax
                 ? `${Math.round(result.plan.budgetMax / 1_000_000)} млн ₽`
                 : "—"}
+              {result.stats.searchPasses
+                ? ` · passes=${result.stats.searchPasses}`
+                : ""}
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
               {result.plan.queries.map((q) => (
@@ -136,32 +168,46 @@ export function LiaOiSearchForm({
             </ul>
           </div>
 
-          <dl className="grid gap-2 sm:grid-cols-2">
+          <dl className="grid gap-2 sm:grid-cols-3">
             <div>
-              <dt className="text-muted">Интернет-результатов</dt>
+              <dt className="text-muted">Найдено (raw)</dt>
               <dd className="text-foreground">{result.stats.signalsRaw}</dd>
             </div>
             <div>
-              <dt className="text-muted">Отброшено фильтром</dt>
-              <dd className="text-foreground">{result.stats.filteredOut}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Дублей</dt>
-              <dd className="text-foreground">{result.stats.duplicatesRemoved}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Проанализировано</dt>
-              <dd className="text-foreground">{result.stats.analyzed}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">DETAIL</dt>
-              <dd className="text-foreground">{result.stats.detailPages ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Каталогов (понижены)</dt>
+              <dt className="text-muted">Подходит (TOP)</dt>
               <dd className="text-foreground">
-                {result.stats.catalogPagesDemoted ?? "—"}
+                {result.stats.topOpportunities ?? top.length}
               </dd>
+            </div>
+            <div>
+              <dt className="text-muted">Требует проверки</dt>
+              <dd className="text-foreground">
+                {result.stats.needsResearch ?? research.length}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted">Отсеяно</dt>
+              <dd className="text-foreground">{result.stats.rejected ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Каталоги</dt>
+              <dd className="text-foreground">
+                {result.stats.sourceCatalogs ?? catalogs.length}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted">Отсеяно по бюджету</dt>
+              <dd className="text-foreground">{result.stats.overBudget ?? 0}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">UNKNOWN цена</dt>
+              <dd className="text-foreground">
+                {result.stats.unknownPrice ?? 0}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted">Serper queries</dt>
+              <dd className="text-foreground">{result.stats.queriesRun}</dd>
             </div>
             <div>
               <dt className="text-muted">safe-fetch</dt>
@@ -170,12 +216,14 @@ export function LiaOiSearchForm({
           </dl>
 
           <div>
-            <p className="font-medium text-foreground">Лучшие возможности</p>
-            {result.candidates.length === 0 ? (
-              <p className="mt-2 text-muted">Пусто — уточните запрос или проверьте Serper.</p>
+            <p className="font-medium text-foreground">Лия рекомендует</p>
+            {top.length === 0 ? (
+              <p className="mt-2 text-muted">
+                Меньше 10 качественных объектов — честно пусто/мало, без мусора.
+              </p>
             ) : (
               <ul className="mt-2 space-y-2">
-                {result.candidates.slice(0, 5).map((c) => (
+                {top.slice(0, 10).map((c) => (
                   <li key={c.id}>
                     <Link
                       href={`/admin/owner/lia/opportunities/${c.id}`}
@@ -185,25 +233,46 @@ export function LiaOiSearchForm({
                     </Link>
                     <span className="text-muted">
                       {" "}
-                      · {c.pageType ?? "?"}
-                      {c.isCatalogSource ? " · каталог" : ""} ·{" "}
-                      {c.isStub ? "STUB" : "LIVE"} · quality{" "}
-                      {c.score.quality ?? "—"}% · opp{" "}
+                      · {c.region ?? "регион?"} ·{" "}
+                      {priceOf(c) != null
+                        ? `${priceOf(c)!.toLocaleString("ru-RU")} ₽`
+                        : "цена UNKNOWN"}{" "}
+                      · {c.budgetFit} · opp{" "}
                       {c.score.opportunity ?? c.score.overall}/100
                     </span>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="mt-3">
-              <Link
-                href="/admin/owner/lia/opportunities"
-                className="text-accent hover:underline"
-              >
-                Открыть ленту возможностей →
-              </Link>
-            </p>
           </div>
+
+          {research.length > 0 ? (
+            <div>
+              <p className="font-medium text-foreground">Нужно проверить</p>
+              <ul className="mt-2 space-y-1 text-muted">
+                {research.slice(0, 5).map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      href={`/admin/owner/lia/opportunities/${c.id}`}
+                      className="text-accent hover:underline"
+                    >
+                      {c.title}
+                    </Link>
+                    {c.priceStatus === "UNKNOWN" ? " · цена UNKNOWN" : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <p className="mt-3">
+            <Link
+              href="/admin/owner/lia/opportunities"
+              className="text-accent hover:underline"
+            >
+              Открыть ленту с buckets →
+            </Link>
+          </p>
         </div>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-/** LIA Opportunity Intelligence — domain types (stage 1 + 2A + 2A.1). */
+/** LIA Opportunity Intelligence — domain types (stage 1 + 2A + 2A.1 + 2A.2). */
 
 export const LIA_OI_PROVENANCE_KINDS = [
   "FACT",
@@ -16,6 +16,56 @@ export const LIA_OI_PAGE_TYPES = [
   "UNKNOWN",
 ] as const;
 export type LiaOiPageType = (typeof LIA_OI_PAGE_TYPES)[number];
+
+/** Stage 2A.2 — intent содержимого страницы (не путать с pageType). */
+export const LIA_OI_CONTENT_INTENTS = [
+  "OPPORTUNITY",
+  "CATALOG",
+  "ARTICLE",
+  "NEWS",
+  "SOCIAL",
+  "GUIDE",
+  "UNKNOWN",
+] as const;
+export type LiaOiContentIntent = (typeof LIA_OI_CONTENT_INTENTS)[number];
+
+export const LIA_OI_BUDGET_FITS = ["FIT", "OVER_BUDGET", "UNKNOWN"] as const;
+export type LiaOiBudgetFit = (typeof LIA_OI_BUDGET_FITS)[number];
+
+export const LIA_OI_PRICE_STATUSES = ["KNOWN", "UNKNOWN"] as const;
+export type LiaOiPriceStatus = (typeof LIA_OI_PRICE_STATUSES)[number];
+
+export const LIA_OI_PRICE_KINDS = [
+  "ASKING_PRICE",
+  "INVESTMENT_REQUIRED",
+  "ASSET_PRICE",
+  "STARTING_AUCTION_PRICE",
+  "UNKNOWN",
+] as const;
+export type LiaOiPriceKind = (typeof LIA_OI_PRICE_KINDS)[number];
+
+export const LIA_OI_RESULT_BUCKETS = [
+  "TOP_OPPORTUNITIES",
+  "NEEDS_RESEARCH",
+  "SOURCE_CATALOGS",
+  "REJECTED",
+] as const;
+export type LiaOiResultBucket = (typeof LIA_OI_RESULT_BUCKETS)[number];
+
+/** Классы источников для source-aware planner (2A.2). */
+export const LIA_OI_SOURCE_CLASSES = [
+  "READY_BUSINESS",
+  "INVESTMENT_PROJECT",
+  "COMMERCIAL_REAL_ESTATE",
+  "AUCTIONS_ASSETS",
+  "PRODUCTION_ASSETS",
+  "LAND_SITES",
+  "SUPPORT_PROGRAMS",
+  "TENDERS",
+  "FRANCHISE",
+  "OTHER",
+] as const;
+export type LiaOiSourceClass = (typeof LIA_OI_SOURCE_CLASSES)[number];
 
 export const LIA_OI_STATUSES = [
   "NEW",
@@ -131,6 +181,19 @@ export type LiaOiSourceRef = {
   isStub: boolean;
 };
 
+export type LiaOiHardConstraints = {
+  geography: string;
+  maxBudgetRub: number | null;
+  minBudgetRub: number | null;
+};
+
+export type LiaOiSoftPreferences = {
+  preferPerspective: boolean;
+  preferDataQuality: boolean;
+  preferFinancialAttractiveness: boolean;
+  notes: string[];
+};
+
 export type LiaOiCandidate = {
   id: string;
   type: string;
@@ -177,6 +240,18 @@ export type LiaOiCandidate = {
   isCatalogSource: boolean;
   /** Было ли обогащение через safe-fetch. */
   enrichedFromFetch?: boolean;
+  /** Stage 2A.2 */
+  contentIntent?: LiaOiContentIntent;
+  budgetFit?: LiaOiBudgetFit;
+  priceStatus?: LiaOiPriceStatus;
+  priceKind?: LiaOiPriceKind;
+  detailConfidence?: number;
+  detailSignals?: string[];
+  resultBucket?: LiaOiResultBucket;
+  rejectReason?: string;
+  missingFields?: string[];
+  whyRecommend?: string[];
+  sourceClass?: LiaOiSourceClass;
 };
 
 export type LiaOiSearchIntent =
@@ -209,6 +284,12 @@ export type LiaOiSearchPlan = {
   hypotheses: string[];
   queries: string[];
   createdAt: string;
+  /** Stage 2A.2 */
+  hardConstraints?: LiaOiHardConstraints;
+  softPreferences?: LiaOiSoftPreferences;
+  sourceClasses?: LiaOiSourceClass[];
+  pass1Queries?: string[];
+  pass2Queries?: string[];
 };
 
 export type LiaOiSearchRequest = {
@@ -277,6 +358,22 @@ export type LiaOiPipelineStats = {
   detailPages?: number;
   pagesFetched?: number;
   pagesFetchFailed?: number;
+  /** Stage 2A.2 */
+  searchPasses?: number;
+  opportunityCount?: number;
+  topOpportunities?: number;
+  needsResearch?: number;
+  sourceCatalogs?: number;
+  rejected?: number;
+  overBudget?: number;
+  unknownPrice?: number;
+};
+
+export type LiaOiBucketCounts = {
+  TOP_OPPORTUNITIES: number;
+  NEEDS_RESEARCH: number;
+  SOURCE_CATALOGS: number;
+  REJECTED: number;
 };
 
 export type LiaOiHypothesis = {

@@ -14,6 +14,14 @@ export {
   isCatalogPageType,
   isSeoArticlePage,
 } from "@/lib/lia/oi/page-type";
+export { classifyContentIntent } from "@/lib/lia/oi/content-intent";
+export { validateDetailOpportunity } from "@/lib/lia/oi/detail-validate";
+export { applyBuckets } from "@/lib/lia/oi/buckets";
+export {
+  parseHardConstraints,
+  resolveBudgetFit,
+  resolvePriceStatus,
+} from "@/lib/lia/oi/constraints";
 export { enrichTopDetailCandidates } from "@/lib/lia/oi/enrich";
 export { resolveOiSearchMode, isOiLiveConfigured } from "@/lib/lia/oi/mode";
 export {

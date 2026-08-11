@@ -1,28 +1,41 @@
 import type {
   LiaOiAssignmentKind,
+  LiaOiBudgetFit,
+  LiaOiContentIntent,
   LiaOiFeedbackEvent,
   LiaOiPriority,
+  LiaOiResultBucket,
   LiaOiStatus,
 } from "@/types/lia-oi";
 
 /**
  * Лимиты OI (cost / quota control).
- * Stage 2A: применяются к LIVE Serper и к stub одинаково.
+ * Stage 2A.2: multi-pass Serper с общим потолком queries/run.
  */
 export const LIA_OI_BUDGETS = {
-  /** max_queries_per_search — поисковых гипотез на один запрос владельца */
+  /** Pass-1 queries */
+  maxQueriesPass1: 6,
+  /** Pass-2 queries (если мало качественных) */
+  maxQueriesPass2: 6,
+  /** Жёсткий потолок Serper queries на весь run */
+  maxQueriesPerRun: 12,
+  /** backward-compat alias = pass1 */
   maxQueriesPerPlan: 6,
   /** max_results_per_query — результатов Serper на один query */
   maxResultsPerQuery: 8,
   /** max_candidates_per_request — карточек в ленту за один run */
-  maxCandidatesPerRun: 12,
+  maxCandidatesPerRun: 16,
+  /** Сколько TOP_OPPORTUNITIES максимум показывать */
+  maxTopOpportunities: 10,
+  /** Порог качественных TOP для запуска pass-2 */
+  minTopForPass2Skip: 8,
   /** max analyses (cheap) */
-  maxAiAnalysesPerRun: 8,
+  maxAiAnalysesPerRun: 12,
   /** max_deep_analysis */
   maxDeepAnalysesPerRun: 3,
   /**
    * Page fetches к первоисточникам (safe-fetch).
-   * Stage 2A.1: только TOP DETAIL, ограниченно.
+   * Stage 2A.1/2A.2: только TOP DETAIL, ограниченно.
    */
   maxFetchesPerSource: 1,
   maxFetchesPerRun: 5,
@@ -35,6 +48,29 @@ export const liaOiPageTypeLabels = {
   HOMEPAGE: "HOMEPAGE",
   UNKNOWN: "UNKNOWN",
 } as const;
+
+export const liaOiContentIntentLabels: Record<LiaOiContentIntent, string> = {
+  OPPORTUNITY: "Возможность",
+  CATALOG: "Каталог",
+  ARTICLE: "Статья",
+  NEWS: "Новость",
+  SOCIAL: "Соцсеть",
+  GUIDE: "Гайд",
+  UNKNOWN: "Неясно",
+};
+
+export const liaOiBudgetFitLabels: Record<LiaOiBudgetFit, string> = {
+  FIT: "В бюджете",
+  OVER_BUDGET: "Выше бюджета",
+  UNKNOWN: "Цена неизвестна",
+};
+
+export const liaOiBucketLabels: Record<LiaOiResultBucket, string> = {
+  TOP_OPPORTUNITIES: "Лия рекомендует",
+  NEEDS_RESEARCH: "Нужно проверить",
+  SOURCE_CATALOGS: "Источники для дальнейшего поиска",
+  REJECTED: "Отсеяно",
+};
 
 export const LIA_OI_STUB_BANNER =
   "Внешний поиск работает в demo/stub режиме. Результаты не являются живыми данными из интернета.";

@@ -1,24 +1,30 @@
-import { LIA_OI_BUDGETS } from "@/config/lia-oi";
-import { oiId } from "@/lib/lia/oi/id";
-import type { LiaOiSearchIntent, LiaOiSearchPlan } from "@/types/lia-oi";
+/**
+ * Stage 2A.2 — source-aware Search Planner + query expansion.
+ */
 
-function parseBudgetMax(query: string): number | null {
-  const lower = query.toLowerCase();
-  const mln = lower.match(/(\d+(?:[.,]\d+)?)\s*(млн|million)/i);
-  if (mln) {
-    return Math.round(parseFloat(mln[1].replace(",", ".")) * 1_000_000);
-  }
-  const rub = lower.match(/до\s+(\d[\d\s]{2,})\s*(₽|руб)/i);
-  if (rub) {
-    return Number(rub[1].replace(/\s/g, ""));
-  }
-  return null;
+import { LIA_OI_BUDGETS } from "@/config/lia-oi";
+import {
+  detectRegions as detectRegionsImpl,
+  parseHardConstraints,
+  parseSoftPreferences,
+} from "@/lib/lia/oi/constraints";
+import { oiId } from "@/lib/lia/oi/id";
+import type {
+  LiaOiSearchIntent,
+  LiaOiSearchPlan,
+  LiaOiSourceClass,
+} from "@/types/lia-oi";
+
+export { detectRegions } from "@/lib/lia/oi/constraints";
+
+export function geographyToken(regions: string[]): string {
+  if (!regions.length || regions[0] === "Россия") return "Россия";
+  return regions[0];
 }
 
 /**
- * Intent classifier (2A.1).
- * Широкие «бизнес-возможности» → business_opportunities (смесь направлений),
- * не только business_for_sale.
+ * Intent classifier (2A.1/2A.2).
+ * Широкие «бизнес-возможности» → business_opportunities.
  */
 export function detectIntent(query: string): LiaOiSearchIntent {
   const q = query.toLowerCase();
@@ -45,7 +51,6 @@ export function detectIntent(query: string): LiaOiSearchIntent {
   }
   if (/оборудован/.test(q) && !/бизнес.?возможност/i.test(q)) return "equipment";
 
-  // Широкий intent — раньше узкой «продажи бизнеса»
   if (
     /бизнес.?возможност|перспективн\w*\s+возможност|возможност\w*\s+для\s+бизнес|интересн\w*\s+возможност/.test(
       q,
@@ -66,7 +71,6 @@ export function detectIntent(query: string): LiaOiSearchIntent {
     return "investment_search";
   }
 
-  // Узкая продажа готового бизнеса — только при явных маркерах
   if (
     /готов(ый|ого)\s+бизнес|продаж[аеи]\s+(действующ\w+\s+)?бизнес|бизнес\s+на\s+продаж|куп(ить|лю)\s+бизнес|франшиз/.test(
       q,
@@ -79,137 +83,96 @@ export function detectIntent(query: string): LiaOiSearchIntent {
   return "general_opportunity";
 }
 
-/**
- * Регионы: вся Россия по умолчанию.
- * Конкретный регион — только если явно в запросе.
- */
-export function detectRegions(query: string): string[] {
-  const map: Array<[RegExp, string]> = [
-    [/дагестан/i, "Дагестан"],
-    [/краснодар|сочи/i, "Краснодарский край"],
-    [/скфо|северо.?кавказ/i, "СКФО"],
-    [/москв/i, "Москва"],
-    [/санкт[-\s]?петербург|спб\b/i, "Санкт-Петербург"],
-    [/ростов/i, "Ростовская область"],
-    [/татарстан|казан/i, "Татарстан"],
-    [/новосибир/i, "Новосибирская область"],
-    [/екатеринбург|свердлов/i, "Свердловская область"],
-  ];
-  const found = map.filter(([re]) => re.test(query)).map(([, name]) => name);
-  return found.length ? found : ["Россия"];
-}
-
-/** Один geography token для query — без «Россия Россия РФ». */
-export function geographyToken(regions: string[]): string {
-  if (!regions.length || regions[0] === "Россия") return "Россия";
-  return regions[0];
-}
-
-const HYPOTHESIS_BANK: Record<LiaOiSearchIntent, string[]> = {
-  business_opportunities: [
-    // Акцент на конкретных лотах/объявлениях, не на каталогах
-    "продаётся действующий бизнес цена объявление -каталог",
-    "продаётся производство цех выручка объявление -каталог",
-    "инвестиционный проект требуется инвестор сумма -каталог",
-    "лот торги предприятие имущественный комплекс",
-    "гостиница кафе склад продаётся бизнес цена",
-    "коммерческая недвижимость продаётся объект м² цена",
-    "франшиза паушальный взнос окупаемость условия",
-    "предприятие ищет инвестора доля проект",
-  ],
-  investment_opportunities: [
-    "инвестиционный проект Россия объявление",
-    "поиск инвестора проект до",
-    "доля в бизнесе инвестиции",
-    "startup инвестиционный раунд Россия",
-    "производство привлечение инвестиций",
-    "господдержка инвестиционный проект",
-  ],
-  investment_search: [
-    "инвестиционный проект поиск инвестора",
-    "готовый бизнес продажа",
-    "производство продажа бизнес",
-    "коммерческая недвижимость инвестиция",
-    "франшиза купить",
-    "предприятие ищет инвестора",
-  ],
-  business_for_sale: [
-    "готовый бизнес продажа объявление",
-    "продажа действующего бизнеса цена",
-    "франшиза купить",
-    "производство продажа действующее",
-    "коммерческая недвижимость продажа объект",
-  ],
-  assets: [
-    "продажа активов предприятия",
-    "имущественный комплекс продажа",
-    "оборудование линия продажа",
-    "торги имущество",
-  ],
-  real_estate: [
-    "коммерческая недвижимость продажа объект",
-    "офис продажа площадь",
-    "склад продажа",
-    "торговое помещение продажа",
-  ],
-  land_or_site: [
-    "земельный участок под производство продажа",
-    "промышленная площадка продажа",
-    "завод продажа",
-    "торги земельные участки",
-  ],
-  suppliers: [
-    "поставщик оптом Россия",
-    "производитель ищет дистрибьютора",
-    "оптовые поставки",
-  ],
-  buyers: [
-    "оптовый спрос покупатели",
-    "тендер закупка",
-    "дистрибьютор ищет поставщика",
-  ],
-  buyers_or_demand: [
-    "оптовый спрос покупатели",
-    "тендер закупка",
-    "дистрибьютор ищет поставщика",
-  ],
-  support_programs: [
-    "господдержка МСП программа",
-    "льготное финансирование бизнес",
-    "грант субсидия предприниматель",
-  ],
-  tenders: [
-    "тендер закупка Россия",
-    "торги имущество бизнес",
-    "аукцион предприятие",
-  ],
-  hotel_or_tourism: [
-    "гостиница продажа бизнес",
-    "отель инвестиционный проект",
-    "глэмпинг продажа",
-  ],
-  equipment: [
-    "оборудование продажа производственная линия",
-    "станки б/у продажа",
-  ],
-  general_opportunity: [
-    "готовый бизнес продажа объявление",
-    "инвестиционный проект",
-    "производство продажа",
-    "коммерческая недвижимость объект",
-    "торги бизнес активы",
-    "господдержка МСП",
-  ],
+type SourceTemplate = {
+  sourceClass: LiaOiSourceClass;
+  hypothesis: string;
+  /** site: queries — только публичные каталоги, без auth bypass */
+  sites?: string[];
 };
 
-/** Убирает повтор geography/budget токенов из hypothesis. */
+const BROAD_SOURCE_BANK: SourceTemplate[] = [
+  {
+    sourceClass: "READY_BUSINESS",
+    hypothesis: "продаётся действующий бизнес цена объявление -каталог -как",
+    sites: ["avito.ru", "biznes-prodazha.ru"],
+  },
+  {
+    sourceClass: "PRODUCTION_ASSETS",
+    hypothesis: "продаётся производство цех выручка цена -каталог",
+  },
+  {
+    sourceClass: "INVESTMENT_PROJECT",
+    hypothesis: "требуется инвестор проект сумма до -каталог",
+  },
+  {
+    sourceClass: "COMMERCIAL_REAL_ESTATE",
+    hypothesis: "коммерческая недвижимость продаётся объект м² цена",
+    sites: ["cian.ru"],
+  },
+  {
+    sourceClass: "AUCTIONS_ASSETS",
+    hypothesis: "лот торги предприятие имущественный комплекс цена",
+    sites: ["torgi.gov.ru"],
+  },
+  {
+    sourceClass: "LAND_SITES",
+    hypothesis: "земельный участок под производство продажа цена",
+  },
+  {
+    sourceClass: "FRANCHISE",
+    hypothesis: "франшиза паушальный взнос окупаемость до",
+  },
+  {
+    sourceClass: "SUPPORT_PROGRAMS",
+    hypothesis: "господдержка МСП инвестиции программа грант",
+  },
+  {
+    sourceClass: "OTHER",
+    hypothesis: "гостиница кафе склад продаётся бизнес цена -как",
+  },
+  {
+    sourceClass: "OTHER",
+    hypothesis: "сельхозпроект ферма производство продуктов инвестиции",
+  },
+];
+
+const INTENT_SOURCE_MAP: Partial<Record<LiaOiSearchIntent, LiaOiSourceClass[]>> =
+  {
+    business_opportunities: [
+      "READY_BUSINESS",
+      "INVESTMENT_PROJECT",
+      "PRODUCTION_ASSETS",
+      "COMMERCIAL_REAL_ESTATE",
+      "AUCTIONS_ASSETS",
+      "LAND_SITES",
+      "FRANCHISE",
+      "SUPPORT_PROGRAMS",
+      "OTHER",
+    ],
+    investment_opportunities: [
+      "INVESTMENT_PROJECT",
+      "READY_BUSINESS",
+      "SUPPORT_PROGRAMS",
+      "PRODUCTION_ASSETS",
+    ],
+    investment_search: [
+      "INVESTMENT_PROJECT",
+      "READY_BUSINESS",
+      "PRODUCTION_ASSETS",
+      "COMMERCIAL_REAL_ESTATE",
+    ],
+    business_for_sale: ["READY_BUSINESS", "FRANCHISE", "PRODUCTION_ASSETS"],
+    real_estate: ["COMMERCIAL_REAL_ESTATE", "LAND_SITES"],
+    land_or_site: ["LAND_SITES", "AUCTIONS_ASSETS"],
+    tenders: ["TENDERS", "AUCTIONS_ASSETS"],
+    support_programs: ["SUPPORT_PROGRAMS"],
+    hotel_or_tourism: ["READY_BUSINESS", "OTHER"],
+    assets: ["AUCTIONS_ASSETS", "PRODUCTION_ASSETS"],
+  };
+
+/** Убирает повтор geography/budget токенов. */
 function composeQuery(parts: string[]): string {
-  const geoWords = new Set([
-    "россия",
-    "рф",
-    "российская",
-    "федерация",
-  ]);
+  const geoWords = new Set(["россия", "рф", "российская", "федерация"]);
   const seen = new Set<string>();
   const out: string[] = [];
   for (const part of parts) {
@@ -222,7 +185,7 @@ function composeQuery(parts: string[]): string {
         out.push(token);
         continue;
       }
-      const key = lower.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]+/g, "");
+      const key = lower.replace(/[^a-zA-Zа-яА-ЯёЁ0-9-]+/g, "");
       if (!key) continue;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -232,39 +195,83 @@ function composeQuery(parts: string[]): string {
   return out.join(" ").replace(/\s+/g, " ").trim();
 }
 
+function budgetLabel(max: number | null): string {
+  if (!max) return "";
+  return `до ${Math.round(max / 1_000_000)} млн рублей`;
+}
+
+function priceBandQueries(max: number | null, geo: string): string[] {
+  if (!max) return [];
+  const mln = Math.round(max / 1_000_000);
+  const mid = Math.max(1, Math.floor(mln / 2));
+  return [
+    composeQuery([
+      `готовый бизнес продажа ${mid}-${mln} млн рублей объявление`,
+      geo,
+      "-каталог",
+      "-как",
+    ]),
+    composeQuery([
+      `производство продаётся цена до ${mln} млн`,
+      geo,
+      "объявление",
+    ]),
+  ];
+}
+
 /**
- * Search Planner: один запрос владельца → несколько поисковых направлений.
+ * Pass-1 queries from intent + hard constraints + source classes.
  */
 export function buildSearchPlan(rawQuery: string): LiaOiSearchPlan {
   const intent = detectIntent(rawQuery);
-  const budgetMax = parseBudgetMax(rawQuery);
-  const regions = detectRegions(rawQuery);
+  const hard = parseHardConstraints(rawQuery);
+  const soft = parseSoftPreferences(rawQuery);
+  const regions = detectRegionsImpl(rawQuery);
   const geo = geographyToken(regions);
-  const budgetLabel = budgetMax
-    ? `до ${Math.round(budgetMax / 1_000_000)} млн рублей`
-    : "";
+  const budgetMax = hard.maxBudgetRub;
+  const bLabel = budgetLabel(budgetMax);
 
-  const bank = HYPOTHESIS_BANK[intent] ?? HYPOTHESIS_BANK.general_opportunity;
-  const hypotheses = bank.slice(0, LIA_OI_BUDGETS.maxQueriesPerPlan);
-
-  const queries = hypotheses.map((h) =>
-    composeQuery([h, geo, budgetLabel]),
+  const allowed =
+    INTENT_SOURCE_MAP[intent] ?? INTENT_SOURCE_MAP.business_opportunities!;
+  const templates = BROAD_SOURCE_BANK.filter((t) =>
+    allowed.includes(t.sourceClass),
   );
 
-  // Для широкого intent не дублируем сырой user query (он размывает выдачу каталогами).
-  // Для узких — можно добавить прямую формулировку, если есть место.
-  const narrow =
-    intent === "business_for_sale" ||
-    intent === "land_or_site" ||
-    intent === "hotel_or_tourism" ||
-    intent === "equipment";
-  if (narrow && queries.length < LIA_OI_BUDGETS.maxQueriesPerPlan) {
-    const direct = composeQuery([rawQuery.trim(), geo, budgetLabel]);
-    if (!queries.includes(direct)) {
-      queries.unshift(direct);
-      queries.splice(LIA_OI_BUDGETS.maxQueriesPerPlan);
+  const hypotheses: string[] = [];
+  const queries: string[] = [];
+  const sourceClasses: LiaOiSourceClass[] = [];
+
+  for (const t of templates) {
+    if (queries.length >= LIA_OI_BUDGETS.maxQueriesPass1) break;
+    hypotheses.push(t.hypothesis);
+    sourceClasses.push(t.sourceClass);
+    queries.push(composeQuery([t.hypothesis, geo, bLabel]));
+
+    // 1–2 site-specific если ещё есть слот и класс приоритетный
+    if (
+      t.sites?.length &&
+      queries.length < LIA_OI_BUDGETS.maxQueriesPass1 &&
+      (t.sourceClass === "READY_BUSINESS" ||
+        t.sourceClass === "AUCTIONS_ASSETS" ||
+        t.sourceClass === "COMMERCIAL_REAL_ESTATE")
+    ) {
+      const site = t.sites[0];
+      const siteQ = composeQuery([
+        `site:${site}`,
+        t.hypothesis.replace(/-каталог|-как/g, "").trim(),
+        geo,
+        bLabel,
+      ]);
+      if (!queries.includes(siteQ)) {
+        queries.push(siteQ);
+        hypotheses.push(`site:${site} ${t.hypothesis}`);
+        sourceClasses.push(t.sourceClass);
+      }
     }
   }
+
+  // Укладываемся в pass1 limit
+  const pass1Queries = queries.slice(0, LIA_OI_BUDGETS.maxQueriesPass1);
 
   return {
     id: oiId("plan"),
@@ -272,7 +279,7 @@ export function buildSearchPlan(rawQuery: string): LiaOiSearchPlan {
     intent,
     country: "RU",
     regions,
-    budgetMin: null,
+    budgetMin: hard.minBudgetRub,
     budgetMax,
     industries: ["ANY"],
     assetTypes:
@@ -280,18 +287,98 @@ export function buildSearchPlan(rawQuery: string): LiaOiSearchPlan {
         ? ["land", "industrial_site"]
         : intent === "real_estate"
           ? ["real_estate", "commercial"]
-          : intent === "hotel_or_tourism"
-            ? ["hotel", "tourism"]
-            : [
-                "business",
-                "production",
-                "real_estate",
-                "project",
-                "franchise",
-                "asset",
-              ],
-    hypotheses,
-    queries,
+          : [
+              "business",
+              "production",
+              "real_estate",
+              "project",
+              "franchise",
+              "asset",
+            ],
+    hypotheses: hypotheses.slice(0, pass1Queries.length),
+    queries: pass1Queries,
+    pass1Queries,
+    pass2Queries: [],
+    sourceClasses: sourceClasses.slice(0, pass1Queries.length),
+    hardConstraints: hard,
+    softPreferences: soft,
     createdAt: new Date().toISOString(),
   };
+}
+
+export type Pass2Hints = {
+  topCount: number;
+  detailCount: number;
+  fitCount: number;
+  unknownPriceCount: number;
+  opportunityCount: number;
+};
+
+/**
+ * Второй проход: уточнённые queries, если мало качественных возможностей.
+ * Не превышает remaining query budget.
+ */
+export function buildPass2Queries(
+  plan: LiaOiSearchPlan,
+  hints: Pass2Hints,
+  remainingQueries: number,
+): string[] {
+  if (remainingQueries <= 0) return [];
+  const geo = geographyToken(plan.regions);
+  const max = plan.budgetMax ?? null;
+  const out: string[] = [];
+
+  if (hints.topCount < 5 || hints.detailCount < 3) {
+    out.push(
+      composeQuery([
+        "продаётся готовый бизнес объявление цена конкретный объект",
+        geo,
+        budgetLabel(max),
+        "-каталог",
+        "-как купить",
+        "-как продать",
+      ]),
+    );
+    out.push(
+      composeQuery([
+        "действующее производство продаётся выручка цена",
+        geo,
+        budgetLabel(max),
+        "объявление",
+      ]),
+    );
+  }
+
+  if (hints.fitCount < 3 && max) {
+    out.push(...priceBandQueries(max, geo));
+  }
+
+  if (hints.opportunityCount < 4) {
+    out.push(
+      composeQuery([
+        "требуется инвестор до",
+        budgetLabel(max),
+        "проект",
+        geo,
+        "-каталог",
+      ]),
+    );
+    out.push(
+      composeQuery([
+        "site:avito.ru готовый бизнес",
+        budgetLabel(max),
+        geo,
+      ]),
+    );
+  }
+
+  // unique + limit
+  const seen = new Set(plan.queries.map((q) => q.toLowerCase()));
+  const unique = out.filter((q) => {
+    const k = q.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return unique.slice(0, remainingQueries);
 }

@@ -72,6 +72,10 @@ export function scoreCandidate(
     candidate.isCatalogSource || isCatalogPageType(pageType);
   const price = candidate.investmentRequired ?? candidate.askingPrice;
   const descLen = (candidate.description || "").trim().length;
+  const budgetFit = candidate.budgetFit ?? "UNKNOWN";
+  const priceStatus = candidate.priceStatus ?? (price != null ? "KNOWN" : "UNKNOWN");
+  const contentIntent = candidate.contentIntent ?? "UNKNOWN";
+  const detailConf = candidate.detailConfidence ?? 0;
 
   // --- relevance ---
   let relevance = 45;
@@ -81,14 +85,30 @@ export function scoreCandidate(
   if (plan?.intent === "business_for_sale" && /бизнес|франшиз|прода/i.test(candidate.title)) {
     relevance += 10;
   }
-  if (plan?.budgetMax && price != null) {
-    if (price <= plan.budgetMax) relevance += 15;
-    else if (price <= plan.budgetMax * 1.25) relevance += 5;
-    else relevance -= 15;
+  if (budgetFit === "FIT") {
+    relevance += 15;
+    whyTop.push("budget FIT");
+  } else if (budgetFit === "OVER_BUDGET") {
+    relevance -= 35;
+    explanation.push("OVER_BUDGET: достоверно выше hard max_budget.");
+  } else if (plan?.budgetMax) {
+    relevance -= 8;
+    explanation.push(
+      "Цена UNKNOWN — отсутствие цены не считается соответствием бюджету.",
+    );
   }
   if (candidate.region) relevance += 8;
   else relevance -= 5;
   if (isCatalog) relevance -= 12;
+  if (contentIntent === "OPPORTUNITY") relevance += 10;
+  if (
+    contentIntent === "GUIDE" ||
+    contentIntent === "ARTICLE" ||
+    contentIntent === "NEWS" ||
+    contentIntent === "SOCIAL"
+  ) {
+    relevance -= 25;
+  }
 
   const sourceUrl = candidate.sources[0]?.url ?? "";
   const isSeoArticle = isSeoArticlePage({
@@ -119,15 +139,24 @@ export function scoreCandidate(
     explanation.push("SEO-статья без конкретного предложения — quality снижен.");
   }
 
+  if (detailConf >= 55) {
+    quality += 12;
+    whyTop.push(`detail_confidence ${detailConf}`);
+  } else if (detailConf > 0 && detailConf < 40 && pageType === "DETAIL") {
+    quality -= 10;
+    explanation.push("URL похож на DETAIL, но мало сигналов конкретного объекта.");
+  }
+
   // Цена на каталоге/статье часто «от N млн» — слабый сигнал
-  if (price != null && !isCatalog && !isSeoArticle) {
+  if (priceStatus === "KNOWN" && !isCatalog && !isSeoArticle) {
     quality += 15;
     whyTop.push("есть цена");
-  } else if (price != null && (isCatalog || isSeoArticle)) {
+  } else if (priceStatus === "KNOWN" && (isCatalog || isSeoArticle)) {
     quality += 4;
     explanation.push("Цена найдена в тексте, но страница не DETAIL.");
   } else {
-    explanation.push("Цена/инвестиции не указаны (UNKNOWN).");
+    quality -= 8;
+    explanation.push("Цена/инвестиции не указаны (price_status=UNKNOWN).");
   }
   if (candidate.region) {
     quality += 10;
@@ -233,25 +262,23 @@ export function scoreCandidate(
     weights.reduce((sum, key) => sum + b[key], 0) / weights.length;
 
   let opportunity = avg * 10;
-  if (pageType === "DETAIL") opportunity += 8;
+  if (pageType === "DETAIL" && detailConf >= 40) opportunity += 8;
   if (isCatalog) opportunity -= 18;
   if (isSeoArticle) opportunity -= 22;
-  if (
-    price != null &&
-    plan?.budgetMax &&
-    price <= plan.budgetMax &&
-    !isCatalog &&
-    !isSeoArticle
-  ) {
-    opportunity += 6;
-  }
+  if (contentIntent === "GUIDE" || contentIntent === "ARTICLE") opportunity -= 25;
+  if (budgetFit === "OVER_BUDGET") opportunity -= 40;
+  if (budgetFit === "FIT" && !isCatalog && !isSeoArticle) opportunity += 8;
+  if (priceStatus === "UNKNOWN") opportunity -= 6;
 
   const confidence = clamp100(
     ((b.sourceConfidence + b.dataCompleteness + (isCatalog ? 2 : b.legal)) /
       3) *
       10 +
-      (candidate.enrichedFromFetch ? 8 : 0) -
-      (isCatalog ? 15 : 0),
+      (candidate.enrichedFromFetch ? 8 : 0) +
+      Math.round(detailConf * 0.15) -
+      (isCatalog ? 15 : 0) -
+      (priceStatus === "UNKNOWN" ? 12 : 0) -
+      (budgetFit === "OVER_BUDGET" ? 20 : 0),
   );
 
   relevance = clamp100(relevance);

@@ -1,14 +1,17 @@
 /**
  * Извлечение полей из текста сниппета/заголовка.
  * Не придумывает значения: нет в тексте → null / UNKNOWN.
+ * Stage 2A.2: различение цены / инвестиций / выручки / прибыли.
  */
 
-import type { LiaOiProvenanceKind } from "@/types/lia-oi";
+import type { LiaOiPriceKind, LiaOiProvenanceKind } from "@/types/lia-oi";
 
 export type ExtractedMoney = {
   amount: number;
   kind: LiaOiProvenanceKind;
   raw: string;
+  /** Stage 2A.2 */
+  priceKind: LiaOiPriceKind;
 };
 
 export type ExtractedLocation = {
@@ -38,33 +41,134 @@ const REGION_PATTERNS: Array<[RegExp, string]> = [
   [/сочи\b/i, "Краснодарский край"],
 ];
 
-/** Цена/инвестиции только если явно есть в тексте. */
+const REVENUE_CTX =
+  /выручк|оборот|доход(?!ност)|revenue|месячн\w*\s+(выручк|оборот)|годов\w*\s+(выручк|оборот)/i;
+const PROFIT_CTX = /прибыл|чистая прибыль|ebitda|маржа\b/i;
+const AUCTION_CTX =
+  /начальн\w*\s+цен|стартов\w*\s+цен|цена\s+торгов|лот\s*№|аукцион/i;
+const INVEST_CTX =
+  /инвестиц|требуется инвестор|поиск инвестора|объ[её]м вложен|нужно вложен|сумма инвестиций|budget/i;
+const ASKING_CTX =
+  /цена\s+(продаж|бизнес)|стоимость\s+бизнес|прода[её]тся\s+за|asking|стоимость объекта|цена объекта/i;
+const ASSET_CTX = /стоимость\s+актив|оценка\s+актив|имущественн/i;
+
+function parseAmountToken(rawNum: string, unit: string): number | null {
+  let amount = Number(rawNum.replace(/\s/g, "").replace(",", "."));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const u = unit.toLowerCase();
+  if (u.startsWith("млн") || u.startsWith("миллион")) {
+    amount = Math.round(amount * 1_000_000);
+  } else if (u.startsWith("тыс") || u === "т." || u === "т") {
+    amount = Math.round(amount * 1_000);
+  }
+  if (amount < 10_000 || amount > 50_000_000_000) return null;
+  return amount;
+}
+
+function classifyPriceKind(
+  window: string,
+  defaultKind: LiaOiPriceKind,
+): LiaOiPriceKind | "REVENUE" | "PROFIT" {
+  if (REVENUE_CTX.test(window)) return "REVENUE";
+  if (PROFIT_CTX.test(window)) return "PROFIT";
+  if (AUCTION_CTX.test(window)) return "STARTING_AUCTION_PRICE";
+  if (INVEST_CTX.test(window)) return "INVESTMENT_REQUIRED";
+  if (ASKING_CTX.test(window)) return "ASKING_PRICE";
+  if (ASSET_CTX.test(window)) return "ASSET_PRICE";
+  return defaultKind;
+}
+
+/**
+ * Извлекает цену/инвестиции, не путая с выручкой/прибылью.
+ */
 export function extractMoneyFromText(text: string): ExtractedMoney | null {
   const t = text.replace(/\u00a0/g, " ");
-  const patterns: RegExp[] = [
-    /(\d{1,3}(?:[\s\u00a0]\d{3})+|\d+(?:[.,]\d+)?)\s*(млн|миллион(?:а|ов)?)\s*(₽|руб(?:\.|лей)?)?/i,
-    /(\d{1,3}(?:[\s\u00a0]\d{3}){1,}|\d{5,9})\s*(₽|руб(?:\.|лей)?)/i,
-    /(?:цена|стоимость|инвестиц\w*|бюджет|вложен\w*)[^\d]{0,20}(\d+(?:[.,]\d+)?)\s*(млн|миллион(?:а|ов)?)?/i,
+  const patterns: Array<{ re: RegExp; defaultKind: LiaOiPriceKind }> = [
+    {
+      re: /(\d{1,3}(?:[\s\u00a0]\d{3})+|\d+(?:[.,]\d+)?)\s*(млн|миллион(?:а|ов)?)\s*(₽|руб(?:\.|лей)?|рублей)?/gi,
+      defaultKind: "ASKING_PRICE",
+    },
+    {
+      re: /(\d{1,3}(?:[\s\u00a0]\d{3})+|\d+(?:[.,]\d+)?)\s*(тыс\.?|тысяч(?:и|а)?)\s*(₽|руб(?:\.|лей)?|рублей)?/gi,
+      defaultKind: "ASKING_PRICE",
+    },
+    {
+      re: /(\d{1,3}(?:[\s\u00a0]\d{3}){1,}|\d{5,9})\s*(₽|руб(?:\.|лей)?|рублей)/gi,
+      defaultKind: "ASKING_PRICE",
+    },
+    {
+      re: /(?:цена|стоимость|инвестиц\w*|бюджет|вложен\w*|лот)[^\d]{0,24}(\d+(?:[.,]\d+)?)\s*(млн|миллион(?:а|ов)?|тыс\.?|тысяч(?:и|а)?)?/gi,
+      defaultKind: "UNKNOWN",
+    },
   ];
 
-  for (const re of patterns) {
-    const m = t.match(re);
-    if (!m) continue;
-    const rawNum = (m[1] || "").replace(/\s/g, "").replace(",", ".");
-    let amount = Number(rawNum);
-    if (!Number.isFinite(amount) || amount <= 0) continue;
-    const unit = (m[2] || "").toLowerCase();
-    if (unit.startsWith("млн") || unit.startsWith("миллион")) {
-      amount = Math.round(amount * 1_000_000);
+  type Cand = ExtractedMoney & { rank: number };
+  const cands: Cand[] = [];
+
+  for (const { re, defaultKind } of patterns) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(t)) !== null) {
+      const rawNum = m[1] || "";
+      const unit = m[2] || "";
+      const amount = parseAmountToken(rawNum, unit);
+      if (amount == null) continue;
+      const start = Math.max(0, m.index - 40);
+      const end = Math.min(t.length, m.index + m[0].length + 40);
+      const window = t.slice(start, end);
+      const kindOrMetric = classifyPriceKind(window, defaultKind);
+      if (kindOrMetric === "REVENUE" || kindOrMetric === "PROFIT") continue;
+      const priceKind = kindOrMetric;
+      const rank =
+        priceKind === "ASKING_PRICE"
+          ? 5
+          : priceKind === "INVESTMENT_REQUIRED"
+            ? 4
+            : priceKind === "STARTING_AUCTION_PRICE"
+              ? 3
+              : priceKind === "ASSET_PRICE"
+                ? 2
+                : 1;
+      cands.push({
+        amount,
+        kind: "FACT",
+        raw: m[0].trim(),
+        priceKind,
+        rank,
+      });
     }
-    if (amount < 10_000 || amount > 50_000_000_000) continue;
-    return {
-      amount,
-      kind: "FACT",
-      raw: m[0].trim(),
-    };
   }
-  return null;
+
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.rank - a.rank || a.amount - b.amount);
+  const best = cands[0];
+  return {
+    amount: best.amount,
+    kind: best.kind,
+    raw: best.raw,
+    priceKind: best.priceKind,
+  };
+}
+
+/** Отдельно: выручка/прибыль (не для budgetFit). */
+export function extractFinancialMetrics(text: string): {
+  revenue: number | null;
+  profit: number | null;
+} {
+  const t = text.replace(/\u00a0/g, " ");
+  let revenue: number | null = null;
+  let profit: number | null = null;
+  const re =
+    /(выручка|оборот|прибыль|ebitda)[^\d]{0,20}(\d+(?:[.,]\d+)?)\s*(млн|миллион(?:а|ов)?|тыс\.?)?/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(t)) !== null) {
+    const label = (m[1] || "").toLowerCase();
+    const amount = parseAmountToken(m[2] || "", m[3] || "");
+    if (amount == null) continue;
+    if (/выручк|оборот/.test(label) && revenue == null) revenue = amount;
+    if (/прибыл|ebitda/.test(label) && profit == null) profit = amount;
+  }
+  return { revenue, profit };
 }
 
 export function extractLocationFromText(text: string): ExtractedLocation | null {
@@ -89,6 +193,7 @@ export function extractIndustryHint(text: string): string | undefined {
   if (/недвижим|офис|торгов/.test(t)) return "недвижимость";
   if (/сельхоз|агро|фермер/.test(t)) return "сельское хозяйство";
   if (/it\b|saas|цифров|софт/.test(t)) return "IT";
+  if (/кафе|ресторан|общепит/.test(t)) return "общепит";
   return undefined;
 }
 

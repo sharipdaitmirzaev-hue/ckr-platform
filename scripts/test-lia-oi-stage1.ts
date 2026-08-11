@@ -55,7 +55,7 @@ async function main() {
   {
     const provider = getInternetSearchProvider();
     const hits = await provider.search(smokeQuery, { limit: 5 });
-    const normalized = hits.map(normalizeHit);
+    const normalized = hits.map((h) => normalizeHit(h));
     assert.ok(normalized.every((c) => c.sources.every((s) => s.isStub)));
     assert.ok(normalized.every((c) => c.title.includes("[STUB]")));
     assert.ok(
@@ -76,7 +76,7 @@ async function main() {
     const hits = await provider.search("производственная площадка", {
       limit: 20,
     });
-    const normalized = hits.map(normalizeHit);
+    const normalized = hits.map((h) => normalizeHit(h));
     // force-include known dup pair if present
     const before = normalized.length;
     const after = dedupeCandidates(normalized);
@@ -95,7 +95,7 @@ async function main() {
       limit: 6,
       budgetMax: plan.budgetMax,
     });
-    const candidates = dedupeCandidates(hits.map(normalizeHit)).map((c) =>
+    const candidates = dedupeCandidates(hits.map((h) => normalizeHit(h))).map((c) =>
       analyzeCandidate(c, plan),
     );
     assert.ok(candidates.length >= 2);
