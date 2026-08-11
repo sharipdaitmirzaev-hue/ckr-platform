@@ -427,8 +427,8 @@ export async function ensureLiaOiSeed(userId = "system"): Promise<void> {
   }
 
   // Persistence already has data — do not re-seed stub corpus into supabase
-  const existing = await listCandidates();
-  if (existing.length > 0) {
+  const existing = await listCandidatesPage({ page: 1, pageSize: 1 });
+  if (existing.total > 0) {
     store.seeded = true;
     return;
   }
