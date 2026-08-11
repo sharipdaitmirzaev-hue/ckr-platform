@@ -82,14 +82,17 @@ export const FIRST_INTENT_PROMPTS = [
   {
     id: "partners",
     label: "Нужны партнёры",
-    href:
-      "/lia?scenario=find_expert&message=" +
-      encodeURIComponent("Нужны партнёры и эксперты"),
+    href: "/dashboard/needs/new?intent=SEEK_PARTNER",
   },
   {
     id: "invest",
     label: "Хочу инвестировать",
-    href: "/projects",
+    href: "/dashboard/needs/new?intent=INVEST",
+  },
+  {
+    id: "need",
+    label: "Описать потребность",
+    href: "/dashboard/needs/new",
   },
   {
     id: "expert",
@@ -124,7 +127,7 @@ export const FIRST_USER_PATHS = {
     label: "Организация",
     action: "Потребность → Партнёры",
     chain: "Потребность → Партнёры",
-    href: "/partner",
+    href: "/dashboard/needs/new",
   },
 } as const;
 
