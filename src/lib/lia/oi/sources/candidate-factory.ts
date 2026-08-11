@@ -21,7 +21,7 @@ import type {
   LiaOiSourceCategory,
   LiaOiSourceClass,
 } from "@/types/lia-oi";
-import type { ExternalSearchResult } from "@/lib/lia/search/types";
+import type { ExternalSearchResult } from "@/types/lia";
 
 function claim(
   field: string,
@@ -163,7 +163,12 @@ export function buildSpecializedCandidate(input: {
       input.askingPrice != null || input.investmentRequired != null
         ? "KNOWN"
         : "UNKNOWN",
-    priceKind: input.askingPrice != null ? "ASKING" : "UNKNOWN",
+    priceKind:
+      input.askingPrice != null
+        ? input.opportunityType === "AUCTION_ASSET"
+          ? "STARTING_AUCTION_PRICE"
+          : "ASKING_PRICE"
+        : "UNKNOWN",
     detailConfidence: input.official ? 70 : 45,
     detailSignals: [],
     missingFields: [],
@@ -243,7 +248,8 @@ export function hitToSpecializedCandidate(
   const objectId =
     extractOfficialIdFromUrl(hit.url, meta.idKind) ||
     oiHash(hit.url).slice(0, 16);
-  const price = extractPriceFromText(`${hit.title} ${hit.snippet || ""}`);
+  const text = `${hit.title} ${hit.description || ""}`;
+  const price = extractPriceFromText(text);
   return buildSpecializedCandidate({
     adapterId: meta.adapterId,
     opportunityType: meta.opportunityType,
@@ -253,13 +259,13 @@ export function hitToSpecializedCandidate(
     official: true,
     sourceConfidence: 82,
     title: hit.title,
-    description: hit.snippet || hit.title,
+    description: hit.description || hit.title,
     url: hit.url,
     askingPrice: meta.opportunityType === "SUPPORT_PROGRAM" ? null : price,
     investmentRequired:
       meta.opportunityType === "SUPPORT_PROGRAM" ? price : null,
     objectId,
-    deadlineRaw: extractDeadlineFromText(`${hit.title}\n${hit.snippet || ""}`),
+    deadlineRaw: extractDeadlineFromText(`${hit.title}\n${hit.description || ""}`),
     isStub: false,
   });
 }

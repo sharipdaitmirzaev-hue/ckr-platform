@@ -107,12 +107,15 @@ apply_via_management_api() {
     -X POST "https://api.supabase.com/v1/projects/${EXPECTED_REF}/database/backups" \
     -H "Authorization: Bearer ${token}" \
     -H "Content-Type: application/json" \
+    -H "User-Agent: ckr-stage2c-apply/1.0" \
     -d '{}' >/tmp/ckr-oi-backup.code || true
   log_info "Backup API HTTP $(cat /tmp/ckr-oi-backup.code)"
 
   log_info "Execute SQL file via Management API: $(basename "$STAGE2C")"
-  python3 - "$STAGE2C" "$token" "$EXPECTED_REF" <<'PY'
-import json, sys, urllib.request
+  # NOTE: must set explicit User-Agent — bare urllib is rejected (403) by the API edge.
+  # Also: do not rely on set -e inside `if apply_...` (bash disables it there).
+  if ! python3 - "$STAGE2C" "$token" "$EXPECTED_REF" <<'PY'
+import json, sys, urllib.request, urllib.error
 path, token, ref = sys.argv[1], sys.argv[2], sys.argv[3]
 sql = open(path, "r", encoding="utf-8").read()
 body = json.dumps({"query": sql}).encode()
@@ -122,22 +125,33 @@ req = urllib.request.Request(
   headers={
     "Authorization": f"Bearer {token}",
     "Content-Type": "application/json",
+    "Accept": "application/json",
+    "User-Agent": "ckr-stage2c-apply/1.0",
   },
   method="POST",
 )
-with urllib.request.urlopen(req, timeout=300) as r:
-  print("SQL_OK", r.status)
+try:
+  with urllib.request.urlopen(req, timeout=300) as r:
+    print("SQL_OK", r.status)
+except urllib.error.HTTPError as e:
+    err = e.read().decode("utf-8", "replace")[:500]
+    print("SQL_FAIL", e.code, err, file=sys.stderr)
+    sys.exit(1)
 PY
+  then
+    return 1
+  fi
   log_ok "Stage 2C applied via Management API"
+  return 0
 }
 
+APPLY_OK=0
 if apply_via_management_api; then
-  :
+  APPLY_OK=1
 elif apply_via_psql; then
-  :
-else
-  die "Нужен SUPABASE_ACCESS_TOKEN или SUPABASE_DB_PASSWORD для apply SQL"
+  APPLY_OK=1
 fi
+[[ "${APPLY_OK}" -eq 1 ]] || die "Нужен SUPABASE_ACCESS_TOKEN или SUPABASE_DB_PASSWORD для apply SQL"
 
 log_info "Post-check Stage 2C columns"
 for col in opportunity_type source_adapter_id source_confidence is_official_source deadline_at days_remaining; do

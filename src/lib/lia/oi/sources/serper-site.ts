@@ -4,7 +4,7 @@
  */
 
 import { getWebSearchProvider } from "@/lib/lia/search/web-provider";
-import type { ExternalSearchResult } from "@/lib/lia/search/types";
+import type { ExternalSearchResult } from "@/types/lia";
 import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
 
 export async function searchOfficialSites(options: {
@@ -31,10 +31,8 @@ export async function searchOfficialSites(options: {
     const query = `${q} (${siteClauses})`;
     try {
       const chunk = await Promise.race([
-        web.search({
-          query,
+        web.search(query, {
           limit: options.limitPerQuery,
-          type: "web",
         }),
         new Promise<never>((_, reject) =>
           setTimeout(
