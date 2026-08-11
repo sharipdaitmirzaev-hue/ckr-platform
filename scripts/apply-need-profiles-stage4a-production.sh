@@ -55,7 +55,12 @@ body=json.dumps({"query":open(path,encoding="utf-8").read()}).encode()
 req=urllib.request.Request(
   f"https://api.supabase.com/v1/projects/{ref}/database/query",
   data=body,
-  headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"},
+  headers={
+    "Authorization":f"Bearer {token}",
+    "Content-Type":"application/json",
+    # Browser UA: Cloudflare otherwise returns 403/1010 on Management API.
+    "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  },
   method="POST",
 )
 with urllib.request.urlopen(req,timeout=300) as r:

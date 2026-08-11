@@ -134,6 +134,7 @@ async function main() {
     assert.ok(r.drafts.some((d) => d.intentType === "SEEK_INVESTMENT"));
     const d = r.drafts.find((d) => d.intentType === "SEEK_INVESTMENT")!;
     assert.equal(d.budgetMax, 50_000_000);
+    assert.ok(d.industries.includes("hospitality"));
   });
 
   await test("NL scenario C SEEK_BUYER", () => {
