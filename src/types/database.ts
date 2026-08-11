@@ -28,7 +28,10 @@ export type DbOpportunityType =
   | "ready_business"
   | "technology"
   | "service"
-  | "partner";
+  | "partner"
+  | "support_program"
+  | "procurement"
+  | "auction_asset";
 
 export type DbApplicationTargetType =
   | "project"
@@ -1079,6 +1082,22 @@ export type OpportunityRow = {
   organization_id?: string | null;
   created_at: string;
   updated_at: string;
+  /** Stage 4C controlled publish provenance (additive). */
+  source_type?: "manual" | "lia_oi" | "import";
+  source_id?: string | null;
+  source_url?: string | null;
+  canonical_url?: string | null;
+  source_label?: string | null;
+  source_published_at?: string | null;
+  fingerprint?: string | null;
+  amount_kind?: string | null;
+  deadline_at?: string | null;
+  data_quality_score?: number | string | null;
+  matching_readiness?: string | null;
+  owner_edited_fields?: string[] | null;
+  pending_source_changes?: unknown;
+  published_from_lia_at?: string | null;
+  published_by?: string | null;
 };
 
 export type ApplicationRow = {

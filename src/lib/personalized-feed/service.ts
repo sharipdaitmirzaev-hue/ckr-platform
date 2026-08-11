@@ -27,7 +27,10 @@ import {
 import { dedupeCandidates } from "@/lib/personalized-feed/dedup";
 import { explainRecommendation } from "@/lib/personalized-feed/explain";
 import { rankCandidate } from "@/lib/personalized-feed/scoring";
-import { labelForMarketplaceSource } from "@/lib/personalized-feed/source-labels";
+import {
+  labelForLiaOiSource,
+  labelForMarketplaceSource,
+} from "@/lib/personalized-feed/source-labels";
 import {
   getPersonalizedFeedMemoryStore,
   resetPersonalizedFeedMemoryStore,
@@ -565,7 +568,7 @@ async function collectMarketplaceCandidates(
     let q = db
       .from("opportunities")
       .select(
-        "id,title,description,region,type,price,currency,status,created_at,updated_at,verification_status",
+        "id,title,description,region,type,price,currency,status,created_at,updated_at,verification_status,source_type,source_label,source_url,canonical_url,fingerprint,deadline_at,data_quality_score,amount_kind",
       )
       .eq("status", "published")
       .limit(80);
@@ -575,11 +578,24 @@ async function collectMarketplaceCandidates(
     const { data } = await q;
     for (const row of data || []) {
       const price = num(row.price);
-      const src = labelForMarketplaceSource("opportunity");
+      const isLia = row.source_type === "lia_oi";
+      const src = isLia
+        ? {
+            sourceLabel:
+              (row.source_label as string) ||
+              labelForLiaOiSource(row.type).sourceLabel,
+            sourceKey: labelForLiaOiSource(row.type).sourceKey,
+            sourceChannel: "external" as const,
+          }
+        : labelForMarketplaceSource("opportunity");
       const unknown: string[] = [];
-      if (!row.region) unknown.push("region");
+      if (!row.region || row.region === "Регион не указан") unknown.push("region");
       if (!row.type) unknown.push("industry");
       if (price == null) unknown.push("price");
+      if (!row.deadline_at && (row.type === "procurement" || row.type === "support_program")) {
+        unknown.push("deadline");
+      }
+      const dq = num(row.data_quality_score);
       out.push({
         id: row.id,
         itemType: "opportunity",
@@ -594,16 +610,26 @@ async function collectMarketplaceCandidates(
         status: row.status,
         ...src,
         href: `/opportunity/${row.id}`,
-        dataQuality: row.verification_status === "verified" ? 8 : 5,
-        sourceConfidence: 5,
+        fingerprint: row.fingerprint || null,
+        canonicalUrl: row.canonical_url || row.source_url || null,
+        deadlineAt: row.deadline_at || null,
+        dataQuality:
+          dq != null
+            ? Math.min(10, Math.max(1, dq))
+            : row.verification_status === "verified"
+              ? 8
+              : 5,
+        sourceConfidence: isLia ? 6 : 5,
         updatedAt: row.updated_at,
         createdAt: row.created_at,
         rawType: row.type,
         unknownFields: unknown,
         confirmedFields: [
           "title",
-          ...(row.region ? ["region"] : []),
+          ...(row.region && row.region !== "Регион не указан" ? ["region"] : []),
           ...(price != null ? ["price"] : []),
+          ...(row.deadline_at ? ["deadline"] : []),
+          ...(isLia ? ["source"] : []),
         ],
       });
     }

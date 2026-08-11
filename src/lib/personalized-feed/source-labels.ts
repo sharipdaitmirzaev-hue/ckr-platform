@@ -18,6 +18,24 @@ export function labelForMarketplaceSource(
         sourceKey: "ckr_opportunity",
         sourceChannel: "internal",
       };
+    case "support_program":
+      return {
+        sourceLabel: "Господдержка",
+        sourceKey: "ckr_support",
+        sourceChannel: "external",
+      };
+    case "procurement":
+      return {
+        sourceLabel: "Официальные закупки",
+        sourceKey: "ckr_procurement",
+        sourceChannel: "external",
+      };
+    case "auction_asset":
+      return {
+        sourceLabel: "Торги",
+        sourceKey: "ckr_auction",
+        sourceChannel: "external",
+      };
     case "investment_offer":
       return {
         sourceLabel: "ЦКР · инвестиции",

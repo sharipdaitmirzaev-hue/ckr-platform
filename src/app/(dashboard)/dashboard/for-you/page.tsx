@@ -134,9 +134,18 @@ export default async function ForYouPage({
 
       {feed.diagnostics.coverage === "UNSUPPORTED" ? (
         <p className="text-sm text-muted">
-          Для этого типа потребности в Feed v1 пока нет безопасного публичного
-          источника кандидатов (например, господдержка/закупки пока только во
-          внутреннем контуре Лии).
+          Для этого типа потребности пока нет безопасного публичного источника
+          кандидатов.
+        </p>
+      ) : null}
+      {feed.diagnostics.coverage === "PARTIAL" &&
+      (feed.diagnostics.intentType === "SEEK_SUPPORT" ||
+        feed.diagnostics.intentType === "SEEK_CONTRACT") &&
+      !feed.recommendations.length ? (
+        <p className="text-sm text-muted">
+          Публичные возможности этого типа появятся после controlled publish
+          владельцем (одобренные записи Лии → marketplace). Прямого доступа к
+          внутреннему LIA OI нет.
         </p>
       ) : null}
 
