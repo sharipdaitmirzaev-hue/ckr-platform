@@ -38,14 +38,20 @@ service_key="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SECRET_KEY:-}}"
 table_ok() {
   local table="$1"
   local code
-  code="$(
-    curl -sS -o /tmp/ckr-bg-table.json -w '%{http_code}' \
-      -H "apikey: ${service_key}" \
-      -H "Authorization: Bearer ${service_key}" \
-      -H "Accept: application/json" \
-      "${url}/rest/v1/${table}?select=id&limit=1" || true
-  )"
-  [[ "$code" == "200" ]]
+  local i
+  # PostgREST schema cache may lag briefly after DDL
+  for i in 1 2 3 4 5 6 7 8; do
+    code="$(
+      curl -sS -o /tmp/ckr-bg-table.json -w '%{http_code}' \
+        -H "apikey: ${service_key}" \
+        -H "Authorization: Bearer ${service_key}" \
+        -H "Accept: application/json" \
+        "${url}/rest/v1/${table}?select=id&limit=1" || true
+    )"
+    [[ "$code" == "200" ]] && return 0
+    sleep 2
+  done
+  return 1
 }
 
 if table_ok "business_graph_nodes" && table_ok "business_graph_edges"; then
