@@ -283,8 +283,9 @@ export async function runOwnerSearchPipeline(input: {
     c.searchRequestId = request.id;
   }
 
-  await upsertCandidates(feed, { searchRunId: request.id });
+  // search_runs first — opportunities.search_run_id and link tables FK to it
   await saveSearchRequest(request);
+  await upsertCandidates(feed, { searchRunId: request.id });
 
   const modeLine =
     modeInfo.mode === "live"
