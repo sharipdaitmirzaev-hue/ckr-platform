@@ -65,6 +65,7 @@ export const dashboardNav: NavItem[] = [
   { label: "Активность", href: "/dashboard/activity" },
   { label: "Оплата", href: "/dashboard/billing" },
   { label: "Потребности", href: "/dashboard/needs" },
+  { label: "Для вас", href: "/dashboard/for-you" },
   { label: "Интересы", href: "/dashboard/interests" },
   { label: "Документы", href: "/dashboard/documents" },
   { label: "Настройки", href: "/dashboard/settings" },

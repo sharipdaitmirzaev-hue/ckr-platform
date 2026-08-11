@@ -15,7 +15,9 @@ import { ASSIGNABLE_ROLES, roleLabels, type AssignableRole } from "@/config/role
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { listActivityFeed } from "@/lib/activity/queries";
 import { getDashboardOverview } from "@/lib/dashboard/overview";
+import { ForYouDashboardWidget } from "@/features/personalized-feed/components/for-you-dashboard-widget";
 import { buildLiaRecommendations } from "@/lib/lia/recommendations";
+import { getPersonalizedFeedService } from "@/lib/personalized-feed/service";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import type { Metadata } from "next";
@@ -43,6 +45,25 @@ export default async function DashboardPage() {
     listActivityFeed(user.id, 6),
     getDashboardOverview(user.id),
   ]);
+
+  let forYouTotal = 0;
+  let forYouTop: Awaited<
+    ReturnType<
+      ReturnType<typeof getPersonalizedFeedService>["getFeedForOwner"]
+    >
+  >["recommendations"] = [];
+  let forYouHasNeeds = false;
+  try {
+    const feed = await getPersonalizedFeedService("supabase").getFeedForOwner({
+      ownerId: user.id,
+      limit: 3,
+    });
+    forYouHasNeeds = feed.needs.length > 0;
+    forYouTotal = feed.recommendations.length;
+    forYouTop = feed.recommendations.slice(0, 3);
+  } catch {
+    forYouHasNeeds = false;
+  }
 
   let hasLia = false;
   let hasInterest = false;
@@ -90,6 +111,12 @@ export default async function DashboardPage() {
       />
 
       <FirstIntentPrompt roles={roles} firstActionDone={firstActionDone} />
+
+      <ForYouDashboardWidget
+        total={forYouTotal}
+        top={forYouTop}
+        hasNeeds={forYouHasNeeds}
+      />
 
       <FirstActionHint
         roles={roles}

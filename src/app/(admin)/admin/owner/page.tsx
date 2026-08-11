@@ -76,6 +76,19 @@ export default async function OwnerCabinetPage() {
 
       <LiaTodayWidget stats={oiStats} recommended={oiRecommended} />
 
+      <section className="space-y-2">
+        <h3 className="font-display text-xl text-foreground">Feed v1</h3>
+        <p className="text-sm text-muted">
+          Диагностика персональной ленты «Для вас» (без Matching Engine).
+        </p>
+        <Link
+          href="/admin/owner/feed"
+          className="text-sm text-accent hover:underline"
+        >
+          Открыть диагностику Feed →
+        </Link>
+      </section>
+
       <section className="space-y-4">
         <h3 className="font-display text-xl text-foreground">Платформа сейчас</h3>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
