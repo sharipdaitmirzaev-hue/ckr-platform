@@ -4,7 +4,7 @@ import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
 import { ensureLiaOiSeed, getTodayStats } from "@/lib/lia/oi/pipeline";
 import {
   listAssignments,
-  listCandidates,
+  listCandidatesPage,
   listReports,
   listSearchRequests,
 } from "@/lib/lia/oi/store";
@@ -18,20 +18,28 @@ export async function GET() {
     await ensureLiaOiSeed(userId);
     const provider = getInternetSearchProvider();
     const mode = resolveOiSearchMode();
+    const [today, candidatesPage, reports, assignments, searches] =
+      await Promise.all([
+        getTodayStats(),
+        listCandidatesPage({ page: 1, pageSize: 1 }),
+        listReports(),
+        listAssignments(),
+        listSearchRequests(),
+      ]);
     return {
       provider: { id: provider.id, label: provider.label, mode: provider.mode },
       searchMode: mode.mode,
       liveAvailable: mode.liveAvailable,
       budgets: LIA_OI_BUDGETS,
-      today: await getTodayStats(),
+      today,
       counts: {
-        candidates: (await listCandidates()).length,
-        reports: (await listReports()).length,
-        assignments: (await listAssignments()).length,
-        searches: (await listSearchRequests()).length,
+        candidates: candidatesPage.total,
+        reports: reports.length,
+        assignments: assignments.length,
+        searches: searches.length,
       },
       stubMode: mode.mode === "stub",
-      note: "Stage 2B: memory|supabase store. SQL not applied to production yet. Scheduler/Matching — позже.",
+      note: "Stage 2B: memory|supabase store. Scheduler/Matching — позже.",
     };
   });
 }

@@ -425,6 +425,13 @@ export async function ensureLiaOiSeed(userId = "system"): Promise<void> {
     return;
   }
 
+  // Persistence already has data — do not re-seed stub corpus into supabase
+  const existing = await listCandidates();
+  if (existing.length > 0) {
+    store.seeded = true;
+    return;
+  }
+
   await runOwnerSearchPipeline({
     query: "Инвестор ищет проект до 30 млн рублей по России",
     userId,

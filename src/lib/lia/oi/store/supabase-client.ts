@@ -22,14 +22,25 @@ function sleep(ms: number) {
 }
 
 /** Transient undici/network failures during sequential OI writes. */
-function createRetryingFetch(baseFetch: Fetch, attempts = 4): Fetch {
+function createRetryingFetch(baseFetch: Fetch, attempts = 3): Fetch {
   return async (input, init) => {
     let lastError: unknown;
     for (let i = 0; i < attempts; i += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12_000);
       try {
-        const res = await baseFetch(input, init);
+        const parentSignal = init?.signal;
+        if (parentSignal) {
+          if (parentSignal.aborted) controller.abort();
+          else {
+            parentSignal.addEventListener("abort", () => controller.abort(), {
+              once: true,
+            });
+          }
+        }
+        const res = await baseFetch(input, { ...init, signal: controller.signal });
         if (res.status >= 500 && i < attempts - 1) {
-          await sleep(150 * 2 ** i);
+          await sleep(100 * 2 ** i);
           continue;
         }
         return res;
@@ -38,11 +49,15 @@ function createRetryingFetch(baseFetch: Fetch, attempts = 4): Fetch {
         const msg = error instanceof Error ? error.message : String(error);
         const retryable =
           msg.includes("fetch failed") ||
+          msg.includes("aborted") ||
+          msg.includes("AbortError") ||
           msg.includes("ECONNRESET") ||
           msg.includes("ETIMEDOUT") ||
           msg.includes("socket");
         if (!retryable || i === attempts - 1) throw error;
-        await sleep(150 * 2 ** i);
+        await sleep(100 * 2 ** i);
+      } finally {
+        clearTimeout(timer);
       }
     }
     throw lastError;
