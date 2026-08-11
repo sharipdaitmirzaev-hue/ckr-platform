@@ -263,3 +263,24 @@ C. DB: таблицы `lia_oi_*` можно оставить — они не л�
 - Tests: `npm run test:lia-oi-stage2c1`
 
 Стоп-линия: Matching / Synthesis / Scheduler / новые источники / destructive migrations.
+
+---
+
+## Stage 2C.2 — Official Data Access (диагностика)
+
+Диагностика с production host (`161.104.18.135`):
+
+| Домен | DNS | TCP:443 | HTTPS | Вывод |
+|---|---|---|---|---|
+| torgi.gov.ru | OK | **TIMEOUT** | — | blocked/filtered path (не bug safe-fetch) |
+| zakupki.gov.ru / int.zakupki.gov.ru | OK | **TIMEOUT** | — | blocked/filtered path |
+| bankrot.fedresurs.ru | OK | OK | 200 (list) / **401** (old detail) | list доступен; detail требует auth |
+| bank-publications-*.fedresurs.ru | OK | OK | swagger demo 200 / prod 403 | REST API есть, нужен договор+login |
+| мсп.рф | OK | OK | **403** | WAF/app block (UA не помогает) |
+| corpmsp.ru | OK | OK | 200 | HTML доступен, часто HOMEPAGE/UNKNOWN |
+| мойбизнес.рф | OK | OK | 200 | HTML доступен, часто LIST/каталог |
+| data.gov.ru | OK | OK | 200 | open data portal reachable |
+
+Скрипт: `scripts/diagnose-official-sources.sh`
+
+**Вывод:** READY=0 из‑за сетевого/access блока на ЕИС/ГИС Торги + отсутствия API credentials, не из‑за extractors.
