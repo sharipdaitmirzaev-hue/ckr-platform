@@ -51,6 +51,29 @@ export default async function LiaOiOpportunityDetailPage({ params }: Props) {
         <h2 className="mt-2 font-display text-3xl text-foreground">
           {item.title}
         </h2>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          {item.isOfficialSource ? (
+            <span className="border border-accent/40 px-2 py-0.5 text-accent">
+              Официальный источник
+            </span>
+          ) : null}
+          {item.opportunityType ? (
+            <span className="border border-border px-2 py-0.5 text-muted">
+              {LIA_OI_OPPORTUNITY_TYPE_LABELS[item.opportunityType] ||
+                item.opportunityType}
+            </span>
+          ) : null}
+          {deadlineLabel(item.daysRemaining ?? null) ? (
+            <span className="border border-border px-2 py-0.5 text-foreground">
+              {deadlineLabel(item.daysRemaining ?? null)}
+            </span>
+          ) : null}
+          {item.sourceAdapterId ? (
+            <span className="border border-border px-2 py-0.5 text-muted">
+              adapter: {item.sourceAdapterId}
+            </span>
+          ) : null}
+        </div>
         <p className="mt-4 text-base leading-relaxed text-muted">
           {item.summary}
         </p>
