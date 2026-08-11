@@ -386,7 +386,7 @@ export class BusinessGraphService {
 
   async commentEdge(
     edgeId: string,
-    userId: string,
+    userId: string | undefined,
     comment: string,
   ): Promise<BusinessEdge> {
     const edge = await this.repo.getEdge(edgeId);
@@ -395,7 +395,7 @@ export class BusinessGraphService {
       ...edge,
       ownerComment: comment,
       updatedAt: now(),
-      createdByUserId: userId || edge.createdByUserId,
+      createdByUserId: userId || edge.createdByUserId || null,
     };
     await this.repo.upsertEdge(updated);
     await this.pushEvent({
@@ -404,7 +404,7 @@ export class BusinessGraphService {
       nodeId: edge.sourceNodeId,
       payload: { comment },
       actorKind: "OWNER",
-      actorUserId: userId,
+      actorUserId: userId || null,
     });
     return updated;
   }
