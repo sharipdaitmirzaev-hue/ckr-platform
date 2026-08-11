@@ -160,9 +160,9 @@ export const DAGESTAN_SOURCES: RegionalSource[] = [
     official: true,
     enabled: true,
     priority: 19,
-    health: "UNVERIFIED",
+    health: "OK",
     lastChecked: "2026-08-11",
-    notes: "Оператор инвестпортала / меры поддержки МСП.",
+    notes: "Оператор инвестпортала / меры поддержки МСП. HTTP 200 с VPS.",
     intents: ["INVEST", "SEEK_PROJECT", "SEEK_SUPPORT"],
   },
   {

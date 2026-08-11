@@ -25,6 +25,38 @@ export type TestDataInventoryItem = {
  * Known Stage 4A–4D / graph / stub pollution patterns.
  * Exact production IDs must be filled by dry-run script before any delete.
  */
+/**
+ * Exact production IDs observed 2026-08-11 (Stage 4E deploy).
+ * SAFE_TO_DELETE — only after separate owner confirm + dry-run backup.
+ */
+export const EXACT_SAFE_TO_DELETE_IDS = {
+  needProfiles: [
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2",
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3",
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4",
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5",
+    "d928a04d-c52b-4694-9033-be41bb41cd5c",
+    "201c64e3-f27b-4b5b-baf9-17dc0dccbb5e",
+    "e8421635-1366-4e6d-be62-573b4d21a8a1",
+    "7f3a1d14-1b62-4d90-9af3-f3a42eeea743",
+    "f170b27f-9a65-4e05-b83e-253da376c0c3",
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3",
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb4",
+  ],
+  /** Stage4C diagnostic needs — KEEP until feed regression replaced */
+  needProfilesKeepForFeedDiag: [
+    "a1111111-1111-4111-8111-111111111111",
+    "a2222222-2222-4222-8222-222222222222",
+  ],
+  marketplaceArchivedSmoke: ["7cb7ac9a-4bc7-4eaf-8201-f46082af571f"],
+  oiStubSupportDemo: [
+    "cand_3599d1245e8b446d",
+    "cand_28c6b5148b03447d",
+  ],
+} as const;
+
 export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
   {
     id: "stage4a_smoke_needs",
@@ -32,8 +64,8 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Stage 4A smoke Need Profiles",
     label: "TEST",
     cleanupClass: "SAFE_TO_DELETE",
-    exactIdsHint: ["np_smoke_", "smoke_need", "stage4a"],
-    notes: "Удалять только по exact ID из dry-run.",
+    exactIdsHint: [...EXACT_SAFE_TO_DELETE_IDS.needProfiles],
+    notes: "Exact IDs from prod 2026-08-11. Удалять только после owner confirm.",
   },
   {
     id: "stage4b_smoke_needs",
@@ -41,8 +73,21 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Stage 4B personalized feed smoke needs",
     label: "TEST",
     cleanupClass: "SAFE_TO_DELETE",
-    exactIdsHint: ["np_smoke_seek_", "smoke-support", "smoke-contract"],
+    exactIdsHint: [
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb4",
+    ],
     notes: "Feed smoke fixtures.",
+  },
+  {
+    id: "stage4c_diag_needs",
+    category: "need_profile",
+    description: "Stage 4C SEEK_SUPPORT/CONTRACT Dagestan diagnostic needs",
+    label: "TEST",
+    cleanupClass: "KEEP_FOR_AUDIT",
+    exactIdsHint: [...EXACT_SAFE_TO_DELETE_IDS.needProfilesKeepForFeedDiag],
+    notes: "Используются для feed A/B regression — не удалять до замены.",
   },
   {
     id: "stage4c_disposable_oi",
@@ -50,7 +95,7 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Stage 4C disposable / smoke OI candidates",
     label: "TEST",
     cleanupClass: "SAFE_TO_DELETE",
-    exactIdsHint: ["cand_smoke", "oi_smoke", "stub_"],
+    exactIdsHint: ["cand_smoke", "oi_smoke"],
     notes: "Не трогать audit events без необходимости.",
   },
   {
@@ -59,8 +104,8 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Stub / demo OI seed cards (isStub=true)",
     label: "SEED",
     cleanupClass: "KEEP_FOR_AUDIT",
-    exactIdsHint: ["isStub=true", "[STUB]"],
-    notes: "Часть нужна для offline demos; классифицировать по ID.",
+    exactIdsHint: [...EXACT_SAFE_TO_DELETE_IDS.oiStubSupportDemo, "isStub=true"],
+    notes: "В т.ч. MSP-GRANT/CREDIT demo с 4E live (не публиковать).",
   },
   {
     id: "fake_public_smoke_demand",
@@ -68,7 +113,7 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Fake/public smoke demand listings",
     label: "DEMO",
     cleanupClass: "UNCERTAIN",
-    exactIdsHint: ["smoke", "demo demand"],
+    exactIdsHint: ["smoke-public-u1"],
     notes: "Проверить вручную — могут пересекаться с реальными.",
   },
   {
@@ -104,8 +149,8 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Marketplace rows published during 4C smoke",
     label: "DEMO",
     cleanupClass: "UNCERTAIN",
-    exactIdsHint: ["Stage 4C smoke", "Отредактировано владельцем"],
-    notes: "Часть может быть помечена archived; не pattern-delete.",
+    exactIdsHint: [...EXACT_SAFE_TO_DELETE_IDS.marketplaceArchivedSmoke],
+    notes: "archived smoke target; не pattern-delete.",
   },
   {
     id: "real_oi_production",
@@ -113,8 +158,8 @@ export const KNOWN_TEST_DATA_INVENTORY: TestDataInventoryItem[] = [
     description: "Real discovered OI from Serper/enrich (Stage 4D+)",
     label: "REAL",
     cleanupClass: "REAL_DATA",
-    exactIdsHint: [],
-    notes: "Никогда не включать в cleanup list без явного ID-исключения.",
+    exactIdsHint: ["cand_5cf36ffd93e14102", "5cedf341-970a-49c3-9a35-14425b47a86c"],
+    notes: "4E published Kontur food tender + other live discoveries.",
   },
 ];
 
