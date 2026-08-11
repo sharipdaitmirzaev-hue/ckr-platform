@@ -203,7 +203,9 @@ export class PersonalizedFeedService {
       };
     }
 
-    // All active needs — tag each recommendation with need id, don't opaque-merge
+    // All active needs — tag each recommendation with need id, don't opaque-merge.
+    // Prefetch hidden keys once (avoid N feedback round-trips per need).
+    const hidden = await this.hiddenItemKeys(params.ownerId);
     const all: FeedRecommendation[] = [];
     let lastDiag = buildDiagnostics(null, "PARTIAL", {
       candidateCount: 0,
@@ -216,6 +218,7 @@ export class PersonalizedFeedService {
         need,
         ownerId: params.ownerId,
         limit: params.limit ?? 8,
+        hiddenKeys: hidden,
       });
       all.push(...part.recommendations);
       lastDiag = {
@@ -252,6 +255,8 @@ export class PersonalizedFeedService {
     need: NeedProfile;
     ownerId: string;
     limit?: number;
+    /** Optional preloaded not_interested keys for batch owner feeds. */
+    hiddenKeys?: Set<string>;
   }): Promise<{
     recommendations: FeedRecommendation[];
     diagnostics: FeedDiagnostics;
@@ -271,7 +276,7 @@ export class PersonalizedFeedService {
 
     const raw = await this.collectCandidates(params.need);
     const { unique, removed } = dedupeCandidates(raw);
-    const hidden = await this.hiddenItemKeys(params.ownerId);
+    const hidden = params.hiddenKeys ?? (await this.hiddenItemKeys(params.ownerId));
     let filtered = 0;
     const ranked: FeedRecommendation[] = [];
 
