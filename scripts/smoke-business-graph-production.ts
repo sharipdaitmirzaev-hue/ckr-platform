@@ -125,39 +125,60 @@ async function main() {
 
   await graph.addAlias(p1.id, `smoke-alias-${project.id.slice(0, 8)}`, "smoke");
 
-  // Explicit smoke edges (no Matching)
-  const edgeUseful = (
-    await graph.createOrUpdateEdge({
-      sourceNodeId: capitalId || o1.id,
-      targetNodeId: p1.id,
-      relationshipType: capitalId ? "CAN_FINANCE" : "RELATED_TO",
-      confidence: 55,
-      provenanceType: "ESTIMATE",
-      reasoningSummary:
-        "Smoke Stage 3A: explicit test relation (not Matching Engine).",
-      status: "ACTIVE",
-      matchClass: "HYPOTHESIS",
-      createdByKind: "SYSTEM",
-      source: "smoke-stage3a-production",
-    })
-  ).edge;
+  // Explicit smoke edges (no Matching). Reuse existing smoke edges if present.
+  const existingEdges = await graph.getEdges({
+    nodeId: p1.id,
+    currentOnly: false,
+  });
+  const smokeEdges = existingEdges.filter(
+    (e) => e.source === "smoke-stage3a-production",
+  );
+
+  let edgeUseful =
+    smokeEdges.find((e) => e.relationshipType === "CAN_FINANCE") ||
+    smokeEdges.find((e) => e.relationshipType === "RELATED_TO" && e.status !== "REJECTED");
+  if (!edgeUseful) {
+    edgeUseful = (
+      await graph.createOrUpdateEdge({
+        sourceNodeId: capitalId || o1.id,
+        targetNodeId: p1.id,
+        relationshipType: capitalId ? "CAN_FINANCE" : "RELATED_TO",
+        confidence: 55,
+        provenanceType: "ESTIMATE",
+        reasoningSummary:
+          "Smoke Stage 3A: explicit test relation (not Matching Engine).",
+        status: "ACTIVE",
+        matchClass: "HYPOTHESIS",
+        createdByKind: "SYSTEM",
+        source: "smoke-stage3a-production",
+      })
+    ).edge;
+  }
   assert.equal(edgeUseful.provenanceType, "ESTIMATE");
   log(`edge useful=${edgeUseful.id} ${edgeUseful.relationshipType}`);
 
-  const edgeReject = (
-    await graph.createOrUpdateEdge({
-      sourceNodeId: o1.id,
-      targetNodeId: p1.id,
-      relationshipType: "RELATED_TO",
-      confidence: 40,
-      provenanceType: "INFERENCE",
-      reasoningSummary: "Smoke Stage 3A: disposable edge for reject test.",
-      status: "PROPOSED",
-      matchClass: "HYPOTHESIS",
-      createdByKind: "LIA",
-      source: "smoke-stage3a-production",
-    })
-  ).edge;
+  let edgeReject = smokeEdges.find(
+    (e) =>
+      e.relationshipType === "RELATED_TO" &&
+      e.sourceNodeId === o1.id &&
+      e.id !== edgeUseful!.id,
+  );
+  if (!edgeReject) {
+    edgeReject = (
+      await graph.createOrUpdateEdge({
+        sourceNodeId: o1.id,
+        targetNodeId: p1.id,
+        relationshipType: "RELATED_TO",
+        confidence: 40,
+        provenanceType: "INFERENCE",
+        reasoningSummary: "Smoke Stage 3A: disposable edge for reject test.",
+        status: "PROPOSED",
+        matchClass: "HYPOTHESIS",
+        createdByKind: "LIA",
+        source: "smoke-stage3a-production",
+      })
+    ).edge;
+  }
 
   const { data: adminRole } = await db
     .from("user_roles")
@@ -276,9 +297,15 @@ async function main() {
         rejectEdgeId: edgeReject.id,
         neighborIn: neighbors.incoming.length,
         neighborOut: neighbors.outgoing.length,
-        historyEvents: history.length,
+        projectHistoryEvents: projectHistory.length,
+        usefulHistoryEvents: usefulHistory.length,
+        rejectHistoryEvents: rejectHistory.length,
         aliases: aliases.length,
         oiSources: sources.length,
+        confirmedStatus: confirmed.status,
+        rejectedStatus: rejected.status,
+        ownerComment: commented.ownerComment,
+        usefulProvenance: edgeUseful.provenanceType,
       },
       null,
       2,
