@@ -6,24 +6,30 @@ import {
   liaOiPriorityLabels,
   liaOiStatusLabels,
 } from "@/config/lia-oi";
-import { getCandidate } from "@/lib/lia/oi/store";
+import {
+  getCandidate,
+  listOpportunityChanges,
+  listOpportunityEvents,
+} from "@/lib/lia/oi/store";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 type Props = { params: { id: string } };
 
-export function generateMetadata({ params }: Props): Metadata {
-  const item = getCandidate(params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const item = await getCandidate(params.id);
   return { title: item?.title ?? "Возможность Лии" };
 }
 
-export default function LiaOiOpportunityDetailPage({ params }: Props) {
-  const item = getCandidate(params.id);
+export default async function LiaOiOpportunityDetailPage({ params }: Props) {
+  const item = await getCandidate(params.id);
   if (!item) notFound();
   const pageType = item.pageType ?? "UNKNOWN";
   const contentIntent = item.contentIntent ?? "UNKNOWN";
   const budgetFit = item.budgetFit ?? "UNKNOWN";
+  const events = await listOpportunityEvents(item.id);
+  const changes = await listOpportunityChanges(item.id);
 
   return (
     <div className="space-y-8">
@@ -231,6 +237,37 @@ export default function LiaOiOpportunityDetailPage({ params }: Props) {
             ))}
           </ul>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="font-display text-lg text-foreground">История</h3>
+        {events.length === 0 && changes.length === 0 ? (
+          <p className="text-sm text-muted">Событий пока нет.</p>
+        ) : (
+          <ul className="space-y-2 text-sm text-muted">
+            {events.map((e) => (
+              <li key={e.id} className="border-l border-accent/40 pl-3">
+                <span className="text-foreground">
+                  {new Date(e.createdAt).toLocaleString("ru-RU")}
+                </span>
+                {" — "}
+                {e.title}
+                {e.detail ? (
+                  <span className="block text-xs">{e.detail}</span>
+                ) : null}
+              </li>
+            ))}
+            {changes.slice(0, 10).map((c) => (
+              <li key={c.id} className="border-l border-border pl-3">
+                <span className="text-foreground">
+                  {new Date(c.createdAt).toLocaleString("ru-RU")}
+                </span>
+                {" — "}
+                поле {c.fieldName}: {c.oldValue ?? "—"} → {c.newValue ?? "—"}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-2">

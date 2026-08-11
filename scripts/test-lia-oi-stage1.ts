@@ -9,7 +9,7 @@ import { getInternetSearchProvider } from "../src/lib/lia/oi/internet";
 import { normalizeHit } from "../src/lib/lia/oi/normalize";
 import { buildSearchPlan } from "../src/lib/lia/oi/planner";
 import { runOwnerSearchPipeline } from "../src/lib/lia/oi/pipeline";
-import { getLiaOiStore, resetLiaOiStoreForTests } from "../src/lib/lia/oi/store";
+import { resetLiaOiStoreForTests } from "../src/lib/lia/oi/store";
 import { LIA_OI_PROVENANCE_KINDS } from "../src/types/lia-oi";
 
 function ok(name: string) {
@@ -134,9 +134,11 @@ async function main() {
     assert.ok(result.afterDedup >= 1);
     assert.ok(result.candidates.length >= 1);
     assert.ok(result.plan.budgetMax === 30_000_000);
-    const store = getLiaOiStore();
-    assert.ok(store.candidates.size >= 1);
-    assert.ok(store.reports.length >= 1);
+    const { listCandidates, listReports } = await import(
+      "../src/lib/lia/oi/store"
+    );
+    assert.ok((await listCandidates()).length >= 1);
+    assert.ok((await listReports()).length >= 1);
     ok(`Smoke E2E: «${smokeQuery}» → ${result.candidates.length} candidates`);
   }
 

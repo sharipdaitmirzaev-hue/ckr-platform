@@ -24,42 +24,46 @@ const feedbackToStatus: Partial<Record<LiaOiFeedbackEvent, LiaOiStatus>> = {
   PUBLISH: "PUBLISHED",
 };
 
-export function applyFeedback(input: {
+export async function applyFeedback(input: {
   candidateId: string;
   event: LiaOiFeedbackEvent;
   reason?: string;
   userId: string;
-}): { feedback: LiaOiFeedback; candidate: LiaOiCandidate } {
-  const candidate = getCandidate(input.candidateId);
+}): Promise<{ feedback: LiaOiFeedback; candidate: LiaOiCandidate }> {
+  const candidate = await getCandidate(input.candidateId);
   if (!candidate) throw new Error("Возможность не найдена");
 
   const nextStatus = feedbackToStatus[input.event] ?? candidate.status;
+  const now = new Date().toISOString();
   const updated: LiaOiCandidate = {
     ...candidate,
     status: nextStatus,
-    lastSeenAt: new Date().toISOString(),
+    lastSeenAt: now,
+    ownerLocked: true,
+    ownerStatusSetAt: now,
+    ownerStatusSetBy: input.userId,
   };
-  upsertCandidates([updated]);
+  await upsertCandidates([updated], { reason: "owner_update" });
 
   const feedback: LiaOiFeedback = {
     id: oiId("fb"),
     candidateId: input.candidateId,
     event: input.event,
     reason: input.reason,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
     createdBy: input.userId,
   };
-  addFeedback(feedback);
+  await addFeedback(feedback);
   return { feedback, candidate: updated };
 }
 
-export function createAssignment(input: {
+export async function createAssignment(input: {
   candidateId: string;
   kind: LiaOiAssignmentKind;
   instruction: string;
   userId: string;
-}): LiaOiAssignment {
-  const candidate = getCandidate(input.candidateId);
+}): Promise<LiaOiAssignment> {
+  const candidate = await getCandidate(input.candidateId);
   if (!candidate) throw new Error("Возможность не найдена");
 
   const resultSummary = [
@@ -68,40 +72,47 @@ export function createAssignment(input: {
     input.instruction.trim()
       ? `Инструкция владельца: ${input.instruction.trim()}`
       : "",
-    "Результат предварительный: рекомендуется проверить факты на этапе 2 (live search).",
+    "Результат предварительный: рекомендуется проверить факты на live-источнике.",
     candidate.nextStep,
   ]
     .filter(Boolean)
     .join(" ");
 
+  const now = new Date().toISOString();
   const assignment: LiaOiAssignment = {
     id: oiId("asg"),
     candidateId: input.candidateId,
     kind: input.kind,
     instruction: input.instruction.trim() || input.kind,
-    status: "done",
+    status: "COMPLETED",
     resultSummary,
-    createdAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
+    createdAt: now,
+    completedAt: now,
     createdBy: input.userId,
   };
-  addAssignment(assignment);
+  await addAssignment(assignment);
 
-  upsertCandidates([
-    {
-      ...candidate,
-      status: "DEEP_RESEARCH",
-      lastSeenAt: new Date().toISOString(),
-    },
-  ]);
+  await upsertCandidates(
+    [
+      {
+        ...candidate,
+        status: "DEEP_RESEARCH",
+        lastSeenAt: now,
+        ownerLocked: true,
+        ownerStatusSetAt: now,
+        ownerStatusSetBy: input.userId,
+      },
+    ],
+    { reason: "owner_update" },
+  );
 
   return assignment;
 }
 
-export function completeAssignmentManual(assignment: LiaOiAssignment) {
-  updateAssignment({
+export async function completeAssignmentManual(assignment: LiaOiAssignment) {
+  await updateAssignment({
     ...assignment,
-    status: "done",
+    status: "COMPLETED",
     completedAt: new Date().toISOString(),
   });
 }

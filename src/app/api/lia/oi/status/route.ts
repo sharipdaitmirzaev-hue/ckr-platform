@@ -23,15 +23,15 @@ export async function GET() {
       searchMode: mode.mode,
       liveAvailable: mode.liveAvailable,
       budgets: LIA_OI_BUDGETS,
-      today: getTodayStats(),
+      today: await getTodayStats(),
       counts: {
-        candidates: listCandidates().length,
-        reports: listReports().length,
-        assignments: listAssignments().length,
-        searches: listSearchRequests().length,
+        candidates: (await listCandidates()).length,
+        reports: (await listReports()).length,
+        assignments: (await listAssignments()).length,
+        searches: (await listSearchRequests()).length,
       },
       stubMode: mode.mode === "stub",
-      note: "Stage 2A: STUB|LIVE Serper. Persistence in-memory. Scheduler/Matching — позже.",
+      note: "Stage 2B: memory|supabase store. SQL not applied to production yet. Scheduler/Matching — позже.",
     };
   });
 }

@@ -6,7 +6,13 @@ import Link from "next/link";
 export const metadata: Metadata = { title: "Поручения Лии" };
 
 export default async function LiaOiAssignmentsPage() {
-  const items = listAssignments();
+  const items = await listAssignments();
+  const withCand = await Promise.all(
+    items.map(async (a) => ({
+      a,
+      cand: await getCandidate(a.candidateId),
+    })),
+  );
 
   return (
     <div className="space-y-4">
@@ -18,29 +24,26 @@ export default async function LiaOiAssignmentsPage() {
         </p>
       ) : (
         <ul className="space-y-3">
-          {items.map((a) => {
-            const cand = getCandidate(a.candidateId);
-            return (
-              <li
-                key={a.id}
-                className="rounded-sm border border-border bg-surface p-4"
-              >
-                <p className="text-xs uppercase tracking-[0.14em] text-muted">
-                  {liaOiAssignmentLabels[a.kind]} · {a.status}
-                </p>
-                <p className="mt-2 text-sm text-foreground">{a.instruction}</p>
-                <p className="mt-2 text-sm text-muted">{a.resultSummary}</p>
-                {cand ? (
-                  <Link
-                    href={`/admin/owner/lia/opportunities/${cand.id}`}
-                    className="mt-3 inline-block text-sm text-accent hover:underline"
-                  >
-                    {cand.title}
-                  </Link>
-                ) : null}
-              </li>
-            );
-          })}
+          {withCand.map(({ a, cand }) => (
+            <li
+              key={a.id}
+              className="rounded-sm border border-border bg-surface p-4"
+            >
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                {liaOiAssignmentLabels[a.kind]} · {a.status}
+              </p>
+              <p className="mt-2 text-sm text-foreground">{a.instruction}</p>
+              <p className="mt-2 text-sm text-muted">{a.resultSummary}</p>
+              {cand ? (
+                <Link
+                  href={`/admin/owner/lia/opportunities/${cand.id}`}
+                  className="mt-3 inline-block text-sm text-accent hover:underline"
+                >
+                  {cand.title}
+                </Link>
+              ) : null}
+            </li>
+          ))}
         </ul>
       )}
     </div>

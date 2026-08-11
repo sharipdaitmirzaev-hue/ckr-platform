@@ -10,7 +10,7 @@ type Ctx = { params: { id: string } };
 export async function GET(_request: Request, context: Ctx) {
   return withOiOwner(async (userId) => {
     await ensureLiaOiSeed(userId);
-    const item = getCandidate(context.params.id);
+    const item = await getCandidate(context.params.id);
     if (!item) throw new Error("Возможность не найдена");
     return { item, stubMode: true as const };
   });

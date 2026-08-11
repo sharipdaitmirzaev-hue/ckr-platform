@@ -19,6 +19,7 @@ import {
   addReport,
   getLiaOiStore,
   listCandidates,
+  listHypotheses,
   saveSearchRequest,
   setHypotheses,
   upsertCandidates,
@@ -120,6 +121,7 @@ export async function runOwnerSearchPipeline(input: {
   query: string;
   userId: string;
 }): Promise<LiaOiSearchPipelineResult> {
+  const started = Date.now();
   const modeInfo = resolveOiSearchMode();
   const plan = buildSearchPlan(input.query);
   const perQueryLimit = LIA_OI_BUDGETS.maxResultsPerQuery;
@@ -271,14 +273,18 @@ export async function runOwnerSearchPipeline(input: {
     searchMode: modeInfo.mode,
     providerLabel: modeInfo.providerLabel,
     stats,
+    durationMs: Date.now() - started,
+    errorSummary: providerUnavailable
+      ? "external search unavailable"
+      : null,
   };
 
   for (const c of feed) {
     c.searchRequestId = request.id;
   }
 
-  upsertCandidates(feed);
-  saveSearchRequest(request);
+  await upsertCandidates(feed, { searchRunId: request.id });
+  await saveSearchRequest(request);
 
   const modeLine =
     modeInfo.mode === "live"
@@ -327,9 +333,9 @@ export async function runOwnerSearchPipeline(input: {
     createdAt: new Date().toISOString(),
     stubMode: modeInfo.mode === "stub",
   };
-  addReport(report);
+  await addReport(report);
 
-  maybeBuildHypotheses(feed);
+  await maybeBuildHypotheses(feed);
 
   return {
     request,
@@ -350,7 +356,7 @@ export async function runOwnerSearchPipeline(input: {
   };
 }
 
-function maybeBuildHypotheses(candidates: LiaOiCandidate[]) {
+async function maybeBuildHypotheses(candidates: LiaOiCandidate[]) {
   const land = candidates.find((c) => /земл|участ/i.test(c.title));
   const support = candidates.find((c) => /льгот|поддерж/i.test(c.title));
   const hotel = candidates.find((c) => /гостиниц|туризм/i.test(c.title));
@@ -388,7 +394,7 @@ function maybeBuildHypotheses(candidates: LiaOiCandidate[]) {
       status: "DRAFT",
     });
   }
-  if (hypotheses.length) setHypotheses(hypotheses);
+  if (hypotheses.length) await setHypotheses(hypotheses);
 }
 
 /**
@@ -409,9 +415,9 @@ export async function ensureLiaOiSeed(userId = "system"): Promise<void> {
     query: "Инвестор ищет проект до 30 млн рублей по России",
     userId,
   });
-  const candidates = listCandidates();
+  const candidates = await listCandidates();
   const digest = buildDigestReport(candidates);
-  addReport(digest);
+  await addReport(digest);
   store.seeded = true;
 }
 
@@ -437,7 +443,7 @@ export function buildDigestReport(candidates: LiaOiCandidate[]): LiaOiReport {
       `Проанализировано: ${candidates.length}`,
       `Рекомендую посмотреть: ${interesting.length}`,
       `Высокий приоритет: ${high.length}`,
-      `Новых бизнес-гипотез: ${getLiaOiStore().hypotheses.length}`,
+      "Новых бизнес-гипотез: см. /admin/owner/lia/hypotheses",
       "",
       "ТОП:",
       ...candidates.slice(0, 5).map(
@@ -452,7 +458,7 @@ export function buildDigestReport(candidates: LiaOiCandidate[]): LiaOiReport {
       analyzed: candidates.length,
       worthAttention: interesting.length,
       highPriority: high.length,
-      hypotheses: getLiaOiStore().hypotheses.length,
+      hypotheses: 0,
     },
     candidateIds: candidates.map((c) => c.id),
     createdAt: new Date().toISOString(),
@@ -460,11 +466,12 @@ export function buildDigestReport(candidates: LiaOiCandidate[]): LiaOiReport {
   };
 }
 
-export function getTodayStats(): LiaOiTodayStats {
+export async function getTodayStats(): Promise<LiaOiTodayStats> {
   const mode = resolveOiSearchMode();
-  const candidates = listCandidates();
+  const candidates = await listCandidates();
   const interesting = candidates.filter((c) => c.score.overall >= 55);
   const high = candidates.filter((c) => c.score.priority === "HIGH_PRIORITY");
+  const hypotheses = await listHypotheses();
   return {
     signalsScanned: candidates.length
       ? Math.max(candidates.length * 3, candidates.length)
@@ -473,7 +480,7 @@ export function getTodayStats(): LiaOiTodayStats {
     analyzed: candidates.length,
     worthAttention: interesting.length,
     highPriority: high.length,
-    newHypotheses: getLiaOiStore().hypotheses.length,
+    newHypotheses: hypotheses.length,
     stubMode: mode.mode === "stub",
     searchMode: mode.mode,
     providerLabel: mode.providerLabel,
@@ -481,8 +488,11 @@ export function getTodayStats(): LiaOiTodayStats {
   };
 }
 
-export function getRecommendedCandidates(limit = 5): LiaOiCandidate[] {
-  return listCandidates()
+export async function getRecommendedCandidates(
+  limit = 5,
+): Promise<LiaOiCandidate[]> {
+  const candidates = await listCandidates();
+  return candidates
     .filter((c) => c.resultBucket === "TOP_OPPORTUNITIES" || !c.resultBucket)
     .slice(0, limit);
 }

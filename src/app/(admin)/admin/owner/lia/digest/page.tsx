@@ -7,10 +7,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Дайджест Лии" };
 
 export default async function LiaOiDigestPage() {
-  let digest = listReports().find((r) => r.kind === "daily_digest");
+  let digest = (await listReports()).find((r) => r.kind === "daily_digest");
   if (!digest) {
-    digest = buildDigestReport(listCandidates());
-    addReport(digest);
+    digest = buildDigestReport(await listCandidates());
+    await addReport(digest);
   }
 
   return (

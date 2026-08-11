@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = { title: "Отчёты Лии" };
 
 export default async function LiaOiReportsPage() {
-  const reports = listReports();
+  const reports = await listReports();
 
   return (
     <div className="space-y-4">

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Источники Лии" };
 export default async function LiaOiSourcesPage() {
   const provider = getInternetSearchProvider();
   const mode = resolveOiSearchMode();
-  const sources = listCandidates().flatMap((c) =>
+  const sources = (await listCandidates()).flatMap((c) =>
     c.sources.map((s) => ({ ...s, candidateTitle: c.title })),
   );
 

@@ -35,7 +35,7 @@ export default async function LiaOiOpportunitiesPage({
 }: {
   searchParams?: { saved?: string };
 }) {
-  const items = listCandidates({
+  const items = await listCandidates({
     savedOnly: searchParams?.saved === "1",
   });
 

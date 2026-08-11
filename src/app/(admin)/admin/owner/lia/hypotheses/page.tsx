@@ -5,14 +5,31 @@ import Link from "next/link";
 export const metadata: Metadata = { title: "Гипотезы Лии" };
 
 export default async function LiaOiHypothesesPage() {
-  const items = listHypotheses();
+  const items = await listHypotheses();
+  const supportLinks = await Promise.all(
+    items.map(async (h) => {
+      const links = await Promise.all(
+        h.supportingCandidateIds.map(async (id) => {
+          const c = await getCandidate(id);
+          return c
+            ? {
+                id,
+                title: c.title.replace(/^\[STUB\]\s*/, "").slice(0, 40),
+              }
+            : null;
+        }),
+      );
+      return { hypId: h.id, links: links.filter(Boolean) as { id: string; title: string }[] };
+    }),
+  );
+  const byHyp = new Map(supportLinks.map((x) => [x.hypId, x.links]));
 
   return (
     <div className="space-y-4">
       <h2 className="font-display text-xl text-foreground">Гипотезы Лии</h2>
       <p className="text-sm text-muted">
-        Этап 1: простые гипотезы из нескольких stub-сигналов. Полный Synthesis
-        Engine — этап 4.
+        Простые гипотезы из нескольких сигналов. Полный Synthesis Engine —
+        отдельный этап.
       </p>
       {items.length === 0 ? (
         <p className="text-sm text-muted">Гипотез пока нет.</p>
@@ -39,18 +56,15 @@ export default async function LiaOiHypothesesPage() {
                 ))}
               </ul>
               <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                {h.supportingCandidateIds.map((id) => {
-                  const c = getCandidate(id);
-                  return c ? (
-                    <Link
-                      key={id}
-                      href={`/admin/owner/lia/opportunities/${id}`}
-                      className="text-accent hover:underline"
-                    >
-                      {c.title.replace(/^\[STUB\]\s*/, "").slice(0, 40)}…
-                    </Link>
-                  ) : null;
-                })}
+                {(byHyp.get(h.id) ?? []).map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/admin/owner/lia/opportunities/${c.id}`}
+                    className="text-accent hover:underline"
+                  >
+                    {c.title}…
+                  </Link>
+                ))}
               </div>
             </li>
           ))}

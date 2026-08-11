@@ -11,9 +11,9 @@ import Link from "next/link";
 export const metadata: Metadata = { title: "Лия — Центр возможностей" };
 
 export default async function LiaOiOverviewPage() {
-  const stats = getTodayStats();
-  const recommended = getRecommendedCandidates(5);
-  const hypotheses = listHypotheses();
+  const stats = await getTodayStats();
+  const recommended = await getRecommendedCandidates(5);
+  const hypotheses = await listHypotheses();
 
   return (
     <div className="space-y-8">

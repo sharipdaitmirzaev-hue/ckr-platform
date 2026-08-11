@@ -1,135 +1,138 @@
+/**
+ * Compatibility facade over store/ (Stage 2B).
+ * Prefer: `import { getOiStore } from "@/lib/lia/oi/store"` then await methods.
+ */
+
+import {
+  getOiStore,
+  isMemorySeeded,
+  markMemorySeeded,
+  resetMemoryStoreForTests,
+  setOiStoreForTests,
+} from "@/lib/lia/oi/store/index";
 import type {
   LiaOiAssignment,
   LiaOiCandidate,
+  LiaOiCandidateListFilter,
   LiaOiFeedback,
   LiaOiHypothesis,
   LiaOiReport,
   LiaOiSearchRequest,
 } from "@/types/lia-oi";
 
-/**
- * InMemoryLiaOiStore — активное хранилище Stage 1 / 2A (без production DB).
- * Интерфейс: `store-types.ts` → LiaOiStore.
- * SupabaseLiaOiStore — Stage 2B (не активировать; SQL не apply).
- */
-type LiaOiStoreState = {
-  candidates: Map<string, LiaOiCandidate>;
-  searchRequests: Map<string, LiaOiSearchRequest>;
-  feedback: LiaOiFeedback[];
-  assignments: LiaOiAssignment[];
-  reports: LiaOiReport[];
-  hypotheses: LiaOiHypothesis[];
-  seeded: boolean;
-};
+export {
+  getOiStore,
+  setOiStoreForTests,
+  resetMemoryStoreForTests,
+  InMemoryLiaOiStore,
+  SupabaseLiaOiStore,
+  resolveOiStoreMode,
+  describeOiStoreMode,
+  LiaOiStoreWriteError,
+} from "@/lib/lia/oi/store/index";
 
-const globalForOi = globalThis as unknown as {
-  __ckrLiaOiStore?: LiaOiStoreState;
-};
-
-function createState(): LiaOiStoreState {
+/** @deprecated use getOiStore(); kept for seed flag in pipeline */
+export function getLiaOiStore(): { seeded: boolean } {
   return {
-    candidates: new Map(),
-    searchRequests: new Map(),
-    feedback: [],
-    assignments: [],
-    reports: [],
-    hypotheses: [],
-    seeded: false,
+    get seeded() {
+      return isMemorySeeded();
+    },
+    set seeded(v: boolean) {
+      if (v) markMemorySeeded();
+    },
   };
 }
 
-export function getLiaOiStore(): LiaOiStoreState {
-  if (!globalForOi.__ckrLiaOiStore) {
-    globalForOi.__ckrLiaOiStore = createState();
-  }
-  return globalForOi.__ckrLiaOiStore;
-}
-
-/** Только для тестов. */
 export function resetLiaOiStoreForTests() {
-  globalForOi.__ckrLiaOiStore = createState();
+  resetMemoryStoreForTests();
+  setOiStoreForTests(null);
 }
 
-export function upsertCandidates(items: LiaOiCandidate[]) {
-  const store = getLiaOiStore();
-  for (const item of items) {
-    const prev = store.candidates.get(item.id);
-    store.candidates.set(item.id, prev ? { ...prev, ...item } : item);
-  }
+export async function upsertCandidates(
+  items: LiaOiCandidate[],
+  options?: {
+    searchRunId?: string;
+    reason?: "rediscovery" | "owner_update";
+  },
+) {
+  return getOiStore().upsertCandidates(items, options);
 }
 
-export function listCandidates(filter?: {
-  status?: string;
-  savedOnly?: boolean;
-  minOverall?: number;
-}): LiaOiCandidate[] {
-  const store = getLiaOiStore();
-  let items = Array.from(store.candidates.values());
-  if (filter?.status) {
-    items = items.filter((c) => c.status === filter.status);
-  }
-  if (filter?.savedOnly) {
-    items = items.filter((c) =>
-      ["SAVED", "INTERESTING", "DEEP_RESEARCH", "PROJECT_CREATED"].includes(
-        c.status,
-      ),
-    );
-  }
-  if (filter?.minOverall != null) {
-    items = items.filter((c) => c.score.overall >= filter.minOverall!);
-  }
-  return items.sort((a, b) => b.score.overall - a.score.overall);
+export async function listCandidates(filter?: LiaOiCandidateListFilter) {
+  const page = await getOiStore().listCandidates(filter);
+  return page.items;
 }
 
-export function getCandidate(id: string): LiaOiCandidate | null {
-  return getLiaOiStore().candidates.get(id) ?? null;
+export async function listCandidatesPage(filter?: LiaOiCandidateListFilter) {
+  return getOiStore().listCandidates(filter);
 }
 
-export function saveSearchRequest(req: LiaOiSearchRequest) {
-  getLiaOiStore().searchRequests.set(req.id, req);
+export async function getCandidate(id: string) {
+  return getOiStore().getCandidate(id);
 }
 
-export function listSearchRequests(): LiaOiSearchRequest[] {
-  return Array.from(getLiaOiStore().searchRequests.values()).sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
-  );
+export async function saveSearchRequest(req: LiaOiSearchRequest) {
+  return getOiStore().saveSearchRequest(req);
 }
 
-export function addFeedback(item: LiaOiFeedback) {
-  getLiaOiStore().feedback.unshift(item);
+export async function listSearchRequests() {
+  const page = await getOiStore().listSearchRequests({ pageSize: 100 });
+  return page.items;
 }
 
-export function listFeedback(): LiaOiFeedback[] {
-  return getLiaOiStore().feedback;
+export async function getSearchRequest(id: string) {
+  return getOiStore().getSearchRequest(id);
 }
 
-export function addAssignment(item: LiaOiAssignment) {
-  getLiaOiStore().assignments.unshift(item);
+export async function listCandidatesForSearchRun(searchRunId: string) {
+  return getOiStore().listCandidatesForSearchRun(searchRunId);
 }
 
-export function updateAssignment(item: LiaOiAssignment) {
-  const store = getLiaOiStore();
-  const idx = store.assignments.findIndex((a) => a.id === item.id);
-  if (idx >= 0) store.assignments[idx] = item;
-  else store.assignments.unshift(item);
+export async function addFeedback(item: LiaOiFeedback) {
+  return getOiStore().addFeedback(item);
 }
 
-export function listAssignments(): LiaOiAssignment[] {
-  return getLiaOiStore().assignments;
+export async function listFeedback() {
+  const page = await getOiStore().listFeedback({ pageSize: 200 });
+  return page.items;
 }
 
-export function addReport(item: LiaOiReport) {
-  getLiaOiStore().reports.unshift(item);
+export async function addAssignment(item: LiaOiAssignment) {
+  return getOiStore().addAssignment(item);
 }
 
-export function listReports(): LiaOiReport[] {
-  return getLiaOiStore().reports;
+export async function updateAssignment(item: LiaOiAssignment) {
+  return getOiStore().updateAssignment(item);
 }
 
-export function setHypotheses(items: LiaOiHypothesis[]) {
-  getLiaOiStore().hypotheses = items;
+export async function listAssignments() {
+  const page = await getOiStore().listAssignments({ pageSize: 200 });
+  return page.items;
 }
 
-export function listHypotheses(): LiaOiHypothesis[] {
-  return getLiaOiStore().hypotheses;
+export async function addReport(item: LiaOiReport) {
+  return getOiStore().addReport(item);
 }
+
+export async function listReports() {
+  const page = await getOiStore().listReports({ pageSize: 200 });
+  return page.items;
+}
+
+export async function setHypotheses(items: LiaOiHypothesis[]) {
+  return getOiStore().setHypotheses(items);
+}
+
+export async function listHypotheses() {
+  return getOiStore().listHypotheses();
+}
+
+export async function listOpportunityEvents(opportunityId: string) {
+  return getOiStore().listOpportunityEvents(opportunityId);
+}
+
+export async function listOpportunityChanges(opportunityId: string) {
+  return getOiStore().listOpportunityChanges(opportunityId);
+}
+
+export type { LiaOiStore } from "@/lib/lia/oi/store-types";

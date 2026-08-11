@@ -34,11 +34,23 @@ export {
 export { applyFeedback, createAssignment } from "@/lib/lia/oi/actions-core";
 export {
   listCandidates,
+  listCandidatesPage,
   getCandidate,
   listReports,
   listAssignments,
   listHypotheses,
   listFeedback,
   listSearchRequests,
+  getSearchRequest,
+  listOpportunityEvents,
+  listOpportunityChanges,
+  getOiStore,
+  resolveOiStoreMode,
+  describeOiStoreMode,
+  LiaOiStoreWriteError,
 } from "@/lib/lia/oi/store";
 export type { LiaOiStore } from "@/lib/lia/oi/store-types";
+export {
+  buildOpportunityFingerprint,
+  mergeRediscovery,
+} from "@/lib/lia/oi/fingerprint";

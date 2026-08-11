@@ -8,6 +8,6 @@ export const runtime = "nodejs";
 export async function GET() {
   return withOiOwner(async (userId) => {
     await ensureLiaOiSeed(userId);
-    return { items: listReports(), stubMode: true as const };
+    return { items: await listReports(), stubMode: true as const };
   });
 }

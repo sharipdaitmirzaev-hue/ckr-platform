@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
+import { LiaOiStoreWriteError } from "@/lib/lia/oi/store-types";
 import { NextResponse } from "next/server";
 
 /**
@@ -70,14 +71,16 @@ export async function withOiOwner<T>(
       message.includes("API") && message.toLowerCase().includes("key")
         ? "Ошибка внешнего поиска"
         : message;
+    const isWriteFail = error instanceof LiaOiStoreWriteError;
     return NextResponse.json(
       {
         ok: false,
         error: safe,
         stubMode: mode.mode === "stub",
         searchMode: mode.mode,
+        persistenceError: isWriteFail,
       },
-      { status: 400 },
+      { status: isWriteFail ? 500 : 400 },
     );
   }
 }

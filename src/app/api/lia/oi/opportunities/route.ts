@@ -1,6 +1,6 @@
 import { withOiOwner } from "@/lib/lia/oi/http";
 import { ensureLiaOiSeed } from "@/lib/lia/oi/pipeline";
-import { listCandidates } from "@/lib/lia/oi/store";
+import { listCandidatesPage } from "@/lib/lia/oi/store";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -9,10 +9,31 @@ export async function GET(request: Request) {
   return withOiOwner(async (userId) => {
     await ensureLiaOiSeed(userId);
     const { searchParams } = new URL(request.url);
-    const savedOnly = searchParams.get("saved") === "1";
-    const status = searchParams.get("status") ?? undefined;
+    const page = Number(searchParams.get("page") || "1");
+    const pageSize = Number(searchParams.get("pageSize") || "20");
+    const result = await listCandidatesPage({
+      savedOnly: searchParams.get("saved") === "1",
+      rejectedOnly: searchParams.get("rejected") === "1",
+      status: searchParams.get("status") ?? undefined,
+      bucket: searchParams.get("bucket") ?? undefined,
+      region: searchParams.get("region") ?? undefined,
+      industry: searchParams.get("industry") ?? undefined,
+      budgetFit: searchParams.get("budgetFit") ?? undefined,
+      source: searchParams.get("source") ?? undefined,
+      q: searchParams.get("q") ?? undefined,
+      minOverall: searchParams.get("minScore")
+        ? Number(searchParams.get("minScore"))
+        : undefined,
+      minConfidence: searchParams.get("minConfidence")
+        ? Number(searchParams.get("minConfidence"))
+        : undefined,
+      dateFrom: searchParams.get("dateFrom") ?? undefined,
+      dateTo: searchParams.get("dateTo") ?? undefined,
+      page,
+      pageSize,
+    });
     return {
-      items: listCandidates({ savedOnly, status }),
+      ...result,
       stubMode: true as const,
     };
   });

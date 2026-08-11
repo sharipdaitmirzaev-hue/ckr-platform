@@ -36,6 +36,7 @@ LIA_WEB_SEARCH_API_KEY=...          # только server-side
 # опционально:
 LIA_WEB_SEARCH_BASE_URL=https://google.serper.dev
 LIA_OI_SEARCH_MODE=auto             # auto | stub | live
+LIA_OI_STORE=memory                 # memory | supabase (см. Stage 2B)
 ```
 
 Перезапустить приложение после изменения env.
@@ -159,22 +160,45 @@ Stage 2A: **InMemoryLiaOiStore** (`src/lib/lia/oi/store.ts`).
 
 ---
 
+## Stage 2B — Persistence (подготовка)
+
+Хранилище выбирается через `LIA_OI_STORE`:
+
+| Режим | Когда |
+|---|---|
+| `memory` (default) | демо / до apply migrations |
+| `supabase` | только после apply Stage 1 + Stage 2B SQL и при наличии `SUPABASE_SERVICE_ROLE_KEY` |
+
+Реализация: `InMemoryLiaOiStore` / `SupabaseLiaOiStore` через интерфейс `LiaOiStore`.
+При `LIA_OI_STORE=supabase` ошибка записи **не** маскируется fallback в memory — владелец видит ошибку (`LiaOiStoreWriteError`).
+
+Миграции (prepared, **не apply без явного OK**):
+
+- `supabase/migrations/20260810220000_lia_oi_stage1.sql`
+- `supabase/migrations/20260811083000_lia_oi_stage2b.sql` (additive: fingerprint, scores, changes/events, RLS)
+
+Identity / dedup: fingerprint (canonical URL + source object id + title + phone + geo + price bucket).
+Повторное обнаружение обновляет `last_seen_at` и пишет change log; решения владельца (`ownerLocked`) не сбрасываются.
+
+---
+
 ## Тесты
 
 ```bash
 npm test
 # включает:
 # scripts/test-lia-oi-stage1.ts
-# scripts/test-lia-oi-stage2a.ts  (mocked Serper, без реального API)
+# scripts/test-lia-oi-stage2a.ts / 2a1 / 2a2
+# scripts/test-lia-oi-stage2b.ts  (memory store, без production DB)
 ```
 
 ---
 
-## Что не входит в 2A
+## Что не входит / стоп-линия Stage 2B
 
-- Применение SQL / Supabase persistence (2B)
+- Apply SQL к production без отдельного подтверждения
+- Deploy persistence (`LIA_OI_STORE=supabase`) на production без OK
 - Matching Engine
 - Synthesis Engine
-- Автономный scheduler
-- Другие внешние источники кроме Serper (через существующий web_api)
-- Production deploy без отдельного подтверждения
+- Автономный scheduler / cron
+- Новые Source Adapters сверх Serper (схема уже готова к нескольким источникам)

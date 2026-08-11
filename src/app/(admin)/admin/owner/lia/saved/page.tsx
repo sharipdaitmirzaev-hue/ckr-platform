@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Сохранённые возможности" };
 
 export default async function LiaOiSavedPage() {
-  const items = listCandidates({ savedOnly: true });
+  const items = await listCandidates({ savedOnly: true });
 
   return (
     <div className="space-y-4">

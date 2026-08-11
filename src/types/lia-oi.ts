@@ -252,6 +252,14 @@ export type LiaOiCandidate = {
   missingFields?: string[];
   whyRecommend?: string[];
   sourceClass?: LiaOiSourceClass;
+  /** Stage 2B identity */
+  fingerprint?: string;
+  canonicalUrl?: string;
+  sourceObjectId?: string | null;
+  /** Owner decision locked — rediscovery must not reset status */
+  ownerLocked?: boolean;
+  ownerStatusSetAt?: string;
+  ownerStatusSetBy?: string;
 };
 
 export type LiaOiSearchIntent =
@@ -303,6 +311,9 @@ export type LiaOiSearchRequest = {
   searchMode: "stub" | "live";
   providerLabel?: string;
   stats?: LiaOiPipelineStats;
+  /** Stage 2B */
+  durationMs?: number;
+  errorSummary?: string | null;
 };
 
 export type LiaOiFeedback = {
@@ -314,16 +325,80 @@ export type LiaOiFeedback = {
   createdBy: string;
 };
 
+export const LIA_OI_ASSIGNMENT_STATUSES = [
+  "PENDING",
+  "RUNNING",
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+] as const;
+export type LiaOiAssignmentStatus = (typeof LIA_OI_ASSIGNMENT_STATUSES)[number];
+
 export type LiaOiAssignment = {
   id: string;
   candidateId: string;
   kind: LiaOiAssignmentKind;
   instruction: string;
-  status: "queued" | "done";
+  status: LiaOiAssignmentStatus;
   resultSummary: string;
   createdAt: string;
   completedAt?: string;
   createdBy: string;
+  errorSummary?: string | null;
+};
+
+export type LiaOiOpportunityChange = {
+  id: string;
+  opportunityId: string;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  changeKind:
+    | "FIELD_UPDATE"
+    | "STATUS_CHANGE"
+    | "REDISCOVERY"
+    | "OWNER_DECISION"
+    | "ENRICHMENT";
+  sourceRunId?: string | null;
+  createdAt: string;
+};
+
+export type LiaOiOpportunityEvent = {
+  id: string;
+  opportunityId: string;
+  eventType: string;
+  title: string;
+  detail?: string | null;
+  actorUserId?: string | null;
+  searchRunId?: string | null;
+  meta?: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type LiaOiCandidateListFilter = {
+  status?: string;
+  bucket?: string;
+  region?: string;
+  industry?: string;
+  savedOnly?: boolean;
+  rejectedOnly?: boolean;
+  minOverall?: number;
+  minConfidence?: number;
+  budgetFit?: string;
+  source?: string;
+  q?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type LiaOiPaginated<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 };
 
 export type LiaOiReportKind =
