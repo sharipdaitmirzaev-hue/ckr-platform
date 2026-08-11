@@ -88,6 +88,14 @@ export const TRACKED_CHANGE_FIELDS = [
   "priceStatus",
   "resultBucket",
   "deadlineAt",
+  "startingPrice",
+  "currentPrice",
+  "nmck",
+  "supportAmount",
+  "auctionStatus",
+  "procurementStage",
+  "matchingReadiness",
+  "dataQualityScore",
 ] as const;
 
 export type TrackedChangeField = (typeof TRACKED_CHANGE_FIELDS)[number];

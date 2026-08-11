@@ -35,10 +35,10 @@ export const LIA_OI_BUDGETS = {
   maxDeepAnalysesPerRun: 3,
   /**
    * Page fetches к первоисточникам (safe-fetch).
-   * Stage 2A.1/2A.2: только TOP DETAIL, ограниченно.
+   * Stage 2C.1: TOP DETAIL (Serper + specialized official), ограниченно.
    */
   maxFetchesPerSource: 1,
-  maxFetchesPerRun: 5,
+  maxFetchesPerRun: 8,
 } as const;
 
 export const liaOiPageTypeLabels = {
@@ -46,7 +46,15 @@ export const liaOiPageTypeLabels = {
   LIST: "LIST",
   CATEGORY: "CATEGORY",
   HOMEPAGE: "HOMEPAGE",
+  NEWS: "NEWS",
+  GUIDE: "GUIDE",
   UNKNOWN: "UNKNOWN",
+} as const;
+
+export const liaOiMatchingReadinessLabels = {
+  READY: "READY",
+  PARTIAL: "PARTIAL",
+  NOT_READY: "NOT_READY",
 } as const;
 
 export const liaOiContentIntentLabels: Record<LiaOiContentIntent, string> = {

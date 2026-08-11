@@ -1,3 +1,4 @@
+import { DataQualityPanel } from "@/components/lia/oi/data-quality-panel";
 import { OpportunityActions } from "@/components/lia/oi/opportunity-actions";
 import {
   liaOiBudgetFitLabels,
@@ -90,6 +91,14 @@ export default async function LiaOiOpportunityDetailPage({ params }: Props) {
       </div>
 
       <OpportunityActions candidateId={item.id} />
+
+      <DataQualityPanel
+        candidateId={item.id}
+        dataQualityScore={item.dataQualityScore}
+        matchingReadiness={item.matchingReadiness}
+        confirmedFields={item.confirmedFields}
+        unknownFields={item.unknownFields}
+      />
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">

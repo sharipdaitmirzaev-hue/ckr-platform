@@ -1,6 +1,7 @@
 import {
   liaOiBudgetFitLabels,
   liaOiContentIntentLabels,
+  liaOiMatchingReadinessLabels,
   liaOiPageTypeLabels,
   liaOiPriorityLabels,
   liaOiStatusLabels,
@@ -50,6 +51,12 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
             {deadlineText ? (
               <span className="border border-border px-2 py-0.5 text-foreground">
                 {deadlineText}
+              </span>
+            ) : null}
+            {item.matchingReadiness ? (
+              <span className="border border-border px-2 py-0.5 text-muted">
+                Matching:{" "}
+                {liaOiMatchingReadinessLabels[item.matchingReadiness]}
               </span>
             ) : null}
           </div>

@@ -105,11 +105,30 @@ export function candidateToRow(c: LiaOiCandidate): OppRow {
     is_official_source: c.isOfficialSource ?? false,
     deadline_at: toDbTimestamptz(c.deadlineAt),
     days_remaining: c.daysRemaining ?? null,
+    data_quality_score: c.dataQualityScore ?? null,
+    matching_readiness: c.matchingReadiness ?? null,
+    confirmed_fields: c.confirmedFields ?? [],
+    unknown_fields: c.unknownFields ?? [],
+    source_published_at: toDbTimestamptz(c.sourcePublishedAt),
+    auction_status: c.auctionStatus ?? null,
+    procurement_stage: c.procurementStage ?? null,
+    organizer: c.organizer ?? null,
+    customer: c.customer ?? null,
+    support_type: c.supportType ?? null,
+    starting_price: c.startingPrice ?? null,
+    current_price: c.currentPrice ?? null,
+    nmck: c.nmck ?? null,
+    support_amount: c.supportAmount ?? null,
+    address: c.address ?? null,
+    eligibility: c.eligibility ?? null,
     discovery_json: {},
     normalized_json: {
       // retention: compact meta only — no HTML
       sourceCount: c.sources.length,
       hasContacts: Boolean(c.contactPhone || c.contactEmail),
+      structuredFields: c.structuredFields ?? [],
+      matchingReadiness: c.matchingReadiness ?? null,
+      dataQualityScore: c.dataQualityScore ?? null,
     },
     updated_at: new Date().toISOString(),
   };
@@ -211,6 +230,33 @@ export function rowToCandidate(
     deadlineAt: (row.deadline_at as string) ?? null,
     daysRemaining:
       row.days_remaining != null ? Number(row.days_remaining) : null,
+    dataQualityScore:
+      row.data_quality_score != null
+        ? Number(row.data_quality_score)
+        : undefined,
+    matchingReadiness:
+      (row.matching_readiness as LiaOiCandidate["matchingReadiness"]) ??
+      undefined,
+    confirmedFields: (row.confirmed_fields as string[]) ?? undefined,
+    unknownFields: (row.unknown_fields as string[]) ?? undefined,
+    sourcePublishedAt: (row.source_published_at as string) ?? null,
+    auctionStatus: (row.auction_status as string) ?? null,
+    procurementStage: (row.procurement_stage as string) ?? null,
+    organizer: (row.organizer as string) ?? null,
+    customer: (row.customer as string) ?? null,
+    supportType: (row.support_type as string) ?? null,
+    startingPrice:
+      row.starting_price != null ? Number(row.starting_price) : null,
+    currentPrice:
+      row.current_price != null ? Number(row.current_price) : null,
+    nmck: row.nmck != null ? Number(row.nmck) : null,
+    supportAmount:
+      row.support_amount != null ? Number(row.support_amount) : null,
+    address: (row.address as string) ?? null,
+    eligibility: (row.eligibility as string) ?? null,
+    structuredFields:
+      ((row.normalized_json as { structuredFields?: LiaOiCandidate["structuredFields"] })
+        ?.structuredFields as LiaOiCandidate["structuredFields"]) ?? undefined,
   };
 }
 

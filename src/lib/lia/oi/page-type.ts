@@ -120,6 +120,8 @@ export function isCatalogPageType(pageType: LiaOiPageType): boolean {
   return (
     pageType === "LIST" ||
     pageType === "CATEGORY" ||
-    pageType === "HOMEPAGE"
+    pageType === "HOMEPAGE" ||
+    pageType === "NEWS" ||
+    pageType === "GUIDE"
   );
 }

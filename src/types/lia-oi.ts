@@ -13,6 +13,8 @@ export const LIA_OI_PAGE_TYPES = [
   "LIST",
   "CATEGORY",
   "HOMEPAGE",
+  "NEWS",
+  "GUIDE",
   "UNKNOWN",
 ] as const;
 export type LiaOiPageType = (typeof LIA_OI_PAGE_TYPES)[number];
@@ -40,9 +42,40 @@ export const LIA_OI_PRICE_KINDS = [
   "INVESTMENT_REQUIRED",
   "ASSET_PRICE",
   "STARTING_AUCTION_PRICE",
+  "CURRENT_AUCTION_PRICE",
+  "NMCK",
+  "SUPPORT_AMOUNT",
   "UNKNOWN",
 ] as const;
 export type LiaOiPriceKind = (typeof LIA_OI_PRICE_KINDS)[number];
+
+/** Stage 2C.1 — готовность карточки к будущему Matching Engine. */
+export const LIA_OI_MATCHING_READINESS = [
+  "READY",
+  "PARTIAL",
+  "NOT_READY",
+] as const;
+export type LiaOiMatchingReadiness = (typeof LIA_OI_MATCHING_READINESS)[number];
+
+export const LIA_OI_STRUCTURED_FIELD_SOURCES = [
+  "official_page",
+  "search_snippet",
+  "fixture",
+  "unknown",
+] as const;
+export type LiaOiStructuredFieldSource =
+  (typeof LIA_OI_STRUCTURED_FIELD_SOURCES)[number];
+
+/** Structured field with explicit provenance (Stage 2C.1). */
+export type LiaOiStructuredField = {
+  field: string;
+  value: string | number | null;
+  source: LiaOiStructuredFieldSource;
+  confidence: number;
+  kind: LiaOiProvenanceKind;
+  sourceUrl?: string;
+  note?: string;
+};
 
 export const LIA_OI_RESULT_BUCKETS = [
   "TOP_OPPORTUNITIES",
@@ -274,6 +307,24 @@ export type LiaOiCandidate = {
   isOfficialSource?: boolean;
   deadlineAt?: string | null;
   daysRemaining?: number | null;
+  /** Stage 2C.1 structured enrichment */
+  structuredFields?: LiaOiStructuredField[];
+  dataQualityScore?: number;
+  matchingReadiness?: LiaOiMatchingReadiness;
+  confirmedFields?: string[];
+  unknownFields?: string[];
+  sourcePublishedAt?: string | null;
+  auctionStatus?: string | null;
+  procurementStage?: string | null;
+  organizer?: string | null;
+  customer?: string | null;
+  supportType?: string | null;
+  currentPrice?: number | null;
+  startingPrice?: number | null;
+  nmck?: number | null;
+  supportAmount?: number | null;
+  address?: string | null;
+  eligibility?: string | null;
 };
 
 export type LiaOiSearchIntent =

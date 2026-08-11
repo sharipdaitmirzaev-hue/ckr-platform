@@ -3,6 +3,7 @@ import { analyzeCandidate } from "@/lib/lia/oi/analyze";
 import { applyBuckets } from "@/lib/lia/oi/buckets";
 import { dedupeCandidates } from "@/lib/lia/oi/dedup";
 import { enrichTopDetailCandidates } from "@/lib/lia/oi/enrich";
+import { scoreWithoutFetch } from "@/lib/lia/oi/enrichment/enrich-candidate";
 import { cheapFilterHits } from "@/lib/lia/oi/filter";
 import { oiId } from "@/lib/lia/oi/id";
 import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
@@ -207,13 +208,8 @@ export async function runOwnerSearchPipeline(input: {
 
   const catalogPagesSeen = working.filter((c) => c.isCatalogSource).length;
 
-  const enrich =
-    modeInfo.mode === "live"
-      ? await enrichTopDetailCandidates(working, plan)
-      : { candidates: working, stats: { pagesFetched: 0, pagesFetchFailed: 0 } };
-
   // Tag general Serper/discovery results
-  const serperTagged = enrich.candidates.map((c) => ({
+  const serperTagged = working.map((c) => ({
     ...c,
     sourceAdapterId: c.sourceAdapterId || "serper_general",
     opportunityType: c.opportunityType || ("WEB_LISTING" as const),
@@ -239,13 +235,33 @@ export async function runOwnerSearchPipeline(input: {
     beforeMerge - mergedPool.length,
   );
 
-  const analyzed = mergedPool
+  // Stage 2C.1 — structured enrichment AFTER merge (official DETAIL pages).
+  // Stub/fixture: score from known fields without live fetch.
+  const enrich =
+    modeInfo.mode === "live"
+      ? await enrichTopDetailCandidates(mergedPool, plan)
+      : {
+          candidates: mergedPool.map(scoreWithoutFetch),
+          stats: {
+            pagesFetched: 0,
+            pagesFetchFailed: 0,
+            detailConsidered: 0,
+            enriched: 0,
+            skippedNonDetail: 0,
+          },
+        };
+
+  const analyzed = enrich.candidates
     .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun + 12)
     .map((c) => analyzeCandidate(c, plan))
     .sort((a, b) => {
+      // Prefer higher matching readiness, then deadline, then score
+      const rank = (r?: string) =>
+        r === "READY" ? 0 : r === "PARTIAL" ? 1 : 2;
+      const rr = rank(a.matchingReadiness) - rank(b.matchingReadiness);
+      if (rr !== 0) return rr;
       if (a.budgetFit === "OVER_BUDGET" && b.budgetFit !== "OVER_BUDGET") return 1;
       if (b.budgetFit === "OVER_BUDGET" && a.budgetFit !== "OVER_BUDGET") return -1;
-      // Deadline urgency: prefer soon-ending among equals
       const da = a.daysRemaining;
       const db = b.daysRemaining;
       if (da != null && db != null && da !== db && da >= 0 && db >= 0) {

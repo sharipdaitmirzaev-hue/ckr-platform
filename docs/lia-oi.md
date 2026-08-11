@@ -247,3 +247,19 @@ C. DB: таблицы `lia_oi_*` можно оставить — они не л�
 - Автопубликация / автоконтакт
 
 **Matching Engine:** не начинать — Stage 2C даёт specialized discovery + persistence; качество лотов/НМЦК/дедлайнов из site-search ещё ограничено snippets.
+
+---
+
+## Stage 2C.1 — Structured Enrichment
+
+Повышает качество structured fields уже подключённых источников:
+
+- Extractors: `AuctionAssetExtractor`, `ProcurementExtractor`, `SupportProgramExtractor`
+- Controlled **safe-fetch** только для DETAIL официальных/detail URL
+- Field provenance (`structuredFields`), `data_quality_score`, `matching_readiness`
+- Owner UI: блок «Качество данных» + действие «Обновить данные»
+- Additive migration: `20260811140000_lia_oi_stage2c1_enrichment.sql`
+- Apply: `sudo ./scripts/apply-lia-oi-stage2c1-production.sh`
+- Tests: `npm run test:lia-oi-stage2c1`
+
+Стоп-линия: Matching / Synthesis / Scheduler / новые источники / destructive migrations.
