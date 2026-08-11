@@ -140,8 +140,14 @@ export function extractMoneyFromText(text: string): ExtractedMoney | null {
   }
 
   if (!cands.length) return null;
-  cands.sort((a, b) => b.rank - a.rank || a.amount - b.amount);
-  const best = cands[0];
+  // Если есть сумма в млн — предпочитаем её «голым» тысячам/рублям
+  // (часто на странице рядом мелкие цифры: 200 000 ₽/мес и т.п.).
+  const hasMln = cands.some((c) => /млн|миллион/i.test(c.raw));
+  const pool = hasMln
+    ? cands.filter((c) => /млн|миллион/i.test(c.raw) || c.amount >= 1_000_000)
+    : cands;
+  pool.sort((a, b) => b.rank - a.rank || a.amount - b.amount);
+  const best = pool[0] ?? cands[0];
   return {
     amount: best.amount,
     kind: best.kind,
