@@ -12,8 +12,39 @@ import type {
   PublicOpportunityDraft,
 } from "@/types/lia-controlled-publish";
 
+export type DbPublicationBag = {
+  draftOverrides?: Partial<PublicOpportunityDraft>;
+  pendingChanges?: PendingPublicChange[];
+};
+
 export function canPersistControlledPublish(): boolean {
   return canUseSupabaseOiStore();
+}
+
+export function encodePublicationBag(input: {
+  draftOverrides?: Partial<PublicOpportunityDraft>;
+  pendingChanges?: PendingPublicChange[];
+}): DbPublicationBag {
+  return {
+    draftOverrides: input.draftOverrides || {},
+    pendingChanges: input.pendingChanges || [],
+  };
+}
+
+export function decodePublicationBag(raw: unknown): DbPublicationBag {
+  if (!raw) return { draftOverrides: {}, pendingChanges: [] };
+  if (Array.isArray(raw)) {
+    return { draftOverrides: {}, pendingChanges: raw as PendingPublicChange[] };
+  }
+  if (typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    return {
+      draftOverrides:
+        (obj.draftOverrides as Partial<PublicOpportunityDraft>) || {},
+      pendingChanges: (obj.pendingChanges as PendingPublicChange[]) || [],
+    };
+  }
+  return { draftOverrides: {}, pendingChanges: [] };
 }
 
 export async function persistOiPublicationMeta(input: {
@@ -22,6 +53,7 @@ export async function persistOiPublicationMeta(input: {
   marketplaceOpportunityId: string | null;
   lockedFields: string[];
   pendingChanges: PendingPublicChange[];
+  draftOverrides?: Partial<PublicOpportunityDraft>;
   actorUserId: string | null;
 }) {
   if (!canPersistControlledPublish()) return;
@@ -30,7 +62,10 @@ export async function persistOiPublicationMeta(input: {
     publication_state: input.publicationState,
     marketplace_opportunity_id: input.marketplaceOpportunityId,
     publication_locked_fields: input.lockedFields,
-    pending_public_changes: input.pendingChanges,
+    pending_public_changes: encodePublicationBag({
+      draftOverrides: input.draftOverrides,
+      pendingChanges: input.pendingChanges,
+    }),
     updated_at: new Date().toISOString(),
   };
   if (input.publicationState === "published") {
@@ -109,6 +144,39 @@ export async function persistPublicationEvent(
   if (error) throw new Error(`persistPublicationEvent: ${error.message}`);
 }
 
+export async function loadPublicationMetaFromDb(liaOiId: string): Promise<{
+  liaOiId: string;
+  publicationState: LiaPublicationState;
+  marketplaceOpportunityId: string | null;
+  lockedFields: string[];
+  pendingChanges: PendingPublicChange[];
+  draftOverrides: Partial<PublicOpportunityDraft>;
+} | null> {
+  if (!canPersistControlledPublish()) return null;
+  const db = createOiAdminClient();
+  const { data, error } = await db
+    .from("lia_oi_opportunities")
+    .select(
+      "id,publication_state,marketplace_opportunity_id,publication_locked_fields,pending_public_changes",
+    )
+    .eq("id", liaOiId)
+    .maybeSingle();
+  if (error) throw new Error(`loadPublicationMetaFromDb: ${error.message}`);
+  if (!data) return null;
+  const bag = decodePublicationBag(data.pending_public_changes);
+  return {
+    liaOiId: String(data.id),
+    publicationState: (data.publication_state ||
+      "none") as LiaPublicationState,
+    marketplaceOpportunityId: data.marketplace_opportunity_id
+      ? String(data.marketplace_opportunity_id)
+      : null,
+    lockedFields: (data.publication_locked_fields as string[]) || [],
+    pendingChanges: bag.pendingChanges || [],
+    draftOverrides: bag.draftOverrides || {},
+  };
+}
+
 export async function loadPublicationQueueFromDb(
   states: LiaPublicationState[] = ["queued", "change_review"],
 ): Promise<
@@ -118,6 +186,7 @@ export async function loadPublicationQueueFromDb(
     marketplaceOpportunityId: string | null;
     lockedFields: string[];
     pendingChanges: PendingPublicChange[];
+    draftOverrides: Partial<PublicOpportunityDraft>;
   }>
 > {
   if (!canPersistControlledPublish()) return [];
@@ -129,16 +198,19 @@ export async function loadPublicationQueueFromDb(
     )
     .in("publication_state", states);
   if (error) throw new Error(`loadPublicationQueueFromDb: ${error.message}`);
-  return (data || []).map((row) => ({
-    liaOiId: String(row.id),
-    publicationState: row.publication_state as LiaPublicationState,
-    marketplaceOpportunityId: row.marketplace_opportunity_id
-      ? String(row.marketplace_opportunity_id)
-      : null,
-    lockedFields: (row.publication_locked_fields as string[]) || [],
-    pendingChanges:
-      (row.pending_public_changes as PendingPublicChange[] | null) || [],
-  }));
+  return (data || []).map((row) => {
+    const bag = decodePublicationBag(row.pending_public_changes);
+    return {
+      liaOiId: String(row.id),
+      publicationState: row.publication_state as LiaPublicationState,
+      marketplaceOpportunityId: row.marketplace_opportunity_id
+        ? String(row.marketplace_opportunity_id)
+        : null,
+      lockedFields: (row.publication_locked_fields as string[]) || [],
+      pendingChanges: bag.pendingChanges || [],
+      draftOverrides: bag.draftOverrides || {},
+    };
+  });
 }
 
 export async function findMarketplaceBySourceId(
@@ -155,6 +227,65 @@ export async function findMarketplaceBySourceId(
   if (error) throw new Error(error.message);
   if (!data) return null;
   return mapOppRow(data);
+}
+
+export async function findMarketplaceByFingerprint(
+  fingerprint: string,
+): Promise<MarketplacePublishedOpportunity | null> {
+  if (!canPersistControlledPublish() || !fingerprint) return null;
+  const db = createOiAdminClient();
+  const { data, error } = await db
+    .from("opportunities")
+    .select("*")
+    .eq("fingerprint", fingerprint)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return mapOppRow(data);
+}
+
+export async function listLiaPublishedOpportunities(): Promise<
+  MarketplacePublishedOpportunity[]
+> {
+  if (!canPersistControlledPublish()) return [];
+  const db = createOiAdminClient();
+  const { data, error } = await db
+    .from("opportunities")
+    .select("*")
+    .eq("source_type", "lia_oi")
+    .order("updated_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  return (data || []).map((row) => mapOppRow(row as Record<string, unknown>));
+}
+
+export async function listPublicationEventsFromDb(
+  liaOiId?: string,
+): Promise<PublicationEvent[]> {
+  if (!canPersistControlledPublish()) return [];
+  const db = createOiAdminClient();
+  let q = db
+    .from("lia_oi_publication_events")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (liaOiId) q = q.eq("lia_oi_id", liaOiId);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data || []).map((row) => ({
+    id: String(row.id),
+    liaOiId: String(row.lia_oi_id),
+    marketplaceOpportunityId: row.marketplace_opportunity_id
+      ? String(row.marketplace_opportunity_id)
+      : null,
+    actorUserId: row.actor_user_id ? String(row.actor_user_id) : null,
+    action: row.action,
+    reason: row.reason ? String(row.reason) : null,
+    beforeSnapshot: (row.before_snapshot as Record<string, unknown>) || {},
+    afterSnapshot: (row.after_snapshot as Record<string, unknown>) || {},
+    publicProjection: (row.public_projection as Record<string, unknown>) || {},
+    createdAt: String(row.created_at),
+  }));
 }
 
 function mapOppRow(data: Record<string, unknown>): MarketplacePublishedOpportunity {
@@ -205,6 +336,7 @@ export async function syncApproveToSupabase(input: {
   actorUserId: string;
   projection: Record<string, unknown>;
   draft: PublicOpportunityDraft;
+  draftOverrides?: Partial<PublicOpportunityDraft>;
 }) {
   if (!canPersistControlledPublish()) return input.opportunity;
   const saved = await persistMarketplaceOpportunity(input.opportunity);
@@ -214,6 +346,7 @@ export async function syncApproveToSupabase(input: {
     marketplaceOpportunityId: saved.id,
     lockedFields: input.lockedFields,
     pendingChanges: [],
+    draftOverrides: input.draftOverrides || {},
     actorUserId: input.actorUserId,
   });
   await persistPublicationEvent({

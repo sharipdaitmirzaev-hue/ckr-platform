@@ -15,6 +15,7 @@ export {
 export {
   ControlledPublishService,
   getControlledPublishService,
+  resolveControlledPublishMode,
   resetControlledPublishForTests,
 } from "@/lib/lia/oi/publish/service";
 export {
@@ -27,4 +28,6 @@ export {
   persistOiPublicationMeta,
   persistPublicationEvent,
   loadPublicationQueueFromDb,
+  listLiaPublishedOpportunities,
+  findMarketplaceBySourceId,
 } from "@/lib/lia/oi/publish/supabase-persist";

@@ -19,14 +19,14 @@ function money(n: number | null | undefined) {
 export default async function OwnerPublishingPage() {
   const current = await requireLiaOiOwner();
   await ensureLiaOiSeed(current.user.id);
-  const svc = getControlledPublishService("memory");
-  // Soft queue scan (idempotent for already queued/published)
-  await svc.queueEligible(current.user.id);
+  const svc = getControlledPublishService();
+  // Do NOT auto-queue all OI on page load (no mass publish / mass queue).
   const items = await svc.listQueue([
     "queued",
     "change_review",
     "published",
     "rejected",
+    "archived",
   ]);
 
   const queued = items.filter((i) => i.publicationState === "queued");
@@ -46,7 +46,8 @@ export default async function OwnerPublishingPage() {
       <div className="flex flex-wrap gap-3 text-sm">
         <Badge variant="accent">В очереди: {queued.length}</Badge>
         <Badge>Изменения: {review.length}</Badge>
-        <Badge>Опубликовано (session): {published.length}</Badge>
+        <Badge>Опубликовано: {published.length}</Badge>
+        <Badge>mode {svc.getMode()}</Badge>
       </div>
 
       <p className="text-xs text-muted">

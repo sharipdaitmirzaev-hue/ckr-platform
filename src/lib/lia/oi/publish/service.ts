@@ -28,6 +28,18 @@ import {
   type MemoryControlledPublishStore,
   type PublicationMeta,
 } from "@/lib/lia/oi/publish/memory-store";
+import {
+  canPersistControlledPublish,
+  findMarketplaceByFingerprint,
+  findMarketplaceBySourceId,
+  listLiaPublishedOpportunities,
+  listPublicationEventsFromDb,
+  loadPublicationMetaFromDb,
+  loadPublicationQueueFromDb,
+  persistMarketplaceOpportunity,
+  persistOiPublicationMeta,
+  persistPublicationEvent,
+} from "@/lib/lia/oi/publish/supabase-persist";
 
 export type ControlledPublishMode = "memory" | "supabase";
 
@@ -145,6 +157,49 @@ export class ControlledPublishService {
     return this.mode;
   }
 
+  private shouldPersist() {
+    return this.mode === "supabase" && canPersistControlledPublish();
+  }
+
+  private async hydrateMeta(liaOiId: string): Promise<PublicationMeta> {
+    const local = this.store.getMeta(liaOiId);
+    if (!this.shouldPersist()) return local;
+    const remote = await loadPublicationMetaFromDb(liaOiId);
+    if (!remote) return local;
+    local.publicationState = remote.publicationState;
+    local.marketplaceOpportunityId = remote.marketplaceOpportunityId;
+    local.lockedFields = remote.lockedFields;
+    local.pendingChanges = remote.pendingChanges;
+    local.draftOverrides = remote.draftOverrides || {};
+    this.store.setMeta(local);
+    if (remote.marketplaceOpportunityId) {
+      const opp =
+        (await findMarketplaceBySourceId(liaOiId)) ||
+        this.store.getOpportunity(remote.marketplaceOpportunityId);
+      if (opp) this.store.upsertOpportunity(opp);
+    }
+    return local;
+  }
+
+  private async persistMeta(meta: PublicationMeta, actorUserId: string | null) {
+    if (!this.shouldPersist()) return;
+    await persistOiPublicationMeta({
+      liaOiId: meta.liaOiId,
+      publicationState: meta.publicationState,
+      marketplaceOpportunityId: meta.marketplaceOpportunityId,
+      lockedFields: meta.lockedFields,
+      pendingChanges: meta.pendingChanges,
+      draftOverrides: meta.draftOverrides,
+      actorUserId,
+    });
+  }
+
+  private async persistOpp(row: MarketplacePublishedOpportunity) {
+    this.store.upsertOpportunity(row);
+    if (!this.shouldPersist()) return row;
+    return persistMarketplaceOpportunity(row);
+  }
+
   private audit(
     action: PublicationEvent["action"],
     input: {
@@ -157,7 +212,7 @@ export class ControlledPublishService {
       projection?: Record<string, unknown>;
     },
   ) {
-    return this.store.addEvent({
+    const event = this.store.addEvent({
       liaOiId: input.liaOiId,
       marketplaceOpportunityId: input.marketplaceOpportunityId ?? null,
       actorUserId: input.actorUserId,
@@ -167,6 +222,50 @@ export class ControlledPublishService {
       afterSnapshot: input.after || {},
       publicProjection: input.projection || {},
     });
+    if (this.shouldPersist()) {
+      void persistPublicationEvent({
+        liaOiId: event.liaOiId,
+        marketplaceOpportunityId: event.marketplaceOpportunityId,
+        actorUserId: event.actorUserId,
+        action: event.action,
+        reason: event.reason,
+        beforeSnapshot: event.beforeSnapshot,
+        afterSnapshot: event.afterSnapshot,
+        publicProjection: event.publicProjection,
+      }).catch(() => undefined);
+    }
+    return event;
+  }
+
+  /** Queue a single OI id (owner-controlled smoke / selective publish). */
+  async queueOne(liaOiId: string, actorUserId: string) {
+    await this.hydrateMeta(liaOiId);
+    const c = await getCandidate(liaOiId);
+    if (!c) throw new Error("LIA OI не найдена");
+    const meta = this.store.getMeta(liaOiId);
+    if (meta.publicationState === "published") {
+      return { queued: false, reason: "already_published" };
+    }
+    const gate = passesPublicationQualityGate(c);
+    if (!gate.ok) return { queued: false, reason: gate.reasons.join(",") };
+    const draft = projectLiaOiToPublicDraft(c);
+    if (
+      draft.lifecycleHint === "closed" ||
+      draft.lifecycleHint === "cancelled" ||
+      draft.lifecycleHint === "expired"
+    ) {
+      return { queued: false, reason: `lifecycle=${draft.lifecycleHint}` };
+    }
+    meta.publicationState = "queued";
+    this.store.setMeta(meta);
+    await this.persistMeta(meta, actorUserId);
+    this.audit("queue", {
+      liaOiId,
+      actorUserId,
+      after: { publicationState: "queued" },
+      projection: enforceSafeProjection(draft),
+    });
+    return { queued: true, reason: null };
   }
 
   async queueEligible(actorUserId: string): Promise<{
@@ -180,7 +279,7 @@ export class ControlledPublishService {
     const reasons: Record<string, string[]> = {};
 
     for (const c of candidates) {
-      const meta = this.store.getMeta(c.id);
+      const meta = await this.hydrateMeta(c.id);
       if (
         meta.publicationState === "published" ||
         meta.publicationState === "queued" ||
@@ -209,6 +308,7 @@ export class ControlledPublishService {
       }
       meta.publicationState = "queued";
       this.store.setMeta(meta);
+      await this.persistMeta(meta, actorUserId);
       this.audit("queue", {
         liaOiId: c.id,
         actorUserId,
@@ -223,6 +323,18 @@ export class ControlledPublishService {
   async listQueue(
     states: LiaPublicationState[] = ["queued", "change_review"],
   ): Promise<PublicationQueueItem[]> {
+    if (this.shouldPersist()) {
+      const remote = await loadPublicationQueueFromDb(states);
+      for (const r of remote) {
+        const meta = this.store.getMeta(r.liaOiId);
+        meta.publicationState = r.publicationState;
+        meta.marketplaceOpportunityId = r.marketplaceOpportunityId;
+        meta.lockedFields = r.lockedFields;
+        meta.pendingChanges = r.pendingChanges;
+        meta.draftOverrides = r.draftOverrides || {};
+        this.store.setMeta(meta);
+      }
+    }
     const metas = this.store.listMetasByState(states);
     const items: PublicationQueueItem[] = [];
     for (const meta of metas) {
@@ -250,7 +362,7 @@ export class ControlledPublishService {
   }
 
   async getQueueItem(liaOiId: string): Promise<PublicationQueueItem | null> {
-    const meta = this.store.getMeta(liaOiId);
+    const meta = await this.hydrateMeta(liaOiId);
     const c = await getCandidate(liaOiId);
     if (!c) return null;
     const draft = buildMergedDraft(c, meta);
@@ -291,7 +403,7 @@ export class ControlledPublishService {
   ) {
     const c = await getCandidate(liaOiId);
     if (!c) throw new Error("LIA OI не найдена");
-    const meta = this.store.getMeta(liaOiId);
+    const meta = await this.hydrateMeta(liaOiId);
     const before = { ...meta.draftOverrides };
     const { draft, lockedFields } = applyOwnerOverrides(
       buildMergedDraft(c, meta),
@@ -308,10 +420,14 @@ export class ControlledPublishService {
       meta.publicationState = "queued";
     }
     this.store.setMeta(meta);
+    await this.persistMeta(meta, actorUserId);
 
     // If already published — update marketplace but keep locks
     if (meta.marketplaceOpportunityId) {
-      const existing = this.store.getOpportunity(meta.marketplaceOpportunityId);
+      let existing = this.store.getOpportunity(meta.marketplaceOpportunityId);
+      if (!existing && this.shouldPersist()) {
+        existing = await findMarketplaceBySourceId(liaOiId);
+      }
       if (existing) {
         const row = draftToMarketplaceRow(draft, {
           id: existing.id,
@@ -322,7 +438,7 @@ export class ControlledPublishService {
           publishedBy: existing.publishedBy,
           existing,
         });
-        this.store.upsertOpportunity(row);
+        await this.persistOpp(row);
       }
     }
 
@@ -338,11 +454,12 @@ export class ControlledPublishService {
   }
 
   async reject(liaOiId: string, actorUserId: string, reason?: string) {
-    const meta = this.store.getMeta(liaOiId);
+    const meta = await this.hydrateMeta(liaOiId);
     const before = { publicationState: meta.publicationState };
     meta.publicationState = "rejected";
     meta.rejectReason = reason || null;
     this.store.setMeta(meta);
+    await this.persistMeta(meta, actorUserId);
     this.audit("reject", {
       liaOiId,
       marketplaceOpportunityId: meta.marketplaceOpportunityId,
@@ -355,12 +472,13 @@ export class ControlledPublishService {
   }
 
   async requestRecheck(liaOiId: string, actorUserId: string, reason?: string) {
-    const meta = this.store.getMeta(liaOiId);
+    const meta = await this.hydrateMeta(liaOiId);
     // Keep queued / change_review; mark via audit for Lia recheck assignment
     if (meta.publicationState === "none" || meta.publicationState === "rejected") {
       meta.publicationState = "queued";
     }
     this.store.setMeta(meta);
+    await this.persistMeta(meta, actorUserId);
     this.audit("request_recheck", {
       liaOiId,
       marketplaceOpportunityId: meta.marketplaceOpportunityId,
@@ -397,6 +515,7 @@ export class ControlledPublishService {
       throw new Error("Нельзя публиковать REJECTED/ARCHIVED");
     }
 
+    await this.hydrateMeta(liaOiId);
     const meta = this.store.getMeta(liaOiId);
     if (overrides && Object.keys(overrides).length) {
       await this.editDraft(liaOiId, actorUserId, overrides);
@@ -419,11 +538,18 @@ export class ControlledPublishService {
       publishedAt: nowIso(),
     };
 
-    // Dedup: source_id / fingerprint / canonical URL
-    const existing =
+    // Dedup: source_id / fingerprint / canonical URL (memory + DB)
+    let existing =
       this.store.findBySourceId(liaOiId) ||
       this.store.findByFingerprint(draft.fingerprint) ||
       this.store.findByCanonicalUrl(draft.canonicalUrl || draft.officialUrl);
+    if (!existing && this.shouldPersist()) {
+      existing =
+        (await findMarketplaceBySourceId(liaOiId)) ||
+        (draft.fingerprint
+          ? await findMarketplaceByFingerprint(draft.fingerprint)
+          : null);
+    }
 
     const row = draftToMarketplaceRow(draft, {
       id: existing?.id,
@@ -470,39 +596,40 @@ export class ControlledPublishService {
       }
     }
 
-    this.store.upsertOpportunity(row);
+    const savedRow = await this.persistOpp(row);
     freshMeta.publicationState = "published";
-    freshMeta.marketplaceOpportunityId = row.id;
+    freshMeta.marketplaceOpportunityId = savedRow.id;
     freshMeta.lastPublicationAt = nowIso();
     freshMeta.lastPublicationBy = actorUserId;
     freshMeta.pendingChanges = [];
     this.store.setMeta(freshMeta);
+    await this.persistMeta(freshMeta, actorUserId);
 
     const projection = enforceSafeProjection({
       ...draft,
-      title: row.title,
-      description: row.description,
-      type: row.type,
-      region: row.region,
-      city: row.city,
-      price: row.price,
-      deadlineAt: row.deadlineAt,
+      title: savedRow.title,
+      description: savedRow.description,
+      type: savedRow.type,
+      region: savedRow.region,
+      city: savedRow.city,
+      price: savedRow.price,
+      deadlineAt: savedRow.deadlineAt,
     });
 
     this.audit("approve_publish", {
       liaOiId,
-      marketplaceOpportunityId: row.id,
+      marketplaceOpportunityId: savedRow.id,
       actorUserId,
       before: { publicationState: meta.publicationState },
       after: {
         publicationState: "published",
-        marketplaceOpportunityId: row.id,
+        marketplaceOpportunityId: savedRow.id,
         status: "published",
       },
       projection,
     });
 
-    return { opportunity: row, projection };
+    return { opportunity: savedRow, projection };
   }
 
   /**
@@ -513,11 +640,14 @@ export class ControlledPublishService {
     action: "noop" | "updated_safe" | "change_review" | "archived";
     pending: PendingPublicChange[];
   }> {
-    const meta = this.store.getMeta(candidate.id);
+    const meta = await this.hydrateMeta(candidate.id);
     if (meta.publicationState !== "published" || !meta.marketplaceOpportunityId) {
       return { action: "noop", pending: [] };
     }
-    const existing = this.store.getOpportunity(meta.marketplaceOpportunityId);
+    let existing = this.store.getOpportunity(meta.marketplaceOpportunityId);
+    if (!existing && this.shouldPersist()) {
+      existing = await findMarketplaceBySourceId(candidate.id);
+    }
     if (!existing) return { action: "noop", pending: [] };
 
     const previousDraft: PublicOpportunityDraft = {
@@ -547,9 +677,10 @@ export class ControlledPublishService {
     ) {
       existing.status = "archived";
       existing.updatedAt = nowIso();
-      this.store.upsertOpportunity(existing);
+      await this.persistOpp(existing);
       meta.publicationState = "archived";
       this.store.setMeta(meta);
+      await this.persistMeta(meta, null);
       this.audit("archive", {
         liaOiId: candidate.id,
         marketplaceOpportunityId: existing.id,
@@ -571,8 +702,9 @@ export class ControlledPublishService {
       meta.publicationState = "change_review";
       existing.pendingSourceChanges = pending;
       existing.updatedAt = nowIso();
-      this.store.upsertOpportunity(existing);
+      await this.persistOpp(existing);
       this.store.setMeta(meta);
+      await this.persistMeta(meta, null);
       this.audit("rediscovery_update", {
         liaOiId: candidate.id,
         marketplaceOpportunityId: existing.id,
@@ -590,7 +722,7 @@ export class ControlledPublishService {
     existing.dataQualityScore = nextDraft.dataQualityScore;
     existing.matchingReadiness = nextDraft.matchingReadiness;
     existing.updatedAt = nowIso();
-    this.store.upsertOpportunity(existing);
+    await this.persistOpp(existing);
     this.audit("rediscovery_update", {
       liaOiId: candidate.id,
       marketplaceOpportunityId: existing.id,
@@ -601,7 +733,7 @@ export class ControlledPublishService {
   }
 
   async applyPendingChanges(liaOiId: string, actorUserId: string) {
-    const meta = this.store.getMeta(liaOiId);
+    const meta = await this.hydrateMeta(liaOiId);
     if (!meta.marketplaceOpportunityId) {
       throw new Error("Нет опубликованной marketplace opportunity");
     }
@@ -641,7 +773,7 @@ export class ControlledPublishService {
     if (!meta.lockedFields.includes("title")) existing.title = existing.title;
     existing.sourceUrl = draft.officialUrl;
     existing.canonicalUrl = draft.canonicalUrl;
-    this.store.upsertOpportunity(existing);
+    await this.persistOpp(existing);
 
     const beforePending = meta.pendingChanges.slice();
     meta.pendingChanges = [];
@@ -650,6 +782,7 @@ export class ControlledPublishService {
         existing.status === "archived" ? "archived" : "published";
     }
     this.store.setMeta(meta);
+    await this.persistMeta(meta, actorUserId);
     this.audit("apply_changes", {
       liaOiId,
       marketplaceOpportunityId: existing.id,
@@ -664,7 +797,7 @@ export class ControlledPublishService {
   }
 
   async rejectPendingChanges(liaOiId: string, actorUserId: string) {
-    const meta = this.store.getMeta(liaOiId);
+    const meta = await this.hydrateMeta(liaOiId);
     if (!meta.marketplaceOpportunityId) {
       throw new Error("Нет опубликованной marketplace opportunity");
     }
@@ -675,9 +808,10 @@ export class ControlledPublishService {
     if (existing) {
       existing.pendingSourceChanges = null;
       existing.updatedAt = nowIso();
-      this.store.upsertOpportunity(existing);
+      await this.persistOpp(existing);
     }
     this.store.setMeta(meta);
+    await this.persistMeta(meta, actorUserId);
     this.audit("reject_changes", {
       liaOiId,
       marketplaceOpportunityId: meta.marketplaceOpportunityId,
@@ -694,11 +828,41 @@ export class ControlledPublishService {
     );
   }
 
+  async listPublishedAsync(): Promise<MarketplacePublishedOpportunity[]> {
+    if (this.shouldPersist()) {
+      const rows = await listLiaPublishedOpportunities();
+      for (const r of rows) this.store.upsertOpportunity(r);
+    }
+    return this.listPublished();
+  }
+
   getPublishedBySource(liaOiId: string): MarketplacePublishedOpportunity | null {
     return this.store.findBySourceId(liaOiId);
   }
 
+  async getPublishedBySourceAsync(
+    liaOiId: string,
+  ): Promise<MarketplacePublishedOpportunity | null> {
+    const local = this.store.findBySourceId(liaOiId);
+    if (local) return local;
+    if (!this.shouldPersist()) return null;
+    const remote = await findMarketplaceBySourceId(liaOiId);
+    if (remote) this.store.upsertOpportunity(remote);
+    return remote;
+  }
+
   listAudit(liaOiId?: string): PublicationEvent[] {
+    return this.store.listEvents(liaOiId);
+  }
+
+  async listAuditAsync(liaOiId?: string): Promise<PublicationEvent[]> {
+    if (this.shouldPersist()) {
+      return listPublicationEventsFromDb(liaOiId);
+    }
+    return this.listEventsSafe(liaOiId);
+  }
+
+  private listEventsSafe(liaOiId?: string): PublicationEvent[] {
     return this.store.listEvents(liaOiId);
   }
 
@@ -711,17 +875,26 @@ export class ControlledPublishService {
 }
 
 let memorySvc: ControlledPublishService | null = null;
+let supabaseSvc: ControlledPublishService | null = null;
+
+export function resolveControlledPublishMode(
+  preferred?: ControlledPublishMode,
+): ControlledPublishMode {
+  if (preferred === "memory") return "memory";
+  if (preferred === "supabase") return "supabase";
+  return canPersistControlledPublish() ? "supabase" : "memory";
+}
 
 export function getControlledPublishService(
-  mode: ControlledPublishMode = "memory",
+  mode?: ControlledPublishMode,
 ): ControlledPublishService {
-  if (mode === "memory") {
+  const resolved = resolveControlledPublishMode(mode);
+  if (resolved === "memory") {
     if (!memorySvc) memorySvc = new ControlledPublishService("memory");
     return memorySvc;
   }
-  // Supabase path reuses memory projection engine + persistence adapter (additive).
-  // Until migration is applied in production, callers should use memory/dry-run.
-  return new ControlledPublishService("supabase");
+  if (!supabaseSvc) supabaseSvc = new ControlledPublishService("supabase");
+  return supabaseSvc;
 }
 
 export function resetControlledPublishForTests() {

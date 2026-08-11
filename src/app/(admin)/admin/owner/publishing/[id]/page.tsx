@@ -18,12 +18,12 @@ export default async function PublishingDetailPage({
 }) {
   await requireLiaOiOwner();
   const { id } = await params;
-  const svc = getControlledPublishService("memory");
+  const svc = getControlledPublishService();
   const item = await svc.getQueueItem(id);
   const oi = await getCandidate(id);
   if (!item || !oi) notFound();
-  const audit = svc.listAudit(id);
-  const published = svc.getPublishedBySource(id);
+  const audit = await svc.listAuditAsync(id);
+  const published = await svc.getPublishedBySourceAsync(id);
 
   return (
     <div className="space-y-8">
