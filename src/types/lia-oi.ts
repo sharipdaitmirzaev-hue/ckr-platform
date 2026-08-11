@@ -260,6 +260,20 @@ export type LiaOiCandidate = {
   ownerLocked?: boolean;
   ownerStatusSetAt?: string;
   ownerStatusSetBy?: string;
+  /** Stage 2C — specialized sources */
+  opportunityType?:
+    | "WEB_LISTING"
+    | "AUCTION_ASSET"
+    | "PROCUREMENT"
+    | "SUPPORT_PROGRAM"
+    | "GOVERNMENT_ASSET"
+    | "REGIONAL_INVESTMENT"
+    | "OTHER";
+  sourceAdapterId?: string;
+  sourceConfidence?: number;
+  isOfficialSource?: boolean;
+  deadlineAt?: string | null;
+  daysRemaining?: number | null;
 };
 
 export type LiaOiSearchIntent =
@@ -386,6 +400,10 @@ export type LiaOiCandidateListFilter = {
   minConfidence?: number;
   budgetFit?: string;
   source?: string;
+  /** Stage 2C adapter id filter */
+  sourceAdapterId?: string;
+  opportunityType?: string;
+  officialOnly?: boolean;
   q?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -442,6 +460,21 @@ export type LiaOiPipelineStats = {
   rejected?: number;
   overBudget?: number;
   unknownPrice?: number;
+  /** Stage 2C specialized adapters */
+  adapterStats?: Array<{
+    adapterId: string;
+    label: string;
+    health: string;
+    durationMs: number;
+    rawCount: number;
+    normalizedCount: number;
+    error?: string | null;
+    official: boolean;
+    transport: string;
+  }>;
+  specializedRaw?: number;
+  specializedNormalized?: number;
+  specializedMergedWithSerper?: number;
 };
 
 export type LiaOiBucketCounts = {

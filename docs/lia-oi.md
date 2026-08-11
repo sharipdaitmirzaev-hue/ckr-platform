@@ -215,4 +215,31 @@ C. DB: таблицы `lia_oi_*` можно оставить — они не л�
 - Matching Engine
 - Synthesis Engine
 - Автономный scheduler / cron
-- Новые Source Adapters сверх Serper (схема уже готова к нескольким источникам)
+
+---
+
+## Stage 2C — Specialized Sources
+
+Специализированные adapters (owner-commanded, не scheduler):
+
+| Adapter | id | Официальные домены / данные |
+|---|---|---|
+| Торги / активы | `auction_assets` | torgi.gov.ru, bankrot.fedresurs.ru |
+| Закупки | `procurement` | zakupki.gov.ru (ЕИС) |
+| Господдержка | `support_programs` | мсп.рф, corpmsp.ru |
+
+- Serper остаётся **general discovery** (`serper_general`).
+- Специализированные adapters в live используют **легальный site-restricted search** через существующий Serper API (не HTML-scraping). Прямые SOAP/REST ЕИС и ЕФРСБ требуют регистрации/токена — не хачим.
+- Stub/fixture режим — детерминированные JSON fixtures для тестов.
+- Поля: `opportunity_type`, `source_adapter_id`, `source_confidence`, `is_official_source`, `deadline_at`, `days_remaining`.
+- Deadline повышает **priority**, не `opportunity_score`.
+- Ошибка одного adapter не ломает поиск.
+- Миграция additive: `20260811130000_lia_oi_stage2c_sources.sql`
+
+### Стоп-линия Stage 2C
+
+- Scheduler / автономные циклы
+- Matching / Synthesis
+- CAPTCHA/auth bypass / запрещённый scraping
+- Destructive migrations
+- Автопубликация / автоконтакт

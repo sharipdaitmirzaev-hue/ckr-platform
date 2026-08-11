@@ -87,6 +87,7 @@ export const TRACKED_CHANGE_FIELDS = [
   "budgetFit",
   "priceStatus",
   "resultBucket",
+  "deadlineAt",
 ] as const;
 
 export type TrackedChangeField = (typeof TRACKED_CHANGE_FIELDS)[number];
@@ -154,6 +155,20 @@ export function mergeRediscovery(
       ? (incoming.ownerStatusSetBy ?? existing.ownerStatusSetBy)
       : (existing.ownerStatusSetBy ?? incoming.ownerStatusSetBy),
     canonicalKey: existing.canonicalKey || incoming.canonicalKey,
+    fingerprint: existing.fingerprint || incoming.fingerprint,
+    sourceObjectId: existing.sourceObjectId || incoming.sourceObjectId,
+    isOfficialSource: Boolean(existing.isOfficialSource || incoming.isOfficialSource),
+    sourceAdapterId:
+      incoming.isOfficialSource
+        ? incoming.sourceAdapterId || existing.sourceAdapterId
+        : existing.sourceAdapterId || incoming.sourceAdapterId,
+    opportunityType: incoming.opportunityType || existing.opportunityType,
+    deadlineAt: incoming.deadlineAt ?? existing.deadlineAt ?? null,
+    daysRemaining: incoming.daysRemaining ?? existing.daysRemaining ?? null,
+    sourceConfidence: Math.max(
+      existing.sourceConfidence ?? 0,
+      incoming.sourceConfidence ?? 0,
+    ),
     rawStubIds: Array.from(
       new Set([...(existing.rawStubIds || []), ...(incoming.rawStubIds || [])]),
     ),

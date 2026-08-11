@@ -2,6 +2,7 @@ import { LIA_OI_BUDGETS } from "@/config/lia-oi";
 import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
 import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
 import { getTodayStats } from "@/lib/lia/oi/pipeline";
+import { getSourceHealthSnapshot } from "@/lib/lia/oi/sources/registry";
 import {
   describeOiStoreMode,
   listAssignments,
@@ -18,12 +19,14 @@ export default async function LiaOiStatusPage() {
   const mode = resolveOiSearchMode();
   const today = await getTodayStats();
   const storeMode = describeOiStoreMode();
-  const [candidates, reports, assignments, searches] = await Promise.all([
-    listCandidates(),
-    listReports(),
-    listAssignments(),
-    listSearchRequests(),
-  ]);
+  const [candidates, reports, assignments, searches, sourceHealth] =
+    await Promise.all([
+      listCandidates(),
+      listReports(),
+      listAssignments(),
+      listSearchRequests(),
+      getSourceHealthSnapshot(),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -72,6 +75,20 @@ export default async function LiaOiStatusPage() {
           </dd>
         </div>
       </dl>
+      <section className="rounded-sm border border-border p-4 text-sm">
+        <p className="text-foreground">Состояние источников (Stage 2C)</p>
+        <ul className="mt-2 space-y-1 text-muted">
+          <li>
+            Serper general · {mode.liveAvailable ? "OK/LIVE-ready" : "stub/key missing"}
+          </li>
+          {sourceHealth.map((h) => (
+            <li key={h.id}>
+              {h.label}: {h.health}
+              {h.official ? " · официальный" : ""}
+            </li>
+          ))}
+        </ul>
+      </section>
       <div className="rounded-sm border border-border p-4 text-sm text-muted">
         <p className="text-foreground">Лимиты / quota</p>
         <pre className="mt-2 whitespace-pre-wrap">

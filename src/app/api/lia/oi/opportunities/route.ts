@@ -20,6 +20,9 @@ export async function GET(request: Request) {
       industry: searchParams.get("industry") ?? undefined,
       budgetFit: searchParams.get("budgetFit") ?? undefined,
       source: searchParams.get("source") ?? undefined,
+      sourceAdapterId: searchParams.get("adapter") ?? undefined,
+      opportunityType: searchParams.get("type") ?? undefined,
+      officialOnly: searchParams.get("official") === "1",
       q: searchParams.get("q") ?? undefined,
       minOverall: searchParams.get("minScore")
         ? Number(searchParams.get("minScore"))

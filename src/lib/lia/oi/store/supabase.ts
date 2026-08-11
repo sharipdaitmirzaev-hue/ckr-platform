@@ -303,6 +303,13 @@ export class SupabaseLiaOiStore implements LiaOiStore {
       ]);
     }
     if (filter?.rejectedOnly) q = q.eq("status", "REJECTED");
+    if (filter?.sourceAdapterId) {
+      q = q.eq("source_adapter_id", filter.sourceAdapterId);
+    }
+    if (filter?.opportunityType) {
+      q = q.eq("opportunity_type", filter.opportunityType);
+    }
+    if (filter?.officialOnly) q = q.eq("is_official_source", true);
     if (filter?.dateFrom) q = q.gte("first_seen_at", filter.dateFrom);
     if (filter?.dateTo) q = q.lte("first_seen_at", filter.dateTo);
     if (filter?.q) {

@@ -1,4 +1,5 @@
 import { OpportunityCard } from "@/components/lia/oi/opportunity-card";
+import { SourceFilters } from "@/components/lia/oi/source-filters";
 import { liaOiBucketLabels } from "@/config/lia-oi";
 import { listCandidates } from "@/lib/lia/oi/store";
 import type { LiaOiCandidate, LiaOiResultBucket } from "@/types/lia-oi";
@@ -33,10 +34,18 @@ function section(
 export default async function LiaOiOpportunitiesPage({
   searchParams,
 }: {
-  searchParams?: { saved?: string };
+  searchParams?: {
+    saved?: string;
+    adapter?: string;
+    type?: string;
+    official?: string;
+  };
 }) {
   const items = await listCandidates({
     savedOnly: searchParams?.saved === "1",
+    sourceAdapterId: searchParams?.adapter,
+    opportunityType: searchParams?.type,
+    officialOnly: searchParams?.official === "1",
   });
 
   const byBucket = (b: LiaOiResultBucket) =>
@@ -62,8 +71,15 @@ export default async function LiaOiOpportunitiesPage({
         </h2>
         <p className="mt-2 text-sm text-muted">
           Не тысячи ссылок — шорт-лист после hard constraints, detail validation
-          и buckets.
+          и buckets. Stage 2C: фильтр по специализированным источникам.
         </p>
+        <div className="mt-4 rounded-sm border border-border p-4">
+          <SourceFilters
+            adapter={searchParams?.adapter}
+            type={searchParams?.type}
+            official={searchParams?.official === "1"}
+          />
+        </div>
         <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-5">
           <div>
             <dt className="text-muted">Найдено</dt>

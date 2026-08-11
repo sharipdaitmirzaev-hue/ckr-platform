@@ -15,6 +15,7 @@ import {
   buildPass2Queries,
   buildSearchPlan,
 } from "@/lib/lia/oi/planner";
+import { runMatchingSourceAdapters } from "@/lib/lia/oi/sources/registry";
 import {
   addReport,
   getLiaOiStore,
@@ -211,11 +212,45 @@ export async function runOwnerSearchPipeline(input: {
       ? await enrichTopDetailCandidates(working, plan)
       : { candidates: working, stats: { pagesFetched: 0, pagesFetchFailed: 0 } };
 
-  const analyzed = enrich.candidates
+  // Tag general Serper/discovery results
+  const serperTagged = enrich.candidates.map((c) => ({
+    ...c,
+    sourceAdapterId: c.sourceAdapterId || "serper_general",
+    opportunityType: c.opportunityType || ("WEB_LISTING" as const),
+    isOfficialSource: c.isOfficialSource ?? false,
+    sourceConfidence: c.sourceConfidence ?? c.score.confidence ?? 40,
+  }));
+
+  // Stage 2C — specialized adapters (owner-commanded, failure-isolated)
+  const specialized = await runMatchingSourceAdapters({
+    rawQuery: input.query,
+    plan,
+    userId: input.userId,
+    mode: modeInfo.mode,
+  });
+
+  const beforeMerge = serperTagged.length + specialized.candidates.length;
+  const mergedPool = dedupeCandidates([
+    ...serperTagged,
+    ...specialized.candidates,
+  ]);
+  const specializedMergedWithSerper = Math.max(
+    0,
+    beforeMerge - mergedPool.length,
+  );
+
+  const analyzed = mergedPool
+    .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun + 12)
     .map((c) => analyzeCandidate(c, plan))
     .sort((a, b) => {
       if (a.budgetFit === "OVER_BUDGET" && b.budgetFit !== "OVER_BUDGET") return 1;
       if (b.budgetFit === "OVER_BUDGET" && a.budgetFit !== "OVER_BUDGET") return -1;
+      // Deadline urgency: prefer soon-ending among equals
+      const da = a.daysRemaining;
+      const db = b.daysRemaining;
+      if (da != null && db != null && da !== db && da >= 0 && db >= 0) {
+        return da - db;
+      }
       if (a.isCatalogSource !== b.isCatalogSource) {
         return a.isCatalogSource ? 1 : -1;
       }
@@ -241,12 +276,13 @@ export async function runOwnerSearchPipeline(input: {
 
   const stats: LiaOiPipelineStats = {
     queriesRun,
-    signalsRaw: allHits.length,
+    signalsRaw: allHits.length + specialized.stats.reduce((s, a) => s + a.rawCount, 0),
     filteredOut,
-    duplicatesRemoved,
-    afterDedup: deduped.length,
+    duplicatesRemoved: duplicatesRemoved + specializedMergedWithSerper,
+    afterDedup: mergedPool.length,
     analyzed: feed.length,
-    providerErrors,
+    providerErrors:
+      providerErrors + specialized.stats.filter((a) => a.error).length,
     providerUnavailable,
     catalogPagesSeen,
     catalogPagesDemoted: bucketed.counts.SOURCE_CATALOGS,
@@ -261,6 +297,10 @@ export async function runOwnerSearchPipeline(input: {
     rejected: bucketed.counts.REJECTED,
     overBudget,
     unknownPrice,
+    adapterStats: specialized.stats,
+    specializedRaw: specialized.stats.reduce((s, a) => s + a.rawCount, 0),
+    specializedNormalized: specialized.candidates.length,
+    specializedMergedWithSerper,
   };
 
   const request: LiaOiSearchRequest = {

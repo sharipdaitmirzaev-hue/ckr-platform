@@ -6,6 +6,8 @@ import {
   liaOiPriorityLabels,
   liaOiStatusLabels,
 } from "@/config/lia-oi";
+import { deadlineLabel } from "@/lib/lia/oi/sources/deadline";
+import { LIA_OI_OPPORTUNITY_TYPE_LABELS } from "@/lib/lia/oi/sources/registry";
 import {
   getCandidate,
   listOpportunityChanges,

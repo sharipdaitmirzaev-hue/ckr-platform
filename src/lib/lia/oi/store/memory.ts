@@ -136,6 +136,15 @@ function filterCandidates(
       ),
     );
   }
+  if (filter?.sourceAdapterId) {
+    out = out.filter((c) => c.sourceAdapterId === filter.sourceAdapterId);
+  }
+  if (filter?.opportunityType) {
+    out = out.filter((c) => c.opportunityType === filter.opportunityType);
+  }
+  if (filter?.officialOnly) {
+    out = out.filter((c) => c.isOfficialSource);
+  }
   if (filter?.q) {
     const q = filter.q.toLowerCase();
     out = out.filter(

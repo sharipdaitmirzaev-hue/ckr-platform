@@ -85,6 +85,12 @@ export function candidateToRow(c: LiaOiCandidate): OppRow {
     source_class: c.sourceClass ?? null,
     first_seen_at: c.firstSeenAt,
     last_seen_at: c.lastSeenAt,
+    opportunity_type: c.opportunityType ?? "WEB_LISTING",
+    source_adapter_id: c.sourceAdapterId ?? "serper_general",
+    source_confidence: c.sourceConfidence ?? c.score.confidence ?? null,
+    is_official_source: c.isOfficialSource ?? false,
+    deadline_at: c.deadlineAt ?? null,
+    days_remaining: c.daysRemaining ?? null,
     discovery_json: {},
     normalized_json: {
       // retention: compact meta only — no HTML
@@ -180,6 +186,17 @@ export function rowToCandidate(
     ownerLocked: Boolean(row.owner_locked),
     ownerStatusSetAt: (row.owner_status_set_at as string) ?? undefined,
     ownerStatusSetBy: (row.owner_status_set_by as string) ?? undefined,
+    opportunityType: (row.opportunity_type as LiaOiCandidate["opportunityType"]) ??
+      "WEB_LISTING",
+    sourceAdapterId: (row.source_adapter_id as string) ?? "serper_general",
+    sourceConfidence:
+      row.source_confidence != null
+        ? Number(row.source_confidence)
+        : undefined,
+    isOfficialSource: Boolean(row.is_official_source),
+    deadlineAt: (row.deadline_at as string) ?? null,
+    daysRemaining:
+      row.days_remaining != null ? Number(row.days_remaining) : null,
   };
 }
 

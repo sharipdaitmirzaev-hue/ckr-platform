@@ -1,4 +1,8 @@
 import { scoreCandidate } from "@/lib/lia/oi/score";
+import {
+  daysRemaining,
+  priorityFromDeadline,
+} from "@/lib/lia/oi/sources/deadline";
 import type { LiaOiCandidate, LiaOiSearchPlan } from "@/types/lia-oi";
 
 /**
@@ -121,7 +125,7 @@ export function analyzeCandidate(
     );
   }
 
-  const score = scoreCandidate(
+  const scored = scoreCandidate(
     {
       ...candidate,
       whyInteresting,
@@ -136,6 +140,17 @@ export function analyzeCandidate(
     },
     plan,
   );
+  const days =
+    candidate.daysRemaining ?? daysRemaining(candidate.deadlineAt ?? null);
+  const score = {
+    ...scored,
+    // Deadline raises priority only — never auto-boosts opportunity_score
+    priority: priorityFromDeadline(scored.priority, days),
+    confidence: Math.max(
+      scored.confidence,
+      candidate.sourceConfidence ?? 0,
+    ),
+  };
 
   const recommendation =
     budgetFit === "OVER_BUDGET"
@@ -184,6 +199,7 @@ export function analyzeCandidate(
     toVerify,
     claims,
     score,
+    daysRemaining: days,
     matchHints: [
       "Сопоставить с инвесторами ЦКР (matching — отдельный этап)",
       "Проверить проекты/заявки в каталоге ЦКР с похожим профилем",

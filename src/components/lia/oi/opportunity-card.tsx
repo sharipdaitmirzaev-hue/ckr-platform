@@ -5,6 +5,8 @@ import {
   liaOiPriorityLabels,
   liaOiStatusLabels,
 } from "@/config/lia-oi";
+import { deadlineLabel } from "@/lib/lia/oi/sources/deadline";
+import { LIA_OI_OPPORTUNITY_TYPE_LABELS } from "@/lib/lia/oi/sources/registry";
 import type { LiaOiCandidate } from "@/types/lia-oi";
 import Link from "next/link";
 
@@ -15,6 +17,10 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
   const contentIntent = item.contentIntent ?? "UNKNOWN";
   const price = item.askingPrice ?? item.investmentRequired;
   const sourceUrl = item.sources[0]?.url;
+  const typeLabel =
+    LIA_OI_OPPORTUNITY_TYPE_LABELS[item.opportunityType || "WEB_LISTING"] ||
+    item.opportunityType;
+  const deadlineText = deadlineLabel(item.daysRemaining ?? null);
 
   return (
     <article className="rounded-sm border border-border bg-surface p-5 transition-colors hover:border-accent/40">
@@ -25,6 +31,7 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
             {liaOiPriorityLabels[item.score.priority]} ·{" "}
             {liaOiPageTypeLabels[pageType]} ·{" "}
             {liaOiContentIntentLabels[contentIntent]}
+            {typeLabel ? ` · ${typeLabel}` : ""}
           </p>
           <h3 className="mt-2 font-display text-xl text-foreground">
             <Link
@@ -34,6 +41,18 @@ export function OpportunityCard({ item }: { item: LiaOiCandidate }) {
               {item.title}
             </Link>
           </h3>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+            {item.isOfficialSource ? (
+              <span className="border border-accent/40 px-2 py-0.5 text-accent">
+                Официальный источник
+              </span>
+            ) : null}
+            {deadlineText ? (
+              <span className="border border-border px-2 py-0.5 text-foreground">
+                {deadlineText}
+              </span>
+            ) : null}
+          </div>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             {item.summary || item.description}
           </p>
