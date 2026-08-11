@@ -3,6 +3,8 @@ import {
   daysRemaining,
   priorityFromDeadline,
 } from "@/lib/lia/oi/sources/deadline";
+import { attachDemandClassification } from "@/lib/lia/oi/regional/demand-classify";
+import { attachSupportApplicability } from "@/lib/lia/oi/regional/support-applicability";
 import type { LiaOiCandidate, LiaOiSearchPlan } from "@/types/lia-oi";
 
 /**
@@ -12,6 +14,10 @@ export function analyzeCandidate(
   candidate: LiaOiCandidate,
   plan?: LiaOiSearchPlan,
 ): LiaOiCandidate {
+  const withDemand = attachDemandClassification(candidate);
+  const withSupport = attachSupportApplicability(withDemand);
+  candidate = withSupport;
+
   const isStub = candidate.isStub || candidate.sources.every((s) => s.isStub);
   const isCatalog = candidate.isCatalogSource;
   const price = candidate.investmentRequired ?? candidate.askingPrice;

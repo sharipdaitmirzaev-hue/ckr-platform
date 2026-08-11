@@ -130,13 +130,16 @@ export async function runOwnerSearchPipeline(input: {
     NeedProfile,
     "intentType" | "regions" | "industries" | "budgetMax" | "budgetMin" | "title"
   >;
+  /** Stage 4E — prefer regional site-restricted strategies */
+  regionalFirst?: boolean;
 }): Promise<LiaOiSearchPipelineResult> {
   const started = Date.now();
   const modeInfo = resolveOiSearchMode();
-  // Stage 4D — planner v2 (budget-capped, need-aware); falls back to v1 seed inside.
+  // Stage 4D/4E — planner v2 (budget-capped, need-aware, regional-first).
   const plan = buildSearchPlanV2({
     rawQuery: input.query,
     need: input.need,
+    regionalFirst: input.regionalFirst,
   });
   const perQueryLimit = LIA_OI_BUDGETS.maxResultsPerQuery;
 

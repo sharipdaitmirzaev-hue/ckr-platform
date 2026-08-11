@@ -1,12 +1,17 @@
 /**
- * Stage 4D — Query Planner v2 from Need Profile criteria.
- * Respects LIA_OI_BUDGETS. No unbounded query explosion.
+ * Stage 4D/4E — Query Planner v2 from Need Profile + regional strategies.
+ * Respects LIA_OI_BUDGETS. Prefer site-specific over broad Google.
  */
 
 import { LIA_OI_BUDGETS } from "@/config/lia-oi";
 import { buildSearchPlan, detectIntent } from "@/lib/lia/oi/planner";
-import { regionSearchTokens, detectCanonicalRegions } from "@/lib/geo/region-normalize";
+import {
+  regionSearchTokens,
+  detectCanonicalRegions,
+  normalizeRegionLabel,
+} from "@/lib/geo/region-normalize";
 import { detectIndustryTags, expandIndustry } from "@/lib/catalog/industry-aliases";
+import { buildRegionalQueryStrategies } from "@/lib/lia/oi/regional/query-strategy";
 import type { LiaOiSearchPlan } from "@/types/lia-oi";
 import type { NeedIntentType, NeedProfile } from "@/types/need-profile";
 
@@ -35,7 +40,6 @@ function industryQueryToken(industries: string[]): string {
   if (!industries.length) return "";
   const primary = industries[0]!;
   const aliases = expandIndustry(primary);
-  // Prefer human RU token when present
   const ru = aliases.find((a) => /[а-яё]/i.test(a));
   if (primary === "beverage" || primary === "food") {
     return "пищевая промышленность напитки";
@@ -52,14 +56,17 @@ export type PlannerV2Input = {
     NeedProfile,
     "intentType" | "regions" | "industries" | "budgetMax" | "budgetMin" | "title"
   >;
+  /** Stage 4E — prefer regional site strategies */
+  regionalFirst?: boolean;
 };
 
 /**
  * Build a budget-capped search plan from Need Profile or free query.
  */
 export function buildSearchPlanV2(input: PlannerV2Input): LiaOiSearchPlan & {
-  plannerVersion: "v2";
+  plannerVersion: "v2" | "v2-regional";
   strategies: string[];
+  regionalQueries: string[];
 } {
   const need = input.need;
   const regions =
@@ -85,45 +92,67 @@ export function buildSearchPlanV2(input: PlannerV2Input): LiaOiSearchPlan & {
   const base = buildSearchPlan(seed || input.rawQuery || "бизнес возможности Россия");
   const strategies: string[] = ["base_intent_geo"];
 
+  const intent = String(need?.intentType || detectIntent(seed));
+  const regionalFirst =
+    input.regionalFirst !== false &&
+    regions.some((r) => {
+      const c = normalizeRegionLabel(r);
+      return (
+        c === "Дагестан" ||
+        c === "СКФО" ||
+        c === "Ставропольский край" ||
+        /дагестан|скфо|северо.?кавказ/i.test(r)
+      );
+    });
+
+  const regional = regionalFirst
+    ? buildRegionalQueryStrategies({
+        intentType: intent,
+        regions,
+        industries,
+        budgetMax: need?.budgetMax ?? null,
+        maxQueries: LIA_OI_BUDGETS.maxQueriesPass1,
+      })
+    : [];
+
+  if (regional.length) strategies.push("regional_site_strategies");
+
   const geoTokens = regionSearchTokens(regions).slice(0, 3);
   const indToken = industryQueryToken(industries);
-  const extra: string[] = [];
+  const extra: string[] = regional.map((r) => r.query);
 
-  // Specialized strategies by intent (capped)
-  const intent = need?.intentType || detectIntent(seed);
-  if (intent === "SEEK_CONTRACT" || base.intent === "tenders") {
-    strategies.push("procurement_sites");
-    for (const g of geoTokens) {
-      extra.push(`site:zakupki.gov.ru ${indToken} ${g}`.trim());
-      extra.push(`закупка ${indToken} ${g} НМЦК`.trim());
+  // Fallback specialized strategies only when regional set is thin
+  if (extra.length < 3) {
+    if (intent === "SEEK_CONTRACT" || base.intent === "tenders") {
+      strategies.push("procurement_sites");
+      for (const g of geoTokens) {
+        extra.push(`site:zakupki.gov.ru ${indToken} ${g}`.trim());
+      }
     }
-  }
-  if (intent === "SEEK_SUPPORT" || base.intent === "support_programs") {
-    strategies.push("support_programs");
-    for (const g of geoTokens) {
-      extra.push(`субсидии МСП ${indToken} ${g}`.trim());
-      extra.push(`господдержка ${indToken} ${g}`.trim());
+    if (intent === "SEEK_SUPPORT" || base.intent === "support_programs") {
+      strategies.push("support_programs");
+      for (const g of geoTokens) {
+        extra.push(`субсидии МСП ${indToken} ${g}`.trim());
+      }
     }
-  }
-  if (intent === "INVEST" || intent === "SEEK_PROJECT") {
-    strategies.push("investment_assets");
-    for (const g of geoTokens) {
-      extra.push(`инвестиционный проект ${indToken} ${g}`.trim());
-      extra.push(`готовый бизнес ${indToken} ${g}`.trim());
+    if (intent === "INVEST" || intent === "SEEK_PROJECT") {
+      strategies.push("investment_assets");
+      for (const g of geoTokens) {
+        extra.push(`инвестиционный проект ${indToken} ${g}`.trim());
+      }
     }
-  }
-  if (intent === "SEEK_BUYER") {
-    strategies.push("buyer_demand");
-    for (const g of geoTokens) {
-      extra.push(`оптовый спрос ${indToken} ${g}`.trim());
-      extra.push(`закупка ${indToken} ${g}`.trim());
+    if (intent === "SEEK_BUYER") {
+      strategies.push("buyer_demand");
+      for (const g of geoTokens) {
+        extra.push(`site:zakupki.gov.ru закупка ${indToken} ${g}`.trim());
+      }
     }
   }
 
-  // Merge unique queries with hard budget
-  const merged = [...base.queries];
-  for (const q of extra) {
-    if (!merged.includes(q)) merged.push(q);
+  // Prefer regional/site queries first, then base — still hard-capped
+  const merged: string[] = [];
+  for (const q of [...extra, ...base.queries]) {
+    if (q && !merged.includes(q)) merged.push(q);
   }
   const capped = merged.slice(0, LIA_OI_BUDGETS.maxQueriesPass1);
 
@@ -136,7 +165,8 @@ export function buildSearchPlanV2(input: PlannerV2Input): LiaOiSearchPlan & {
     budgetMin: need?.budgetMin ?? base.budgetMin,
     queries: capped,
     pass1Queries: capped,
-    plannerVersion: "v2",
+    plannerVersion: regionalFirst ? "v2-regional" : "v2",
     strategies,
+    regionalQueries: regional.map((r) => r.query),
   };
 }
