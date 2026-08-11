@@ -246,7 +246,12 @@ export function extractOfficialIdFromText(
 }
 
 export function extractPriceFromText(text: string): number | null {
-  const m = text.match(
+  // Do not treat notice/reg numbers as money (e.g. «Извещение № 2100001453…»)
+  const cleaned = text.replace(
+    /(?:извещени[ея]|лот|рег\.?\s*номер|№)\s*[№#]?\s*[0-9]{10,}/gi,
+    " ",
+  );
+  const m = cleaned.match(
     /(\d{1,3}(?:[ \u00a0]\d{3})+|\d+(?:[.,]\d+)?)\s*(млрд|млн|миллион(?:ов|а)?|тыс(?:яч(?:и|а)?)?|million|thousand)?\s*(?:₽|руб\.?|RUB)?/i,
   );
   if (!m) return null;
@@ -257,7 +262,10 @@ export function extractPriceFromText(text: string): number | null {
   if (/млрд|billion/.test(scale)) n *= 1_000_000_000;
   else if (/млн|миллион|million/.test(scale)) n *= 1_000_000;
   else if (/тыс|thousand/.test(scale)) n *= 1_000;
-  return Math.round(n) > 0 ? Math.round(n) : null;
+  const amount = Math.round(n);
+  // Plausible opportunity amounts only (reject notice-id-scale garbage)
+  if (amount < 1_000 || amount > 50_000_000_000) return null;
+  return amount;
 }
 
 export function hitToSpecializedCandidate(

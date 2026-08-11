@@ -106,10 +106,12 @@ export function computePublishability(
     candidate.startingPrice ??
     candidate.currentPrice ??
     null;
-  // Plausible RUB amounts only — reject tiny garbage extractions (e.g. 8, 22)
+  // Plausible RUB amounts only — reject tiny garbage and notice-id-scale junk
   const moneyOk =
-    (moneyRaw != null && moneyRaw >= 10_000) ||
-    (candidate.priceStatus === "KNOWN" && moneyRaw != null && moneyRaw >= 10_000);
+    moneyRaw != null &&
+    Number.isFinite(moneyRaw) &&
+    moneyRaw >= 10_000 &&
+    moneyRaw <= 50_000_000_000;
   const deadlineOk = Boolean(candidate.deadlineAt);
   const idOk = Boolean(candidate.sourceObjectId);
   const detailOk =
