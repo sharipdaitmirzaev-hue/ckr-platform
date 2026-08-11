@@ -191,19 +191,36 @@ async function main() {
     neighbors.incoming.length + neighbors.outgoing.length >= 1,
     "neighbors expected",
   );
-  const history = await graph.getNodeHistory(p1.id);
-  assert.ok(history.some((h) => h.eventType === "NODE_CREATED" || h.eventType === "NODE_UPDATED"));
+  const projectHistory = await graph.getNodeHistory(p1.id);
   assert.ok(
-    history.some(
-      (h) =>
-        h.eventType === "EDGE_CREATED" ||
-        h.eventType === "EDGE_CONFIRMED" ||
-        h.eventType === "EDGE_REJECTED" ||
-        h.eventType === "OWNER_COMMENT",
+    projectHistory.some(
+      (h) => h.eventType === "NODE_CREATED" || h.eventType === "NODE_UPDATED",
     ),
+    "project node history",
   );
+  assert.ok(
+    projectHistory.some((h) => h.eventType === "ALIAS_ADDED"),
+    "alias history on project",
+  );
+
+  // Edge events are recorded on source_node_id
+  const usefulHistory = await graph.getNodeHistory(edgeUseful.sourceNodeId);
+  assert.ok(
+    usefulHistory.some((h) => h.eventType === "EDGE_CONFIRMED"),
+    "confirm history",
+  );
+  assert.ok(
+    usefulHistory.some((h) => h.eventType === "OWNER_COMMENT"),
+    "comment history",
+  );
+  const rejectHistory = await graph.getNodeHistory(edgeReject.sourceNodeId);
+  assert.ok(
+    rejectHistory.some((h) => h.eventType === "EDGE_REJECTED"),
+    "reject history",
+  );
+
   const aliases = await graph.listAliases(p1.id);
-  assert.ok(aliases.length >= 1);
+  assert.ok(aliases.length >= 1, "alias expected");
 
   const afterNodes = await countNodes(db);
   const afterEdges = await countEdges(db);
