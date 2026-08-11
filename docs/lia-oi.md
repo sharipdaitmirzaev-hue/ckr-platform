@@ -194,7 +194,21 @@ npm test
 
 ---
 
-## Что не входит / стоп-линия Stage 2B
+## Stage 2B.1 — Isolated dry-run
+
+Локальная проверка migrations + `SupabaseLiaOiStore` без production:
+
+- скрипты: `scripts/lia-oi-dryrun/`
+- integration: `npm run test:lia-oi-dryrun` (+ `--restart-check`)
+- окружение: временная Postgres DB `lia_oi_dryrun` + PostgREST (не cloud Supabase)
+
+### Rollback plan (production, если позже включат supabase store)
+
+A. App: вернуть `LIA_OI_STORE=memory` (без destructive SQL)  
+B. Code: rollback на предыдущий production commit  
+C. DB: таблицы `lia_oi_*` можно оставить — они не ломают остальной продукт и не трогают `public.opportunities`. Destructive DROP не делать автоматически.
+
+## Что не входит / стоп-линия Stage 2B / 2B.1
 
 - Apply SQL к production без отдельного подтверждения
 - Deploy persistence (`LIA_OI_STORE=supabase`) на production без OK

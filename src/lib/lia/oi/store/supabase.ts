@@ -135,9 +135,31 @@ export class SupabaseLiaOiStore implements LiaOiStore {
           : null) ?? (await this.getCandidate(incoming.id));
 
       let merged: LiaOiCandidate;
+      let diffs: ReturnType<typeof diffTrackedFields> = [];
+      const isCreate = !existing;
       if (existing) {
         merged = mergeRediscovery(existing, { ...incoming, id: existing.id });
-        const diffs = diffTrackedFields(existing, merged);
+        diffs = diffTrackedFields(existing, merged);
+        updatedIds.push(existing.id);
+      } else {
+        merged = {
+          ...incoming,
+          firstSeenAt: incoming.firstSeenAt || new Date().toISOString(),
+        };
+        createdIds.push(merged.id);
+      }
+
+      if (options?.searchRunId) {
+        merged = { ...merged, searchRequestId: options.searchRunId };
+      }
+
+      // Parent row first — child FKs (events/changes/sources) require opportunity id.
+      const { error: upErr } = await this.db
+        .from("lia_oi_opportunities")
+        .upsert(candidateToRow(merged), { onConflict: "id" });
+      await throwWrite("opportunities.upsert", upErr);
+
+      if (existing) {
         for (const d of diffs) {
           const change: LiaOiOpportunityChange = {
             id: oiId("chg"),
@@ -171,7 +193,6 @@ export class SupabaseLiaOiStore implements LiaOiStore {
         }
 
         if (!isOwnerUpdate) {
-          // Compact snapshot (no HTML)
           const { error: snapErr } = await this.db
             .from("lia_oi_opportunity_snapshots")
             .insert({
@@ -207,12 +228,7 @@ export class SupabaseLiaOiStore implements LiaOiStore {
             });
           await throwWrite("opportunity_events.insert", evtErr);
         }
-        updatedIds.push(existing.id);
-      } else {
-        merged = {
-          ...incoming,
-          firstSeenAt: incoming.firstSeenAt || new Date().toISOString(),
-        };
+      } else if (isCreate) {
         const { error: evtErr } = await this.db
           .from("lia_oi_opportunity_events")
           .insert({
@@ -226,17 +242,7 @@ export class SupabaseLiaOiStore implements LiaOiStore {
             created_at: merged.firstSeenAt,
           });
         await throwWrite("opportunity_events.insert", evtErr);
-        createdIds.push(merged.id);
       }
-
-      if (options?.searchRunId) {
-        merged = { ...merged, searchRequestId: options.searchRunId };
-      }
-
-      const { error: upErr } = await this.db
-        .from("lia_oi_opportunities")
-        .upsert(candidateToRow(merged), { onConflict: "id" });
-      await throwWrite("opportunities.upsert", upErr);
 
       // replace sources for this opportunity (URLs only — no HTML)
       await this.db
@@ -246,9 +252,7 @@ export class SupabaseLiaOiStore implements LiaOiStore {
       if (merged.sources.length) {
         const { error: srcErr } = await this.db
           .from("lia_oi_sources")
-          .insert(
-            merged.sources.map((s) => sourceToRow(s, merged.id)),
-          );
+          .insert(merged.sources.map((s) => sourceToRow(s, merged.id)));
         await throwWrite("sources.insert", srcErr);
       }
 

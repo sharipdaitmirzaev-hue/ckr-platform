@@ -9,8 +9,11 @@ import type { LiaOiStore } from "@/lib/lia/oi/store-types";
 
 let cached: LiaOiStore | null = null;
 let cachedMode: string | null = null;
+/** When set, getOiStore always returns this (tests / dry-run). */
+let testOverride: LiaOiStore | null = null;
 
 export function getOiStore(): LiaOiStore {
+  if (testOverride) return testOverride;
   const mode = resolveOiStoreMode();
   if (!cached || cachedMode !== mode) {
     cached =
@@ -22,6 +25,7 @@ export function getOiStore(): LiaOiStore {
 
 /** Tests: inject store instance. */
 export function setOiStoreForTests(store: LiaOiStore | null) {
+  testOverride = store;
   cached = store;
   cachedMode = store?.kind ?? null;
 }
