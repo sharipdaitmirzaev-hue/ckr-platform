@@ -122,8 +122,16 @@ export function detectLifecycleHint(
   candidate: LiaOiCandidate,
 ): PublicOpportunityDraft["lifecycleHint"] {
   const stage = `${candidate.procurementStage || ""} ${candidate.auctionStatus || ""}`.toUpperCase();
-  if (/\b(CANCEL|CANCELLED|ОТМЕН)/.test(stage)) return "cancelled";
-  if (/\b(CLOSED|COMPLETE|ЗАВЕРШ|ЗАКРЫТ)/.test(stage)) return "closed";
+  const titleBlob = `${candidate.title || ""} ${candidate.description || ""}`;
+  if (/\b(CANCEL|CANCELLED|ОТМЕН)/.test(stage) || /отменен/i.test(titleBlob)) {
+    return "cancelled";
+  }
+  if (
+    /\b(CLOSED|COMPLETE|ЗАВЕРШ|ЗАКРЫТ)/.test(stage) ||
+    /завершен[оа]?/i.test(titleBlob)
+  ) {
+    return "closed";
+  }
   if (/\b(EXPIRED|ИСТЕК)/.test(stage)) return "expired";
   if (candidate.deadlineAt) {
     const ms = Date.parse(candidate.deadlineAt);

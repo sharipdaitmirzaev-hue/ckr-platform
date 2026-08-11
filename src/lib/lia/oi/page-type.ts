@@ -31,6 +31,7 @@ export function classifyPageType(input: {
   }
 
   const blob = `${input.title} ${input.snippet ?? ""}`;
+  const full = `${path}?${input.url}`;
 
   if (HOME_PATH.test(path) || path === "/") {
     // homepage of marketplace/catalog domains
@@ -40,8 +41,26 @@ export function classifyPageType(input: {
     return "HOMEPAGE";
   }
 
+  // Official search / index surfaces — never DETAIL
+  if (
+    /extendedsearch|search\/results|\/search\b|\/results\.html/i.test(full) ||
+    /extrajudicialbankruptcy\/?$/i.test(path) ||
+    /\/epz\/order\/(?:nsi|quicksearch)/i.test(path)
+  ) {
+    return "LIST";
+  }
+
   if (LIST_PATH.test(path) || /\/page\/\d+/i.test(path)) {
     return /category|rubric|tag/i.test(path) ? "CATEGORY" : "LIST";
+  }
+
+  // Newspapers / media
+  if (
+    /\/newspaper\/|rbc\.ru\/(?:newspaper|politics|society|economics)/i.test(
+      host + path,
+    )
+  ) {
+    return "NEWS";
   }
 
   // Editorial / SEO — раньше DETAIL (иначе /articles/887322/ ловится как id)
@@ -53,7 +72,14 @@ export function classifyPageType(input: {
       blob,
     )
   ) {
-    return "UNKNOWN";
+    if (/\/news\b/i.test(path) || /новост/i.test(blob)) return "NEWS";
+    if (
+      /\b(как (я|продать|купить)|гид по|что такое|инструкц)/i.test(blob) ||
+      /\/(blog|article|articles|guide)\b/i.test(path)
+    ) {
+      return "GUIDE";
+    }
+    return "NEWS";
   }
 
   if (LIST_TITLE.test(input.title) && !DETAIL_HINT.test(path)) {

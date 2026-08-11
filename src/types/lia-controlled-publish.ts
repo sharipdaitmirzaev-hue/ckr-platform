@@ -166,6 +166,13 @@ export type PublicationQueueItem = {
   lastSeenAt: string;
   sourcesSummary: string[];
   officialUrl: string | null;
+  /** Stage 4D — owner quality labels (computed). */
+  publishabilityTier?: string | null;
+  publishabilityScore?: number | null;
+  qualityLabelRu?: string | null;
+  pageType?: string | null;
+  region?: string | null;
+  industry?: string | null;
 };
 
 export type QualityGateResult = {

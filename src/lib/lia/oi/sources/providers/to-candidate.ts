@@ -2,7 +2,7 @@
  * Map OfficialProviderObject → LiaOiCandidate for specialized adapters.
  */
 
-import { computeDataQuality } from "@/lib/lia/oi/enrichment/quality";
+import { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
 import { buildSpecializedCandidate } from "@/lib/lia/oi/sources/candidate-factory";
 import type {
   LiaOiOpportunityType,
@@ -102,7 +102,7 @@ export function officialObjectToCandidate(
     },
   };
 
-  const q = computeDataQuality({
+  const q = computeDataQualityV2({
     candidate: base,
     structuredFields: base.structuredFields || [],
   });
@@ -112,6 +112,8 @@ export function officialObjectToCandidate(
     matchingReadiness: q.matchingReadiness,
     confirmedFields: q.confirmedFields,
     unknownFields: q.unknownFields,
+    publishabilityScore: q.publishabilityScore,
+    publishabilityTier: q.publishabilityTier as LiaOiCandidate["publishabilityTier"],
     score: {
       ...base.score,
       quality: Math.max(base.score.quality, q.dataQualityScore),

@@ -16,6 +16,8 @@ import {
   buildPass2Queries,
   buildSearchPlan,
 } from "@/lib/lia/oi/planner";
+import { buildSearchPlanV2 } from "@/lib/lia/oi/planner-v2";
+import type { NeedProfile } from "@/types/need-profile";
 import { runMatchingSourceAdapters } from "@/lib/lia/oi/sources/registry";
 import {
   addReport,
@@ -123,10 +125,19 @@ function processHits(
 export async function runOwnerSearchPipeline(input: {
   query: string;
   userId: string;
+  /** Stage 4D — optional Need Profile for Query Planner v2 */
+  need?: Pick<
+    NeedProfile,
+    "intentType" | "regions" | "industries" | "budgetMax" | "budgetMin" | "title"
+  >;
 }): Promise<LiaOiSearchPipelineResult> {
   const started = Date.now();
   const modeInfo = resolveOiSearchMode();
-  const plan = buildSearchPlan(input.query);
+  // Stage 4D — planner v2 (budget-capped, need-aware); falls back to v1 seed inside.
+  const plan = buildSearchPlanV2({
+    rawQuery: input.query,
+    need: input.need,
+  });
   const perQueryLimit = LIA_OI_BUDGETS.maxResultsPerQuery;
 
   // --- Pass 1 ---

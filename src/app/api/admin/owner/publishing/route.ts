@@ -33,6 +33,8 @@ export async function POST(req: Request) {
     const body = (await req.json().catch(() => ({}))) as {
       action?: string;
       id?: string;
+      ids?: string[];
+      reason?: string;
     };
     const svc = getControlledPublishService();
     if (body.action === "queue_eligible") {
@@ -41,6 +43,14 @@ export async function POST(req: Request) {
     if (body.action === "queue_one") {
       if (!body.id) throw new Error("id required");
       return { mode: svc.getMode(), ...(await svc.queueOne(body.id, userId)) };
+    }
+    if (body.action === "reject_many") {
+      if (!body.ids?.length) throw new Error("ids required");
+      // Bulk reject only — never bulk publish
+      return {
+        mode: svc.getMode(),
+        ...(await svc.rejectMany(body.ids, userId, body.reason)),
+      };
     }
     throw new Error("Unknown action");
   });

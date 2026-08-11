@@ -2,6 +2,7 @@ import {
   mergeSerperWithOfficial,
   sameOfficialIdentity,
 } from "@/lib/lia/oi/sources/providers/merge";
+import { canonicalUrl } from "@/lib/lia/oi/normalize";
 import type { LiaOiCandidate } from "@/types/lia-oi";
 
 function normalizeTitle(title: string): string {
@@ -24,10 +25,37 @@ function titleSimilar(a: string, b: string): boolean {
   return inter / union >= 0.55;
 }
 
+function primaryMoney(c: LiaOiCandidate): number | null {
+  return (
+    c.nmck ??
+    c.supportAmount ??
+    c.askingPrice ??
+    c.startingPrice ??
+    c.currentPrice ??
+    null
+  );
+}
+
+function priceKnown(c: LiaOiCandidate): boolean {
+  return c.priceStatus === "KNOWN" || primaryMoney(c) != null;
+}
+
+function sameCanonUrlPair(a: LiaOiCandidate, b: LiaOiCandidate): boolean {
+  const ua = a.canonicalUrl || a.sources?.[0]?.url || "";
+  const ub = b.canonicalUrl || b.sources?.[0]?.url || "";
+  if (!ua || !ub) return false;
+  try {
+    return canonicalUrl(ua) === canonicalUrl(ub);
+  } catch {
+    return ua === ub;
+  }
+}
+
 /**
  * Схлопывает дубликаты:
  * 1) одинаковый procurement_id / lot_id (Serper + Official API → одна карточка)
- * 2) canonicalKey + similarity title/price/region
+ * 2) canonicalKey / canonical URL
+ * 3) strong title+region+KNOWN money (weak title alone does NOT merge — Stage 4D)
  * Official fields имеют приоритет; provenance обоих источников сохраняется.
  */
 export function dedupeCandidates(items: LiaOiCandidate[]): LiaOiCandidate[] {
@@ -40,13 +68,27 @@ export function dedupeCandidates(items: LiaOiCandidate[]): LiaOiCandidate[] {
       continue;
     }
 
-    const existing = groups.find(
-      (g) =>
-        g.canonicalKey === item.canonicalKey ||
-        (titleSimilar(g.title, item.title) &&
-          (g.region ?? "") === (item.region ?? "") &&
-          (g.askingPrice ?? null) === (item.askingPrice ?? null)),
-    );
+    const existing = groups.find((g) => {
+      if (g.canonicalKey === item.canonicalKey || sameCanonUrlPair(g, item)) {
+        return true;
+      }
+      // Distinct official IDs → never merge on weak title similarity
+      if (
+        g.sourceObjectId &&
+        item.sourceObjectId &&
+        String(g.sourceObjectId) !== String(item.sourceObjectId)
+      ) {
+        return false;
+      }
+      return (
+        titleSimilar(g.title, item.title) &&
+        (g.region ?? "") === (item.region ?? "") &&
+        priceKnown(g) &&
+        priceKnown(item) &&
+        primaryMoney(g) != null &&
+        primaryMoney(g) === primaryMoney(item)
+      );
+    });
 
     if (!existing) {
       groups.push(item);

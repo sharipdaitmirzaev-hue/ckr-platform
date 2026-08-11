@@ -16,10 +16,10 @@ import {
   isEnrichableDetail,
   refinePageKind,
 } from "@/lib/lia/oi/enrichment/page-kind";
-import { computeDataQuality } from "@/lib/lia/oi/enrichment/quality";
 import type { OpportunityExtractor } from "@/lib/lia/oi/enrichment/types";
 import { field } from "@/lib/lia/oi/enrichment/types";
 import { isCatalogPageType } from "@/lib/lia/oi/page-type";
+import { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
 import { safeFetch } from "@/lib/http/safe-fetch";
 import type { LiaOiCandidate, LiaOiSearchPlan, LiaOiStructuredField } from "@/types/lia-oi";
 
@@ -55,7 +55,7 @@ function mergeStructured(
 }
 
 function applyQuality(c: LiaOiCandidate): LiaOiCandidate {
-  const q = computeDataQuality({
+  const q = computeDataQualityV2({
     candidate: c,
     structuredFields: c.structuredFields || [],
   });
@@ -65,6 +65,8 @@ function applyQuality(c: LiaOiCandidate): LiaOiCandidate {
     matchingReadiness: q.matchingReadiness,
     confirmedFields: q.confirmedFields,
     unknownFields: q.unknownFields,
+    publishabilityScore: q.publishabilityScore,
+    publishabilityTier: q.publishabilityTier as LiaOiCandidate["publishabilityTier"],
     score: {
       ...c.score,
       quality: Math.max(c.score.quality, q.dataQualityScore),
