@@ -15,6 +15,40 @@ export function canUseSupabaseOiStore(): boolean {
   return hasSupabaseSecretEnv();
 }
 
+type Fetch = typeof fetch;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Transient undici/network failures during sequential OI writes. */
+function createRetryingFetch(baseFetch: Fetch, attempts = 4): Fetch {
+  return async (input, init) => {
+    let lastError: unknown;
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        const res = await baseFetch(input, init);
+        if (res.status >= 500 && i < attempts - 1) {
+          await sleep(150 * 2 ** i);
+          continue;
+        }
+        return res;
+      } catch (error) {
+        lastError = error;
+        const msg = error instanceof Error ? error.message : String(error);
+        const retryable =
+          msg.includes("fetch failed") ||
+          msg.includes("ECONNRESET") ||
+          msg.includes("ETIMEDOUT") ||
+          msg.includes("socket");
+        if (!retryable || i === attempts - 1) throw error;
+        await sleep(150 * 2 ** i);
+      }
+    }
+    throw lastError;
+  };
+}
+
 export function createOiAdminClient(): SupabaseClient {
   if (!hasSupabaseSecretEnv()) {
     throw new Error(
@@ -23,8 +57,9 @@ export function createOiAdminClient(): SupabaseClient {
   }
   const { url } = getSupabaseEnv();
   const key = getSupabaseSecretKey()!;
+  const safeFetch = createHeaderSafeFetch();
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: createHeaderSafeFetch() },
+    global: { fetch: createRetryingFetch(safeFetch) },
   });
 }
