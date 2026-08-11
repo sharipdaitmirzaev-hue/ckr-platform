@@ -377,7 +377,7 @@ export async function enrichStructuredCandidates(
   };
 
   // Always score everyone from available fields first
-  let working = candidates.map(scoreWithoutFetch);
+  const working = candidates.map(scoreWithoutFetch);
 
   const detailIdx = working
     .map((c, i) => ({ c, i }))
