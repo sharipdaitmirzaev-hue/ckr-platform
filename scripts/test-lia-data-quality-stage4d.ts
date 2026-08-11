@@ -301,6 +301,34 @@ async function main() {
     const gateJunk = passesPublicationQualityGate(junk);
     assert.equal(gateJunk.ok, false);
     assert.ok(!isQueueWorthy(computePublishability(junk).tier) || gateJunk.ok === false);
+
+    const searchList = base({
+      id: "oi_search",
+      pageType: "DETAIL", // historically wrong
+      canonicalUrl:
+        "https://zakupki.gov.ru/epz/order/extendedsearch/results.html",
+      sources: [
+        {
+          id: "s",
+          category: "PROCUREMENT",
+          name: "EIS",
+          url: "https://zakupki.gov.ru/epz/order/extendedsearch/results.html",
+          isStub: false,
+        },
+      ],
+      nmck: 22,
+      region: undefined,
+    });
+    assert.equal(computePublishability(searchList).tier, "WEAK_SOURCE");
+
+    const stubDemo = base({
+      id: "oi_stub",
+      title: "[STUB] demo",
+      canonicalUrl: "https://stub.ckr-center.ru/demo/x",
+      nmck: 12_000_000,
+      region: "Дагестан",
+    });
+    assert.equal(computePublishability(stubDemo).tier, "WEAK_SOURCE");
   });
 
   await test("query planner v2 budgets + need strategies", () => {

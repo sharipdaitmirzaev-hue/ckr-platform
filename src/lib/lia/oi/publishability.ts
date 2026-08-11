@@ -56,6 +56,26 @@ export function computePublishability(
 
   const page = candidate.pageType || "UNKNOWN";
   const intent = candidate.contentIntent || "UNKNOWN";
+  const title = (candidate.title || "").trim();
+  const url =
+    candidate.canonicalUrl ||
+    candidate.sources?.find((s) => s.url)?.url ||
+    "";
+  const hasUrl = /^https?:\/\//i.test(url);
+
+  // URL-level list/search/news even if stored pageType was wrong historically
+  const urlLooksList =
+    /extendedsearch|search\/results|\/search\b|\/results\.html|extrajudicialbankruptcy\/?$/i.test(
+      url,
+    ) || /\/epz\/order\/(?:nsi|quicksearch)/i.test(url);
+  const urlLooksNews =
+    /\/newspaper\/|\/news\/|rbc\.ru\/(?:newspaper|politics|society)/i.test(url);
+  // Demo pollution: stub host / smoke titles. Do NOT treat fixture isStub alone
+  // as junk — many valid specialized adapters use isStub in tests/fixtures.
+  const isDemoStub =
+    /stub\.ckr-center\.ru|example\.com\/smoke/i.test(url) ||
+    /\[STUB\]|Smoke opportunity|smoke archive/i.test(title);
+
   const isJunkPage =
     page === "LIST" ||
     page === "CATEGORY" ||
@@ -66,28 +86,38 @@ export function computePublishability(
     intent === "NEWS" ||
     intent === "GUIDE" ||
     intent === "SOCIAL" ||
-    intent === "CATALOG";
+    intent === "CATALOG" ||
+    urlLooksList ||
+    urlLooksNews ||
+    isDemoStub;
 
-  const title = (candidate.title || "").trim();
-  const url =
-    candidate.canonicalUrl ||
-    candidate.sources?.find((s) => s.url)?.url ||
-    "";
-  const hasUrl = /^https?:\/\//i.test(url);
+  if (urlLooksList) reasons.push("url_search_or_list");
+  if (urlLooksNews) reasons.push("url_news");
+  if (isDemoStub) reasons.push("demo_or_stub");
+
   const regionOk = Boolean(
     normalizeRegionLabel(candidate.region) ||
       (candidate.region && candidate.region.trim().length >= 3),
   );
+  const moneyRaw =
+    candidate.nmck ??
+    candidate.supportAmount ??
+    candidate.askingPrice ??
+    candidate.startingPrice ??
+    candidate.currentPrice ??
+    null;
+  // Plausible RUB amounts only — reject tiny garbage extractions (e.g. 8, 22)
   const moneyOk =
-    candidate.nmck != null ||
-    candidate.supportAmount != null ||
-    candidate.askingPrice != null ||
-    candidate.startingPrice != null ||
-    candidate.currentPrice != null ||
-    candidate.priceStatus === "KNOWN";
+    (moneyRaw != null && moneyRaw >= 10_000) ||
+    (candidate.priceStatus === "KNOWN" && moneyRaw != null && moneyRaw >= 10_000);
   const deadlineOk = Boolean(candidate.deadlineAt);
   const idOk = Boolean(candidate.sourceObjectId);
-  const detailOk = page === "DETAIL" && !candidate.isCatalogSource;
+  const detailOk =
+    page === "DETAIL" &&
+    !candidate.isCatalogSource &&
+    !urlLooksList &&
+    !urlLooksNews &&
+    !isDemoStub;
   const dq = candidate.dataQualityScore ?? candidate.score?.quality ?? 0;
 
   let score = 0;
@@ -100,7 +130,7 @@ export function computePublishability(
   if (regionOk) score += 15;
   else reasons.push("unknown_region");
   if (moneyOk) score += 15;
-  else reasons.push("unknown_money");
+  else reasons.push("unknown_or_implausible_money");
   if (deadlineOk) score += 10;
   else reasons.push("unknown_deadline");
   if (idOk) score += 10;
@@ -118,18 +148,21 @@ export function computePublishability(
   score = Math.max(0, Math.min(100, score));
 
   let tier: PublishabilityTier;
-  if (isJunkPage && score < 40) {
+  if (isDemoStub || urlLooksList || urlLooksNews) {
+    tier = "WEAK_SOURCE";
+  } else if (isJunkPage && score < 40) {
     tier = "WEAK_SOURCE";
   } else if (
     detailOk &&
     hasUrl &&
     title.length >= 3 &&
-    (regionOk || moneyOk || idOk) &&
+    // READY needs substance: region+money OR official id + (region|money)
+    ((regionOk && moneyOk) || (idOk && (regionOk || moneyOk))) &&
     score >= 55 &&
     !isJunkPage
   ) {
     tier = "READY_TO_REVIEW";
-  } else if (hasUrl && title.length >= 3 && score >= 35) {
+  } else if (hasUrl && title.length >= 3 && score >= 35 && !isDemoStub) {
     tier = "NEEDS_ENRICHMENT";
   } else {
     tier = "WEAK_SOURCE";
