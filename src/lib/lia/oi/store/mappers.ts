@@ -17,6 +17,20 @@ import type {
 
 export type OppRow = Record<string, unknown>;
 
+/** Persist only parseable absolute timestamps; Serper often returns "3 hours ago". */
+export function toDbTimestamptz(
+  value: string | null | undefined,
+): string | null {
+  if (value == null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  // Reject relative / human phrases early
+  if (/ago|yesterday|today|час|дн|недел|месяц/i.test(raw)) return null;
+  const ms = Date.parse(raw);
+  if (Number.isNaN(ms)) return null;
+  return new Date(ms).toISOString();
+}
+
 export function candidateToRow(c: LiaOiCandidate): OppRow {
   return {
     id: c.id,
@@ -89,7 +103,7 @@ export function candidateToRow(c: LiaOiCandidate): OppRow {
     source_adapter_id: c.sourceAdapterId ?? "serper_general",
     source_confidence: c.sourceConfidence ?? c.score.confidence ?? null,
     is_official_source: c.isOfficialSource ?? false,
-    deadline_at: c.deadlineAt ?? null,
+    deadline_at: toDbTimestamptz(c.deadlineAt),
     days_remaining: c.daysRemaining ?? null,
     discovery_json: {},
     normalized_json: {
@@ -262,17 +276,19 @@ export function rowToSearchRequest(row: OppRow): LiaOiSearchRequest {
 }
 
 export function sourceToRow(s: LiaOiSourceRef, opportunityId: string): OppRow {
+  const discoveredAt =
+    toDbTimestamptz(s.discoveredAt) ?? new Date().toISOString();
   return {
     id: s.id,
     opportunity_id: opportunityId,
     category: s.category ?? "WEB",
     name: s.name ?? "",
     url: s.url,
-    published_at: s.publishedAt ?? null,
-    discovered_at: s.discoveredAt ?? null,
+    published_at: toDbTimestamptz(s.publishedAt),
+    discovered_at: discoveredAt,
     // PostgREST sends JSON null when undefined — NOT NULL DEFAULT would not apply
     is_stub: s.isStub ?? false,
-    retrieved_at: s.discoveredAt ?? new Date().toISOString(),
+    retrieved_at: discoveredAt,
     canonical_url: s.url,
     snippet: null,
     fetch_status: null,
