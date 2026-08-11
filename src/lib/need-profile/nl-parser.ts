@@ -42,7 +42,7 @@ function extractIndustries(text: string): string[] {
   const out: string[] = [];
   const map: Array<[RegExp, string]> = [
     [/производств/i, "manufacturing"],
-    [/гостиниц|отель|hotel|гостев/i, "hospitality"],
+    [/гостиниц|гостинич|отель|hotel|гостев/i, "hospitality"],
     [/строительств/i, "construction"],
     [/напитк|вод[аы]|beverage/i, "beverage"],
     [/недвижим|участ|соток|площадк|земл/i, "real-estate"],
@@ -107,7 +107,7 @@ export function parseNeedProfileDrafts(rawText: string): ParseNeedDraftResult {
     );
   const seekPartner = /партн[её]р/i.test(lower);
   const landPlot = /участ|соток|площадк|земл/i.test(lower);
-  const hotel = /гостиниц|отель/i.test(lower);
+  const hotel = /гостиниц|гостинич|отель/i.test(lower);
 
   // Scenario A — INVEST
   if (investLike && !seekInvestment) {
