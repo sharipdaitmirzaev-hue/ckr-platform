@@ -285,7 +285,19 @@ export async function runOwnerSearchPipeline(input: {
 
   // search_runs first — opportunities.search_run_id and link tables FK to it
   await saveSearchRequest(request);
-  await upsertCandidates(feed, { searchRunId: request.id });
+  const { candidates: persistedFeed } = await upsertCandidates(feed, {
+    searchRunId: request.id,
+  });
+  // Rediscovery may keep an existing id — remap API payloads to persisted rows
+  const remapByIndex = new Map(
+    feed.map((c, i) => [c.id, persistedFeed[i] ?? c] as const),
+  );
+  const remap = (c: LiaOiCandidate) => remapByIndex.get(c.id) ?? c;
+  const persistedTop = top.map(remap);
+  const persistedNeeds = bucketed.needsResearch.map(remap);
+  const persistedCatalogs = bucketed.catalogs.map(remap);
+  const persistedRejected = bucketed.rejected.map(remap);
+  request.candidateIds = persistedFeed.map((c) => c.id);
 
   const modeLine =
     modeInfo.mode === "live"
@@ -309,7 +321,7 @@ export async function runOwnerSearchPipeline(input: {
       "Search Plan queries:",
       ...plan.queries.map((q, i) => `  ${i + 1}. ${q}`),
       "",
-      ...top.slice(0, 5).map(
+      ...persistedTop.slice(0, 5).map(
         (c, i) =>
           `${i + 1}. [${c.contentIntent}/${c.pageType}] ${c.title} — ${c.budgetFit} · opp ${c.score.opportunity}/100`,
       ),
@@ -319,8 +331,9 @@ export async function runOwnerSearchPipeline(input: {
     stats: {
       afterDedup: stats.afterDedup,
       analyzed: stats.analyzed,
-      highPriority: top.filter((c) => c.score.priority === "HIGH_PRIORITY")
-        .length,
+      highPriority: persistedTop.filter(
+        (c) => c.score.priority === "HIGH_PRIORITY",
+      ).length,
       providerErrors: stats.providerErrors,
       detailPages: stats.detailPages ?? 0,
       topOpportunities: stats.topOpportunities ?? 0,
@@ -330,24 +343,24 @@ export async function runOwnerSearchPipeline(input: {
       pagesFetched: stats.pagesFetched ?? 0,
       queriesRun: stats.queriesRun,
     },
-    candidateIds: feed.map((c) => c.id),
+    candidateIds: persistedFeed.map((c) => c.id),
     createdAt: new Date().toISOString(),
     stubMode: modeInfo.mode === "stub",
   };
   await addReport(report);
 
-  await maybeBuildHypotheses(feed);
+  await maybeBuildHypotheses(persistedFeed);
 
   return {
     request,
     plan,
     signalsScanned: stats.signalsRaw,
     afterDedup: stats.afterDedup,
-    candidates: feed,
-    topOpportunities: top,
-    needsResearch: bucketed.needsResearch,
-    sourceCatalogs: bucketed.catalogs,
-    rejected: bucketed.rejected,
+    candidates: persistedFeed,
+    topOpportunities: persistedTop,
+    needsResearch: persistedNeeds,
+    sourceCatalogs: persistedCatalogs,
+    rejected: persistedRejected,
     stubMode: modeInfo.mode === "stub",
     searchMode: modeInfo.mode,
     providerLabel: modeInfo.providerLabel,
