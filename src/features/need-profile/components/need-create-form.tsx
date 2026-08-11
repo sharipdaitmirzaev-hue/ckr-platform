@@ -5,9 +5,23 @@ import {
   type NeedActionState,
 } from "@/features/need-profile/actions";
 import { NEED_ONBOARDING_CARDS } from "@/config/need-intents";
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 const initial: NeedActionState = {};
+
+function SubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending || disabled}
+      className="rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+    >
+      Сохранить потребность
+    </button>
+  );
+}
 
 export function NeedCreateForm({
   defaultIntent,
@@ -15,10 +29,7 @@ export function NeedCreateForm({
   defaultIntent?: string;
 }) {
   const [intent, setIntent] = useState(defaultIntent || "");
-  const [state, action, pending] = useActionState(
-    createNeedProfileAction,
-    initial,
-  );
+  const [state, action] = useFormState(createNeedProfileAction, initial);
 
   return (
     <form action={action} className="space-y-4">
@@ -108,13 +119,7 @@ export function NeedCreateForm({
       {state.error ? (
         <p className="text-sm text-red-700">{state.error}</p>
       ) : null}
-      <button
-        type="submit"
-        disabled={pending || !intent}
-        className="rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-      >
-        Сохранить потребность
-      </button>
+      <SubmitButton disabled={!intent} />
     </form>
   );
 }

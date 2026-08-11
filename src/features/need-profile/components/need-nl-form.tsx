@@ -5,16 +5,39 @@ import {
   parseNeedNlAction,
   type NeedActionState,
 } from "@/features/need-profile/actions";
-import { useActionState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 const initial: NeedActionState = {};
 
-export function NeedNlForm() {
-  const [parseState, parseAction, parsePending] = useActionState(
-    parseNeedNlAction,
-    initial,
+function ParseButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+    >
+      Разобрать запрос
+    </button>
   );
-  const [confirmState, confirmAction, confirmPending] = useActionState(
+}
+
+function ConfirmButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+    >
+      Подтвердить и сохранить
+    </button>
+  );
+}
+
+export function NeedNlForm() {
+  const [parseState, parseAction] = useFormState(parseNeedNlAction, initial);
+  const [confirmState, confirmAction] = useFormState(
     confirmNeedDraftsAction,
     initial,
   );
@@ -32,13 +55,7 @@ export function NeedNlForm() {
             className="mt-1 w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
           />
         </label>
-        <button
-          type="submit"
-          disabled={parsePending}
-          className="rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-        >
-          Разобрать запрос
-        </button>
+        <ParseButton />
       </form>
 
       {parseState.error ? (
@@ -60,13 +77,7 @@ export function NeedNlForm() {
               LLM/парсер только предлагает структуру. Сохранение — только после
               подтверждения.
             </p>
-            <button
-              type="submit"
-              disabled={confirmPending}
-              className="rounded-sm bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            >
-              Подтвердить и сохранить
-            </button>
+            <ConfirmButton />
           </form>
           {confirmState.error ? (
             <p className="text-sm text-red-700">{confirmState.error}</p>

@@ -6,9 +6,32 @@ import {
   rejectGraphEdgeAction,
   type GraphActionState,
 } from "@/features/business-graph/actions";
-import { useActionState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 const initial: GraphActionState = {};
+
+function ActionButton({
+  label,
+  variant = "default",
+}: {
+  label: string;
+  variant?: "default" | "accent";
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={
+        variant === "accent"
+          ? "rounded-sm bg-accent px-2 py-1 text-xs text-white disabled:opacity-60"
+          : "rounded-sm border border-border px-2 py-1 text-xs text-foreground disabled:opacity-60"
+      }
+    >
+      {label}
+    </button>
+  );
+}
 
 export function EdgeOwnerActions({
   edgeId,
@@ -17,15 +40,15 @@ export function EdgeOwnerActions({
   edgeId: string;
   nodeId: string;
 }) {
-  const [confirmState, confirmAction, confirmPending] = useActionState(
+  const [confirmState, confirmAction] = useFormState(
     confirmGraphEdgeAction,
     initial,
   );
-  const [rejectState, rejectAction, rejectPending] = useActionState(
+  const [rejectState, rejectAction] = useFormState(
     rejectGraphEdgeAction,
     initial,
   );
-  const [commentState, commentAction, commentPending] = useActionState(
+  const [commentState, commentAction] = useFormState(
     commentGraphEdgeAction,
     initial,
   );
@@ -49,13 +72,7 @@ export function EdgeOwnerActions({
             placeholder="Комментарий (опц.)"
             className="rounded-sm border border-border bg-surface px-2 py-1 text-xs"
           />
-          <button
-            type="submit"
-            disabled={confirmPending}
-            className="rounded-sm bg-accent px-2 py-1 text-xs text-white disabled:opacity-60"
-          >
-            Подтвердить
-          </button>
+          <ActionButton label="Подтвердить" variant="accent" />
         </form>
         <form action={rejectAction} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="edgeId" value={edgeId} />
@@ -63,15 +80,9 @@ export function EdgeOwnerActions({
           <input
             name="comment"
             placeholder="Причина (опц.)"
-            className="rounded-sm border border-border bg-surface px-2 py-1 text-xs"
+            className="rounded-sm border border-border px-2 py-1 text-xs"
           />
-          <button
-            type="submit"
-            disabled={rejectPending}
-            className="rounded-sm border border-border px-2 py-1 text-xs text-foreground disabled:opacity-60"
-          >
-            Отклонить
-          </button>
+          <ActionButton label="Отклонить" />
         </form>
       </div>
       <form action={commentAction} className="flex flex-wrap items-center gap-2">
@@ -83,13 +94,7 @@ export function EdgeOwnerActions({
           placeholder="Комментарий владельца"
           className="min-w-[180px] flex-1 rounded-sm border border-border bg-surface px-2 py-1 text-xs"
         />
-        <button
-          type="submit"
-          disabled={commentPending}
-          className="rounded-sm border border-border px-2 py-1 text-xs text-foreground disabled:opacity-60"
-        >
-          Сохранить комментарий
-        </button>
+        <ActionButton label="Сохранить комментарий" />
       </form>
       {message ? (
         <p className="text-xs text-muted">{message}</p>

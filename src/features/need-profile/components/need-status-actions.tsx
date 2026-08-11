@@ -4,9 +4,22 @@ import {
   setNeedStatusAction,
   type NeedActionState,
 } from "@/features/need-profile/actions";
-import { useActionState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 const initial: NeedActionState = {};
+
+function StatusButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-sm border border-border px-3 py-1.5 text-xs disabled:opacity-60"
+    >
+      {label}
+    </button>
+  );
+}
 
 export function NeedStatusActions({
   id,
@@ -15,7 +28,7 @@ export function NeedStatusActions({
   id: string;
   status: string;
 }) {
-  const [state, action, pending] = useActionState(setNeedStatusAction, initial);
+  const [state, action] = useFormState(setNeedStatusAction, initial);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -23,52 +36,28 @@ export function NeedStatusActions({
         <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="ACTIVE" />
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-sm border border-border px-3 py-1.5 text-xs"
-          >
-            Активировать
-          </button>
+          <StatusButton label="Активировать" />
         </form>
       ) : null}
       {status === "ACTIVE" ? (
         <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="PAUSED" />
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-sm border border-border px-3 py-1.5 text-xs"
-          >
-            Пауза
-          </button>
+          <StatusButton label="Пауза" />
         </form>
       ) : null}
       {status !== "FULFILLED" ? (
         <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="FULFILLED" />
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-sm border border-border px-3 py-1.5 text-xs"
-          >
-            Исполнено
-          </button>
+          <StatusButton label="Исполнено" />
         </form>
       ) : null}
       {status !== "ARCHIVED" ? (
         <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="ARCHIVED" />
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-sm border border-border px-3 py-1.5 text-xs"
-          >
-            В архив
-          </button>
+          <StatusButton label="В архив" />
         </form>
       ) : null}
       {state.error ? (
