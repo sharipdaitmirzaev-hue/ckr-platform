@@ -248,12 +248,13 @@ export function sourceToRow(s: LiaOiSourceRef, opportunityId: string): OppRow {
   return {
     id: s.id,
     opportunity_id: opportunityId,
-    category: s.category,
-    name: s.name,
+    category: s.category ?? "WEB",
+    name: s.name ?? "",
     url: s.url,
     published_at: s.publishedAt ?? null,
     discovered_at: s.discoveredAt ?? null,
-    is_stub: s.isStub,
+    // PostgREST sends JSON null when undefined — NOT NULL DEFAULT would not apply
+    is_stub: s.isStub ?? false,
     retrieved_at: s.discoveredAt ?? new Date().toISOString(),
     canonical_url: s.url,
     snippet: null,
