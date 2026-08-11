@@ -1,7 +1,11 @@
 /**
  * Stage 4C — Controlled Publish tests (in-memory).
  * Run: npx tsx scripts/test-lia-controlled-publish-stage4c.ts
+ * Forces memory OI store so production LIA_OI_STORE=supabase is not mutated.
  */
+process.env.LIA_OI_STORE = "memory";
+process.env.BUSINESS_GRAPH_STORE = process.env.BUSINESS_GRAPH_STORE || "memory";
+
 import assert from "node:assert/strict";
 import { emptyScore } from "../src/lib/lia/oi/score";
 import {
