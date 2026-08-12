@@ -84,6 +84,9 @@ async function main() {
     const chrome = read("src/components/layout/public-chrome.tsx");
     assert.match(chrome, /isLanding/);
     assert.match(chrome, /pathname === \"\/\"/);
+    const widget = read("src/components/lia/lia-widget.tsx");
+    assert.match(widget, /pathname === \"\/\"/);
+    assert.match(widget, /pathname === \"\/idea\"/);
   });
 
   await test("idea form supports optional contacts + no-contact submit", () => {

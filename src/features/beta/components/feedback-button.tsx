@@ -55,7 +55,12 @@ export function FeedbackButton() {
     });
   }
 
-  if (pathname.startsWith("/admin")) {
+  // Stage 4I — keep first public screens chrome-free.
+  if (
+    pathname === "/" ||
+    pathname === "/idea" ||
+    pathname.startsWith("/admin")
+  ) {
     return null;
   }
 
