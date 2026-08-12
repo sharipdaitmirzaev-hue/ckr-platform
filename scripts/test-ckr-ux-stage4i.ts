@@ -58,18 +58,18 @@ async function main() {
         status: "IN_PROGRESS",
         organizationName: "ТИНДА",
       }),
-      "Ищет покупателей для ТИНДА",
+      "ЦКР ищет покупателей для ТИНДА.",
     );
     assert.equal(
       describeCkrNow({
         requestType: "IDEA",
         status: "NEW",
       }),
-      "Оценивает вашу идею",
+      "ЦКР изучает вашу идею.",
     );
     assert.match(
       describeNextStepPublic({ status: "IN_PROGRESS" }),
-      /От вас пока ничего не требуется/i,
+      /Пока ничего|не требуется/i,
     );
   });
 
@@ -144,6 +144,8 @@ async function main() {
       dashboardNavStandard.some((i) => i.label === "Возможности для вас"),
     );
     assert.ok(dashboardNavStandard.some((i) => i.label === "Что вам нужно"));
+    // Stage 4J: idea is CTA, not STANDARD menu item
+    assert.ok(!dashboardNavStandard.some((i) => i.href === "/idea"));
     assert.ok(
       dashboardNavAdvanced.some((i) => i.href === "/dashboard/projects"),
     );
