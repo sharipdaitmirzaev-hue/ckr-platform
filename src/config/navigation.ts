@@ -57,28 +57,33 @@ export const publicNav: NavItem[] = [
   { label: "Контакты", href: "/contacts", description: "Связь с ЦКР" },
 ];
 
-/** Stage 4H — BASIC cabinet (default for new users). */
+/** Stage 4H/4J — BASIC cabinet (default for new users). */
 export const dashboardNavBasic: NavItem[] = [
   { label: "Главная", href: "/dashboard" },
   { label: "Мои обращения", href: "/dashboard/ckr-requests" },
-  { label: "Расскажите идею", href: "/idea" },
+  { label: "Рассказать идею", href: "/idea" },
   { label: "Профиль", href: "/dashboard/settings" },
 ];
 
-/** STANDARD — after CKR review / when needs or company exist. */
+/**
+ * STANDARD — after CKR review / when needs or company exist.
+ * Stage 4J: idea CTA stays in header/empty states, not a heavy menu item.
+ */
 export const dashboardNavStandard: NavItem[] = [
-  ...dashboardNavBasic,
+  { label: "Главная", href: "/dashboard" },
+  { label: "Мои обращения", href: "/dashboard/ckr-requests" },
   { label: "Моя компания", href: "/partner" },
   { label: "Что вам нужно", href: "/dashboard/needs" },
   { label: "Возможности для вас", href: "/dashboard/for-you" },
   { label: "Уведомления", href: "/dashboard/notifications" },
+  { label: "Профиль", href: "/dashboard/settings" },
 ];
 
 /** ADVANCED — full platform tools (existing catalog kept). */
 export const dashboardNavAdvanced: NavItem[] = [
   { label: "Главная", href: "/dashboard" },
   { label: "Мои обращения", href: "/dashboard/ckr-requests" },
-  { label: "Расскажите идею", href: "/idea" },
+  { label: "Рассказать идею", href: "/idea" },
   { label: "Моя компания", href: "/partner" },
   { label: "Мои проекты", href: "/dashboard/projects" },
   { label: "Что вам нужно", href: "/dashboard/needs" },

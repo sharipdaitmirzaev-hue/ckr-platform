@@ -292,7 +292,12 @@ export async function addCkrRequestCommentAction(formData: FormData): Promise<vo
   await appendEvent({
     requestId: id,
     eventType: visibility === "CLIENT" ? "CLIENT_MESSAGE" : "COMMENT_ADDED",
-    title: visibility === "CLIENT" ? "Ответ клиенту" : "Внутренний комментарий",
+    title:
+      visibility === "CLIENT"
+        ? isStaff
+          ? "Сообщение от ЦКР"
+          : "Вы написали ЦКР"
+        : "Внутренний комментарий",
     detail: body.slice(0, 200),
     visibility,
     actorUserId: current.user.id,
