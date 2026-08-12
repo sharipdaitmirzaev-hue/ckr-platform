@@ -1,0 +1,400 @@
+import { Badge } from "@/components/ui/badge";
+import { SectionHeading } from "@/components/ui/section-heading";
+import {
+  CKR_REQUEST_PRIORITIES,
+  CKR_REQUEST_STATUSES,
+  ckrRequestPriorityLabels,
+  ckrRequestStatusLabels,
+  ckrRequestTypeLabels,
+  intentDraftFromRequestType,
+} from "@/config/ckr-inbox";
+import {
+  addCkrRequestCommentAction,
+  assignCkrRequestAction,
+  createNeedFromCkrRequestAction,
+  createTaskFromCkrRequestAction,
+  createDealFromCkrRequestAction,
+  generateLiaBriefAction,
+  updateCkrRequestPriorityAction,
+  updateCkrRequestStatusAction,
+} from "@/features/ckr-inbox/actions";
+import { requireStaff } from "@/lib/auth/require-staff";
+import {
+  getCkrRequestById,
+  listCkrComments,
+  listCkrEvents,
+} from "@/lib/ckr-inbox/queries";
+import { getOrganizationById } from "@/lib/partners/queries";
+import { createClient } from "@/lib/supabase/server";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  return { title: `Заявка ${params.id.slice(0, 8)} · Inbox` };
+}
+
+export default async function OwnerInboxDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const staff = await requireStaff(`/admin/owner/inbox/${params.id}`);
+  const request = await getCkrRequestById(params.id);
+  if (!request) notFound();
+
+  const [comments, events, org] = await Promise.all([
+    listCkrComments(request.id),
+    listCkrEvents(request.id),
+    request.organizationId
+      ? getOrganizationById(request.organizationId)
+      : Promise.resolve(null),
+  ]);
+
+  const supabase = createClient();
+  const { data: assigneeProfile } = request.assignedTo
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("id", request.assignedTo)
+        .maybeSingle()
+    : { data: null };
+  const { data: fromProfile } = await supabase
+    .from("profiles")
+    .select("id, full_name, phone")
+    .eq("id", request.fromUserId)
+    .maybeSingle();
+
+  const draft = intentDraftFromRequestType(request.requestType);
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
+      <div>
+        <Link
+          href="/admin/owner/inbox"
+          className="text-sm text-accent hover:underline"
+        >
+          ← Inbox
+        </Link>
+        <SectionHeading
+          className="mt-3"
+          eyebrow="Карточка заявки"
+          title={request.subject || "Обращение в ЦКР"}
+          description={`${ckrRequestTypeLabels[request.requestType]} · ${ckrRequestStatusLabels[request.status]}`}
+        />
+      </div>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-lg">Заявитель</h2>
+        <p className="text-sm">
+          {fromProfile?.full_name || request.fromUserId}
+          {org ? (
+            <>
+              {" · "}
+              <Link
+                href={`/organizations/${org.id}`}
+                className="text-accent hover:underline"
+              >
+                {org.name}
+              </Link>{" "}
+              ({org.type}) · {org.region || "регион?"}
+            </>
+          ) : null}
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-lg">Заявка</h2>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="soft">{ckrRequestStatusLabels[request.status]}</Badge>
+          <Badge variant="accent">
+            {ckrRequestPriorityLabels[request.priority]}
+          </Badge>
+          <Badge variant="soft">{request.source}</Badge>
+        </div>
+        <p className="whitespace-pre-wrap text-sm text-foreground">
+          {request.body}
+        </p>
+        <p className="text-xs text-muted">
+          {new Date(request.createdAt).toLocaleString("ru-RU")}
+          {request.sourceId ? ` · source ${request.sourceTable}:${request.sourceId}` : ""}
+        </p>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <form action={updateCkrRequestStatusAction} className="space-y-2">
+          <input type="hidden" name="requestId" value={request.id} />
+          <label className="block text-sm">
+            Статус
+            <select
+              name="status"
+              defaultValue={request.status}
+              className="mt-1 h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+            >
+              {CKR_REQUEST_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {ckrRequestStatusLabels[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="submit"
+            className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
+          >
+            Обновить статус
+          </button>
+        </form>
+
+        <form action={updateCkrRequestPriorityAction} className="space-y-2">
+          <input type="hidden" name="requestId" value={request.id} />
+          <label className="block text-sm">
+            Приоритет
+            <select
+              name="priority"
+              defaultValue={request.priority}
+              className="mt-1 h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+            >
+              {CKR_REQUEST_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {ckrRequestPriorityLabels[p]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="submit"
+            className="rounded-sm border border-border px-3 py-2 text-sm"
+          >
+            Обновить приоритет
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-lg">Ответственный</h2>
+        <p className="text-sm text-muted">
+          Сейчас: {assigneeProfile?.full_name || request.assignedTo || "не назначен"}
+        </p>
+        <form action={assignCkrRequestAction} className="flex flex-wrap gap-2">
+          <input type="hidden" name="requestId" value={request.id} />
+          <input
+            name="assignedTo"
+            defaultValue={request.assignedTo || staff.user.id}
+            placeholder="user id"
+            className="h-10 min-w-[16rem] flex-1 rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
+          >
+            Назначить
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg">Need Profile</h2>
+        {request.needProfileId ? (
+          <p className="text-sm">
+            Связан:{" "}
+            <code className="text-xs">{request.needProfileId}</code>
+          </p>
+        ) : (
+          <p className="text-sm text-muted">
+            Черновик: {draft.intentType} — {draft.hint}. Подтвердите создание.
+          </p>
+        )}
+        <form action={createNeedFromCkrRequestAction} className="space-y-2">
+          <input type="hidden" name="requestId" value={request.id} />
+          <input
+            name="intentType"
+            defaultValue={draft.intentType}
+            className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <input
+            name="title"
+            defaultValue={request.subject}
+            className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <textarea
+            name="description"
+            defaultValue={request.body}
+            rows={3}
+            className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+          />
+          <input
+            name="regions"
+            defaultValue={request.region || "Дагестан"}
+            className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <input
+            name="linkExistingId"
+            placeholder="Или ID существующего Need Profile"
+            className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="confirm" /> Подтверждаю создание Need
+            Profile
+          </label>
+          <button
+            type="submit"
+            className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
+          >
+            Создать / связать потребность
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg">Поручить Лие · Brief</h2>
+        <form action={generateLiaBriefAction}>
+          <input type="hidden" name="requestId" value={request.id} />
+          <button
+            type="submit"
+            className="rounded-sm border border-border px-3 py-2 text-sm"
+          >
+            Подготовить LIA brief (без MATCHES / outreach)
+          </button>
+        </form>
+        {request.liaBrief ? (
+          <pre className="overflow-auto rounded-sm border border-border bg-surface p-3 text-xs">
+            {JSON.stringify(request.liaBrief, null, 2)}
+          </pre>
+        ) : null}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg">Задача</h2>
+        <form action={createTaskFromCkrRequestAction} className="space-y-2">
+          <input type="hidden" name="requestId" value={request.id} />
+          <input
+            name="title"
+            defaultValue="Связаться с клиентом"
+            className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <input
+            name="description"
+            defaultValue="Уточнить объём и ассортимент"
+            className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-sm border border-border px-3 py-2 text-sm"
+          >
+            Создать задачу
+          </button>
+        </form>
+        {request.linkedTaskId ? (
+          <p className="text-xs text-muted">Task: {request.linkedTaskId}</p>
+        ) : null}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg">Сделка</h2>
+        {request.dealId ? (
+          <p className="text-sm">
+            Связана: <code className="text-xs">{request.dealId}</code>
+          </p>
+        ) : (
+          <form action={createDealFromCkrRequestAction} className="space-y-2">
+            <input type="hidden" name="requestId" value={request.id} />
+            <input
+              name="projectId"
+              required
+              placeholder="UUID проекта (обязательно)"
+              className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+            />
+            <input
+              name="description"
+              defaultValue={request.subject}
+              className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-sm border border-border px-3 py-2 text-sm"
+            >
+              Создать сделку (вручную)
+            </button>
+          </form>
+        )}
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <form action={addCkrRequestCommentAction} className="space-y-2">
+          <h2 className="font-display text-lg">Комментарий для ЦКР</h2>
+          <input type="hidden" name="requestId" value={request.id} />
+          <input type="hidden" name="visibility" value="INTERNAL" />
+          <textarea
+            name="body"
+            rows={3}
+            required
+            className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+            placeholder="Внутренняя заметка (клиент не видит)"
+          />
+          <button
+            type="submit"
+            className="rounded-sm border border-border px-3 py-2 text-sm"
+          >
+            Сохранить internal
+          </button>
+        </form>
+        <form action={addCkrRequestCommentAction} className="space-y-2">
+          <h2 className="font-display text-lg">Ответ клиенту</h2>
+          <input type="hidden" name="requestId" value={request.id} />
+          <input type="hidden" name="visibility" value="CLIENT" />
+          <textarea
+            name="body"
+            rows={3}
+            required
+            className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+            placeholder="Публичный ответ заявителю"
+          />
+          <button
+            type="submit"
+            className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
+          >
+            Отправить клиенту
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-lg">Комментарии</h2>
+        <ul className="space-y-2 text-sm">
+          {comments.map((c) => (
+            <li key={c.id} className="border-b border-border pb-2">
+              <Badge variant={c.visibility === "CLIENT" ? "accent" : "soft"}>
+                {c.visibility === "CLIENT" ? "Клиенту" : "ЦКР"}
+              </Badge>{" "}
+              <span className="text-muted">
+                {c.authorName || c.authorId.slice(0, 8)} ·{" "}
+                {new Date(c.createdAt).toLocaleString("ru-RU")}
+              </span>
+              <p className="mt-1 whitespace-pre-wrap">{c.body}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-lg">История</h2>
+        <ul className="space-y-1 text-sm text-muted">
+          {events.map((e) => (
+            <li key={e.id}>
+              <span className="text-foreground">{e.eventType}</span> — {e.title}
+              {e.detail ? `: ${e.detail}` : ""} ·{" "}
+              {new Date(e.createdAt).toLocaleString("ru-RU")}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}

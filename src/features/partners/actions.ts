@@ -319,6 +319,17 @@ export async function createPartnershipAction(
 
   if (error) return { error: error.message };
 
+  // Stage 4G — mirror partnership request into CKR Inbox (idempotent).
+  if (data?.id) {
+    try {
+      await supabase.rpc("ensure_ckr_request_from_partnership", {
+        p_partnership_id: data.id,
+      });
+    } catch {
+      /* inbox migration may be pending */
+    }
+  }
+
   const { recordEntityHistory } = await import(
     "@/lib/reputation/ensure-profile"
   );

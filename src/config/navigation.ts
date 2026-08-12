@@ -60,6 +60,7 @@ export const dashboardNav: NavItem[] = [
   { label: "Мои инвестиции", href: "/dashboard/investments" },
   { label: "Профиль эксперта", href: "/dashboard/expert" },
   { label: "Заявки", href: "/dashboard/applications" },
+  { label: "Обращения в ЦКР", href: "/dashboard/ckr-requests" },
   { label: "Уведомления", href: "/dashboard/notifications" },
   { label: "Сообщения", href: "/messages" },
   { label: "Активность", href: "/dashboard/activity" },
