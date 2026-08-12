@@ -22,7 +22,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Кабинет организации — ЦКР",
+  title: "Моя компания — ЦКР",
 };
 
 export const dynamic = "force-dynamic";
@@ -85,7 +85,7 @@ export default async function PartnerHomePage({
   return (
     <div className="space-y-10">
       <SectionHeading
-        eyebrow="Партнёрская сеть ЦКР"
+        eyebrow="Моя компания"
         title={org.name}
         description={`${organizationTypeLabels[org.type]} · ${
           organizationVerificationLabels[org.verificationStatus]

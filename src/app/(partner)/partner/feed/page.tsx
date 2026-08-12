@@ -28,9 +28,9 @@ export default async function PartnerCompanyFeedPage() {
   return (
     <div className="space-y-8">
       <SectionHeading
-        eyebrow="Компания"
+        eyebrow="Моя компания"
         title="Возможности для компании"
-        description={`${org.name}. Feed v1 через Need Profiles организации. Matching Engine не используется.`}
+        description={`${org.name}. Персональные варианты для компании — отдельно от общего каталога сайта.`}
       />
 
       <p className="text-sm space-x-3">
@@ -41,24 +41,24 @@ export default async function PartnerCompanyFeedPage() {
           Карточка компании
         </Link>
         <Link href="/dashboard/needs/new" className="text-accent hover:underline">
-          Добавить потребность
+          Что нужно компании
         </Link>
       </p>
 
       <section className="space-y-2">
-        <h2 className="font-display text-lg">Need Profiles организации</h2>
+        <h2 className="font-display text-lg">Запросы компании</h2>
         {bundle.needsUsed.length ? (
           <ul className="text-sm text-muted">
             {bundle.needsUsed.map((n) => (
               <li key={n.id}>
-                {n.intentType} — {n.title}
+                {n.title || n.intentType}
               </li>
             ))}
           </ul>
         ) : (
           <p className="text-sm text-muted">
-            Нет ACTIVE needs с owner_type=organization. Создайте SEEK_BUYER /
-            SEEK_CONTRACT и укажите организацию владельцем.
+            Пока нет активных запросов компании. Добавьте, что ищете — например
+            покупателей или контракт.
           </p>
         )}
       </section>

@@ -25,11 +25,15 @@ export function LiaWidget({
 }: LiaWidgetProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Stage 4I — public first screen and idea entry must not require/show LIA.
   const hideFloating =
+    pathname === "/" ||
+    pathname === "/idea" ||
     pathname === "/lia" ||
     pathname?.startsWith("/login") ||
     pathname?.startsWith("/register") ||
-    pathname?.startsWith("/admin");
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/dashboard");
 
   if (embedded) {
     return (

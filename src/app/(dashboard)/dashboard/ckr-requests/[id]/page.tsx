@@ -1,16 +1,16 @@
-import { Badge } from "@/components/ui/badge";
 import { SectionHeading } from "@/components/ui/section-heading";
-import {
-  ckrRequestStatusLabels,
-  ckrRequestTypeLabels,
-} from "@/config/ckr-inbox";
 import { addCkrRequestCommentAction } from "@/features/ckr-inbox/actions";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import {
+  describeCkrNow,
+  describeNextStepPublic,
+} from "@/lib/ckr-inbox/client-presentation";
 import {
   getCkrRequestById,
   listCkrComments,
   listCkrEvents,
 } from "@/lib/ckr-inbox/queries";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -27,13 +27,33 @@ export default async function ClientCkrRequestDetailPage({
   const request = await getCkrRequestById(params.id);
   if (!request) notFound();
 
-  // Defense in depth — RLS already filters; hide internal if somehow leaked
   const [comments, events] = await Promise.all([
     listCkrComments(request.id),
     listCkrEvents(request.id),
   ]);
   const clientComments = comments.filter((c) => c.visibility === "CLIENT");
   const clientEvents = events.filter((e) => e.visibility === "CLIENT");
+
+  let organizationName: string | null = null;
+  if (request.organizationId) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", request.organizationId)
+      .maybeSingle();
+    organizationName = (data as { name?: string } | null)?.name || null;
+  }
+
+  const nowText = describeCkrNow({
+    requestType: request.requestType,
+    status: request.status,
+    organizationName,
+  });
+  const nextText = describeNextStepPublic({
+    status: request.status,
+    nextStepPublic: request.nextStepPublic,
+  });
 
   return (
     <div className="space-y-8">
@@ -44,18 +64,28 @@ export default async function ClientCkrRequestDetailPage({
         ← Мои обращения
       </Link>
       <SectionHeading
-        title={request.subject}
-        description={`${ckrRequestTypeLabels[request.requestType]} · ${ckrRequestStatusLabels[request.status]}`}
+        title={organizationName || request.subject || "Обращение в ЦКР"}
+        description={nowText}
       />
 
-      <section className="space-y-2">
-        <Badge variant="soft">{ckrRequestStatusLabels[request.status]}</Badge>
-        <p className="whitespace-pre-wrap text-sm">{request.body}</p>
-        {request.nextStepPublic ? (
-          <p className="text-sm text-muted">
-            Следующий шаг: {request.nextStepPublic}
+      <section className="space-y-3 rounded-sm border border-border bg-surface/50 p-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">
+            Сейчас ЦКР
           </p>
-        ) : null}
+          <p className="mt-1 font-display text-lg text-foreground">{nowText}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">
+            Следующий шаг
+          </p>
+          <p className="mt-1 text-sm text-foreground">{nextText}</p>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-lg">Ваша идея / запрос</h2>
+        <p className="whitespace-pre-wrap text-sm">{request.body}</p>
       </section>
 
       <section className="space-y-2">
@@ -95,11 +125,15 @@ export default async function ClientCkrRequestDetailPage({
 
       <section className="space-y-1 text-sm text-muted">
         <h2 className="font-display text-lg text-foreground">История</h2>
-        {clientEvents.map((e) => (
-          <p key={e.id}>
-            {e.title} · {new Date(e.createdAt).toLocaleString("ru-RU")}
-          </p>
-        ))}
+        {clientEvents.length ? (
+          clientEvents.map((e) => (
+            <p key={e.id}>
+              {e.title} · {new Date(e.createdAt).toLocaleString("ru-RU")}
+            </p>
+          ))
+        ) : (
+          <p>История появится по мере работы ЦКР.</p>
+        )}
       </section>
     </div>
   );

@@ -47,7 +47,7 @@ export default async function DashboardLayout({
               href="/idea"
               className="hidden text-sm text-accent transition-colors hover:underline sm:inline"
             >
-              Рассказать идею
+              Расскажите идею
             </Link>
             <Link
               href="/"

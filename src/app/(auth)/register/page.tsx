@@ -14,25 +14,11 @@ export default function RegisterPage() {
     <Card as="div" variant="surface" className="p-6 sm:p-8">
       <RegistrationStartedTracker />
       <h1 className="font-display text-2xl font-semibold text-foreground">
-        Регистрация
+        Создать аккаунт
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Создайте аккаунт в экосистеме ЦКР. Путь: Главная → Лия → Регистрация →
-        Роль → Онбординг → Первое действие.
-      </p>
-
-      <ol className="mt-4 space-y-1 text-xs text-muted">
-        <li>1. Регистрация</li>
-        <li>2. Роль и профиль</li>
-        <li>3. Онбординг с подсказкой по роли</li>
-        <li>4. Первое действие (идея/проект, интерес, профиль, партнёры)</li>
-      </ol>
-      <p className="mt-3 text-xs text-muted">
-        Ещё до регистрации можно спросить Лию на{" "}
-        <Link href="/lia" className="text-accent hover:underline">
-          /lia
-        </Link>
-        .
+        Аккаунт нужен, чтобы следить за рассмотрением идеи, получать ответы ЦКР
+        и продолжить работу. Отправить идею можно и без регистрации.
       </p>
 
       <Suspense fallback={<p className="mt-8 text-sm text-muted">Загрузка формы…</p>}>
@@ -43,6 +29,12 @@ export default function RegisterPage() {
         Уже есть аккаунт?{" "}
         <Link href="/login" className="text-accent hover:underline">
           Войти
+        </Link>
+      </p>
+      <p className="mt-3 text-sm text-muted">
+        Хотите сначала рассказать идею?{" "}
+        <Link href="/idea" className="text-accent hover:underline">
+          Перейти к форме
         </Link>
       </p>
     </Card>

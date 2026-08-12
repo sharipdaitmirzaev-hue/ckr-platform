@@ -10,12 +10,12 @@ import { redirect } from "next/navigation";
 /** After login/register — claim anonymous IDEA from httpOnly cookie. */
 export async function claimIdeaFromCookieAction(): Promise<void> {
   const current = await getCurrentUser();
-  if (!current) redirect("/login?next=/dashboard/ckr-requests?claim=1");
+  if (!current) redirect("/login?next=/dashboard?claim=1");
 
   const jar = cookies();
   const claim = decodeClaimCookie(jar.get(IDEA_FORM.claimCookie)?.value);
   if (!claim) {
-    redirect("/dashboard/ckr-requests");
+    redirect("/dashboard");
   }
 
   const result = await claimPublicIdea({
