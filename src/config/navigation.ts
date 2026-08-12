@@ -41,41 +41,56 @@ export const mainNav: NavItem[] = [
     description: "Что такое ЦКР, как работает и принципы доверия",
   },
   {
-    label: "Лия",
-    href: "/lia",
-    description: "ИИ-навигатор: идея → ресурсы → решение",
-  },
-  {
     label: "О ЦКР",
     href: "/about",
     description: "Миссия и подход ЦКР",
   },
 ];
 
-export const dashboardNav: NavItem[] = [
-  { label: "Обзор", href: "/dashboard" },
-  { label: "Организация", href: "/partner" },
+/** Stage 4H — BASIC cabinet (default for new users). */
+export const dashboardNavBasic: NavItem[] = [
+  { label: "Главная", href: "/dashboard" },
+  { label: "Мои обращения", href: "/dashboard/ckr-requests" },
+  { label: "Рассказать идею", href: "/idea" },
+  { label: "Профиль", href: "/dashboard/settings" },
+];
+
+/** STANDARD — after CKR review / when needs or company exist. */
+export const dashboardNavStandard: NavItem[] = [
+  ...dashboardNavBasic,
+  { label: "Моя компания", href: "/partner" },
+  { label: "Потребности", href: "/dashboard/needs" },
+  { label: "Для вас", href: "/dashboard/for-you" },
+  { label: "Уведомления", href: "/dashboard/notifications" },
+];
+
+/** ADVANCED — full platform tools (existing catalog kept). */
+export const dashboardNavAdvanced: NavItem[] = [
+  { label: "Главная", href: "/dashboard" },
+  { label: "Мои обращения", href: "/dashboard/ckr-requests" },
+  { label: "Рассказать идею", href: "/idea" },
+  { label: "Моя компания", href: "/partner" },
   { label: "Мои проекты", href: "/dashboard/projects" },
+  { label: "Потребности", href: "/dashboard/needs" },
+  { label: "Для вас", href: "/dashboard/for-you" },
   { label: "Мои возможности", href: "/dashboard/opportunities" },
   { label: "Мои инвестиции", href: "/dashboard/investments" },
   { label: "Профиль эксперта", href: "/dashboard/expert" },
-  { label: "Заявки", href: "/dashboard/applications" },
-  { label: "Обращения в ЦКР", href: "/dashboard/ckr-requests" },
+  { label: "Заявки marketplace", href: "/dashboard/applications" },
   { label: "Уведомления", href: "/dashboard/notifications" },
   { label: "Сообщения", href: "/messages" },
-  { label: "Активность", href: "/dashboard/activity" },
-  { label: "Оплата", href: "/dashboard/billing" },
-  { label: "Потребности", href: "/dashboard/needs" },
-  { label: "Для вас", href: "/dashboard/for-you" },
-  { label: "Интересы", href: "/dashboard/interests" },
   { label: "Документы", href: "/dashboard/documents" },
-  { label: "Настройки", href: "/dashboard/settings" },
+  { label: "Профиль", href: "/dashboard/settings" },
 ];
+
+/** @deprecated alias — prefer resolveDashboardNav() */
+export const dashboardNav = dashboardNavAdvanced;
 
 export const authNav = {
   login: { label: "Войти", href: "/login" },
   register: { label: "Регистрация", href: "/register" },
   dashboard: { label: "Кабинет", href: "/dashboard" },
+  idea: { label: "Рассказать идею", href: "/idea" },
 } as const;
 
 export const adminNav: NavItem[] = [

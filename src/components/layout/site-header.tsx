@@ -57,12 +57,15 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
             </ButtonLink>
           ) : (
             <>
+              <ButtonLink href={authNav.idea.href} variant="primary" size="sm">
+                {authNav.idea.label}
+              </ButtonLink>
               <ButtonLink href={authNav.login.href} variant="ghost" size="sm">
                 {authNav.login.label}
               </ButtonLink>
               <ButtonLink
                 href={authNav.register.href}
-                variant="primary"
+                variant="outline"
                 size="sm"
               >
                 {authNav.register.label}
@@ -128,10 +131,13 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
               </ButtonLink>
             ) : (
               <>
+                <ButtonLink href={authNav.idea.href} variant="primary">
+                  {authNav.idea.label}
+                </ButtonLink>
                 <ButtonLink href={authNav.login.href} variant="ghost">
                   {authNav.login.label}
                 </ButtonLink>
-                <ButtonLink href={authNav.register.href} variant="primary">
+                <ButtonLink href={authNav.register.href} variant="outline">
                   {authNav.register.label}
                 </ButtonLink>
               </>

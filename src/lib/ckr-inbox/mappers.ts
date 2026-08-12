@@ -35,6 +35,11 @@ export function mapCkrRequestRow(row: CkrRequestRow): CkrRequest {
     region: row.region || "",
     liaBrief: row.lia_brief,
     idempotencyKey: row.idempotency_key,
+    contactName: row.contact_name || "",
+    contactPhone: row.contact_phone || "",
+    contactEmail: row.contact_email || "",
+    contactTelegram: row.contact_telegram || "",
+    claimedAt: row.claimed_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

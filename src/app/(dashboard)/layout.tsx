@@ -3,6 +3,10 @@ import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { Container } from "@/components/ui/container";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import {
+  resolveCabinetContext,
+  resolveDashboardNav,
+} from "@/lib/cabinet/access";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -19,6 +23,15 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const cabinet = await resolveCabinetContext(current.user.id, current.roles);
+  const navItems = resolveDashboardNav(cabinet);
+  const accessLabel =
+    cabinet.accessLevel === "basic"
+      ? "Базовый кабинет"
+      : cabinet.accessLevel === "standard"
+        ? "Стандартный доступ"
+        : "Расширенный доступ";
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-border bg-background/90 backdrop-blur-md">
@@ -31,6 +44,12 @@ export default async function DashboardLayout({
           </div>
           <div className="flex items-center gap-3">
             <Link
+              href="/idea"
+              className="hidden text-sm text-accent transition-colors hover:underline sm:inline"
+            >
+              Рассказать идею
+            </Link>
+            <Link
               href="/"
               className="text-sm text-muted transition-colors hover:text-accent"
             >
@@ -42,7 +61,11 @@ export default async function DashboardLayout({
       </header>
 
       <Container className="grid gap-6 py-8 md:grid-cols-[240px_1fr] lg:gap-8">
-        <DashboardSidebar isAdmin={current.roles.includes("admin")} />
+        <DashboardSidebar
+          isAdmin={current.roles.includes("admin")}
+          items={navItems}
+          accessLabel={accessLabel}
+        />
         <div>{children}</div>
       </Container>
     </div>

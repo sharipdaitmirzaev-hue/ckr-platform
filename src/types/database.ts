@@ -1010,6 +1010,7 @@ export type ProfileRow = {
   phone: string | null;
   city: string | null;
   region: string | null;
+  ckr_access_level?: string;
   created_at: string;
   updated_at: string;
 };

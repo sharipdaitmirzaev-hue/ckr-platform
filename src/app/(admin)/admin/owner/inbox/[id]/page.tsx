@@ -4,10 +4,12 @@ import {
   CKR_REQUEST_PRIORITIES,
   CKR_REQUEST_STATUSES,
   ckrRequestPriorityLabels,
+  ckrRequestSourceLabels,
   ckrRequestStatusLabels,
   ckrRequestTypeLabels,
   intentDraftFromRequestType,
 } from "@/config/ckr-inbox";
+import { setUserCabinetAccessAction } from "@/features/idea-first/access-actions";
 import {
   addCkrRequestCommentAction,
   assignCkrRequestAction,
@@ -65,13 +67,22 @@ export default async function OwnerInboxDetailPage({
         .eq("id", request.assignedTo)
         .maybeSingle()
     : { data: null };
-  const { data: fromProfile } = await supabase
-    .from("profiles")
-    .select("id, full_name, phone")
-    .eq("id", request.fromUserId)
-    .maybeSingle();
+  const { data: fromProfile } = request.fromUserId
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name, phone")
+        .eq("id", request.fromUserId)
+        .maybeSingle()
+    : { data: null };
 
   const draft = intentDraftFromRequestType(request.requestType);
+  const contactBits = [
+    request.contactPhone && `тел. ${request.contactPhone}`,
+    request.contactTelegram && `Telegram ${request.contactTelegram}`,
+    request.contactEmail && request.contactEmail,
+  ].filter(Boolean);
+  const isAnonymousIdea =
+    !request.fromUserId && request.source === "public_idea_form";
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
@@ -84,7 +95,7 @@ export default async function OwnerInboxDetailPage({
         </Link>
         <SectionHeading
           className="mt-3"
-          eyebrow="Карточка заявки"
+          eyebrow={isAnonymousIdea ? "Новая идея" : "Карточка заявки"}
           title={request.subject || "Обращение в ЦКР"}
           description={`${ckrRequestTypeLabels[request.requestType]} · ${ckrRequestStatusLabels[request.status]}`}
         />
@@ -93,7 +104,13 @@ export default async function OwnerInboxDetailPage({
       <section className="space-y-2">
         <h2 className="font-display text-lg">Заявитель</h2>
         <p className="text-sm">
-          {fromProfile?.full_name || request.fromUserId}
+          {request.contactName ||
+            fromProfile?.full_name ||
+            request.fromUserId ||
+            "Без имени"}
+          {isAnonymousIdea ? (
+            <span className="text-muted"> · без регистрации</span>
+          ) : null}
           {org ? (
             <>
               {" · "}
@@ -107,6 +124,12 @@ export default async function OwnerInboxDetailPage({
             </>
           ) : null}
         </p>
+        <p className="text-sm text-muted">
+          Контакт:{" "}
+          {contactBits.length
+            ? contactBits.join(" · ")
+            : "Не указан"}
+        </p>
       </section>
 
       <section className="space-y-2">
@@ -116,7 +139,9 @@ export default async function OwnerInboxDetailPage({
           <Badge variant="accent">
             {ckrRequestPriorityLabels[request.priority]}
           </Badge>
-          <Badge variant="soft">{request.source}</Badge>
+          <Badge variant="soft">
+            {ckrRequestSourceLabels[request.source] || request.source}
+          </Badge>
         </div>
         <p className="whitespace-pre-wrap text-sm text-foreground">
           {request.body}
@@ -263,12 +288,47 @@ export default async function OwnerInboxDetailPage({
             Подготовить LIA brief (без MATCHES / outreach)
           </button>
         </form>
+        <p className="text-xs text-muted">
+          Если Лия недоступна — разбор выполняется вручную. Flow обращения не
+          зависит от AI.
+        </p>
         {request.liaBrief ? (
           <pre className="overflow-auto rounded-sm border border-border bg-surface p-3 text-xs">
             {JSON.stringify(request.liaBrief, null, 2)}
           </pre>
         ) : null}
       </section>
+
+      {request.fromUserId ? (
+        <section className="space-y-2">
+          <h2 className="font-display text-lg">Доступ кабинета пользователя</h2>
+          <p className="text-xs text-muted">
+            Progressive disclosure: basic → standard → advanced. Не создаёт
+            Project/Need автоматически.
+          </p>
+          <form
+            action={setUserCabinetAccessAction}
+            className="flex flex-wrap gap-2"
+          >
+            <input type="hidden" name="userId" value={request.fromUserId} />
+            <select
+              name="accessLevel"
+              defaultValue="standard"
+              className="h-10 rounded-sm border border-border bg-surface px-3 text-sm"
+            >
+              <option value="basic">basic</option>
+              <option value="standard">standard</option>
+              <option value="advanced">advanced</option>
+            </select>
+            <button
+              type="submit"
+              className="rounded-sm border border-border px-3 py-2 text-sm"
+            >
+              Открыть доступ
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="font-display text-lg">Задача</h2>

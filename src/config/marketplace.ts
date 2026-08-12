@@ -1,25 +1,23 @@
 /** Публичный Marketplace Layer (этап 48). */
 
 export const MARKETPLACE_HERO = {
-  title: "ЦКР — платформа, где идеи, бизнес и ресурсы находят друг друга",
+  title: "Расскажите нам вашу идею",
   description:
-    "Предприниматели, инвесторы, эксперты и организации работают в одной экосистеме.",
+    "Не обязательно иметь готовый бизнес-план. Опишите своими словами, что хотите сделать, что у вас уже есть и чего не хватает. ЦКР изучит идею и предложит следующие шаги.",
   ctas: [
-    { label: "Создать проект", href: "/lia?scenario=business_idea" },
-    { label: "Найти возможности", href: "/opportunities" },
-    { label: "Стать экспертом", href: "/expert" },
-    { label: "Инвестировать", href: "/investments" },
+    { label: "Рассказать идею", href: "/idea" },
+    { label: "Смотреть возможности", href: "/opportunities" },
+    { label: "Войти", href: "/login" },
   ],
 } as const;
 
 /** Полный путь «Как работает ЦКР» на главной. */
 export const MARKETPLACE_JOURNEY = [
   "Идея",
-  "Анализ Лии",
-  "Проект",
-  "Ресурсы",
-  "Партнёры",
-  "Реализация",
+  "Обращение в ЦКР",
+  "Разбор",
+  "Инструменты",
+  "Результат",
 ] as const;
 
 export const MARKETPLACE_ROLE_CARDS = [
@@ -59,8 +57,8 @@ export const TINDA_PUBLIC_CASE = {
 
 export const PUBLIC_LIA_PROMPTS = [
   {
-    label: "У меня есть идея",
-    href: "/lia?scenario=business_idea&message=" + encodeURIComponent("У меня есть идея"),
+    label: "Рассказать идею ЦКР",
+    href: "/idea",
   },
   {
     label: "Мне нужен ресурс",

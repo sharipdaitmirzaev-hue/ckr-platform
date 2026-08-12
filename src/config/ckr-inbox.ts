@@ -56,6 +56,7 @@ export const CKR_REQUEST_TYPES = [
   "SUPPORT",
   "EXPERT",
   "CKR_SERVICE",
+  "IDEA",
   "OTHER",
 ] as const;
 
@@ -75,6 +76,7 @@ export const ckrRequestTypeLabels: Record<CkrRequestType, string> = {
   SUPPORT: "Поддержка / меры",
   EXPERT: "Эксперт",
   CKR_SERVICE: "Услуга ЦКР",
+  IDEA: "Идея",
   OTHER: "Другое",
 };
 
@@ -85,10 +87,22 @@ export const CKR_REQUEST_SOURCES = [
   "verification",
   "need_profile",
   "manual",
+  "public_idea_form",
   "other",
 ] as const;
 
 export type CkrRequestSource = (typeof CKR_REQUEST_SOURCES)[number];
+
+export const ckrRequestSourceLabels: Record<CkrRequestSource, string> = {
+  direct: "Кабинет",
+  partnership: "Партнёрство",
+  marketplace_application: "Заявка marketplace",
+  verification: "Верификация",
+  need_profile: "Need Profile",
+  manual: "Вручную",
+  public_idea_form: "Сайт ЦКР · без регистрации",
+  other: "Другое",
+};
 
 export const CKR_COMMENT_VISIBILITIES = ["INTERNAL", "CLIENT"] as const;
 export type CkrCommentVisibility = (typeof CKR_COMMENT_VISIBILITIES)[number];
@@ -104,6 +118,8 @@ export const CKR_REQUEST_EVENT_TYPES = [
   "DEAL_CREATED",
   "CLIENT_MESSAGE",
   "LIA_BRIEF",
+  "CLAIMED",
+  "CONTACT_ADDED",
   "COMPLETED",
   "REJECTED",
 ] as const;
@@ -156,6 +172,8 @@ export function intentDraftFromRequestType(
       return { intentType: "SEEK_SUPPORT", hint: "Меры поддержки" };
     case "PROCUREMENT":
       return { intentType: "SEEK_CONTRACT", hint: "Контракт / закупка" };
+    case "IDEA":
+      return { intentType: "SEEK_PARTNER", hint: "Идея — уточнить intent после review" };
     default:
       return { intentType: "SEEK_PARTNER", hint: "Общий запрос" };
   }
