@@ -62,6 +62,7 @@ function fakeRequest(
     linkedTaskId: null,
     nextStepPublic: "",
     nextStepInternal: "",
+    publicActivityText: "",
     region: "",
     liaBrief: null,
     idempotencyKey: null,

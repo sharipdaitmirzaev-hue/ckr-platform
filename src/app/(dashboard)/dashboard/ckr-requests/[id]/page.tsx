@@ -91,6 +91,7 @@ export default async function ClientCkrRequestDetailPage({
     requestType: request.requestType,
     status: request.status,
     organizationName,
+    publicActivityText: request.publicActivityText,
   });
   const need = describeWhatYouNeed({
     status: request.status,

@@ -122,6 +122,8 @@ export const CKR_REQUEST_EVENT_TYPES = [
   "CONTACT_ADDED",
   "COMPLETED",
   "REJECTED",
+  "PUBLIC_ACTIVITY_UPDATED",
+  "NEXT_STEP_UPDATED",
 ] as const;
 
 export type CkrRequestEventType = (typeof CKR_REQUEST_EVENT_TYPES)[number];

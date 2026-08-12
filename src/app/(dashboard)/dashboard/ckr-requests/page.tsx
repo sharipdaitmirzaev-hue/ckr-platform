@@ -118,6 +118,7 @@ export default async function ClientCkrRequestsPage({
                       requestType: item.requestType,
                       status: item.status,
                       organizationName: org,
+                      publicActivityText: item.publicActivityText,
                     })}
                   </p>
                   <Link

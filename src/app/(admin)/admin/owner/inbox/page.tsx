@@ -7,6 +7,7 @@ import {
 } from "@/config/ckr-inbox";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { getInboxStats, listCkrRequests } from "@/lib/ckr-inbox/queries";
+import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -40,6 +41,21 @@ export default async function OwnerInboxPage({
     }),
     getInboxStats(),
   ]);
+
+  const assigneeIds = [
+    ...new Set(items.map((i) => i.assignedTo).filter(Boolean)),
+  ] as string[];
+  const assigneeNames = new Map<string, string>();
+  if (assigneeIds.length) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", assigneeIds);
+    for (const row of data || []) {
+      assigneeNames.set(row.id, row.full_name || row.id.slice(0, 8));
+    }
+  }
 
   const buckets = [
     { id: "all", label: "Все", count: stats.newCount + stats.inProgress + stats.waiting + stats.done },
@@ -102,34 +118,47 @@ export default async function OwnerInboxPage({
       </form>
 
       <ul className="space-y-3">
-        {items.map((item) => (
-          <li key={item.id} className="border-b border-border pb-3">
-            <Link
-              href={`/admin/owner/inbox/${item.id}`}
-              className="block space-y-1 hover:opacity-90"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-foreground">
-                  {item.subject || "Без темы"}
-                </span>
-                <Badge variant="soft">
-                  {ckrRequestStatusLabels[item.status]}
-                </Badge>
-                <Badge variant="accent">
-                  {ckrRequestTypeLabels[item.requestType]}
-                </Badge>
-                <Badge variant="soft">
-                  {ckrRequestPriorityLabels[item.priority]}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted line-clamp-2">{item.body}</p>
-              <p className="text-xs text-muted">
-                {item.region || "регион?"} · {item.source} ·{" "}
-                {new Date(item.createdAt).toLocaleString("ru-RU")}
-              </p>
-            </Link>
-          </li>
-        ))}
+        {items.map((item) => {
+          const waitingClient = item.status === "WAITING_CLIENT";
+          const needsCkrAction =
+            item.status === "NEW" || item.status === "IN_REVIEW";
+          return (
+            <li key={item.id} className="border-b border-border pb-3">
+              <Link
+                href={`/admin/owner/inbox/${item.id}`}
+                className="block space-y-1 hover:opacity-90"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-foreground">
+                    {item.subject || "Без темы"}
+                  </span>
+                  <Badge variant="soft">
+                    {ckrRequestStatusLabels[item.status]}
+                  </Badge>
+                  <Badge variant="accent">
+                    {ckrRequestTypeLabels[item.requestType]}
+                  </Badge>
+                  <Badge variant="soft">
+                    {ckrRequestPriorityLabels[item.priority]}
+                  </Badge>
+                  {waitingClient ? (
+                    <Badge variant="accent">Ждём клиента</Badge>
+                  ) : needsCkrAction ? (
+                    <Badge variant="soft">Нужно действие ЦКР</Badge>
+                  ) : null}
+                </div>
+                <p className="text-sm text-muted line-clamp-2">{item.body}</p>
+                <p className="text-xs text-muted">
+                  {item.region || "регион?"} · {item.source}
+                  {item.assignedTo
+                    ? ` · ${assigneeNames.get(item.assignedTo) || "назначен"}`
+                    : " · без ответственного"}{" "}
+                  · {new Date(item.createdAt).toLocaleString("ru-RU")}
+                </p>
+              </Link>
+            </li>
+          );
+        })}
         {!items.length ? (
           <p className="text-sm text-muted">
             Очередь пуста. Импортируйте партнёрства или дождитесь прямых заявок.

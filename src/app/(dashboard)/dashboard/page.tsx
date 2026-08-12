@@ -138,6 +138,7 @@ export default async function DashboardPage({
                 requestType: primary.requestType,
                 status: primary.status,
                 organizationName: primaryOrg,
+                publicActivityText: primary.publicActivityText,
               })}
             </p>
           </div>
@@ -222,6 +223,7 @@ export default async function DashboardPage({
                         requestType: r.requestType,
                         status: r.status,
                         organizationName: org,
+                        publicActivityText: r.publicActivityText,
                       })}
                     </p>
                   </Link>
