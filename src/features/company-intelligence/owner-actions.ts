@@ -74,16 +74,28 @@ export async function ownerSeedCompanyAction(
     };
   }
 
-  const { data, error } = await supabase
+  const { data: orgId, error } = await supabase.rpc(
+    "create_organization_with_owner",
+    {
+      p_name: name,
+      p_type: type,
+      p_description: description,
+      p_website: website,
+      p_region: region,
+      p_city: city,
+    },
+  );
+
+  if (error || !orgId) {
+    return { error: error?.message || "Не удалось создать." };
+  }
+
+  const data = { id: orgId as string };
+
+  const { error: enrichError } = await supabase
     .from("organizations")
-    .insert({
-      name,
-      type,
-      region,
-      city,
+    .update({
       industry,
-      website,
-      description,
       legal_name: legalName,
       inn,
       ogrn,
@@ -92,15 +104,12 @@ export async function ownerSeedCompanyAction(
       products_services: productsServices,
       source_url: sourceUrl || website,
       source_label: sourceLabel || "owner_manual_seed",
-      created_by: session.user.id,
       verification_status: markVerified ? "verified" : "unverified",
       is_listed: true,
     })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    return { error: error?.message || "Не удалось создать." };
+    .eq("id", data.id);
+  if (enrichError) {
+    return { error: enrichError.message };
   }
 
   await supabase.from("organization_events").insert({

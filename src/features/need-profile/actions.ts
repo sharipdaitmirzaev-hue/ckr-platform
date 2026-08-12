@@ -151,6 +151,18 @@ export async function createNeedProfileAction(
       actor_user_id: current.user.id,
     });
 
+    if (ownerType === "organization") {
+      await supabase.from("organization_events").insert({
+        organization_id: ownerId,
+        event_type: "need_created",
+        title: `Need Profile · ${intentType}`,
+        detail: title,
+        visibility: "CKR_ONLY",
+        actor_user_id: current.user.id,
+        meta: { need_profile_id: data.id },
+      });
+    }
+
     // Optional graph bridge when store is supabase
     try {
       if (resolveBusinessGraphStoreMode() === "supabase") {

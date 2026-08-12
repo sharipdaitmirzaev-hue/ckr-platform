@@ -53,41 +53,75 @@ export async function createOrganizationAction(
   }
 
   const supabase = createClient();
-  const { data, error } = await supabase
+  // Atomic RPC: created_by forced to auth.uid(); owner membership in same TX.
+  // Avoids INSERT…RETURNING RLS trap and client-side created_by spoofing.
+  const { data: orgId, error } = await supabase.rpc(
+    "create_organization_with_owner",
+    {
+      p_name: name,
+      p_type: type,
+      p_description: description,
+      p_website: website,
+      p_region: region,
+      p_city: city,
+    },
+  );
+
+  if (error || !orgId) {
+    return { error: error?.message ?? "Не удалось создать организацию." };
+  }
+
+  const data = { id: orgId as string };
+
+  // Stage 4F fields after membership exists (owner can update).
+  const { error: enrichError } = await supabase
     .from("organizations")
-    .insert({
-      name,
-      type,
-      description,
-      website,
-      region,
-      city,
+    .update({
       industry,
       legal_name: legalName,
       inn,
       ogrn,
       offers_summary: offersSummary,
       seeks_summary: seeksSummary,
-      created_by: session.user.id,
-      verification_status: "unverified",
     })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    return { error: error?.message ?? "Не удалось создать организацию." };
+    .eq("id", data.id);
+  if (enrichError) {
+    return { error: enrichError.message };
   }
 
-  const { error: memberError } = await supabase
-    .from("organization_members")
-    .insert({
-      organization_id: data.id,
-      user_id: session.user.id,
-      role: "owner",
-    });
+  await supabase.from("organization_events").insert({
+    organization_id: data.id,
+    event_type: "created",
+    title: "Организация создана",
+    detail: name,
+    visibility: "CKR_ONLY",
+    actor_user_id: session.user.id,
+  });
 
-  if (memberError) {
-    return { error: memberError.message };
+  try {
+    const graph = (await import("@/lib/business-graph/service")).getBusinessGraphService();
+    await graph.bridgeFromOrganization({
+      id: data.id,
+      name,
+      description,
+      region,
+      city,
+      website,
+      inn,
+      ogrn,
+      industry,
+      verificationStatus: "unverified",
+    });
+    await supabase.from("organization_events").insert({
+      organization_id: data.id,
+      event_type: "graph_bridged",
+      title: "Связь с Business Graph",
+      detail: "COMPANY node",
+      visibility: "CKR_ONLY",
+      actor_user_id: session.user.id,
+    });
+  } catch {
+    /* graph optional / memory store */
   }
 
   // Добавим роль company на платформе, если её ещё нет
@@ -188,8 +222,21 @@ export async function updateOrganizationAction(
     .eq("id", orgId);
 
   if (error) return { error: error.message };
+
+  await supabase.from("organization_events").insert({
+    organization_id: orgId,
+    event_type: "profile_updated",
+    title: "Профиль обновлён",
+    detail: name,
+    visibility: "CKR_ONLY",
+    actor_user_id: session.user.id,
+  });
+
   revalidatePartner();
+  revalidatePath("/organizations");
+  revalidatePath(`/organizations/${orgId}`);
   return { success: "Профиль организации обновлён." };
+
 }
 
 export async function addOrganizationMemberAction(
