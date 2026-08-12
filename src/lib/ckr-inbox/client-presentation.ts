@@ -37,7 +37,14 @@ export function describeCkrNow(input: {
   requestType: CkrRequestType;
   status: CkrRequestStatus;
   organizationName?: string | null;
+  /** Stage 4K CUSTOM override; empty → AUTO (deterministic). */
+  publicActivityText?: string | null;
 }): string {
+  const custom = (input.publicActivityText || "")
+    .replace(/<[^>]*>/g, "")
+    .trim();
+  if (custom) return custom;
+
   const org = (input.organizationName || "").trim();
   const shortOrg = shortenOrgName(org);
   const { requestType: type, status } = input;
@@ -129,7 +136,7 @@ export function describeWhatYouNeed(input: {
   }
   return {
     needsAction: false,
-    text: "Пока ничего. Мы работаем с вашим обращением.",
+    text: "Пока ничего. ЦКР работает с вашим обращением.",
   };
 }
 
@@ -252,6 +259,9 @@ export function humanizeClientEvent(event: CkrRequestEvent): string | null {
       return title;
     }
     return title || "Сообщение по обращению";
+  }
+  if (type === "PUBLIC_ACTIVITY_UPDATED" || type === "NEXT_STEP_UPDATED") {
+    return "ЦКР обновил информацию по вашему обращению.";
   }
   if (type === "COMMENT_ADDED") {
     return null;

@@ -32,6 +32,7 @@ export function mapCkrRequestRow(row: CkrRequestRow): CkrRequest {
     linkedTaskId: row.linked_task_id,
     nextStepPublic: row.next_step_public || "",
     nextStepInternal: row.next_step_internal || "",
+    publicActivityText: row.public_activity_text || "",
     region: row.region || "",
     liaBrief: row.lia_brief,
     idempotencyKey: row.idempotency_key,

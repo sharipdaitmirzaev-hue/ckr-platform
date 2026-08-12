@@ -11,7 +11,6 @@ import {
 } from "@/config/ckr-inbox";
 import { setUserCabinetAccessAction } from "@/features/idea-first/access-actions";
 import {
-  addCkrRequestCommentAction,
   assignCkrRequestAction,
   createNeedFromCkrRequestAction,
   createTaskFromCkrRequestAction,
@@ -20,6 +19,7 @@ import {
   updateCkrRequestPriorityAction,
   updateCkrRequestStatusAction,
 } from "@/features/ckr-inbox/actions";
+import { OwnerClientCabinetPanel } from "@/features/ckr-inbox/components/owner-client-cabinet-panel";
 import { requireStaff } from "@/lib/auth/require-staff";
 import {
   getCkrRequestById,
@@ -83,6 +83,11 @@ export default async function OwnerInboxDetailPage({
   ].filter(Boolean);
   const isAnonymousIdea =
     !request.fromUserId && request.source === "public_idea_form";
+  const lastClientMessage =
+    [...comments]
+      .reverse()
+      .find((c) => c.visibility === "CLIENT")
+      ?.body || "";
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
@@ -152,11 +157,21 @@ export default async function OwnerInboxDetailPage({
         </p>
       </section>
 
+      <OwnerClientCabinetPanel
+        requestId={request.id}
+        status={request.status}
+        requestType={request.requestType}
+        organizationName={org?.name || null}
+        publicActivityText={request.publicActivityText}
+        nextStepPublic={request.nextStepPublic}
+        lastClientMessage={lastClientMessage}
+      />
+
       <section className="grid gap-6 lg:grid-cols-2">
         <form action={updateCkrRequestStatusAction} className="space-y-2">
           <input type="hidden" name="requestId" value={request.id} />
           <label className="block text-sm">
-            Статус
+            Статус (вручную)
             <select
               name="status"
               defaultValue={request.status}
@@ -169,6 +184,13 @@ export default async function OwnerInboxDetailPage({
               ))}
             </select>
           </label>
+          {request.status === "WAITING_CLIENT" &&
+          !request.nextStepPublic.trim() ? (
+            <p className="text-xs text-amber-700">
+              Статус «Ждём клиента», но next_step_public пуст — укажите, что
+              нужно от клиента в блоке выше.
+            </p>
+          ) : null}
           <button
             type="submit"
             className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
@@ -386,47 +408,12 @@ export default async function OwnerInboxDetailPage({
         )}
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <form action={addCkrRequestCommentAction} className="space-y-2">
-          <h2 className="font-display text-lg">Комментарий для ЦКР</h2>
-          <input type="hidden" name="requestId" value={request.id} />
-          <input type="hidden" name="visibility" value="INTERNAL" />
-          <textarea
-            name="body"
-            rows={3}
-            required
-            className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
-            placeholder="Внутренняя заметка (клиент не видит)"
-          />
-          <button
-            type="submit"
-            className="rounded-sm border border-border px-3 py-2 text-sm"
-          >
-            Сохранить internal
-          </button>
-        </form>
-        <form action={addCkrRequestCommentAction} className="space-y-2">
-          <h2 className="font-display text-lg">Ответ клиенту</h2>
-          <input type="hidden" name="requestId" value={request.id} />
-          <input type="hidden" name="visibility" value="CLIENT" />
-          <textarea
-            name="body"
-            rows={3}
-            required
-            className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
-            placeholder="Публичный ответ заявителю"
-          />
-          <button
-            type="submit"
-            className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
-          >
-            Отправить клиенту
-          </button>
-        </form>
-      </section>
-
       <section className="space-y-2">
         <h2 className="font-display text-lg">Комментарии</h2>
+        <p className="text-xs text-muted">
+          Новые сообщения — в блоке «Что видит клиент» (CLIENT / INTERNAL
+          разделены визуально).
+        </p>
         <ul className="space-y-2 text-sm">
           {comments.map((c) => (
             <li key={c.id} className="border-b border-border pb-2">

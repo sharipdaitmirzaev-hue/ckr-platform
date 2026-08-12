@@ -25,6 +25,8 @@ export type CkrRequest = {
   linkedTaskId: string | null;
   nextStepPublic: string;
   nextStepInternal: string;
+  /** CUSTOM «Сейчас ЦКР»; empty = AUTO Stage 4J text. */
+  publicActivityText: string;
   region: string;
   liaBrief: Record<string, unknown> | null;
   idempotencyKey: string | null;
@@ -78,6 +80,7 @@ export type CkrRequestRow = {
   linked_task_id: string | null;
   next_step_public: string;
   next_step_internal: string;
+  public_activity_text?: string | null;
   region: string;
   lia_brief: Record<string, unknown> | null;
   idempotency_key: string | null;
