@@ -30,6 +30,9 @@ export default function IdeaPage() {
         <p className="mt-4 text-base leading-relaxed text-muted">
           {IDEA_FORM.subtitle}
         </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Оставьте телефон или почту — ЦКР сможет ответить вам.
+        </p>
         <div className="mt-10 border border-border bg-surface/80 p-5 sm:p-8">
           <PublicIdeaForm />
         </div>

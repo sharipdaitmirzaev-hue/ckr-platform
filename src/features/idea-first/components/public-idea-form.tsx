@@ -4,7 +4,7 @@ import { IDEA_FORM } from "@/config/idea-first";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
-type Step = "form" | "contact" | "thanks";
+type Step = "form" | "thanks";
 
 export function PublicIdeaForm() {
   const [step, setStep] = useState<Step>("form");
@@ -24,7 +24,12 @@ export function PublicIdeaForm() {
     [],
   );
 
-  function goToContact() {
+  const hasContact =
+    phone.trim().length > 0 ||
+    email.trim().length > 0 ||
+    telegram.trim().length > 0;
+
+  function submitIdea() {
     setError(null);
     const trimmedName = name.trim();
     const trimmedIdea = idea.trim();
@@ -36,11 +41,7 @@ export function PublicIdeaForm() {
       setError("Расскажите идею чуть подробнее — своими словами.");
       return;
     }
-    setStep("contact");
-  }
 
-  function submitIdea(withContacts: boolean) {
-    setError(null);
     startTransition(async () => {
       const res = await fetch("/api/idea", {
         method: "POST",
@@ -50,9 +51,9 @@ export function PublicIdeaForm() {
           name,
           idea,
           idempotencyKey,
-          phone: withContacts ? phone : "",
-          email: withContacts ? email : "",
-          telegram: withContacts ? telegram : "",
+          phone,
+          email,
+          telegram,
         }),
       });
       const data = (await res.json()) as {
@@ -77,6 +78,16 @@ export function PublicIdeaForm() {
         <div>
           <h2 className="font-display text-2xl text-foreground">{title}</h2>
           <p className="mt-3 text-muted">{IDEA_FORM.thanksBody}</p>
+          {hasContact ? (
+            <p className="mt-2 text-sm text-muted">
+              Мы свяжемся с вами по оставленному контакту.
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-muted">
+              Контакт не указан. Создайте аккаунт или напишите позже — так
+              проще получить ответ ЦКР.
+            </p>
+          )}
           <p className="mt-4 text-sm leading-relaxed text-muted">
             {IDEA_FORM.thanksNext}
           </p>
@@ -99,83 +110,12 @@ export function PublicIdeaForm() {
     );
   }
 
-  if (step === "contact") {
-    return (
-      <div className="space-y-5">
-        <div>
-          <h2 className="font-display text-xl text-foreground">
-            {IDEA_FORM.contactTitle}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            {IDEA_FORM.contactPrompt}
-          </p>
-        </div>
-        <label className="block text-sm">
-          {IDEA_FORM.contactPhoneLabel}
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            type="tel"
-            autoComplete="tel"
-            className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          {IDEA_FORM.contactEmailLabel}
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            autoComplete="email"
-            className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          {IDEA_FORM.contactTelegramLabel}
-          <input
-            value={telegram}
-            onChange={(e) => setTelegram(e.target.value)}
-            placeholder="@username"
-            className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
-          />
-        </label>
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => submitIdea(true)}
-            className="rounded-sm bg-accent px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
-          >
-            {pending ? "Отправляем…" : IDEA_FORM.contactSubmit}
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => submitIdea(false)}
-            className="rounded-sm border border-border px-5 py-3 text-sm text-muted disabled:opacity-60"
-          >
-            {IDEA_FORM.contactSkip}
-          </button>
-        </div>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => setStep("form")}
-          className="text-sm text-muted hover:text-foreground"
-        >
-          ← Назад
-        </button>
-      </div>
-    );
-  }
-
   return (
     <form
-      className="space-y-4"
+      className="space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
-        goToContact();
+        submitIdea();
       }}
     >
       <label className="block text-sm">
@@ -188,29 +128,72 @@ export function PublicIdeaForm() {
           autoComplete="name"
         />
       </label>
+
       <label className="block text-sm">
         {IDEA_FORM.ideaLabel}
         <textarea
           required
           value={idea}
           onChange={(e) => setIdea(e.target.value)}
-          rows={8}
+          rows={7}
           maxLength={IDEA_FORM.maxIdeaLength}
           placeholder={IDEA_FORM.ideaPlaceholder}
           className="mt-1 w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm leading-relaxed"
         />
       </label>
+
+      <fieldset className="space-y-3 border-t border-border pt-5">
+        <legend className="font-display text-lg text-foreground">
+          {IDEA_FORM.contactTitle}
+        </legend>
+        <p className="text-sm leading-relaxed text-muted">
+          {IDEA_FORM.contactPrompt}
+        </p>
+        <label className="block text-sm">
+          {IDEA_FORM.contactPhoneLabel}
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            type="tel"
+            autoComplete="tel"
+            placeholder="+7 …"
+            className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+        </label>
+        <label className="block text-sm">
+          {IDEA_FORM.contactEmailLabel}
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            autoComplete="email"
+            placeholder="name@example.com"
+            className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+        </label>
+        <label className="block text-sm">
+          {IDEA_FORM.contactTelegramLabel}
+          <input
+            value={telegram}
+            onChange={(e) => setTelegram(e.target.value)}
+            placeholder="@username"
+            className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm"
+          />
+        </label>
+        <p className="text-xs text-muted">{IDEA_FORM.contactHint}</p>
+      </fieldset>
+
       {error ? <p className="text-sm text-danger">{error}</p> : null}
+
       <button
         type="submit"
         disabled={pending}
         className="rounded-sm bg-accent px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
       >
-        {IDEA_FORM.submit}
+        {pending ? "Отправляем…" : IDEA_FORM.submit}
       </button>
       <p className="text-xs text-muted">
-        Регистрация не нужна. Контакт можно оставить на следующем шаге или
-        пропустить.
+        Регистрация не нужна. Достаточно имени, идеи и любого удобного контакта.
       </p>
     </form>
   );

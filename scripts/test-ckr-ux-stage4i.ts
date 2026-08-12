@@ -89,17 +89,19 @@ async function main() {
     assert.match(widget, /pathname === \"\/idea\"/);
   });
 
-  await test("idea form supports optional contacts + no-contact submit", () => {
+  await test("idea form shows phone/email contact fields on one screen", () => {
     const form = read(
       "src/features/idea-first/components/public-idea-form.tsx",
     );
-    assert.match(form, /contactSkip|Продолжить без контактов/);
-    assert.match(form, /submitIdea\(false\)/);
-    assert.match(form, /submitIdea\(true\)/);
+    assert.match(form, /contactPhoneLabel|Телефон/);
+    assert.match(form, /contactEmailLabel|Электронная почта/);
+    assert.match(form, /contactTitle|Как с вами связаться/);
+    assert.match(form, /phone/);
+    assert.match(form, /email/);
     assert.match(form, /Создать аккаунт|createCabinet/);
     assert.match(form, /Сделать это позже|doLater/);
     assert.match(form, /claim=1/);
-    assert.equal(IDEA_FORM.contactSkip, "Продолжить без контактов");
+    assert.match(IDEA_FORM.contactPrompt, /телефон или почту/i);
   });
 
   await test("contacts remain optional in sanitize (empty ok)", () => {
