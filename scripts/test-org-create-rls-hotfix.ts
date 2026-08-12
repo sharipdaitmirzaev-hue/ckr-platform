@@ -118,7 +118,12 @@ async function main() {
     const admin = createClient(url!, serviceKey!, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    // Dedicated anonymous client — never call signIn on it.
     const anon = createClient(url!, anonKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    // Separate client for password logins (avoids contaminating anon).
+    const authClient = createClient(url!, anonKey!, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
@@ -152,7 +157,7 @@ async function main() {
       assert.ok(b.data.user?.id, b.error?.message);
       userB = b.data.user!.id;
 
-      const loginA = await anon.auth.signInWithPassword({
+      const loginA = await authClient.auth.signInWithPassword({
         email: emailA,
         password,
       });
@@ -166,7 +171,7 @@ async function main() {
         auth: { persistSession: false, autoRefreshToken: false },
       });
 
-      const loginB = await anon.auth.signInWithPassword({
+      const loginB = await authClient.auth.signInWithPassword({
         email: emailB,
         password,
       });
@@ -181,11 +186,18 @@ async function main() {
       });
 
       await test("anon cannot create organization", async () => {
-        const { error } = await anon.rpc("create_organization_with_owner", {
-          p_name: `Anon Blocked ${suffix}`,
+        const name = `Anon Blocked ${suffix}`;
+        const { data, error } = await anon.rpc("create_organization_with_owner", {
+          p_name: name,
           p_type: "company",
         });
         assert.ok(error, "anon must be denied");
+        assert.equal(data, null);
+        const { data: leaked } = await admin
+          .from("organizations")
+          .select("id")
+          .eq("name", name);
+        assert.equal((leaked ?? []).length, 0, "anon must not leave a row");
       });
 
       await test("authenticated user can create", async () => {

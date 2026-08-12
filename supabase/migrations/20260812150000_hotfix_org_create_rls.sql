@@ -92,7 +92,8 @@ declare
   v_org_id uuid;
   v_name text := nullif(btrim(p_name), '');
 begin
-  if v_uid is null then
+  -- Reject anon / missing JWT even if EXECUTE was mis-granted.
+  if v_uid is null or auth.role() is distinct from 'authenticated' then
     raise exception 'not authenticated' using errcode = '42501';
   end if;
 
@@ -158,6 +159,15 @@ revoke all on function public.create_organization_with_owner(
   text,
   text
 ) from public;
+
+revoke all on function public.create_organization_with_owner(
+  text,
+  public.organization_type,
+  text,
+  text,
+  text,
+  text
+) from anon;
 
 grant execute on function public.create_organization_with_owner(
   text,
