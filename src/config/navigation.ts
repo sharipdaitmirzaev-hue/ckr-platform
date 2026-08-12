@@ -4,6 +4,10 @@ export type NavItem = {
   description?: string;
 };
 
+/**
+ * Catalog / deep public sections — still available by URL and footer.
+ * Not shown as heavy primary nav on public chrome (Stage 4I).
+ */
 export const mainNav: NavItem[] = [
   {
     label: "Проекты",
@@ -47,11 +51,17 @@ export const mainNav: NavItem[] = [
   },
 ];
 
+/** Stage 4I — light public header (no marketplace clutter). */
+export const publicNav: NavItem[] = [
+  { label: "О ЦКР", href: "/about", description: "Миссия и подход ЦКР" },
+  { label: "Контакты", href: "/contacts", description: "Связь с ЦКР" },
+];
+
 /** Stage 4H — BASIC cabinet (default for new users). */
 export const dashboardNavBasic: NavItem[] = [
   { label: "Главная", href: "/dashboard" },
   { label: "Мои обращения", href: "/dashboard/ckr-requests" },
-  { label: "Рассказать идею", href: "/idea" },
+  { label: "Расскажите идею", href: "/idea" },
   { label: "Профиль", href: "/dashboard/settings" },
 ];
 
@@ -59,8 +69,8 @@ export const dashboardNavBasic: NavItem[] = [
 export const dashboardNavStandard: NavItem[] = [
   ...dashboardNavBasic,
   { label: "Моя компания", href: "/partner" },
-  { label: "Потребности", href: "/dashboard/needs" },
-  { label: "Для вас", href: "/dashboard/for-you" },
+  { label: "Что вам нужно", href: "/dashboard/needs" },
+  { label: "Возможности для вас", href: "/dashboard/for-you" },
   { label: "Уведомления", href: "/dashboard/notifications" },
 ];
 
@@ -68,11 +78,11 @@ export const dashboardNavStandard: NavItem[] = [
 export const dashboardNavAdvanced: NavItem[] = [
   { label: "Главная", href: "/dashboard" },
   { label: "Мои обращения", href: "/dashboard/ckr-requests" },
-  { label: "Рассказать идею", href: "/idea" },
+  { label: "Расскажите идею", href: "/idea" },
   { label: "Моя компания", href: "/partner" },
   { label: "Мои проекты", href: "/dashboard/projects" },
-  { label: "Потребности", href: "/dashboard/needs" },
-  { label: "Для вас", href: "/dashboard/for-you" },
+  { label: "Что вам нужно", href: "/dashboard/needs" },
+  { label: "Возможности для вас", href: "/dashboard/for-you" },
   { label: "Мои возможности", href: "/dashboard/opportunities" },
   { label: "Мои инвестиции", href: "/dashboard/investments" },
   { label: "Профиль эксперта", href: "/dashboard/expert" },
@@ -90,7 +100,7 @@ export const authNav = {
   login: { label: "Войти", href: "/login" },
   register: { label: "Регистрация", href: "/register" },
   dashboard: { label: "Кабинет", href: "/dashboard" },
-  idea: { label: "Рассказать идею", href: "/idea" },
+  idea: { label: "Расскажите нам вашу идею", href: "/idea" },
 } as const;
 
 export const adminNav: NavItem[] = [

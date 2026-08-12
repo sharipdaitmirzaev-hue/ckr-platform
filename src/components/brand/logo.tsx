@@ -5,7 +5,7 @@ import Link from "next/link";
 type LogoProps = {
   className?: string;
   href?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   showWordmark?: boolean;
 };
 
@@ -13,6 +13,7 @@ const sizes = {
   sm: { mark: "h-7 w-6", text: "text-lg", gap: "gap-2" },
   md: { mark: "h-8 w-7", text: "text-xl", gap: "gap-2.5" },
   lg: { mark: "h-12 w-10", text: "text-3xl", gap: "gap-3" },
+  xl: { mark: "h-16 w-14", text: "text-5xl", gap: "gap-4" },
 } as const;
 
 export function Logo({

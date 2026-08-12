@@ -44,19 +44,41 @@ export function SiteFooter() {
         <div className="grid gap-8 sm:grid-cols-2">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
-              Разделы
+              Начать
             </p>
             <ul className="mt-4 space-y-2.5">
-              {mainNav.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-foreground/90 transition-colors hover:text-accent"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  href="/idea"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Расскажите нам вашу идею
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/login"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Войти
+                </Link>
+              </li>
+              {mainNav
+                .filter((item) =>
+                  ["/about", "/how-it-works", "/trust", "/cases"].includes(
+                    item.href,
+                  ),
+                )
+                .map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
             </ul>
           </div>
           <div>

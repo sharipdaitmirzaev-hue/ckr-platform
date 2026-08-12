@@ -3,7 +3,7 @@
 import { Logo } from "@/components/brand/logo";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
-import { authNav, mainNav } from "@/config/navigation";
+import { authNav, publicNav } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,7 +28,7 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
           className="hidden items-center gap-7 md:flex"
           aria-label="Основная навигация"
         >
-          {mainNav.map((item) => {
+          {publicNav.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -62,13 +62,6 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
               </ButtonLink>
               <ButtonLink href={authNav.login.href} variant="ghost" size="sm">
                 {authNav.login.label}
-              </ButtonLink>
-              <ButtonLink
-                href={authNav.register.href}
-                variant="outline"
-                size="sm"
-              >
-                {authNav.register.label}
               </ButtonLink>
             </>
           )}
@@ -114,7 +107,7 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
         )}
       >
         <Container className="flex flex-col gap-1 py-4">
-          {mainNav.map((item) => (
+          {publicNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -136,9 +129,6 @@ export function SiteHeader({ isAuthenticated = false }: SiteHeaderProps) {
                 </ButtonLink>
                 <ButtonLink href={authNav.login.href} variant="ghost">
                   {authNav.login.label}
-                </ButtonLink>
-                <ButtonLink href={authNav.register.href} variant="outline">
-                  {authNav.register.label}
                 </ButtonLink>
               </>
             )}

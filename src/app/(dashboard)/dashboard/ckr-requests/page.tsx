@@ -40,13 +40,7 @@ export default async function ClientCkrRequestsPage({
             href="/idea"
             className="rounded-sm bg-accent px-3 py-2 text-sm text-white"
           >
-            Рассказать идею
-          </Link>
-          <Link
-            href="/dashboard/ckr-requests/new"
-            className="rounded-sm border border-border px-3 py-2 text-sm"
-          >
-            Из кабинета
+            Расскажите нам вашу идею
           </Link>
         </div>
       </div>

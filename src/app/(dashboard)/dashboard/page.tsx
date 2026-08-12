@@ -45,7 +45,7 @@ export default async function DashboardPage({
         title={`Здравствуйте, ${name}.`}
         description={
           cabinet.accessLevel === "basic"
-            ? "Расскажите идею или следите за обращениями в ЦКР. Расширенные инструменты откроются после разбора."
+            ? "Следите за обращениями в ЦКР. Дополнительные возможности откроются после рассмотрения идеи."
             : "Ваш кабинет адаптирован под текущую работу с ЦКР."
         }
       />
@@ -54,7 +54,7 @@ export default async function DashboardPage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-xl">Ваше обращение</h2>
           <ButtonLink href="/idea" size="sm">
-            Рассказать ещё одну идею
+            Расскажите ещё одну идею
           </ButtonLink>
         </div>
 
@@ -93,7 +93,7 @@ export default async function DashboardPage({
               Пока нет обращений. Начните с простой формы — регистрация для
               отправки идеи не нужна, но в кабинете удобнее следить за ответом.
             </p>
-            <ButtonLink href="/idea">Рассказать идею</ButtonLink>
+            <ButtonLink href="/idea">Расскажите нам вашу идею</ButtonLink>
           </div>
         )}
       </section>
@@ -142,7 +142,8 @@ export default async function DashboardPage({
         </section>
       ) : (
         <p className="text-xs text-muted">
-          Лия и каталоги доступны, но не обязательны. Основной путь — идея → ЦКР.
+          Основной путь: идея → ЦКР → следующие шаги. Инструменты платформы
+          откроются, когда они понадобятся.
         </p>
       )}
     </div>
