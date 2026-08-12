@@ -50,6 +50,16 @@ async function main() {
     assert.doesNotMatch(s, /disable row level security/i);
   });
 
+  await test("internal privacy table is staff-only", () => {
+    const privacy = readFileSync(
+      resolve("supabase/migrations/20260812183000_ckr_inbox_internal_privacy.sql"),
+      "utf8",
+    );
+    assert.match(privacy, /ckr_request_internal/i);
+    assert.match(privacy, /can_manage_ckr_inbox/i);
+    assert.match(privacy, /lia_brief = NULL/i);
+  });
+
   await test("lifecycle statuses present", () => {
     for (const st of [
       "NEW",

@@ -64,9 +64,36 @@ except urllib.error.HTTPError as e:
   raise
 PY
 
-code="$(curl -sS -o /tmp/ckr-4g-probe.json -w '%{http_code}' \
+  code="$(curl -sS -o /tmp/ckr-4g-probe.json -w '%{http_code}' \
   -H "apikey: ${service_key}" -H "Authorization: Bearer ${service_key}" \
   "${url}/rest/v1/ckr_requests?select=id&limit=1" || true)"
+
+# PostgREST may need a schema reload after CREATE TABLE
+if [[ "$code" != "200" ]]; then
+  log_info "Reloading PostgREST schema cache"
+  python3 - "$token" "$EXPECTED_REF" <<'PY'
+import json, sys, urllib.request
+token, ref = sys.argv[1], sys.argv[2]
+body = json.dumps({"query": "NOTIFY pgrst, 'reload schema';"}).encode()
+req = urllib.request.Request(
+  f"https://api.supabase.com/v1/projects/{ref}/database/query",
+  data=body,
+  headers={
+    "Authorization": f"Bearer {token}",
+    "Content-Type": "application/json",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  },
+  method="POST",
+)
+with urllib.request.urlopen(req, timeout=60) as r:
+  print("RELOAD", r.status)
+PY
+  sleep 2
+  code="$(curl -sS -o /tmp/ckr-4g-probe.json -w '%{http_code}' \
+    -H "apikey: ${service_key}" -H "Authorization: Bearer ${service_key}" \
+    "${url}/rest/v1/ckr_requests?select=id&limit=1" || true)"
+fi
+
 [[ "$code" == "200" ]] || die "ckr_requests missing after apply (HTTP $code)"
 
 code2="$(curl -sS -o /tmp/ckr-4g-comments.json -w '%{http_code}' \

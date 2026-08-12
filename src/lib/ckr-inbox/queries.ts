@@ -65,6 +65,15 @@ export async function listCkrRequests(
     .filter((r) => applyBucket(r.status, filters.bucket));
 }
 
+/** Strip CKR_ONLY fields for client-facing payloads. */
+function asClientRequest(row: CkrRequestRow): CkrRequest {
+  return mapCkrRequestRow({
+    ...row,
+    lia_brief: null,
+    next_step_internal: "",
+  });
+}
+
 export async function listMyCkrRequests(userId: string): Promise<CkrRequest[]> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -74,7 +83,7 @@ export async function listMyCkrRequests(userId: string): Promise<CkrRequest[]> {
     .order("created_at", { ascending: false })
     .limit(100);
   if (error || !data) return [];
-  return (data as CkrRequestRow[]).map(mapCkrRequestRow);
+  return (data as CkrRequestRow[]).map(asClientRequest);
 }
 
 export async function listOrgCkrRequests(
@@ -88,11 +97,12 @@ export async function listOrgCkrRequests(
     .order("created_at", { ascending: false })
     .limit(100);
   if (error || !data) return [];
-  return (data as CkrRequestRow[]).map(mapCkrRequestRow);
+  return (data as CkrRequestRow[]).map(asClientRequest);
 }
 
 export async function getCkrRequestById(
   id: string,
+  options: { includeInternal?: boolean } = {},
 ): Promise<CkrRequest | null> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -101,7 +111,27 @@ export async function getCkrRequestById(
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
-  return mapCkrRequestRow(data as CkrRequestRow);
+
+  const mapped = options.includeInternal
+    ? mapCkrRequestRow(data as CkrRequestRow)
+    : asClientRequest(data as CkrRequestRow);
+
+  if (options.includeInternal) {
+    const { data: internal } = await supabase
+      .from("ckr_request_internal")
+      .select("lia_brief, next_step_internal")
+      .eq("request_id", id)
+      .maybeSingle();
+    if (internal) {
+      mapped.liaBrief =
+        (internal.lia_brief as Record<string, unknown> | null) ??
+        mapped.liaBrief;
+      mapped.nextStepInternal =
+        (internal.next_step_internal as string) || mapped.nextStepInternal;
+    }
+  }
+
+  return mapped;
 }
 
 export async function listCkrComments(

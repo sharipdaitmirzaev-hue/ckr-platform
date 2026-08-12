@@ -46,7 +46,7 @@ export default async function OwnerInboxDetailPage({
   params: { id: string };
 }) {
   const staff = await requireStaff(`/admin/owner/inbox/${params.id}`);
-  const request = await getCkrRequestById(params.id);
+  const request = await getCkrRequestById(params.id, { includeInternal: true });
   if (!request) notFound();
 
   const [comments, events, org] = await Promise.all([

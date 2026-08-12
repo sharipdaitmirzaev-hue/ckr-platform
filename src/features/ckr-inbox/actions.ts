@@ -646,11 +646,20 @@ export async function generateLiaBriefAction(formData: FormData): Promise<void> 
     ],
   });
 
-  const { error } = await supabase
-    .from("ckr_requests")
-    .update({ lia_brief: brief })
-    .eq("id", id);
+  const { error } = await supabase.from("ckr_request_internal").upsert(
+    {
+      request_id: id,
+      lia_brief: brief,
+    },
+    { onConflict: "request_id" },
+  );
   if (error) throw new Error(error.message);
+
+  // Clear legacy shared column if present
+  await supabase
+    .from("ckr_requests")
+    .update({ lia_brief: null })
+    .eq("id", id);
 
   await appendEvent({
     requestId: id,
