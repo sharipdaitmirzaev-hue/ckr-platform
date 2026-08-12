@@ -17,7 +17,7 @@ export type CkrRequest = {
   sourceTable: string;
   sourceId: string | null;
   organizationId: string | null;
-  fromUserId: string;
+  fromUserId: string | null;
   assignedTo: string | null;
   assignedAt: string | null;
   needProfileId: string | null;
@@ -28,6 +28,11 @@ export type CkrRequest = {
   region: string;
   liaBrief: Record<string, unknown> | null;
   idempotencyKey: string | null;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactTelegram: string;
+  claimedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -65,7 +70,7 @@ export type CkrRequestRow = {
   source_table: string;
   source_id: string | null;
   organization_id: string | null;
-  from_user_id: string;
+  from_user_id: string | null;
   assigned_to: string | null;
   assigned_at: string | null;
   need_profile_id: string | null;
@@ -76,6 +81,11 @@ export type CkrRequestRow = {
   region: string;
   lia_brief: Record<string, unknown> | null;
   idempotency_key: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  contact_telegram?: string | null;
+  claimed_at?: string | null;
   created_at: string;
   updated_at: string;
 };

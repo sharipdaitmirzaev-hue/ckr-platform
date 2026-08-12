@@ -1,25 +1,16 @@
-import { ActivityFeed } from "@/components/activity/activity-feed";
-import { LiaRecommendations } from "@/components/lia/lia-recommendations";
-import { LiaWidget } from "@/components/lia/lia-widget";
-import { FirstActionHint } from "@/components/onboarding/first-action-hint";
-import { FirstIntentPrompt } from "@/components/onboarding/first-intent-prompt";
-import { FirstUsersFeedbackPrompt } from "@/components/onboarding/first-users-feedback-prompt";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
-import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { VerificationBadge } from "@/components/verification/verification-badge";
-import { projectStatusLabels } from "@/config/projects";
-import { ASSIGNABLE_ROLES, roleLabels, type AssignableRole } from "@/config/roles";
+import {
+  ckrRequestStatusLabels,
+  ckrRequestTypeLabels,
+} from "@/config/ckr-inbox";
+import { claimIdeaFromCookieAction } from "@/features/idea-first/actions";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { listActivityFeed } from "@/lib/activity/queries";
-import { getDashboardOverview } from "@/lib/dashboard/overview";
-import { ForYouDashboardWidget } from "@/features/personalized-feed/components/for-you-dashboard-widget";
-import { buildLiaRecommendations } from "@/lib/lia/recommendations";
-import { getPersonalizedFeedService } from "@/lib/personalized-feed/service";
-import { createClient } from "@/lib/supabase/server";
-import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  resolveCabinetContext,
+} from "@/lib/cabinet/access";
+import { listMyCkrRequests } from "@/lib/ckr-inbox/queries";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -28,315 +19,132 @@ export const metadata: Metadata = {
   title: "Личный кабинет",
 };
 
-export default async function DashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: { claim?: string };
+}) {
   const current = await getCurrentUser();
+  if (!current) redirect("/login");
 
-  if (!current) {
-    redirect("/login");
+  if (searchParams?.claim === "1") {
+    await claimIdeaFromCookieAction();
   }
 
-  const { user, profile } = current;
-  const roles = current.roles.filter((role): role is AssignableRole =>
-    (ASSIGNABLE_ROLES as readonly string[]).includes(role),
-  );
-
-  const [recommendations, activity, overview] = await Promise.all([
-    buildLiaRecommendations(user.id),
-    listActivityFeed(user.id, 6),
-    getDashboardOverview(user.id),
-  ]);
-
-  let forYouTotal = 0;
-  let forYouTop: Awaited<
-    ReturnType<
-      ReturnType<typeof getPersonalizedFeedService>["getFeedForOwner"]
-    >
-  >["recommendations"] = [];
-  let forYouHasNeeds = false;
-  try {
-    const feed = await getPersonalizedFeedService("supabase").getFeedForOwner({
-      ownerId: user.id,
-      limit: 3,
-    });
-    forYouHasNeeds = feed.needs.length > 0;
-    forYouTotal = feed.recommendations.length;
-    forYouTop = feed.recommendations.slice(0, 3);
-  } catch {
-    forYouHasNeeds = false;
-  }
-
-  let hasLia = false;
-  let hasInterest = false;
-  let hasExpertProfile = false;
-  let hasOrganization = false;
-  if (hasSupabaseEnv()) {
-    const supabase = createClient();
-    const [liaRes, interestRes, expertRes, orgRes] = await Promise.all([
-      supabase
-        .from("analytics_events")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .in("event_type", ["first_lia_use", "lia_used", "lia_started"]),
-      supabase
-        .from("investor_interests")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
-      supabase
-        .from("expert_profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
-      supabase
-        .from("organization_members")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
-    ]);
-    hasLia = (liaRes.count ?? 0) > 0;
-    hasInterest = (interestRes.count ?? 0) > 0;
-    hasExpertProfile = (expertRes.count ?? 0) > 0;
-    hasOrganization = (orgRes.count ?? 0) > 0;
-  }
-
-  const firstActionDone =
-    (roles.includes("entrepreneur") && overview.projects.length > 0) ||
-    (roles.includes("investor") && hasInterest) ||
-    (roles.includes("expert") && hasExpertProfile) ||
-    (roles.includes("company") && hasOrganization);
+  const cabinet = await resolveCabinetContext(current.user.id, current.roles);
+  const requests = await listMyCkrRequests(current.user.id);
+  const primary = requests[0];
+  const name = current.user.fullName || current.user.email || "друг";
 
   return (
     <div className="space-y-8">
       <SectionHeading
         eyebrow="Кабинет"
-        title={user.fullName ? `Здравствуйте, ${user.fullName}` : "Обзор"}
-        description="Единый обзор: проекты, заявки, инвестиции, сделки, уведомления и рекомендации Лии."
+        title={`Здравствуйте, ${name}.`}
+        description={
+          cabinet.accessLevel === "basic"
+            ? "Расскажите идею или следите за обращениями в ЦКР. Расширенные инструменты откроются после разбора."
+            : "Ваш кабинет адаптирован под текущую работу с ЦКР."
+        }
       />
 
-      <FirstIntentPrompt roles={roles} firstActionDone={firstActionDone} />
-
-      <ForYouDashboardWidget
-        total={forYouTotal}
-        top={forYouTop}
-        hasNeeds={forYouHasNeeds}
-      />
-
-      <FirstActionHint
-        roles={roles}
-        hasProject={overview.projects.length > 0}
-        hasLia={hasLia}
-        hasInterest={hasInterest}
-        hasExpertProfile={hasExpertProfile}
-        hasOrganization={hasOrganization}
-      />
-
-      {firstActionDone ? <FirstUsersFeedbackPrompt /> : null}
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {(
-          [
-            {
-              label: "Проекты",
-              value: overview.projects.length,
-              href: "/dashboard/projects",
-              hint: "последние",
-            },
-            {
-              label: "Заявки",
-              value:
-                overview.applicationsIncoming + overview.applicationsOutgoing,
-              href: "/dashboard/applications",
-              hint: `${overview.applicationsIncoming} вх. · ${overview.applicationsOutgoing} исх.`,
-            },
-            {
-              label: "Инвестиции",
-              value: overview.investments,
-              href: "/dashboard/investments",
-              hint: "мои предложения",
-            },
-            {
-              label: "Сделки",
-              value: overview.deals,
-              href: "/dashboard/projects",
-              hint: "как участник",
-            },
-            {
-              label: "Уведомления",
-              value: overview.unreadNotifications,
-              href: "/dashboard/notifications",
-              hint: "непрочитанные",
-            },
-            {
-              label: "Задачи",
-              value: overview.openMilestones,
-              href: "/dashboard/projects",
-              hint: "открытые этапы",
-            },
-          ] as const
-        ).map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className="rounded-sm border border-border bg-surface/60 px-4 py-3 transition-colors hover:border-accent/40"
-          >
-            <p className="text-xs uppercase tracking-[0.14em] text-muted">
-              {item.label}
-            </p>
-            <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {item.value}
-            </p>
-            <p className="mt-1 text-xs text-muted">{item.hint}</p>
-          </Link>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <ButtonLink href="/dashboard/notifications" variant="outline" size="sm">
-          Уведомления
-          {overview.unreadNotifications > 0
-            ? ` (${overview.unreadNotifications})`
-            : ""}
-        </ButtonLink>
-        <ButtonLink href="/messages" variant="outline" size="sm">
-          Сообщения
-        </ButtonLink>
-        <ButtonLink href="/dashboard/activity" variant="outline" size="sm">
-          Активность
-        </ButtonLink>
-        <ButtonLink href="/lia" variant="outline" size="sm">
-          Лия
-        </ButtonLink>
-      </div>
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-xl text-foreground">Мои проекты</h2>
-          <ButtonLink href="/dashboard/projects" variant="outline" size="sm">
-            Все проекты
+      <section className="space-y-4 rounded-sm border border-border bg-surface/60 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl">Ваше обращение</h2>
+          <ButtonLink href="/idea" size="sm">
+            Рассказать ещё одну идею
           </ButtonLink>
         </div>
-        {overview.projects.length === 0 ? (
-          <EmptyState
-            title="Проектов пока нет"
-            description={
-              roles.includes("entrepreneur")
-                ? "Путь предпринимателя: Идея → Проект. Начните с Лии или создайте проект вручную."
-                : roles.includes("investor")
-                  ? "Путь инвестора: Проекты → Интерес. Откройте каталог и отметьте интерес."
-                  : roles.includes("expert")
-                    ? "Путь эксперта: Профиль → Доверие → Запросы. Сначала заполните профиль эксперта."
-                    : roles.includes("company")
-                      ? "Путь организации: Потребность → Партнёры. Оформите профиль на /partner."
-                      : "Создайте проект или начните сценарий с Лией «У меня есть идея»."
-            }
-            actionHref={
-              roles.includes("investor")
-                ? "/projects"
-                : roles.includes("expert")
-                  ? "/dashboard/expert"
-                  : roles.includes("company")
-                    ? "/partner"
-                    : "/lia?scenario=business_idea&message=" +
-                      encodeURIComponent("У меня есть идея")
-            }
-            actionLabel={
-              roles.includes("investor")
-                ? "Каталог проектов"
-                : roles.includes("expert")
-                  ? "Профиль эксперта"
-                  : roles.includes("company")
-                    ? "Кабинет организации"
-                    : "Начать с идеи"
-            }
-          />
+
+        {primary ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="soft">
+                {ckrRequestTypeLabels[primary.requestType]}
+              </Badge>
+              <Badge variant="accent">
+                {ckrRequestStatusLabels[primary.status]}
+              </Badge>
+            </div>
+            <p className="font-medium text-foreground">
+              {primary.subject || "Обращение в ЦКР"}
+            </p>
+            <p className="line-clamp-3 text-sm text-muted">{primary.body}</p>
+            {primary.nextStepPublic ? (
+              <p className="text-sm">
+                Следующий шаг:{" "}
+                <span className="text-foreground">{primary.nextStepPublic}</span>
+              </p>
+            ) : (
+              <p className="text-sm text-muted">ЦКР рассматривает обращение.</p>
+            )}
+            <Link
+              href={`/dashboard/ckr-requests/${primary.id}`}
+              className="inline-flex text-sm text-accent hover:underline"
+            >
+              Открыть обращение →
+            </Link>
+          </div>
         ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted">
+              Пока нет обращений. Начните с простой формы — регистрация для
+              отправки идеи не нужна, но в кабинете удобнее следить за ответом.
+            </p>
+            <ButtonLink href="/idea">Рассказать идею</ButtonLink>
+          </div>
+        )}
+      </section>
+
+      {requests.length > 1 ? (
+        <section className="space-y-3">
+          <h2 className="font-display text-lg">Другие обращения</h2>
           <ul className="space-y-2">
-            {overview.projects.map((project) => (
-              <li key={project.id}>
+            {requests.slice(1, 5).map((r) => (
+              <li key={r.id}>
                 <Link
-                  href={`/dashboard/projects/${project.id}/workspace`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-sm border border-border bg-background/40 px-4 py-3 transition-colors hover:border-accent/40"
+                  href={`/dashboard/ckr-requests/${r.id}`}
+                  className="flex items-center justify-between gap-3 rounded-sm border border-border px-3 py-2 text-sm hover:bg-foreground/5"
                 >
-                  <span className="font-medium text-foreground">
-                    {project.title}
-                  </span>
+                  <span className="truncate">{r.subject || r.body.slice(0, 60)}</span>
                   <Badge variant="soft">
-                    {projectStatusLabels[project.status]}
+                    {ckrRequestStatusLabels[r.status]}
                   </Badge>
                 </Link>
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <LiaRecommendations items={recommendations} />
-        <Card variant="surface" className="space-y-4 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display text-xl text-foreground">
-              Недавняя активность
-            </h2>
-            <ButtonLink href="/dashboard/activity" variant="outline" size="sm">
-              Вся лента
+      {cabinet.accessLevel !== "basic" ? (
+        <section className="grid gap-3 sm:grid-cols-2">
+          {cabinet.hasNeeds ? (
+            <ButtonLink href="/dashboard/for-you" variant="outline">
+              Возможности для вас
             </ButtonLink>
-          </div>
-          <ActivityFeed items={activity} />
-        </Card>
-      </div>
-
-      <Card variant="surface">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="font-display text-lg text-foreground">Профиль</h2>
-            <dl className="mt-4 space-y-2 text-sm">
-              <div className="flex gap-2">
-                <dt className="text-muted">Email:</dt>
-                <dd className="text-foreground">{user.email}</dd>
-              </div>
-              {profile.company_name ? (
-                <div className="flex gap-2">
-                  <dt className="text-muted">Компания:</dt>
-                  <dd className="text-foreground">{profile.company_name}</dd>
-                </div>
-              ) : null}
-              {profile.city || profile.region ? (
-                <div className="flex gap-2">
-                  <dt className="text-muted">Локация:</dt>
-                  <dd className="text-foreground">
-                    {[profile.city, profile.region].filter(Boolean).join(", ")}
-                  </dd>
-                </div>
-              ) : null}
-              <div className="flex flex-wrap items-center gap-2">
-                <dt className="text-muted">Проверка:</dt>
-                <dd>
-                  <VerificationBadge
-                    status={profile.verification_status ?? "unverified"}
-                  />
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <ButtonLink href="/onboarding" variant="outline" size="sm">
-            Редактировать
+          ) : null}
+          {cabinet.hasOrganization ? (
+            <ButtonLink href="/partner" variant="outline">
+              Моя компания
+            </ButtonLink>
+          ) : null}
+          {cabinet.hasProjects ? (
+            <ButtonLink href="/dashboard/projects" variant="outline">
+              Мои проекты
+            </ButtonLink>
+          ) : null}
+          <ButtonLink href="/dashboard/ckr-requests" variant="outline">
+            Все обращения
           </ButtonLink>
-        </div>
-
-        <div className="mt-5">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">Роли</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {user.roles.length > 0 ? (
-              user.roles.map((role) => (
-                <Badge key={role} variant="accent">
-                  {roleLabels[role]}
-                </Badge>
-              ))
-            ) : (
-              <Badge variant="soft">Роль не выбрана</Badge>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      <LiaWidget embedded compact />
+        </section>
+      ) : (
+        <p className="text-xs text-muted">
+          Лия и каталоги доступны, но не обязательны. Основной путь — идея → ЦКР.
+        </p>
+      )}
     </div>
   );
 }
