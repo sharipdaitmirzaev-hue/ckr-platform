@@ -44,36 +44,25 @@ export async function createOrganizationAction(
   if (!isOrganizationType(type)) return { error: "Некорректный тип." };
 
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("organizations")
-    .insert({
-      name,
-      type,
-      description,
-      website,
-      region,
-      city,
-      created_by: session.user.id,
-      verification_status: "unverified",
-    })
-    .select("id")
-    .single();
+  // Atomic RPC: created_by forced to auth.uid(); owner membership in same transaction.
+  // Avoids INSERT…RETURNING RLS trap and client-side created_by spoofing.
+  const { data: orgId, error } = await supabase.rpc(
+    "create_organization_with_owner",
+    {
+      p_name: name,
+      p_type: type,
+      p_description: description,
+      p_website: website,
+      p_region: region,
+      p_city: city,
+    },
+  );
 
-  if (error || !data) {
+  if (error || !orgId) {
     return { error: error?.message ?? "Не удалось создать организацию." };
   }
 
-  const { error: memberError } = await supabase
-    .from("organization_members")
-    .insert({
-      organization_id: data.id,
-      user_id: session.user.id,
-      role: "owner",
-    });
-
-  if (memberError) {
-    return { error: memberError.message };
-  }
+  const data = { id: orgId as string };
 
   // Добавим роль company на платформе, если её ещё нет
   if (!session.roles.includes("company")) {
