@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Мои потребности" };
+export const metadata: Metadata = { title: "Что вам нужно" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardNeedsPage() {
@@ -38,10 +38,10 @@ export default async function DashboardNeedsPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading
-          title="Мои потребности"
-          description="Что вы хотите найти, купить, продать или проинвестировать. Основа будущей ленты «Для вас» — Matching пока не активен."
+          title="Что вам нужно"
+          description="Коротко опишите, что ищете: покупателей, инвестора, партнёра, помещение и т.д. Персональные варианты появятся в разделе «Возможности для вас»."
         />
-        <ButtonLink href="/dashboard/needs/new">Новая потребность</ButtonLink>
+        <ButtonLink href="/dashboard/needs/new">Добавить запрос</ButtonLink>
       </div>
 
       {tableMissing ? (
@@ -54,10 +54,12 @@ export default async function DashboardNeedsPage() {
       {!tableMissing && needs.length === 0 ? (
         <Card variant="surface" className="space-y-3 p-5">
           <p className="text-sm text-muted">
-            Пока нет потребностей. Создайте первую — короткой формой или
-            описанием своими словами.
+            Пока пусто. Расскажите, что вам нужно — ЦКР поможет найти подходящие
+            варианты.
           </p>
-          <ButtonLink href="/dashboard/needs/new">Создать</ButtonLink>
+          <ButtonLink href="/dashboard/needs/new">
+            Расскажите, что вам нужно
+          </ButtonLink>
         </Card>
       ) : null}
 

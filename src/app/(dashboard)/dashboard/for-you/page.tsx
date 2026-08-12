@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Для вас" };
+export const metadata: Metadata = { title: "Возможности для вас" };
 export const dynamic = "force-dynamic";
 
 export default async function ForYouPage({
@@ -37,16 +37,15 @@ export default async function ForYouPage({
     return (
       <div className="space-y-4">
         <SectionHeading
-          eyebrow="Лента"
-          title="Для вас"
-          description="Персональные варианты по вашим активным потребностям."
+          eyebrow="Для вас"
+          title="Возможности для вас"
+          description="Персональные варианты по тому, что вам нужно."
         />
         <p className="text-sm text-red-700">
-          Не удалось построить ленту: {msg}. Если таблицы feedback ещё не
-          применены — это ожидаемо до production apply.
+          Не удалось загрузить варианты: {msg}.
         </p>
         <ButtonLink href="/dashboard/needs/new">
-          Расскажите, что вы ищете
+          Расскажите, что вам нужно
         </ButtonLink>
       </div>
     );
@@ -56,16 +55,16 @@ export default async function ForYouPage({
     return (
       <div className="space-y-6">
         <SectionHeading
-          eyebrow="Лента"
-          title="Для вас"
-          description="ЦКР подбирает варианты под ваши активные потребности."
+          eyebrow="Для вас"
+          title="Возможности для вас"
+          description="Здесь появятся персональные варианты под ваш запрос."
         />
         <EmptyState
-          title="Пока нечего рекомендовать"
-          description="Создайте потребность — и лента «Для вас» начнёт подбирать подходящие проекты, возможности и предложения."
+          title="Пока нет персональных вариантов"
+          description="Расскажите, что вам нужно — ЦКР подберёт подходящие предложения. Общий каталог сайта остаётся отдельно."
         />
         <ButtonLink href="/dashboard/needs/new">
-          Расскажите, что вы ищете
+          Расскажите, что вам нужно
         </ButtonLink>
       </div>
     );
@@ -78,17 +77,17 @@ export default async function ForYouPage({
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading
-          eyebrow="Лента"
-          title="Для вас"
-          description="Не Matching Engine: простые объяснимые совпадения по вашим ACTIVE Need Profiles."
+          eyebrow="Для вас"
+          title="Возможности для вас"
+          description="Персональные варианты по вашим запросам. Это не общий каталог сайта."
         />
         <ButtonLink href="/dashboard/needs/new" variant="secondary">
-          Новая потребность
+          Что вам нужно
         </ButtonLink>
       </div>
 
       <section className="space-y-3">
-        <p className="text-sm text-muted">Потребность</p>
+        <p className="text-sm text-muted">Ваш запрос</p>
         <div className="flex flex-wrap gap-2">
           <Link
             href="/dashboard/for-you"

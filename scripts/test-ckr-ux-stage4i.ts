@@ -44,6 +44,33 @@ async function main() {
     assert.equal(LANDING.primaryCta.href, "/idea");
     assert.equal(LANDING.secondaryCta.href, "/login");
     assert.ok(LANDING.mission.length >= 2 && LANDING.mission.length <= 4);
+    assert.match(LANDING.mission.join(" "), /объединяет идеи/i);
+  });
+
+  await test("client presentation: TINDA buyers + IDEA review", () => {
+    const {
+      describeCkrNow,
+      describeNextStepPublic,
+    } = require("../src/lib/ckr-inbox/client-presentation") as typeof import("../src/lib/ckr-inbox/client-presentation");
+    assert.equal(
+      describeCkrNow({
+        requestType: "FIND_BUYER",
+        status: "IN_PROGRESS",
+        organizationName: "ТИНДА",
+      }),
+      "Ищет покупателей для ТИНДА",
+    );
+    assert.equal(
+      describeCkrNow({
+        requestType: "IDEA",
+        status: "NEW",
+      }),
+      "Оценивает вашу идею",
+    );
+    assert.match(
+      describeNextStepPublic({ status: "IN_PROGRESS" }),
+      /От вас пока ничего не требуется/i,
+    );
   });
 
   await test("homepage is chrome-free idea-first screen", () => {
