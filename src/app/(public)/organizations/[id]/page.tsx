@@ -12,6 +12,11 @@ import {
   listOrganizationProjects,
 } from "@/lib/partners/queries";
 import { getNeedProfileService } from "@/lib/need-profile/service";
+import { listOrgCkrRequests } from "@/lib/ckr-inbox/queries";
+import {
+  ckrRequestStatusLabels,
+  ckrRequestTypeLabels,
+} from "@/config/ckr-inbox";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -46,6 +51,11 @@ export default async function OrganizationIntelligencePage({
     canManage:
       membership?.role === "owner" || membership?.role === "manager",
   });
+
+  const orgRequests =
+    membership || isAdmin
+      ? await listOrgCkrRequests(org.id).catch(() => [])
+      : [];
 
   // Public page: only verified orgs for anon (RLS already enforces)
   if (
@@ -291,6 +301,51 @@ export default async function OrganizationIntelligencePage({
           <p className="text-sm text-muted">Состав скрыт или пуст.</p>
         )}
       </section>
+
+      {orgRequests.length || membership || isAdmin ? (
+        <section className="space-y-2">
+          <h2 className="font-display text-lg">Заявки в ЦКР</h2>
+          {orgRequests.length ? (
+            <ul className="space-y-2 text-sm">
+              {orgRequests.map((r) => (
+                <li key={r.id}>
+                  {isAdmin ? (
+                    <Link
+                      href={`/admin/owner/inbox/${r.id}`}
+                      className="text-accent hover:underline"
+                    >
+                      {r.subject || "Обращение"}
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/dashboard/ckr-requests/${r.id}`}
+                      className="text-accent hover:underline"
+                    >
+                      {r.subject || "Обращение"}
+                    </Link>
+                  )}{" "}
+                  <Badge variant="soft">
+                    {ckrRequestStatusLabels[r.status]}
+                  </Badge>{" "}
+                  <span className="text-muted">
+                    {ckrRequestTypeLabels[r.requestType]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">
+              Пока нет обращений.{" "}
+              <Link
+                href="/dashboard/ckr-requests/new"
+                className="text-accent hover:underline"
+              >
+                Отправить в ЦКР
+              </Link>
+            </p>
+          )}
+        </section>
+      ) : null}
 
       <section className="space-y-2">
         <h2 className="font-display text-lg">История</h2>
