@@ -25,11 +25,19 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 
 export function NeedCreateForm({
   defaultIntent,
+  organizationId,
+  organizationName,
 }: {
   defaultIntent?: string;
+  /** Stage 4F — attach need to organization when provided */
+  organizationId?: string;
+  organizationName?: string;
 }) {
   const [intent, setIntent] = useState(defaultIntent || "");
   const [state, action] = useFormState(createNeedProfileAction, initial);
+  const [ownerMode, setOwnerMode] = useState<"user" | "organization">(
+    organizationId ? "organization" : "user",
+  );
 
   return (
     <form action={action} className="space-y-4">
@@ -114,7 +122,39 @@ export function NeedCreateForm({
         </select>
       </label>
       <input type="hidden" name="status" value="ACTIVE" />
-      <input type="hidden" name="ownerType" value="user" />
+      {organizationId ? (
+        <div className="space-y-2 text-sm">
+          <p className="text-foreground">Владелец потребности</p>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="ownerMode"
+              checked={ownerMode === "user"}
+              onChange={() => setOwnerMode("user")}
+            />
+            Мой профиль (user)
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="ownerMode"
+              checked={ownerMode === "organization"}
+              onChange={() => setOwnerMode("organization")}
+            />
+            Организация {organizationName || organizationId.slice(0, 8)}
+          </label>
+          <input
+            type="hidden"
+            name="ownerType"
+            value={ownerMode === "organization" ? "organization" : "user"}
+          />
+          {ownerMode === "organization" ? (
+            <input type="hidden" name="ownerId" value={organizationId} />
+          ) : null}
+        </div>
+      ) : (
+        <input type="hidden" name="ownerType" value="user" />
+      )}
 
       {state.error ? (
         <p className="text-sm text-red-700">{state.error}</p>

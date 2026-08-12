@@ -39,40 +39,89 @@ export async function createOrganizationAction(
   const website = String(formData.get("website") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const industry = String(formData.get("industry") ?? "").trim();
+  const legalName = String(formData.get("legalName") ?? "").trim();
+  const inn = String(formData.get("inn") ?? "").replace(/\D/g, "");
+  const ogrn = String(formData.get("ogrn") ?? "").replace(/\D/g, "");
+  const offersSummary = String(formData.get("offersSummary") ?? "").trim();
+  const seeksSummary = String(formData.get("seeksSummary") ?? "").trim();
 
   if (name.length < 2) return { error: "Укажите название организации." };
   if (!isOrganizationType(type)) return { error: "Некорректный тип." };
+  if (inn && !(inn.length === 10 || inn.length === 12)) {
+    return { error: "ИНН: 10 или 12 цифр, либо оставьте пустым (UNKNOWN)." };
+  }
 
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("organizations")
-    .insert({
-      name,
-      type,
-      description,
-      website,
-      region,
-      city,
-      created_by: session.user.id,
-      verification_status: "unverified",
-    })
-    .select("id")
-    .single();
+  // Atomic RPC: created_by forced to auth.uid(); owner membership in same TX.
+  // Avoids INSERT…RETURNING RLS trap and client-side created_by spoofing.
+  const { data: orgId, error } = await supabase.rpc(
+    "create_organization_with_owner",
+    {
+      p_name: name,
+      p_type: type,
+      p_description: description,
+      p_website: website,
+      p_region: region,
+      p_city: city,
+    },
+  );
 
-  if (error || !data) {
+  if (error || !orgId) {
     return { error: error?.message ?? "Не удалось создать организацию." };
   }
 
-  const { error: memberError } = await supabase
-    .from("organization_members")
-    .insert({
-      organization_id: data.id,
-      user_id: session.user.id,
-      role: "owner",
-    });
+  const data = { id: orgId as string };
 
-  if (memberError) {
-    return { error: memberError.message };
+  // Stage 4F fields after membership exists (owner can update).
+  const { error: enrichError } = await supabase
+    .from("organizations")
+    .update({
+      industry,
+      legal_name: legalName,
+      inn,
+      ogrn,
+      offers_summary: offersSummary,
+      seeks_summary: seeksSummary,
+    })
+    .eq("id", data.id);
+  if (enrichError) {
+    return { error: enrichError.message };
+  }
+
+  await supabase.from("organization_events").insert({
+    organization_id: data.id,
+    event_type: "created",
+    title: "Организация создана",
+    detail: name,
+    visibility: "CKR_ONLY",
+    actor_user_id: session.user.id,
+  });
+
+  try {
+    const graph = (await import("@/lib/business-graph/service")).getBusinessGraphService();
+    await graph.bridgeFromOrganization({
+      id: data.id,
+      name,
+      description,
+      region,
+      city,
+      website,
+      inn,
+      ogrn,
+      industry,
+      verificationStatus: "unverified",
+    });
+    await supabase.from("organization_events").insert({
+      organization_id: data.id,
+      event_type: "graph_bridged",
+      title: "Связь с Business Graph",
+      detail: "COMPANY node",
+      visibility: "CKR_ONLY",
+      actor_user_id: session.user.id,
+    });
+  } catch {
+    /* graph optional / memory store */
   }
 
   // Добавим роль company на платформе, если её ещё нет
@@ -122,10 +171,26 @@ export async function updateOrganizationAction(
   const website = String(formData.get("website") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const industry = String(formData.get("industry") ?? "").trim();
+  const subindustry = String(formData.get("subindustry") ?? "").trim();
+  const legalName = String(formData.get("legalName") ?? "").trim();
+  const legalForm = String(formData.get("legalForm") ?? "").trim();
+  const inn = String(formData.get("inn") ?? "").replace(/\D/g, "");
+  const ogrn = String(formData.get("ogrn") ?? "").replace(/\D/g, "");
+  const publicEmail = String(formData.get("publicEmail") ?? "").trim();
+  const publicPhone = String(formData.get("publicPhone") ?? "").trim();
+  const productsServices = String(formData.get("productsServices") ?? "").trim();
+  const offersSummary = String(formData.get("offersSummary") ?? "").trim();
+  const seeksSummary = String(formData.get("seeksSummary") ?? "").trim();
+  const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
+  const sourceLabel = String(formData.get("sourceLabel") ?? "").trim();
   const requestVerification = formData.get("requestVerification") === "on";
 
   if (name.length < 2) return { error: "Укажите название организации." };
   if (!isOrganizationType(type)) return { error: "Некорректный тип." };
+  if (inn && !(inn.length === 10 || inn.length === 12)) {
+    return { error: "ИНН: 10 или 12 цифр, либо пусто (UNKNOWN)." };
+  }
 
   const supabase = createClient();
   const { error } = await supabase
@@ -137,6 +202,19 @@ export async function updateOrganizationAction(
       website,
       region,
       city,
+      industry,
+      subindustry,
+      legal_name: legalName,
+      legal_form: legalForm,
+      inn,
+      ogrn,
+      public_email: publicEmail,
+      public_phone: publicPhone,
+      products_services: productsServices,
+      offers_summary: offersSummary,
+      seeks_summary: seeksSummary,
+      source_url: sourceUrl,
+      source_label: sourceLabel,
       verification_status: requestVerification
         ? "pending"
         : session.primary.organization.verificationStatus,
@@ -144,8 +222,21 @@ export async function updateOrganizationAction(
     .eq("id", orgId);
 
   if (error) return { error: error.message };
+
+  await supabase.from("organization_events").insert({
+    organization_id: orgId,
+    event_type: "profile_updated",
+    title: "Профиль обновлён",
+    detail: name,
+    visibility: "CKR_ONLY",
+    actor_user_id: session.user.id,
+  });
+
   revalidatePartner();
+  revalidatePath("/organizations");
+  revalidatePath(`/organizations/${orgId}`);
   return { success: "Профиль организации обновлён." };
+
 }
 
 export async function addOrganizationMemberAction(

@@ -105,6 +105,81 @@ export function OrganizationProfileForm({
           defaultValue={organization.website}
         />
       </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label htmlFor="profile-industry" className="text-sm text-muted">
+            Отрасль
+          </label>
+          <Input
+            id="profile-industry"
+            name="industry"
+            defaultValue={organization.industry || ""}
+            placeholder="beverage / food / manufacturing"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="profile-legal-name" className="text-sm text-muted">
+            Юр. название
+          </label>
+          <Input
+            id="profile-legal-name"
+            name="legalName"
+            defaultValue={organization.legalName || ""}
+            placeholder="UNKNOWN если нет"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="profile-inn" className="text-sm text-muted">
+            ИНН
+          </label>
+          <Input
+            id="profile-inn"
+            name="inn"
+            defaultValue={organization.inn || ""}
+            placeholder="только подтверждённый"
+          />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="profile-ogrn" className="text-sm text-muted">
+            ОГРН
+          </label>
+          <Input
+            id="profile-ogrn"
+            name="ogrn"
+            defaultValue={organization.ogrn || ""}
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="profile-offers" className="text-sm text-muted">
+          Что предлагает
+        </label>
+        <Input
+          id="profile-offers"
+          name="offersSummary"
+          defaultValue={organization.offersSummary || ""}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="profile-seeks" className="text-sm text-muted">
+          Что ищет
+        </label>
+        <Input
+          id="profile-seeks"
+          name="seeksSummary"
+          defaultValue={organization.seeksSummary || ""}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="profile-products" className="text-sm text-muted">
+          Продукты / услуги
+        </label>
+        <Input
+          id="profile-products"
+          name="productsServices"
+          defaultValue={organization.productsServices || ""}
+        />
+      </div>
       <div className="space-y-2">
         <label htmlFor="profile-description" className="text-sm text-muted">
           Описание

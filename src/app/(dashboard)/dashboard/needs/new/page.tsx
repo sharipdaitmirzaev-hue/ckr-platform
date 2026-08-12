@@ -3,6 +3,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { NeedCreateForm } from "@/features/need-profile/components/need-create-form";
 import { NeedNlForm } from "@/features/need-profile/components/need-nl-form";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { listMyOrganizations } from "@/lib/partners/queries";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -20,6 +21,8 @@ export default async function NewNeedPage({
   const current = await getCurrentUser();
   if (!current) redirect("/login?next=/dashboard/needs/new");
   const sp = await searchParams;
+  const orgs = await listMyOrganizations(current.user.id);
+  const primary = orgs[0]?.organization;
 
   return (
     <div className="space-y-8">
@@ -36,7 +39,11 @@ export default async function NewNeedPage({
 
       <Card variant="surface" className="space-y-4 p-5">
         <h2 className="font-display text-xl text-foreground">Короткая форма</h2>
-        <NeedCreateForm defaultIntent={sp.intent} />
+        <NeedCreateForm
+          defaultIntent={sp.intent}
+          organizationId={primary?.id}
+          organizationName={primary?.name}
+        />
       </Card>
 
       <Card variant="surface" className="space-y-4 p-5">

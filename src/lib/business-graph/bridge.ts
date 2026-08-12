@@ -89,6 +89,53 @@ export function projectToNodeInput(project: {
   };
 }
 
+/** Organization (CKR) → COMPANY graph node. No MATCHES. */
+export function organizationToNodeInput(org: {
+  id: string;
+  name: string;
+  description?: string | null;
+  region?: string | null;
+  city?: string | null;
+  website?: string | null;
+  inn?: string | null;
+  ogrn?: string | null;
+  industry?: string | null;
+  verificationStatus?: string | null;
+}): CreateNodeInput {
+  const inn = (org.inn || "").replace(/\D/g, "");
+  const ogrn = (org.ogrn || "").replace(/\D/g, "");
+  return {
+    nodeType: "COMPANY",
+    title: org.name,
+    description: org.description || "",
+    internalEntityType: "organizations",
+    internalEntityId: org.id,
+    sourceType: "ckr_organization",
+    sourceId: org.id,
+    sourceUrl: org.website || null,
+    region: org.region || null,
+    city: org.city || null,
+    visibility: "INTERNAL",
+    status: "ACTIVE",
+    fingerprint: bgHash(
+      inn
+        ? `org|inn|${inn}`
+        : ogrn
+          ? `org|ogrn|${ogrn}`
+          : `int|organizations|${org.id}`,
+    ),
+    dataConfidence: inn || ogrn ? 92 : 75,
+    dataQualityScore: inn || ogrn ? 80 : 55,
+    structuredData: {
+      inn: inn || undefined,
+      ogrn: ogrn || undefined,
+      industry: org.industry || undefined,
+      verificationStatus: org.verificationStatus || undefined,
+      website: org.website || undefined,
+    },
+  };
+}
+
 export function investmentOfferToNodeInput(offer: {
   id: string;
   title: string;

@@ -10,6 +10,7 @@ export type GraphSyncSummary = {
   projectsUpserted: number;
   investmentsUpserted: number;
   oiUpserted: number;
+  organizationsUpserted: number;
   errors: string[];
 };
 
@@ -63,17 +64,42 @@ export async function syncOiCandidatesToGraph(
   return n;
 }
 
+export async function syncOrganizationsToGraph(
+  service: BusinessGraphService,
+  orgs: Array<{
+    id: string;
+    name: string;
+    description?: string | null;
+    region?: string | null;
+    city?: string | null;
+    website?: string | null;
+    inn?: string | null;
+    ogrn?: string | null;
+    industry?: string | null;
+    verificationStatus?: string | null;
+  }>,
+): Promise<number> {
+  let n = 0;
+  for (const o of orgs) {
+    await service.bridgeFromOrganization(o);
+    n += 1;
+  }
+  return n;
+}
+
 /** Owner-triggered sync helper (no scheduler). */
 export async function runOwnerGraphSync(params: {
   service: BusinessGraphService;
   projects?: Parameters<typeof syncProjectsToGraph>[1];
   investments?: Parameters<typeof syncInvestmentOffersToGraph>[1];
   oiCandidates?: LiaOiCandidate[];
+  organizations?: Parameters<typeof syncOrganizationsToGraph>[1];
 }): Promise<GraphSyncSummary> {
   const errors: string[] = [];
   let projectsUpserted = 0;
   let investmentsUpserted = 0;
   let oiUpserted = 0;
+  let organizationsUpserted = 0;
   try {
     if (params.projects?.length) {
       projectsUpserted = await syncProjectsToGraph(
@@ -104,5 +130,23 @@ export async function runOwnerGraphSync(params: {
   } catch (e) {
     errors.push(`oi:${e instanceof Error ? e.message : String(e)}`);
   }
-  return { projectsUpserted, investmentsUpserted, oiUpserted, errors };
+  try {
+    if (params.organizations?.length) {
+      organizationsUpserted = await syncOrganizationsToGraph(
+        params.service,
+        params.organizations,
+      );
+    }
+  } catch (e) {
+    errors.push(
+      `organizations:${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  return {
+    projectsUpserted,
+    investmentsUpserted,
+    oiUpserted,
+    organizationsUpserted,
+    errors,
+  };
 }

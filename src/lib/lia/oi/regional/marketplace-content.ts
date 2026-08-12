@@ -4,6 +4,7 @@
  */
 
 export type MarketplaceManualContentType =
+  | "company"
   | "investment_project"
   | "ready_business"
   | "land_plot"
@@ -15,12 +16,19 @@ export type MarketplaceManualContentSpec = {
   type: MarketplaceManualContentType;
   labelRu: string;
   createPath: string;
-  entity: "project" | "opportunity" | "investment" | "need";
+  entity: "project" | "opportunity" | "investment" | "need" | "organization";
   notes: string;
 };
 
 /** Types the owner can safely add manually without generating fakes. */
 export const MARKETPLACE_MANUAL_CONTENT_TYPES: MarketplaceManualContentSpec[] = [
+  {
+    type: "company",
+    labelRu: "Компания / организация",
+    createPath: "/admin/owner/companies",
+    entity: "organization",
+    notes: "Stage 4F Company Intelligence — ручной seed с provenance.",
+  },
   {
     type: "investment_project",
     labelRu: "Инвестиционный проект",

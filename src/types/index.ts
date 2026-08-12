@@ -799,6 +799,23 @@ export type Organization = {
   createdBy: string | null;
   createdAt?: string;
   updatedAt?: string;
+  /** Stage 4F */
+  legalName?: string;
+  inn?: string;
+  ogrn?: string;
+  legalForm?: string;
+  industry?: string;
+  subindustry?: string;
+  publicEmail?: string;
+  publicPhone?: string;
+  productsServices?: string;
+  offersSummary?: string;
+  seeksSummary?: string;
+  sourceUrl?: string;
+  sourceLabel?: string;
+  ownerNotes?: string;
+  liaEnrichmentDraft?: Record<string, unknown> | null;
+  isListed?: boolean;
 };
 
 export type OrganizationMember = {

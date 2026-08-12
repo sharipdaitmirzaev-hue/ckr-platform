@@ -733,6 +733,35 @@ export type OrganizationRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** Stage 4F — additive company intelligence fields */
+  legal_name?: string;
+  inn?: string;
+  ogrn?: string;
+  legal_form?: string;
+  industry?: string;
+  subindustry?: string;
+  public_email?: string;
+  public_phone?: string;
+  products_services?: string;
+  offers_summary?: string;
+  seeks_summary?: string;
+  source_url?: string;
+  source_label?: string;
+  owner_notes?: string;
+  lia_enrichment_draft?: Record<string, unknown> | null;
+  is_listed?: boolean;
+};
+
+export type OrganizationEventRow = {
+  id: string;
+  organization_id: string;
+  event_type: string;
+  title: string;
+  detail: string;
+  visibility: "PUBLIC" | "CKR_ONLY" | "OWNER_ONLY";
+  actor_user_id: string | null;
+  meta: Record<string, unknown>;
+  created_at: string;
 };
 
 export type OrganizationMemberRow = {

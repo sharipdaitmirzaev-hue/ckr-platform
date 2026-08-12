@@ -93,6 +93,7 @@ export const partnershipStatusLabels: Record<PartnershipStatus, string> = {
 export const partnerNav = [
   { label: "Обзор", href: "/partner" },
   { label: "Профиль", href: "/partner/profile" },
+  { label: "Возможности", href: "/partner/feed" },
   { label: "Сотрудники", href: "/partner/members" },
   { label: "Проекты", href: "/partner/projects" },
   { label: "Предложения", href: "/partner/offers" },

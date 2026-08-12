@@ -6,6 +6,7 @@
 import {
   investmentOfferToNodeInput,
   oiCandidateToNodeInput,
+  organizationToNodeInput,
   projectToNodeInput,
 } from "@/lib/business-graph/bridge";
 import { bgId, normalizeAlias } from "@/lib/business-graph/id";
@@ -494,6 +495,22 @@ export class BusinessGraphService {
   }): Promise<BusinessNode> {
     return (await this.createOrUpdateNode(investmentOfferToNodeInput(offer)))
       .node;
+  }
+
+  /** Stage 4F — organizations → COMPANY (no MATCHES). */
+  async bridgeFromOrganization(org: {
+    id: string;
+    name: string;
+    description?: string | null;
+    region?: string | null;
+    city?: string | null;
+    website?: string | null;
+    inn?: string | null;
+    ogrn?: string | null;
+    industry?: string | null;
+    verificationStatus?: string | null;
+  }): Promise<BusinessNode> {
+    return (await this.createOrUpdateNode(organizationToNodeInput(org))).node;
   }
 
   async resolveIdentity(input: CreateNodeInput) {

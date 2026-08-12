@@ -15,6 +15,11 @@ export type MarketplaceCoverageSlice = {
   investmentOffers: number;
   expertProfiles: number;
   publicNeeds: number;
+  /** Stage 4F */
+  companies?: number;
+  suppliers?: number;
+  buyers?: number;
+  properties?: number;
   byType: Record<string, number>;
 };
 

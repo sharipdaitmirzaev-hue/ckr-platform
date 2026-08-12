@@ -190,6 +190,26 @@ export async function listOrganizationInvestments(organizationId: string) {
   }
 }
 
+/** Public catalog: verified + listed (RLS). */
+export async function listVerifiedOrganizations(limit = 100): Promise<Organization[]> {
+  if (!hasSupabaseEnv()) return [];
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("organizations")
+      .select("*")
+      .eq("verification_status", "verified")
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    if (error || !data) return [];
+    return (data as OrganizationRow[])
+      .map(mapOrganizationRow)
+      .filter((o) => o.isListed !== false);
+  } catch {
+    return [];
+  }
+}
+
 export async function listOrganizationApplications(
   organizationId: string,
   memberUserIds: string[],
