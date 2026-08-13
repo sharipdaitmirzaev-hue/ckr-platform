@@ -22,6 +22,24 @@ export type ParsedProcurementHtml = {
   lifecycle: ProcurementLifecycle;
 };
 
+function decodeBasicEntities(raw: string): string {
+  return raw
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => {
+      const cp = Number.parseInt(h, 16);
+      return Number.isFinite(cp) ? String.fromCodePoint(cp) : "";
+    })
+    .replace(/&#(\d+);/g, (_, d) => {
+      const cp = Number.parseInt(d, 10);
+      return Number.isFinite(cp) ? String.fromCodePoint(cp) : "";
+    })
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&quot;/gi, '"')
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/«|»/g, '"');
+}
+
 function firstMatch(text: string, re: RegExp): string | null {
   const m = text.match(re);
   return m?.[1]?.trim().replace(/\s+/g, " ") || null;
@@ -46,7 +64,7 @@ export function parseProcurementDetailHtml(input: {
   noticeHint?: string | null;
   titleHint?: string | null;
 }): ParsedProcurementHtml {
-  const text = stripHtml(input.html).replace(/\s+/g, " ");
+  const text = decodeBasicEntities(stripHtml(input.html)).replace(/\s+/g, " ");
   const noticeId =
     input.noticeHint ||
     firstMatch(text, /(?:номер\s*закупки|тендер\s*№|извещени[ея]\s*№?)\s*[:#]?\s*(\d{18,19})/i) ||
@@ -60,16 +78,29 @@ export function parseProcurementDetailHtml(input: {
     ) ||
     firstMatch(text, /Заказчик[:\s]+([^\n.]{8,160})/i);
 
-  const subject =
+  const subjectRaw =
     firstMatch(
       text,
-      /(?:Объект закупки|Предмет закупки|Наименование закупки)[:\s]+([^\n.]{5,200})/i,
+      /(?:Объект закупки|Предмет закупки|Наименование закупки|Наименование объекта закупки)[:\s]+([^\n.]{5,200})/i,
     ) ||
-    input.titleHint ||
-    null;
+    firstMatch(
+      text,
+      /(?:Описание\s+закупки|Что\s+закупают)[:\s]+([^\n.]{5,200})/i,
+    );
+
+  const subject =
+    subjectRaw && !/^#?\s*Позиция\b/i.test(subjectRaw) && !/доля\s+кол/i.test(subjectRaw)
+      ? subjectRaw
+      : input.titleHint || null;
 
   const title =
-    firstMatch(text, /(?:Закупка\s+\d{18,19}\s+Лот\s+\d+\s+)([^|]+?)(?:\s+Зарегистрироваться|\s+Войти)/i) ||
+    firstMatch(
+      text,
+      /(?:Закупка\s+\d{18,19}\s+Лот\s+\d+\s+)([^|#]+?)(?:\s+Зарегистрироваться|\s+Войти|\s+Сумма)/i,
+    ) ||
+    firstMatch(text, /<title[^>]*>\s*([^|<]{8,160})/i) ||
+    // star-pro often has human title before "Лот"
+    firstMatch(text, /([А-ЯЁA-Z][^|#]{8,120}?)\s+Лот\s+\d+/i) ||
     subject ||
     input.titleHint ||
     null;

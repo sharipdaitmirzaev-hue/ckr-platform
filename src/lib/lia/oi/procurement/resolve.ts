@@ -196,7 +196,7 @@ export async function resolveProcurementDetail(
         durationMs: Date.now() - t0,
       });
       const hit = official.objects.find((o) =>
-        String(o.objectId || "").includes(noticeId),
+        String(o.rawOfficialId || "").includes(noticeId),
       );
       if (hit) {
         hadOfficial = true;
@@ -207,14 +207,15 @@ export async function resolveProcurementDetail(
         region = hit.region || region;
         amount = hit.nmck ?? amount;
         deadlineAt = hit.deadlineAt || deadlineAt;
-        canonicalUrl = hit.url || canonicalUrl;
-        officialUrl = hit.url || officialUrl;
+        canonicalUrl = hit.officialUrl || canonicalUrl;
+        officialUrl = hit.officialUrl || officialUrl;
+        const hitUrl = hit.officialUrl || null;
         for (const f of [
-          fact("procurement_id", noticeId, "eis_soap", hit.url, "ЕИС SOAP", "official_eis"),
-          fact("customer", customer, "eis_soap", hit.url, "ЕИС SOAP", "official_eis"),
-          fact("nmck", amount, "eis_soap", hit.url, "ЕИС SOAP", "official_eis"),
-          fact("deadline_at", deadlineAt, "eis_soap", hit.url, "ЕИС SOAP", "official_eis"),
-          fact("region", region, "eis_soap", hit.url, "ЕИС SOAP", "official_eis"),
+          fact("procurement_id", noticeId, "eis_soap", hitUrl, "ЕИС SOAP", "official_eis"),
+          fact("customer", customer, "eis_soap", hitUrl, "ЕИС SOAP", "official_eis"),
+          fact("nmck", amount, "eis_soap", hitUrl, "ЕИС SOAP", "official_eis"),
+          fact("deadline_at", deadlineAt, "eis_soap", hitUrl, "ЕИС SOAP", "official_eis"),
+          fact("region", region, "eis_soap", hitUrl, "ЕИС SOAP", "official_eis"),
         ]) {
           if (f) facts.push(f);
         }

@@ -162,7 +162,7 @@ export const procurementSourceAdapter: OpportunitySourceAdapter = {
               sourceClass: "TENDERS",
               category: "PROCUREMENT",
               sourceName: (() => {
-                const link = hit.link || "";
+                const link = hit.url || "";
                 if (/zakupki\.gov\.ru/i.test(link)) {
                   return "ЕИС Закупки (Serper discovery)";
                 }

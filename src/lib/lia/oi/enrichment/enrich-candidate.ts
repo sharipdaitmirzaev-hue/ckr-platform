@@ -101,14 +101,14 @@ async function enrichProcurementViaResolver(
           field: "page_fetch",
           value: "failed",
           kind: "UNKNOWN",
-          sourceUrl: url || null,
+          sourceUrl: url || undefined,
           note: `safe-fetch: ${primaryFetchError || "fail"}; resolver: no DETAIL`,
         },
         {
           field: "detail_confidence",
           value: detail.confidence,
           kind: "INFERENCE",
-          sourceUrl: url || null,
+          sourceUrl: url || undefined,
           note: detail.attempts
             .slice(0, 4)
             .map((a) => `${a.sourceId}:${a.reason || (a.ok ? "ok" : "fail")}`)
@@ -171,21 +171,21 @@ async function enrichProcurementViaResolver(
         field: "page_fetch",
         value: "ok_via_resolver",
         kind: "FACT",
-        sourceUrl: detail.canonicalUrl,
+        sourceUrl: detail.canonicalUrl || undefined,
         note: `Multi-source resolver (${confidenceToLabel(detail.confidence)}); primary: ${primaryFetchError || "n/a"}`,
       },
       {
         field: "detail_confidence",
         value: detail.confidence,
         kind: "FACT",
-        sourceUrl: detail.canonicalUrl,
+        sourceUrl: detail.canonicalUrl || undefined,
         note: detail.sourcesUsed.join(", "),
       },
       {
         field: "verification_label",
         value: confidenceToLabel(detail.confidence),
         kind: "FACT",
-        sourceUrl: detail.canonicalUrl,
+        sourceUrl: detail.canonicalUrl || undefined,
       },
     ],
     sources: candidate.sources.length

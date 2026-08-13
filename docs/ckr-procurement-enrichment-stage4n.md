@@ -187,3 +187,17 @@ Server-side credentials only; `safeFetch` SSRF guards retained; HTML untrusted; 
 ## 24. Success metric target
 
 Improve DETAIL success rate vs Stage 4M baseline **0/8** via resolver + reachable mirrors.
+
+## 25. Dry-run AFTER (branch, `CKR_4N_LIVE=1`, no DB writes)
+
+| Metric | BEFORE (4M) | AFTER (4N dry-run on 5 known notices) |
+|---|---|---|
+| DETAIL success | 0/8 | **5/5** |
+| Customers | snippet-limited | **5/5** |
+| Amounts | often snippet | **3/5** (2 UNKNOWN kept) |
+| Deadlines | often snippet | **5/5** |
+| Official confirmed | 0 | 0 (EIS TCP + no SOAP creds) |
+| Trusted secondary | — | 5 |
+| Tea product fit | fail vocab | **18 (tea)** |
+
+Production untouched. TINDA untouched.
