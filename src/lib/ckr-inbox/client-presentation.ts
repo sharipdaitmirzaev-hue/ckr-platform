@@ -253,6 +253,11 @@ export function humanizeClientEvent(event: CkrRequestEvent): string | null {
     }
     return "Статус обращения обновлён";
   }
+  if (type === "CANDIDATE_SHARED") {
+    return event.detail
+      ? `ЦКР нашёл новый вариант: ${event.detail}`
+      : "ЦКР нашёл новый вариант";
+  }
   if (type === "CLIENT_MESSAGE") {
     if (/дополнил/i.test(title)) return "Вы дополнили идею";
     if (/написал/i.test(title) || /сообщени/i.test(title)) {
@@ -269,6 +274,11 @@ export function humanizeClientEvent(event: CkrRequestEvent): string | null {
   // Prefer human titles already written for CLIENT visibility
   if (title && !/[A-Z_]{3,}/.test(title)) return title;
   return title || null;
+}
+
+/** Detect Stage 4L owner-shared demand candidate message (CLIENT comment body). */
+export function isSharedCandidateMessage(body: string): boolean {
+  return /ЦКР нашёл вариант, который может быть вам интересен/i.test(body || "");
 }
 
 export function formatClientDate(iso: string): string {

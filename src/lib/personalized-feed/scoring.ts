@@ -9,6 +9,7 @@ import type {
   ScoreBreakdown,
 } from "@/types/personalized-feed";
 import { getIntentMapping } from "@/lib/personalized-feed/mapping";
+import { productDemandFit } from "@/lib/personalized-feed/demand-signals";
 import { regionsCompatible } from "@/lib/geo/region-normalize";
 import { expandIndustry as expandIndustryCatalog } from "@/lib/catalog/industry-aliases";
 
@@ -217,18 +218,40 @@ export function rankCandidate(
     ...(candidate.regions || []),
     candidate.region || "",
   ].filter(Boolean);
-  const reg = regionMatch(need.regions, regions);
+  let reg = regionMatch(need.regions, regions);
   const inds = [
     ...(candidate.industries || []),
     candidate.industry || "",
   ].filter(Boolean);
   const ind = industryMatch(need.industries, inds, candidate.rawType);
+
+  // Stage 4L: SEEK_BUYER / SUPPLY use title+summary product fit (procurement).
+  let industryScore = ind.score;
+  const seekDemand =
+    need.intentType === "SEEK_BUYER" || need.intentType === "SUPPLY";
+  if (seekDemand) {
+    const product = productDemandFit(need, candidate);
+    industryScore = Math.max(ind.score, product.score);
+    // Region alone must not elevate irrelevant procurements.
+    if (industryScore < 8 && reg.score >= 12) {
+      reg = { ...reg, score: Math.min(reg.score, 6) };
+    }
+    // Soft bonus for confirmed demand signal (published procurement).
+    if (
+      candidate.itemType === "opportunity" &&
+      candidate.rawType === "procurement" &&
+      industryScore >= 12
+    ) {
+      industryScore = Math.min(18, industryScore + 1);
+    }
+  }
+
   const dq = Math.max(0, Math.min(10, Math.round(candidate.dataQuality)));
   const fresh = freshnessScore(candidate.updatedAt || candidate.createdAt);
   const sc = Math.max(0, Math.min(5, Math.round(candidate.sourceConfidence)));
 
   const total =
-    intent + budget.score + reg.score + ind.score + dq + fresh + sc;
+    intent + budget.score + reg.score + industryScore + dq + fresh + sc;
 
   return {
     hardReject: false,
@@ -237,7 +260,7 @@ export function rankCandidate(
       intentCompatibility: intent,
       budgetFit: budget.score,
       regionFit: reg.score,
-      industryFit: ind.score,
+      industryFit: industryScore,
       dataQuality: dq,
       freshness: fresh,
       sourceConfidence: sc,
