@@ -75,10 +75,10 @@ export function detectIndustryTags(text: string): string[] {
   const t = text.toLowerCase();
   const found: string[] = [];
   const checks: Array<[string, RegExp]> = [
-    ["beverage", /напит|безалкогол|розлив|\bвод[аые]\b|fmcg/],
-    ["food", /пищев|продукт(ы|ов)?\s+питан|еда\b/],
+    ["beverage", /напит|безалкогол|розлив|\bвод[аые]\b|fmcg|сок|энергетик/],
+    ["food", /пищев|продукт(ы|ов)?\s+питан|еда\b|бакалея|питани/],
     ["manufacturing", /производ|завод|цех|оборудован/],
-    ["hospitality", /гостиниц|отел|глэмп|туризм/],
+    ["hospitality", /гостиниц|отел|глэмп|туризм|санатор|ресторан|кейтеринг/],
     ["agriculture", /сельхоз|агро|фермер/],
     ["construction", /строител|недвижим/],
     ["it", /\bit\b|цифр|software|saas/],

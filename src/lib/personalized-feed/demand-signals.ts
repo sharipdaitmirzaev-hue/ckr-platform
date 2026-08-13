@@ -1,7 +1,8 @@
 /**
- * Stage 4L — demand-signal helpers for SEEK_BUYER (not Matching Engine).
+ * Stage 4L/4M — demand-signal helpers for SEEK_BUYER (not Matching Engine).
  */
 
+import { productFitScore } from "@/lib/demand-intelligence/product-vocab";
 import { detectIndustryTags, industriesOverlap } from "@/lib/catalog/industry-aliases";
 import type { NeedProfile } from "@/types/need-profile";
 import type { FeedCandidate } from "@/types/personalized-feed";
@@ -65,46 +66,30 @@ export function enrichCandidateIndustries(
 
 /**
  * Product/industry fit using title+summary text — critical for procurement.
+ * Stage 4M: uses shared product vocabulary.
  * Returns 0–18.
  */
 export function productDemandFit(
   need: NeedProfile,
   candidate: FeedCandidate,
 ): { score: number; matched: string[]; unknown: boolean } {
+  const text = `${candidate.title} ${candidate.summary || ""} ${candidate.rawType || ""} ${(candidate.industries || []).join(" ")}`;
+  const base = productFitScore(
+    need.industries,
+    need.keywords || [],
+    text,
+  );
+  if (base.matched.length || base.score > 0) return base;
+
   if (!need.industries.length && !(need.keywords || []).length) {
     return { score: 8, matched: [], unknown: false };
   }
-  const text = `${candidate.title} ${candidate.summary || ""} ${candidate.rawType || ""}`;
   const tags = [
     ...(candidate.industries || []),
     candidate.industry || "",
   ].filter(Boolean);
-
-  const matched: string[] = [];
   if (industriesOverlap(need.industries, text, tags)) {
-    for (const ind of need.industries) {
-      if (industriesOverlap([ind], text, tags)) matched.push(ind);
-    }
-    // Strong food/beverage + procurement title hit
-    const strong =
-      /продукт|напит|пищев|безалкогол|опт/i.test(text) &&
-      need.industries.some((i) => /food|beverage|пищев|напит/i.test(i));
-    return { score: strong ? 18 : 15, matched, unknown: false };
+    return { score: 12, matched: need.industries.slice(0, 2), unknown: false };
   }
-
-  // keyword soft match
-  for (const kw of need.keywords || []) {
-    if (kw.length >= 3 && text.toLowerCase().includes(kw.toLowerCase())) {
-      matched.push(kw);
-    }
-  }
-  if (matched.length) return { score: 10, matched, unknown: false };
-
-  const hasAnyIndustrySignal = Boolean(
-    tags.length || detectIndustryTags(text).length,
-  );
-  if (!hasAnyIndustrySignal) {
-    return { score: 0, matched: [], unknown: true };
-  }
-  return { score: 3, matched: [], unknown: false };
+  return base;
 }

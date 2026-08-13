@@ -404,8 +404,11 @@ async function main() {
     assert.ok(read("package.json").includes("test-ckr-owner-client-control-stage4k"));
     assert.ok(
       read("src/app/(admin)/admin/owner/inbox/[id]/page.tsx").includes(
-        "OwnerRequestWorkbench",
-      ),
+        "OwnerDemandWorkbench",
+      ) ||
+        read("src/app/(admin)/admin/owner/inbox/[id]/page.tsx").includes(
+          "OwnerRequestWorkbench",
+        ),
     );
     assert.equal(getIntentMapping("SEEK_CONTRACT").opportunityTypes?.[0], "procurement");
     // Other intents unchanged: INVEST still no procurement
