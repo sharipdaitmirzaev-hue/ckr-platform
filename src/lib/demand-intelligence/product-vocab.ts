@@ -65,7 +65,7 @@ export const PRODUCT_ALIASES: Record<string, string[]> = {
 
 /** Subjects that look like "food" but are usually a poor fit for beverage wholesalers. */
 const FOOD_FALSE_POSITIVE_RE =
-  /мяс[оа]|говядин|свинин|птиц[аы]|медицинск\w*\s+питан|лечебн\w*\s+питан|специализированн\w*\s+(?:детск\w*\s+)?питан|энтеральн|смес[иь]\s+для\s+дет|парентеральн/i;
+  /мяс[оа]|говядин|свинин|птиц[аы]|медицинск[а-яё]*\s+питан|лечебн[а-яё]*\s+питан|специализированн[а-яё]*\s+(?:детск[а-яё]*\s+)?питан|энтеральн|смес[иь]\s+для\s+дет|парентеральн|детск[а-яё]*\s+питан/i;
 
 export function expandProductTag(tag: string): string[] {
   const key = tag.trim().toLowerCase();
