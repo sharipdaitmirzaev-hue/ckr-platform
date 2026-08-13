@@ -11,6 +11,7 @@ import {
   describeWhatYouNeed,
   formatClientDate,
   humanizeClientEvent,
+  isSharedCandidateMessage,
 } from "@/lib/ckr-inbox/client-presentation";
 import {
   getCkrRequestById,
@@ -164,6 +165,7 @@ export default async function ClientCkrRequestDetailPage({
         <ul className="space-y-3">
           {clientComments.map((c) => {
             const mine = c.authorId === current.user.id;
+            const shared = !mine && isSharedCandidateMessage(c.body);
             return (
               <li
                 key={c.id}
@@ -176,7 +178,7 @@ export default async function ClientCkrRequestDetailPage({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="font-medium text-foreground">
-                    {mine ? "Вы" : "ЦКР"}
+                    {mine ? "Вы" : shared ? "ЦКР нашёл новый вариант" : "ЦКР"}
                   </p>
                   <p className="text-xs text-muted">
                     {formatClientDate(c.createdAt)}

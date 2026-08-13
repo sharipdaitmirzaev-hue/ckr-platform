@@ -65,6 +65,14 @@ export function explainRecommendation(
     notes.push("Найдено Лией · внешняя возможность");
   }
 
+  if (
+    candidate.itemType === "opportunity" &&
+    candidate.rawType === "procurement"
+  ) {
+    notes.push("Закупка = сигнал спроса, не подтверждённый покупатель");
+    toVerify.push("условия участия в закупке");
+  }
+
   if (candidate.unknownFields.includes("profit")) {
     toVerify.push("прибыль");
   }
@@ -73,7 +81,9 @@ export function explainRecommendation(
   }
 
   const why = [
-    `Подходит под вашу потребность: «${needSummary(need)}».`,
+    candidate.rawType === "procurement"
+      ? `Сигнал спроса по потребности: «${needSummary(need)}».`
+      : `Подходит под вашу потребность: «${needSummary(need)}».`,
     matched.length ? `Совпало: ${matched.map((m) => `✓ ${m}`).join(" · ")}.` : "",
     toVerify.length ? `Нужно проверить: ${toVerify.join(", ")}.` : "",
   ]

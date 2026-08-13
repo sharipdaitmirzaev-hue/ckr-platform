@@ -79,8 +79,11 @@ const MAP: IntentMapping[] = [
     intentType: "SEEK_BUYER",
     coverage: "PARTIAL",
     itemTypes: ["need_profile", "opportunity"],
-    opportunityTypes: ["partner", "service"],
-    notes: "PUBLIC DEMAND/BUY needs + слабый marketplace signal. OI procurement owner-only.",
+    // Stage 4L: published procurement = demand signal (not proven buyer).
+    // Raw LIA OI stays owner-only via Controlled Publish — never auto-included.
+    opportunityTypes: ["procurement", "partner", "service"],
+    notes:
+      "Stage 4L: PUBLIC DEMAND needs + published procurement/partner/service as demand signals. No Matching Engine.",
   },
   {
     intentType: "SEEK_EXPERT",
@@ -121,8 +124,8 @@ const MAP: IntentMapping[] = [
     intentType: "SUPPLY",
     coverage: "PARTIAL",
     itemTypes: ["need_profile", "opportunity"],
-    opportunityTypes: ["partner", "service"],
-    notes: "Ищем DEMAND / buyer signals.",
+    opportunityTypes: ["procurement", "partner", "service"],
+    notes: "Stage 4L: DEMAND needs + published procurement as demand signals.",
   },
   {
     intentType: "DEMAND",

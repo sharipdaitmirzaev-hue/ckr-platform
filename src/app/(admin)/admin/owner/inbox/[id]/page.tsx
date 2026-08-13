@@ -20,7 +20,9 @@ import {
   updateCkrRequestStatusAction,
 } from "@/features/ckr-inbox/actions";
 import { OwnerClientCabinetPanel } from "@/features/ckr-inbox/components/owner-client-cabinet-panel";
+import { OwnerRequestWorkbench } from "@/features/ckr-inbox/components/owner-request-workbench";
 import { requireStaff } from "@/lib/auth/require-staff";
+import { getRequestWorkbench } from "@/lib/ckr-inbox/request-workbench";
 import {
   getCkrRequestById,
   listCkrComments,
@@ -51,12 +53,18 @@ export default async function OwnerInboxDetailPage({
   const request = await getCkrRequestById(params.id, { includeInternal: true });
   if (!request) notFound();
 
-  const [comments, events, org] = await Promise.all([
+  const [comments, events, org, workbench] = await Promise.all([
     listCkrComments(request.id),
     listCkrEvents(request.id),
     request.organizationId
       ? getOrganizationById(request.organizationId)
       : Promise.resolve(null),
+    getRequestWorkbench({
+      requestId: request.id,
+      needProfileId: request.needProfileId,
+      ownerUserId: request.fromUserId || staff.user.id,
+      limit: 5,
+    }),
   ]);
 
   const supabase = createClient();
@@ -165,6 +173,15 @@ export default async function OwnerInboxDetailPage({
         publicActivityText={request.publicActivityText}
         nextStepPublic={request.nextStepPublic}
         lastClientMessage={lastClientMessage}
+      />
+
+      <OwnerRequestWorkbench
+        requestId={request.id}
+        needProfileId={workbench.needProfileId}
+        needTitle={workbench.needTitle}
+        total={workbench.total}
+        candidates={workbench.candidates}
+        emptyReason={workbench.emptyReason}
       />
 
       <section className="grid gap-6 lg:grid-cols-2">

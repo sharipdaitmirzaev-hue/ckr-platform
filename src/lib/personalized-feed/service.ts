@@ -25,7 +25,9 @@ import {
   getIntentMapping,
 } from "@/lib/personalized-feed/mapping";
 import { dedupeCandidates } from "@/lib/personalized-feed/dedup";
+import { enrichCandidateIndustries } from "@/lib/personalized-feed/demand-signals";
 import { explainRecommendation } from "@/lib/personalized-feed/explain";
+import { isFixtureNoise } from "@/lib/personalized-feed/fixtures";
 import { rankCandidate } from "@/lib/personalized-feed/scoring";
 import {
   labelForLiaOiSource,
@@ -260,6 +262,12 @@ export class PersonalizedFeedService {
     limit?: number;
     /** Optional preloaded not_interested keys for batch owner feeds. */
     hiddenKeys?: Set<string>;
+    /** Stage 4L: drop smoke/seed/stub from working sets (owner workbench). */
+    excludeFixtures?: boolean;
+    /** Lower threshold for owner demand workbench (default 25). */
+    minScore?: number;
+    /** Stage 4L: for SEEK_BUYER, drop region-only procurements without product fit. */
+    requireProductFit?: boolean;
   }): Promise<{
     recommendations: FeedRecommendation[];
     diagnostics: FeedDiagnostics;
@@ -282,6 +290,7 @@ export class PersonalizedFeedService {
     const hidden = params.hiddenKeys ?? (await this.hiddenItemKeys(params.ownerId));
     let filtered = 0;
     const ranked: FeedRecommendation[] = [];
+    const minScore = params.minScore ?? 25;
 
     for (const candidate of unique) {
       const key = `${candidate.itemType}:${candidate.id}`;
@@ -289,11 +298,29 @@ export class PersonalizedFeedService {
         filtered += 1;
         continue;
       }
+      if (
+        params.excludeFixtures &&
+        isFixtureNoise({
+          id: candidate.id,
+          title: candidate.title,
+          summary: candidate.summary,
+          sourceLabel: candidate.sourceLabel,
+          sourceType: candidate.rawType,
+          fingerprint: candidate.fingerprint,
+        })
+      ) {
+        filtered += 1;
+        continue;
+      }
       const { breakdown, hardReject, budgetNote } = rankCandidate(
         params.need,
         candidate,
       );
-      if (hardReject || breakdown.total < 25) {
+      if (hardReject || breakdown.total < minScore) {
+        filtered += 1;
+        continue;
+      }
+      if (params.requireProductFit && breakdown.industryFit < 10) {
         filtered += 1;
         continue;
       }
@@ -587,23 +614,35 @@ async function collectMarketplaceCandidates(
             sourceKey: labelForLiaOiSource(row.type).sourceKey,
             sourceChannel: "external" as const,
           }
-        : labelForMarketplaceSource("opportunity");
+        : row.type === "procurement"
+          ? labelForMarketplaceSource("procurement")
+          : row.type === "support_program"
+            ? labelForMarketplaceSource("support_program")
+            : labelForMarketplaceSource("opportunity");
       const unknown: string[] = [];
       if (!row.region || row.region === "Регион не указан") unknown.push("region");
-      if (!row.type) unknown.push("industry");
       if (price == null) unknown.push("price");
       if (!row.deadline_at && (row.type === "procurement" || row.type === "support_program")) {
         unknown.push("deadline");
       }
+      const industries = enrichCandidateIndustries(
+        row.title || "",
+        row.description || "",
+        [],
+      );
+      if (!industries.length) unknown.push("industry");
       const dq = num(row.data_quality_score);
+      // sourceConfidence: official procurement slightly higher when published from LIA
+      const sourceConfidence =
+        row.type === "procurement" ? (isLia ? 7 : 6) : isLia ? 6 : 5;
       out.push({
         id: row.id,
         itemType: "opportunity",
         title: row.title,
         summary: row.description || "",
         region: row.region,
-        industry: row.type,
-        industries: row.type ? [row.type] : [],
+        industry: industries[0] || null,
+        industries,
         price,
         priceKnown: price != null,
         currency: row.currency || "RUB",
@@ -615,11 +654,11 @@ async function collectMarketplaceCandidates(
         deadlineAt: row.deadline_at || null,
         dataQuality:
           dq != null
-            ? Math.min(10, Math.max(1, dq))
+            ? Math.min(10, Math.max(1, Math.round(dq / 10)))
             : row.verification_status === "verified"
               ? 8
               : 5,
-        sourceConfidence: isLia ? 6 : 5,
+        sourceConfidence,
         updatedAt: row.updated_at,
         createdAt: row.created_at,
         rawType: row.type,
@@ -629,6 +668,7 @@ async function collectMarketplaceCandidates(
           ...(row.region && row.region !== "Регион не указан" ? ["region"] : []),
           ...(price != null ? ["price"] : []),
           ...(row.deadline_at ? ["deadline"] : []),
+          ...(industries.length ? ["industry"] : []),
           ...(isLia ? ["source"] : []),
         ],
       });
