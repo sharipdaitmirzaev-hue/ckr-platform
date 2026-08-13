@@ -60,6 +60,7 @@ export type LiaOiMatchingReadiness = (typeof LIA_OI_MATCHING_READINESS)[number];
 export const LIA_OI_STRUCTURED_FIELD_SOURCES = [
   "official_api",
   "official_page",
+  "trusted_secondary",
   "search_snippet",
   "fixture",
   "unknown",

@@ -29,19 +29,29 @@ function CandidateCard(props: {
         {c.region ? <Badge variant="soft">{c.region}</Badge> : null}
         {c.staffOnly ? <Badge variant="soft">Только ЦКР</Badge> : null}
       </div>
-      {c.customer ? (
-        <p className="text-sm text-muted">Заказчик: {c.customer}</p>
-      ) : null}
+      <div className="space-y-1 text-sm text-muted">
+        <p>Заказчик: {c.customer || "UNKNOWN"}</p>
+        {c.subjectLabel || c.summary ? (
+          <p>
+            Что закупают:{" "}
+            {(c.subjectLabel || c.summary || "").slice(0, 180) || "UNKNOWN"}
+          </p>
+        ) : (
+          <p>Что закупают: UNKNOWN</p>
+        )}
+        <p>Регион: {c.region || "UNKNOWN"}</p>
+        <p>НМЦК: {c.amountLabel || "UNKNOWN"}</p>
+        <p>Приём заявок до: {c.deadlineLabel || "UNKNOWN"}</p>
+        <p>
+          Проверка: {c.verificationLabel || "требует проверки"}
+        </p>
+      </div>
       <p className="text-sm text-foreground">
         Почему подходит:{" "}
         {c.matched.length ? c.matched.join(" · ") : c.why.slice(0, 160)}
       </p>
       <p className="text-xs text-muted">
         Источник: {c.sourceLabel}
-        {c.amountLabel ? ` · Сумма: ${c.amountLabel}` : " · Сумма: неизвестна"}
-        {c.deadlineLabel
-          ? ` · Срок: ${c.deadlineLabel}`
-          : " · Срок: неизвестен"}
         {c.toVerify.length
           ? ` · Проверить: ${c.toVerify.slice(0, 2).join(", ")}`
           : ""}

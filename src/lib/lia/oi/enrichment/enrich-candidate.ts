@@ -19,6 +19,13 @@ import {
 import type { OpportunityExtractor } from "@/lib/lia/oi/enrichment/types";
 import { field } from "@/lib/lia/oi/enrichment/types";
 import { isCatalogPageType } from "@/lib/lia/oi/page-type";
+import {
+  applyResolvedDetailToCandidatePatch,
+  extractNoticeIdFromText,
+  extractNoticeIdFromUrl,
+  resolveProcurementDetail,
+  type ProcurementConfidence,
+} from "@/lib/lia/oi/procurement";
 import { computeDataQualityV2 } from "@/lib/lia/oi/quality-v2";
 import { safeFetch } from "@/lib/http/safe-fetch";
 import type { LiaOiCandidate, LiaOiSearchPlan, LiaOiStructuredField } from "@/types/lia-oi";
@@ -35,7 +42,200 @@ export type StructuredEnrichStats = {
   detailConsidered: number;
   enriched: number;
   skippedNonDetail: number;
+  /** Stage 4N — multi-source resolver attempts / successes */
+  detailResolverAttempts?: number;
+  detailResolverSuccess?: number;
 };
+
+function confidenceToLabel(c: ProcurementConfidence): string {
+  switch (c) {
+    case "OFFICIAL_CONFIRMED":
+      return "официальный источник";
+    case "MULTI_SOURCE_CONFIRMED":
+      return "несколько источников";
+    case "TRUSTED_SECONDARY":
+      return "вторичный источник";
+    case "SEARCH_ONLY":
+      return "только поиск";
+    default:
+      return "не проверено";
+  }
+}
+
+async function enrichProcurementViaResolver(
+  candidate: LiaOiCandidate,
+  plan?: LiaOiSearchPlan,
+  primaryFetchError?: string,
+): Promise<{ candidate: LiaOiCandidate; fetched: boolean; error?: string }> {
+  const url = candidate.sources[0]?.url || candidate.canonicalUrl || "";
+  const noticeId =
+    candidate.sourceObjectId ||
+    extractNoticeIdFromUrl(url) ||
+    extractNoticeIdFromText(candidate.title) ||
+    extractNoticeIdFromText(candidate.description);
+
+  const mirrorUrls = [
+    url,
+    ...candidate.sources.map((s) => s.url).filter(Boolean),
+  ].filter((u, i, arr) => u && arr.indexOf(u) === i);
+
+  const detail = await resolveProcurementDetail({
+    noticeId,
+    title: candidate.title,
+    url,
+    mirrorUrls,
+    allowLiveFetch: true,
+  });
+
+  const ok = Boolean(
+    detail.sourcesUsed.length &&
+      (detail.customer || detail.amount != null || detail.deadlineAt),
+  );
+
+  if (!ok) {
+    const failed = scoreWithoutFetch({
+      ...candidate,
+      claims: [
+        ...candidate.claims,
+        {
+          field: "page_fetch",
+          value: "failed",
+          kind: "UNKNOWN",
+          sourceUrl: url || null,
+          note: `safe-fetch: ${primaryFetchError || "fail"}; resolver: no DETAIL`,
+        },
+        {
+          field: "detail_confidence",
+          value: detail.confidence,
+          kind: "INFERENCE",
+          sourceUrl: url || null,
+          note: detail.attempts
+            .slice(0, 4)
+            .map((a) => `${a.sourceId}:${a.reason || (a.ok ? "ok" : "fail")}`)
+            .join("; "),
+        },
+      ],
+    });
+    return {
+      candidate: failed,
+      fetched: false,
+      error: primaryFetchError || "resolver_unresolved",
+    };
+  }
+
+  const patch = applyResolvedDetailToCandidatePatch(detail);
+  const structured: LiaOiStructuredField[] = [];
+  const push = (
+    name: string,
+    value: string | number | null | undefined,
+    conf: number,
+  ) => {
+    if (value == null || value === "") return;
+    const f = field(name, value, {
+      source:
+        detail.confidence === "OFFICIAL_CONFIRMED"
+          ? "official_page"
+          : detail.confidence === "SEARCH_ONLY"
+            ? "search_snippet"
+            : "trusted_secondary",
+      confidence: conf,
+      sourceUrl: detail.canonicalUrl || url || undefined,
+      kind: "FACT",
+      note: `resolver:${detail.confidence}`,
+    });
+    if (f) structured.push(f);
+  };
+  push("procurement_id", detail.noticeId, 92);
+  push("customer", detail.customer, 80);
+  push("nmck", detail.amount, 78);
+  push("deadline_at", detail.deadlineAt, 78);
+  push("region", detail.region, 70);
+  push("procurement_subject", detail.subject, 75);
+  push("official_url", detail.canonicalUrl, 70);
+
+  let next: LiaOiCandidate = {
+    ...candidate,
+    ...(patch as Partial<LiaOiCandidate>),
+    pageType: "DETAIL",
+    isCatalogSource: false,
+    enrichedFromFetch: true,
+    isOfficialSource:
+      detail.confidence === "OFFICIAL_CONFIRMED"
+        ? true
+        : candidate.isOfficialSource,
+    lastSeenAt: new Date().toISOString(),
+    structuredFields: mergeStructured(candidate.structuredFields, structured),
+    claims: [
+      ...candidate.claims,
+      {
+        field: "page_fetch",
+        value: "ok_via_resolver",
+        kind: "FACT",
+        sourceUrl: detail.canonicalUrl,
+        note: `Multi-source resolver (${confidenceToLabel(detail.confidence)}); primary: ${primaryFetchError || "n/a"}`,
+      },
+      {
+        field: "detail_confidence",
+        value: detail.confidence,
+        kind: "FACT",
+        sourceUrl: detail.canonicalUrl,
+        note: detail.sourcesUsed.join(", "),
+      },
+      {
+        field: "verification_label",
+        value: confidenceToLabel(detail.confidence),
+        kind: "FACT",
+        sourceUrl: detail.canonicalUrl,
+      },
+    ],
+    sources: candidate.sources.length
+      ? candidate.sources.map((s, idx) =>
+          idx === 0 && detail.canonicalUrl
+            ? {
+                ...s,
+                url: detail.canonicalUrl!,
+                name:
+                  detail.confidence === "OFFICIAL_CONFIRMED"
+                    ? s.name
+                    : `Зеркало закупки (${detail.sourcesUsed[0] || "secondary"})`,
+              }
+            : s,
+        )
+      : candidate.sources,
+  };
+
+  const priceAmt =
+    next.nmck ??
+    next.currentPrice ??
+    next.startingPrice ??
+    next.askingPrice ??
+    null;
+  next.priceStatus = resolvePriceStatus(priceAmt);
+  next.budgetFit = resolveBudgetFit(priceAmt, plan?.budgetMax);
+  next.contentIntent = classifyContentIntent({
+    url: detail.canonicalUrl || url,
+    title: next.title,
+    snippet: (next.description || "").slice(0, 400),
+    pageType: "DETAIL",
+  });
+
+  const detailVal = validateDetailOpportunity(next);
+  next = {
+    ...next,
+    pageType:
+      detailVal.effectivePageType === "DETAIL"
+        ? "DETAIL"
+        : detailVal.effectivePageType,
+    isCatalogSource:
+      isCatalogPageType(detailVal.effectivePageType) ||
+      next.contentIntent === "CATALOG",
+    detailConfidence: detailVal.detailConfidence,
+    detailSignals: detailVal.signals,
+    missingFields: detailVal.missing,
+  };
+  next = applyQuality(next);
+  return { candidate: next, fetched: true };
+}
 
 function pickExtractor(c: LiaOiCandidate): OpportunityExtractor | null {
   return EXTRACTORS.find((e) => e.matches(c)) ?? null;
@@ -203,6 +403,15 @@ export async function enrichOneCandidate(
   });
 
   if (!fetched.ok) {
+    // Stage 4N: procurement DETAIL via multi-source resolver when primary URL fails
+    // (typical: zakupki.gov.ru TCP timeout from VPS).
+    const isProcurement =
+      candidate.opportunityType === "PROCUREMENT" ||
+      candidate.sourceAdapterId === "procurement" ||
+      /zakupki\.gov\.ru|star-pro\.ru|zakupki360\.ru|tektorg\.ru/i.test(url);
+    if (isProcurement) {
+      return enrichProcurementViaResolver(candidate, plan, fetched.code);
+    }
     const failed = scoreWithoutFetch({
       ...candidate,
       claims: [
@@ -376,6 +585,8 @@ export async function enrichStructuredCandidates(
     detailConsidered: 0,
     enriched: 0,
     skippedNonDetail: 0,
+    detailResolverAttempts: 0,
+    detailResolverSuccess: 0,
   };
 
   // Always score everyone from available fields first
@@ -407,9 +618,18 @@ export async function enrichStructuredCandidates(
   for (const { c, i } of detailIdx) {
     const result = await enrichOneCandidate(c, plan);
     working[i] = result.candidate;
+    const viaResolver = result.candidate.claims?.some(
+      (cl) =>
+        cl.field === "page_fetch" &&
+        String(cl.value).includes("resolver"),
+    );
+    if (viaResolver) stats.detailResolverAttempts = (stats.detailResolverAttempts || 0) + 1;
     if (result.fetched) {
       stats.pagesFetched += 1;
       if (result.candidate.enrichedFromFetch) stats.enriched += 1;
+      if (viaResolver) {
+        stats.detailResolverSuccess = (stats.detailResolverSuccess || 0) + 1;
+      }
     } else if (result.error && result.error.startsWith("skip_")) {
       /* already counted as non-detail-ish */
     } else {

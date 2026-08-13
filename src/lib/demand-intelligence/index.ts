@@ -20,6 +20,7 @@ export {
   productFitScore,
   expandProductTag,
   PRODUCT_ALIASES,
+  isFoodFalsePositiveForBeverageWholesale,
 } from "@/lib/demand-intelligence/product-vocab";
 export {
   runDemandDiscoveryForNeed,
@@ -32,3 +33,7 @@ export {
   type DemandWorkbenchResult,
 } from "@/lib/demand-intelligence/workbench";
 export { buildDemandClientShareMessage } from "@/lib/demand-intelligence/client-copy";
+export {
+  assessAssortmentSufficiency,
+  buildInternalAssortmentRecommendation,
+} from "@/lib/demand-intelligence/company-assortment";

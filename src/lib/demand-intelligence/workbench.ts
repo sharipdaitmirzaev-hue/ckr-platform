@@ -30,6 +30,7 @@ export type DemandWorkbenchItem = WorkbenchCandidateView & {
   amountLabel: string | null;
   deadlineLabel: string | null;
   discoveredAt: string | null;
+  verificationLabel: string | null;
 };
 
 export type DemandWorkbenchResult = RequestWorkbenchResult & {
@@ -87,10 +88,11 @@ function mapPublished(
       tierLabel: demandTierLabelRu(q.tier),
       section,
       staffOnly: false,
-      customer: null,
-      amountLabel: null,
-      deadlineLabel: null,
+      customer: c.customer ?? null,
+      amountLabel: c.amountLabel ?? null,
+      deadlineLabel: c.deadlineLabel ?? null,
       discoveredAt: null,
+      verificationLabel: c.verificationLabel ?? null,
       signalTypeLabel:
         q.classification === "POTENTIAL_BUYER"
           ? "Потенциальный покупатель"
@@ -215,6 +217,17 @@ async function loadOiReviewItems(input: {
         ? new Date(c.deadlineAt).toLocaleDateString("ru-RU")
         : null,
       discoveredAt: c.firstSeenAt || null,
+      verificationLabel: (() => {
+        const conf = c.claims?.find((x) => x.field === "detail_confidence");
+        if (conf?.value === "OFFICIAL_CONFIRMED") return "официальный источник";
+        if (conf?.value === "MULTI_SOURCE_CONFIRMED")
+          return "несколько источников";
+        if (conf?.value === "TRUSTED_SECONDARY") return "вторичный источник";
+        if (c.enrichedFromFetch && !c.isOfficialSource)
+          return "вторичный источник";
+        if (c.isOfficialSource) return "официальный источник";
+        return "требует проверки";
+      })(),
     });
   }
 

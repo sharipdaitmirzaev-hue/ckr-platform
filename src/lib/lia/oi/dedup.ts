@@ -69,16 +69,16 @@ export function dedupeCandidates(items: LiaOiCandidate[]): LiaOiCandidate[] {
     }
 
     const existing = groups.find((g) => {
-      if (g.canonicalKey === item.canonicalKey || sameCanonUrlPair(g, item)) {
-        return true;
-      }
-      // Distinct official IDs → never merge on weak title similarity
+      // Distinct official IDs → never merge (EIS notice URLs share path; query stripped)
       if (
         g.sourceObjectId &&
         item.sourceObjectId &&
         String(g.sourceObjectId) !== String(item.sourceObjectId)
       ) {
         return false;
+      }
+      if (g.canonicalKey === item.canonicalKey || sameCanonUrlPair(g, item)) {
+        return true;
       }
       return (
         titleSimilar(g.title, item.title) &&

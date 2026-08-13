@@ -18,24 +18,37 @@ function claimFrom(f: LiaOiStructuredField): LiaOiClaim {
     value: String(f.value),
     kind: f.kind,
     sourceUrl: f.sourceUrl,
-    sourceName: "official page",
+    sourceName: f.source === "official_page" ? "official page" : "trusted secondary",
     note: f.note,
   };
+}
+
+function isOfficialHost(url: string): boolean {
+  return /zakupki\.gov\.ru/i.test(url);
+}
+
+function isTrustedMirror(url: string): boolean {
+  return /star-pro\.ru|zakupki360\.ru|tektorg\.ru|expertcentre\.org/i.test(url);
 }
 
 export const procurementExtractor: OpportunityExtractor = {
   id: "ProcurementExtractor",
   matches(c) {
+    const url = c.sources[0]?.url || c.canonicalUrl || "";
     return (
       c.sourceAdapterId === "procurement" ||
       c.opportunityType === "PROCUREMENT" ||
-      /zakupki\.gov\.ru/i.test(c.sources[0]?.url || "")
+      isOfficialHost(url) ||
+      isTrustedMirror(url)
     );
   },
   extract({ candidate, text, finalUrl, titleTag }) {
     const structured: LiaOiStructuredField[] = [];
     const patch: Record<string, unknown> = {};
-    const src = "official_page" as const;
+    const official = isOfficialHost(finalUrl);
+    const src = official
+      ? ("official_page" as const)
+      : ("trusted_secondary" as const);
     const url = finalUrl;
 
     const procurementId =
@@ -158,7 +171,8 @@ export const procurementExtractor: OpportunityExtractor = {
       })!,
     );
     patch.canonicalUrl = url;
-    patch.isOfficialSource = true;
+    // Only mark official when HTML was fetched from zakupki.gov.ru
+    if (official) patch.isOfficialSource = true;
 
     return {
       patch: patch as Partial<typeof candidate>,
