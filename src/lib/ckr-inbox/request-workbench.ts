@@ -32,7 +32,40 @@ export type WorkbenchCandidateView = {
   canonicalUrl: string | null;
   rawType: string | null;
   shareable: boolean;
+  /** Stage 4N enrichment hints (may be UNKNOWN/null) */
+  customer?: string | null;
+  amountLabel?: string | null;
+  deadlineLabel?: string | null;
+  verificationLabel?: string | null;
+  subjectLabel?: string | null;
 };
+
+function moneyLabel(n: number | null | undefined): string | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `${Number.isInteger(m) ? m : m.toFixed(1)} млн ₽`;
+  }
+  return `${Math.round(n).toLocaleString("ru-RU")} ₽`;
+}
+
+function parseCustomerFromText(text: string): string | null {
+  const m = text.match(
+    /Заказчик[:\s]+([А-ЯЁA-Z«"][^.\n]{6,120})/i,
+  );
+  return m?.[1]?.trim() || null;
+}
+
+function verificationFromSource(sourceLabel: string, url: string | null): string {
+  if (/еис|zakupki\.gov\.ru|официальн/i.test(`${sourceLabel} ${url || ""}`)) {
+    return "официальный / заявлен как ЕИС";
+  }
+  if (/star-pro|zakupki360|tektorg|зеркал/i.test(`${sourceLabel} ${url || ""}`)) {
+    return "вторичный источник";
+  }
+  if (/serper|поиск/i.test(sourceLabel)) return "только поиск";
+  return "требует проверки";
+}
 
 export type RequestWorkbenchResult = {
   needProfileId: string | null;
@@ -54,12 +87,17 @@ export function toWorkbenchView(
   rec: FeedRecommendation,
 ): WorkbenchCandidateView {
   const kind = demandSignalKind(rec.candidate);
+  const summary = rec.candidate.summary || "";
+  const customer = parseCustomerFromText(summary);
+  const deadlineLabel = rec.candidate.deadlineAt
+    ? new Date(rec.candidate.deadlineAt).toLocaleDateString("ru-RU")
+    : null;
   return {
     recommendationId: rec.recommendationId,
     itemType: rec.candidate.itemType,
     itemId: rec.candidate.id,
     title: rec.candidate.title,
-    summary: (rec.candidate.summary || "").slice(0, 220),
+    summary: summary.slice(0, 220),
     region: rec.candidate.region,
     signalTypeLabel: demandSignalTypeLabel(kind),
     signalStatusLabel: demandSignalStatusLabel(kind),
@@ -76,6 +114,14 @@ export function toWorkbenchView(
     shareable:
       rec.candidate.itemType === "opportunity" &&
       (rec.candidate.status || "").toLowerCase() === "published",
+    customer,
+    amountLabel: moneyLabel(rec.candidate.price),
+    deadlineLabel,
+    verificationLabel: verificationFromSource(
+      rec.candidate.sourceLabel,
+      rec.candidate.canonicalUrl || null,
+    ),
+    subjectLabel: summary.slice(0, 160) || null,
   };
 }
 

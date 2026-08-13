@@ -20,7 +20,13 @@ import type {
 } from "@/lib/lia/oi/sources/types";
 import type { LiaOiCandidate } from "@/types/lia-oi";
 
-const SITES = ["zakupki.gov.ru"];
+/** Official + trusted secondary mirrors reachable from VPS (Stage 4N audit). */
+const SITES = [
+  "zakupki.gov.ru",
+  "star-pro.ru",
+  "zakupki360.ru",
+  "tektorg.ru",
+];
 
 function matchQuery(q: LiaOiSourceAdapterQuery): boolean {
   const text = `${q.rawQuery} ${q.plan.intent}`.toLowerCase();
@@ -155,7 +161,17 @@ export const procurementSourceAdapter: OpportunitySourceAdapter = {
               opportunityType: "PROCUREMENT",
               sourceClass: "TENDERS",
               category: "PROCUREMENT",
-              sourceName: "ЕИС Закупки (Serper discovery)",
+              sourceName: (() => {
+                const link = hit.url || "";
+                if (/zakupki\.gov\.ru/i.test(link)) {
+                  return "ЕИС Закупки (Serper discovery)";
+                }
+                try {
+                  return `Закупки · зеркало (${new URL(link).hostname})`;
+                } catch {
+                  return "Закупки · зеркало (Serper discovery)";
+                }
+              })(),
               idKind: "procurement",
             }),
           ),
