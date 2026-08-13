@@ -3,6 +3,7 @@ import { evaluateDemandQuality } from "../src/lib/demand-intelligence/quality";
 import { buildDemandQueryPlan } from "../src/lib/demand-intelligence/query-planner";
 import { listCandidates } from "../src/lib/lia/oi/store";
 
+async function main() {
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -200,3 +201,9 @@ const plan = buildDemandQueryPlan({
   maxQueries: 8,
 });
 console.log("QUERIES", plan.queries.map((q) => q.query));
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
