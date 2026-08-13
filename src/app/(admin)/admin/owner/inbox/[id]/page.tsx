@@ -20,9 +20,9 @@ import {
   updateCkrRequestStatusAction,
 } from "@/features/ckr-inbox/actions";
 import { OwnerClientCabinetPanel } from "@/features/ckr-inbox/components/owner-client-cabinet-panel";
-import { OwnerRequestWorkbench } from "@/features/ckr-inbox/components/owner-request-workbench";
+import { OwnerDemandWorkbench } from "@/features/ckr-inbox/components/owner-demand-workbench";
 import { requireStaff } from "@/lib/auth/require-staff";
-import { getRequestWorkbench } from "@/lib/ckr-inbox/request-workbench";
+import { getDemandWorkbench } from "@/lib/demand-intelligence/workbench";
 import {
   getCkrRequestById,
   listCkrComments,
@@ -59,11 +59,11 @@ export default async function OwnerInboxDetailPage({
     request.organizationId
       ? getOrganizationById(request.organizationId)
       : Promise.resolve(null),
-    getRequestWorkbench({
+    getDemandWorkbench({
       requestId: request.id,
       needProfileId: request.needProfileId,
       ownerUserId: request.fromUserId || staff.user.id,
-      limit: 5,
+      limit: 8,
     }),
   ]);
 
@@ -175,13 +175,17 @@ export default async function OwnerInboxDetailPage({
         lastClientMessage={lastClientMessage}
       />
 
-      <OwnerRequestWorkbench
+      <OwnerDemandWorkbench
         requestId={request.id}
         needProfileId={workbench.needProfileId}
         needTitle={workbench.needTitle}
         total={workbench.total}
-        candidates={workbench.candidates}
+        confirmed={workbench.confirmed}
+        potential={workbench.potential}
+        review={workbench.review}
         emptyReason={workbench.emptyReason}
+        oiReviewCount={workbench.oiReviewCount}
+        queryPlanSamples={workbench.queryPlanSamples}
       />
 
       <section className="grid gap-6 lg:grid-cols-2">
