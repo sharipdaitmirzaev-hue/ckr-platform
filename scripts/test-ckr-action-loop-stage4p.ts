@@ -429,6 +429,125 @@ async function main() {
     assert.match(src, /assertClientOwnsRequest/);
   });
 
+  await test("double-submit create yields two distinct actions (known risk)", () => {
+    // Server assigns a new UUID per create — two creates = two action_ids.
+    const events: ActionLoopEventRow[] = [
+      ev({
+        id: "d1",
+        eventType: ACTION_EVENT.created,
+        createdAt: "2026-08-22T12:00:00.000Z",
+        meta: {
+          stage4p: true,
+          action_id: "act-dup-1",
+          action_type: "CONTACT",
+          status: "TODO",
+          responsible: "CKR",
+          item_title: "E2E 4P Test Opportunity",
+        },
+      }),
+      ev({
+        id: "d2",
+        eventType: ACTION_EVENT.created,
+        createdAt: "2026-08-22T12:00:00.050Z",
+        meta: {
+          stage4p: true,
+          action_id: "act-dup-2",
+          action_type: "CONTACT",
+          status: "TODO",
+          responsible: "CKR",
+          item_title: "E2E 4P Test Opportunity",
+        },
+      }),
+    ];
+    const actions = deriveActionsFromEvents(events, { requestId: REQUEST_ID });
+    assert.equal(actions.length, 2);
+    assert.notEqual(actions[0].id, actions[1].id);
+  });
+
+  await test("dual-write: client view ignores INTERNAL-only note_internal", () => {
+    const internalOnly: ActionLoopEventRow[] = [
+      ev({
+        id: "i1",
+        eventType: ACTION_EVENT.created,
+        createdAt: "2026-08-22T12:00:00.000Z",
+        visibility: "INTERNAL",
+        meta: {
+          stage4p: true,
+          action_id: "act-dw-1",
+          action_type: "CONTACT",
+          status: "IN_PROGRESS",
+          responsible: "CKR",
+          note_internal: "SECRET_PHONE",
+          item_title: "E2E 4P Test Opportunity",
+        },
+      }),
+    ];
+    // Staff fold (all events)
+    const staff = deriveActionsFromEvents(internalOnly, {
+      includeInternalNotes: true,
+    });
+    assert.equal(staff[0].noteInternal, "SECRET_PHONE");
+
+    // Client fold — only CLIENT visibility rows (simulate RLS)
+    const clientRows = internalOnly.filter((e) => e.visibility === "CLIENT");
+    const clientActions = deriveActionsFromEvents(clientRows, {
+      includeInternalNotes: false,
+    });
+    assert.equal(clientActions.length, 0);
+
+    // After dual-write CLIENT mirror arrives (sanitized)
+    const dual = [
+      ...internalOnly,
+      ev({
+        id: "i2",
+        eventType: ACTION_EVENT.created,
+        createdAt: "2026-08-22T12:00:00.010Z",
+        visibility: "CLIENT",
+        meta: {
+          stage4p: true,
+          action_id: "act-dw-1",
+          action_type: "CONTACT",
+          status: "IN_PROGRESS",
+          responsible: "CKR",
+          item_title: "E2E 4P Test Opportunity",
+        },
+      }),
+    ];
+    const clientDual = deriveActionsFromEvents(
+      dual.filter((e) => e.visibility === "CLIENT"),
+      { includeInternalNotes: false },
+    );
+    assert.equal(clientDual.length, 1);
+    assert.equal(clientDual[0].noteInternal, "");
+    const view = toClientActionLoopView(clientDual)!;
+    assert.doesNotMatch(JSON.stringify(view), /SECRET_PHONE|IN_PROGRESS/);
+  });
+
+  await test("dual-write partial failure: INTERNAL without CLIENT leaves client empty", () => {
+    // Models first insert ok, second insert fail — client never sees action.
+    const partial: ActionLoopEventRow[] = [
+      ev({
+        id: "p1",
+        eventType: ACTION_EVENT.created,
+        createdAt: "2026-08-22T12:00:00.000Z",
+        visibility: "INTERNAL",
+        meta: {
+          stage4p: true,
+          action_id: "act-partial",
+          action_type: "CONTACT",
+          status: "TODO",
+          responsible: "CKR",
+        },
+      }),
+    ];
+    const client = deriveActionsFromEvents(
+      partial.filter((e) => e.visibility === "CLIENT"),
+      { includeInternalNotes: false },
+    );
+    assert.equal(client.length, 0);
+    const staff = deriveActionsFromEvents(partial, { includeInternalNotes: true });
+    assert.equal(staff.length, 1);
+  });
 
   console.log(`\nStage 4P: ${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);
