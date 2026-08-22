@@ -359,8 +359,16 @@ async function main() {
 
   await test("22. RLS / inbox page wires demand workbench", () => {
     const page = read("src/app/(admin)/admin/owner/inbox/[id]/page.tsx");
-    assert.ok(page.includes("OwnerDemandWorkbench"));
+    const oneDesk = read(
+      "src/features/ckr-action-loop/components/owner-one-desk.tsx",
+    );
     assert.ok(page.includes("getDemandWorkbench"));
+    // Stage 4P: One Desk embeds OwnerDemandWorkbench
+    assert.ok(
+      page.includes("OwnerDemandWorkbench") ||
+        (page.includes("OwnerOneDesk") &&
+          oneDesk.includes("OwnerDemandWorkbench")),
+    );
   });
 
   await test("23. Stage 4A–4L regression guards", () => {

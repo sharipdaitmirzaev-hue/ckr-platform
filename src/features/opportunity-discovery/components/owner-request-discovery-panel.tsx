@@ -36,8 +36,10 @@ function ExternalSubmit() {
 export function OwnerRequestDiscoveryPanel(props: {
   requestId: string;
   needProfileId: string | null;
+  /** When true (One Desk), skip outer section chrome — parent owns the heading. */
+  embedded?: boolean;
 }) {
-  const { requestId, needProfileId } = props;
+  const { requestId, needProfileId, embedded } = props;
   const [internalState, internalAction] = useFormState(
     findInternalVariantsForRequestAction,
     {},
@@ -49,23 +51,41 @@ export function OwnerRequestDiscoveryPanel(props: {
 
   if (!needProfileId) {
     return (
-      <section className="space-y-2 rounded-sm border border-border p-4">
-        <h2 className="font-display text-lg">Найденные варианты</h2>
+      <div
+        className={
+          embedded
+            ? "space-y-2"
+            : "space-y-2 rounded-sm border border-border p-4"
+        }
+      >
+        {!embedded ? (
+          <h2 className="font-display text-lg">Найденные варианты</h2>
+        ) : null}
         <p className="text-sm text-muted">
           Сначала свяжите потребность обращения — без неё поиск не запустить.
         </p>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="space-y-4 rounded-sm border border-border p-4">
-      <div>
-        <h2 className="font-display text-lg">Найденные варианты</h2>
-        <p className="mt-1 text-sm text-muted">
+    <div
+      className={
+        embedded ? "space-y-4" : "space-y-4 rounded-sm border border-border p-4"
+      }
+    >
+      {!embedded ? (
+        <div>
+          <h2 className="font-display text-lg">Найденные варианты</h2>
+          <p className="mt-1 text-sm text-muted">
+            Сначала ищем внутри ЦКР. Интернет — только по явному действию.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-muted">
           Сначала ищем внутри ЦКР. Интернет — только по явному действию.
         </p>
-      </div>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <form action={internalAction} className="space-y-2">
@@ -123,6 +143,6 @@ export function OwnerRequestDiscoveryPanel(props: {
           К публикации
         </Link>
       </div>
-    </section>
+    </div>
   );
 }

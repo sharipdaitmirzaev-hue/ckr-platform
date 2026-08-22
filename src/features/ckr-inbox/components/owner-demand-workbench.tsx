@@ -172,6 +172,8 @@ export function OwnerDemandWorkbench(props: {
   emptyReason: string | null;
   oiReviewCount: number;
   queryPlanSamples: string[];
+  /** When true (One Desk), parent owns the section title. */
+  embedded?: boolean;
 }) {
   const {
     confirmed,
@@ -184,18 +186,25 @@ export function OwnerDemandWorkbench(props: {
     total,
     oiReviewCount,
     queryPlanSamples,
+    embedded,
   } = props;
 
   const [state, action] = useFormState(findMoreDemandForRequestAction, {});
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-lg">Спрос и потенциальные покупатели</h2>
-        {total > 0 ? (
-          <p className="text-sm text-muted">Найдено {total} вариант(а)</p>
-        ) : null}
-      </div>
+    <div className="space-y-4">
+      {!embedded ? (
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg">
+            Спрос и потенциальные покупатели
+          </h2>
+          {total > 0 ? (
+            <p className="text-sm text-muted">Найдено {total} вариант(а)</p>
+          ) : null}
+        </div>
+      ) : total > 0 ? (
+        <p className="text-sm text-muted">Найдено {total} вариант(а)</p>
+      ) : null}
       <p className="text-sm text-muted">
         Сигналы спроса по потребности
         {needTitle ? <> «{needTitle}»</> : null}. Закупка ≠ найденный покупатель.
@@ -208,7 +217,8 @@ export function OwnerDemandWorkbench(props: {
           <input type="hidden" name="needProfileId" value={needProfileId} />
           <FindMoreSubmit />
           <p className="text-xs text-muted">
-            Ручной поиск. Без автопубликации и без сообщений клиенту.
+            Ручное расширение поиска. Без автопубликации и без сообщений
+            клиенту.
           </p>
           {state.error ? (
             <p className="text-sm text-amber-800">{state.error}</p>
@@ -292,6 +302,6 @@ export function OwnerDemandWorkbench(props: {
           </Link>
         ) : null}
       </div>
-    </section>
+    </div>
   );
 }

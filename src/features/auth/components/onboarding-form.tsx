@@ -14,6 +14,7 @@ import { onboardingAction, type ActionState } from "@/features/auth/actions";
 import type { ProfileRow } from "@/types/database";
 import { useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { useSearchParams } from "next/navigation";
 
 const initialState: ActionState = {};
 
@@ -33,6 +34,8 @@ type OnboardingFormProps = {
 
 export function OnboardingForm({ profile, roles }: OnboardingFormProps) {
   const [state, formAction] = useFormState(onboardingAction, initialState);
+  const searchParams = useSearchParams();
+  const nextFromQuery = searchParams.get("next") ?? "";
   const [selected, setSelected] = useState<AssignableRole[]>(
     roles.length > 0 ? roles : ["entrepreneur"],
   );
@@ -52,6 +55,9 @@ export function OnboardingForm({ profile, roles }: OnboardingFormProps) {
   return (
     <form action={formAction} className="mt-8 space-y-8">
       <AuthFormMessage error={state.error} success={state.success} />
+      {nextFromQuery ? (
+        <input type="hidden" name="next" value={nextFromQuery} />
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="font-display text-lg text-foreground">1. Выберите роль</h2>

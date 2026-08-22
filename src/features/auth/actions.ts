@@ -228,6 +228,23 @@ export async function registerAction(
     }
 
     revalidatePath("/", "layout");
+
+    // Stage 4P — pending idea claim has priority over LIA first-step.
+    const nextRaw =
+      typeof formData.get("next") === "string"
+        ? String(formData.get("next"))
+        : "";
+    const { cookies } = await import("next/headers");
+    const { IDEA_FORM } = await import("@/config/idea-first");
+    const { decodeClaimCookie } = await import("@/lib/idea-first/security");
+    const { isClaimNextPath } = await import("@/lib/idea-first/claim-redirect");
+    const jar = cookies();
+    const hasClaim = Boolean(
+      decodeClaimCookie(jar.get(IDEA_FORM.claimCookie)?.value),
+    );
+    if (hasClaim || isClaimNextPath(nextRaw)) {
+      redirect("/onboarding?next=/dashboard?claim=1");
+    }
     redirect("/onboarding");
   } catch (error) {
     // redirect() бросает спец. exception — пробрасываем.
@@ -298,7 +315,24 @@ export async function loginAction(
     }
 
     revalidatePath("/", "layout");
-    redirect(safeNextPath(formData.get("next")));
+
+    // Stage 4P — pending idea claim wins over arbitrary next (incl. /lia).
+    const nextRaw = safeNextPath(formData.get("next"));
+    const { cookies } = await import("next/headers");
+    const { IDEA_FORM } = await import("@/config/idea-first");
+    const { decodeClaimCookie } = await import("@/lib/idea-first/security");
+    const {
+      CLAIM_DASHBOARD_PATH,
+      isClaimNextPath,
+    } = await import("@/lib/idea-first/claim-redirect");
+    const jar = cookies();
+    const hasClaim = Boolean(
+      decodeClaimCookie(jar.get(IDEA_FORM.claimCookie)?.value),
+    );
+    if (hasClaim || isClaimNextPath(nextRaw)) {
+      redirect(CLAIM_DASHBOARD_PATH);
+    }
+    redirect(nextRaw);
   } catch (error) {
     if (
       error &&
@@ -518,7 +552,29 @@ export async function onboardingAction(
   });
 
   const { pathForRoles } = await import("@/config/onboarding");
-  const nextPath = pathForRoles(parsed.data.roles).href;
+  const roleDefaultPath = pathForRoles(parsed.data.roles).href;
+
+  // Stage 4P — pending claim wins over entrepreneur → /lia
+  const { cookies } = await import("next/headers");
+  const { IDEA_FORM } = await import("@/config/idea-first");
+  const { decodeClaimCookie } = await import("@/lib/idea-first/security");
+  const {
+    resolvePostAuthRedirect,
+    isClaimNextPath,
+  } = await import("@/lib/idea-first/claim-redirect");
+  const jar = cookies();
+  const hasClaim = Boolean(
+    decodeClaimCookie(jar.get(IDEA_FORM.claimCookie)?.value),
+  );
+  const nextFromForm =
+    typeof formData.get("next") === "string"
+      ? String(formData.get("next"))
+      : null;
+  const nextPath = resolvePostAuthRedirect({
+    hasPendingClaim: hasClaim || isClaimNextPath(nextFromForm),
+    nextPath: nextFromForm,
+    roleDefaultPath,
+  });
 
   revalidatePath("/", "layout");
   redirect(nextPath);
