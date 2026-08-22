@@ -402,13 +402,16 @@ async function main() {
   await test("15. regression Stage 4A–4K guards present", () => {
     assert.ok(read("src/lib/personalized-feed/mapping.ts").includes("SEEK_BUYER"));
     assert.ok(read("package.json").includes("test-ckr-owner-client-control-stage4k"));
+    const inbox = read("src/app/(admin)/admin/owner/inbox/[id]/page.tsx");
+    const oneDesk = read(
+      "src/features/ckr-action-loop/components/owner-one-desk.tsx",
+    );
+    // Stage 4P: One Desk orchestrates Demand workbench (capability retained)
     assert.ok(
-      read("src/app/(admin)/admin/owner/inbox/[id]/page.tsx").includes(
-        "OwnerDemandWorkbench",
-      ) ||
-        read("src/app/(admin)/admin/owner/inbox/[id]/page.tsx").includes(
-          "OwnerRequestWorkbench",
-        ),
+      inbox.includes("OwnerDemandWorkbench") ||
+        inbox.includes("OwnerRequestWorkbench") ||
+        (inbox.includes("OwnerOneDesk") &&
+          oneDesk.includes("OwnerDemandWorkbench")),
     );
     assert.equal(getIntentMapping("SEEK_CONTRACT").opportunityTypes?.[0], "procurement");
     // Other intents unchanged: INVEST still no procurement
