@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { isInviteRequired } from "@/config/beta";
 import {
   ASSIGNABLE_ROLES,
@@ -80,10 +81,9 @@ export function RegisterForm() {
         <label htmlFor="password" className="text-sm text-muted">
           Пароль
         </label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           placeholder="Не менее 8 символов"
           autoComplete="new-password"
           minLength={8}
