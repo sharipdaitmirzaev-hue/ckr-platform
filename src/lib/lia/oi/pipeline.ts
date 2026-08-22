@@ -1,0 +1,591 @@
+import { LIA_OI_BUDGETS, LIA_OI_LIVE_UNAVAILABLE } from "@/config/lia-oi";
+import { analyzeCandidate } from "@/lib/lia/oi/analyze";
+import { applyBuckets } from "@/lib/lia/oi/buckets";
+import { dedupeCandidates } from "@/lib/lia/oi/dedup";
+import { enrichTopDetailCandidates } from "@/lib/lia/oi/enrich";
+import { scoreWithoutFetch } from "@/lib/lia/oi/enrichment/enrich-candidate";
+import { cheapFilterHits } from "@/lib/lia/oi/filter";
+import { oiId } from "@/lib/lia/oi/id";
+import { getInternetSearchProvider } from "@/lib/lia/oi/internet";
+import {
+  resolveOiSearchMode,
+  safeProviderErrorMessage,
+} from "@/lib/lia/oi/mode";
+import { normalizeHit } from "@/lib/lia/oi/normalize";
+import {
+  buildPass2Queries,
+  buildSearchPlan,
+} from "@/lib/lia/oi/planner";
+import { buildSearchPlanV2 } from "@/lib/lia/oi/planner-v2";
+import type { NeedProfile } from "@/types/need-profile";
+import { runMatchingSourceAdapters } from "@/lib/lia/oi/sources/registry";
+import {
+  addReport,
+  getLiaOiStore,
+  listCandidates,
+  listCandidatesPage,
+  listHypotheses,
+  saveSearchRequest,
+  setHypotheses,
+  upsertCandidates,
+} from "@/lib/lia/oi/store";
+import type {
+  LiaOiCandidate,
+  LiaOiHypothesis,
+  LiaOiPipelineStats,
+  LiaOiReport,
+  LiaOiSearchRequest,
+  LiaOiTodayStats,
+} from "@/types/lia-oi";
+import type { InternetSearchHit } from "@/lib/lia/oi/internet/types";
+
+export type LiaOiSearchPipelineResult = {
+  request: LiaOiSearchRequest;
+  plan: LiaOiSearchRequest["plan"];
+  signalsScanned: number;
+  afterDedup: number;
+  candidates: LiaOiCandidate[];
+  /** Stage 2A.2 buckets */
+  topOpportunities: LiaOiCandidate[];
+  needsResearch: LiaOiCandidate[];
+  sourceCatalogs: LiaOiCandidate[];
+  rejected: LiaOiCandidate[];
+  stubMode: boolean;
+  searchMode: "stub" | "live";
+  providerLabel: string;
+  stats: LiaOiPipelineStats;
+  providerUnavailable: boolean;
+  ownerMessage?: string;
+};
+
+async function searchAllQueries(
+  queries: string[],
+  options: { limit: number; budgetMax: number | null; region?: string },
+): Promise<{ hits: InternetSearchHit[]; errors: number; fatal: boolean }> {
+  const provider = getInternetSearchProvider();
+  let errors = 0;
+  const hits: InternetSearchHit[] = [];
+
+  for (const q of queries) {
+    try {
+      const chunk = await provider.search(q, {
+        limit: options.limit,
+        budgetMax: options.budgetMax,
+        region: options.region,
+      });
+      hits.push(...chunk);
+    } catch (error) {
+      errors += 1;
+      console.error(
+        "[lia-oi] internet search query failed:",
+        safeProviderErrorMessage(error),
+      );
+    }
+  }
+
+  return {
+    hits,
+    errors,
+    fatal: errors > 0 && hits.length === 0,
+  };
+}
+
+function processHits(
+  rawHits: InternetSearchHit[],
+  plan: ReturnType<typeof buildSearchPlan>,
+): {
+  filteredOut: number;
+  duplicatesRemoved: number;
+  deduped: LiaOiCandidate[];
+} {
+  const { hits: filtered, stats: filterStats } = cheapFilterHits(rawHits, {
+    budgetMax: plan.budgetMax,
+  });
+  const normalized = filtered.map((h) => normalizeHit(h, plan));
+  const beforeDedup = normalized.length;
+  const deduped = dedupeCandidates(normalized).slice(
+    0,
+    LIA_OI_BUDGETS.maxCandidatesPerRun,
+  );
+  return {
+    filteredOut:
+      filterStats.droppedEmpty +
+      filterStats.droppedUrl +
+      filterStats.droppedJunk +
+      filterStats.droppedBudget,
+    duplicatesRemoved: Math.max(0, beforeDedup - deduped.length),
+    deduped,
+  };
+}
+
+/**
+ * Запрос владельца → plan → multi-pass search → filter → normalize →
+ * dedup → analyze → enrich → buckets.
+ */
+export async function runOwnerSearchPipeline(input: {
+  query: string;
+  userId: string;
+  /** Stage 4D — optional Need Profile for Query Planner v2 */
+  need?: Pick<
+    NeedProfile,
+    "intentType" | "regions" | "industries" | "budgetMax" | "budgetMin" | "title"
+  >;
+  /** Stage 4E — prefer regional site-restricted strategies */
+  regionalFirst?: boolean;
+}): Promise<LiaOiSearchPipelineResult> {
+  const started = Date.now();
+  const modeInfo = resolveOiSearchMode();
+  // Stage 4D/4E — planner v2 (budget-capped, need-aware, regional-first).
+  const plan = buildSearchPlanV2({
+    rawQuery: input.query,
+    need: input.need,
+    regionalFirst: input.regionalFirst,
+  });
+  const perQueryLimit = LIA_OI_BUDGETS.maxResultsPerQuery;
+
+  // --- Pass 1 ---
+  const pass1 = plan.pass1Queries?.length
+    ? plan.pass1Queries
+    : plan.queries.slice(0, LIA_OI_BUDGETS.maxQueriesPass1);
+
+  const search1 = await searchAllQueries(pass1, {
+    limit: perQueryLimit,
+    budgetMax: plan.budgetMax ?? null,
+    region: plan.regions[0],
+  });
+
+  let allHits = [...search1.hits];
+  let providerErrors = search1.errors;
+  let searchPasses = 1;
+  let queriesRun = pass1.length;
+
+  let { filteredOut, duplicatesRemoved, deduped } = processHits(allHits, plan);
+
+  let working = deduped
+    .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun)
+    .map((c) => analyzeCandidate(c, plan))
+    .sort((a, b) => b.score.overall - a.score.overall);
+
+  // Preliminary bucket peek for pass-2 decision
+  const peek = applyBuckets(working);
+  const needPass2 =
+    modeInfo.mode === "live" &&
+    peek.counts.TOP_OPPORTUNITIES < LIA_OI_BUDGETS.minTopForPass2Skip &&
+    queriesRun < LIA_OI_BUDGETS.maxQueriesPerRun;
+
+  if (needPass2) {
+    const remaining = LIA_OI_BUDGETS.maxQueriesPerRun - queriesRun;
+    const pass2 = buildPass2Queries(
+      plan,
+      {
+        topCount: peek.counts.TOP_OPPORTUNITIES,
+        detailCount: working.filter((c) => c.pageType === "DETAIL").length,
+        fitCount: working.filter((c) => c.budgetFit === "FIT").length,
+        unknownPriceCount: working.filter((c) => c.priceStatus === "UNKNOWN")
+          .length,
+        opportunityCount: working.filter((c) => c.contentIntent === "OPPORTUNITY")
+          .length,
+      },
+      Math.min(remaining, LIA_OI_BUDGETS.maxQueriesPass2),
+    );
+
+    if (pass2.length) {
+      plan.pass2Queries = pass2;
+      plan.queries = [...pass1, ...pass2];
+      const search2 = await searchAllQueries(pass2, {
+        limit: perQueryLimit,
+        budgetMax: plan.budgetMax ?? null,
+        region: plan.regions[0],
+      });
+      allHits = [...allHits, ...search2.hits];
+      providerErrors += search2.errors;
+      searchPasses = 2;
+      queriesRun += pass2.length;
+
+      ({ filteredOut, duplicatesRemoved, deduped } = processHits(allHits, plan));
+      working = deduped
+        .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun)
+        .map((c) => analyzeCandidate(c, plan))
+        .sort((a, b) => b.score.overall - a.score.overall);
+    }
+  }
+
+  const providerUnavailable =
+    search1.fatal &&
+    allHits.length === 0 &&
+    modeInfo.mode === "live";
+  if (providerUnavailable) {
+    console.error(
+      "[lia-oi] external search unavailable for owner run; mode=live",
+    );
+  }
+
+  const catalogPagesSeen = working.filter((c) => c.isCatalogSource).length;
+
+  // Tag general Serper/discovery results
+  const serperTagged = working.map((c) => ({
+    ...c,
+    sourceAdapterId: c.sourceAdapterId || "serper_general",
+    opportunityType: c.opportunityType || ("WEB_LISTING" as const),
+    isOfficialSource: c.isOfficialSource ?? false,
+    sourceConfidence: c.sourceConfidence ?? c.score.confidence ?? 40,
+    dataChannel: c.dataChannel || ("SERPER_DISCOVERY" as const),
+  }));
+
+  // Stage 2C — specialized adapters (owner-commanded, failure-isolated)
+  const specialized = await runMatchingSourceAdapters({
+    rawQuery: input.query,
+    plan,
+    userId: input.userId,
+    mode: modeInfo.mode,
+  });
+
+  const beforeMerge = serperTagged.length + specialized.candidates.length;
+  const mergedPool = dedupeCandidates([
+    ...serperTagged,
+    ...specialized.candidates,
+  ]);
+  const specializedMergedWithSerper = Math.max(
+    0,
+    beforeMerge - mergedPool.length,
+  );
+
+  // Stage 2C.1 — structured enrichment AFTER merge (official DETAIL pages).
+  // Stub/fixture: score from known fields without live fetch.
+  const enrich =
+    modeInfo.mode === "live"
+      ? await enrichTopDetailCandidates(mergedPool, plan)
+      : {
+          candidates: mergedPool.map(scoreWithoutFetch),
+          stats: {
+            pagesFetched: 0,
+            pagesFetchFailed: 0,
+            detailConsidered: 0,
+            enriched: 0,
+            skippedNonDetail: 0,
+          },
+        };
+
+  const analyzed = enrich.candidates
+    .slice(0, LIA_OI_BUDGETS.maxAiAnalysesPerRun + 12)
+    .map((c) => analyzeCandidate(c, plan))
+    .sort((a, b) => {
+      // Prefer higher matching readiness, then deadline, then score
+      const rank = (r?: string) =>
+        r === "READY" ? 0 : r === "PARTIAL" ? 1 : 2;
+      const rr = rank(a.matchingReadiness) - rank(b.matchingReadiness);
+      if (rr !== 0) return rr;
+      if (a.budgetFit === "OVER_BUDGET" && b.budgetFit !== "OVER_BUDGET") return 1;
+      if (b.budgetFit === "OVER_BUDGET" && a.budgetFit !== "OVER_BUDGET") return -1;
+      const da = a.daysRemaining;
+      const db = b.daysRemaining;
+      if (da != null && db != null && da !== db && da >= 0 && db >= 0) {
+        return da - db;
+      }
+      if (a.isCatalogSource !== b.isCatalogSource) {
+        return a.isCatalogSource ? 1 : -1;
+      }
+      return b.score.overall - a.score.overall;
+    });
+
+  const bucketed = applyBuckets(analyzed);
+  const top = bucketed.top.slice(0, LIA_OI_BUDGETS.maxTopOpportunities);
+  // Не добиваем TOP мусором — честно меньше 10
+  const feed = [
+    ...top,
+    ...bucketed.needsResearch,
+    ...bucketed.catalogs,
+    ...bucketed.rejected,
+  ];
+
+  const detailPages = feed.filter((c) => c.pageType === "DETAIL").length;
+  const opportunityCount = feed.filter(
+    (c) => c.contentIntent === "OPPORTUNITY",
+  ).length;
+  const overBudget = feed.filter((c) => c.budgetFit === "OVER_BUDGET").length;
+  const unknownPrice = feed.filter((c) => c.priceStatus === "UNKNOWN").length;
+
+  const stats: LiaOiPipelineStats = {
+    queriesRun,
+    signalsRaw: allHits.length + specialized.stats.reduce((s, a) => s + a.rawCount, 0),
+    filteredOut,
+    duplicatesRemoved: duplicatesRemoved + specializedMergedWithSerper,
+    afterDedup: mergedPool.length,
+    analyzed: feed.length,
+    providerErrors:
+      providerErrors + specialized.stats.filter((a) => a.error).length,
+    providerUnavailable,
+    catalogPagesSeen,
+    catalogPagesDemoted: bucketed.counts.SOURCE_CATALOGS,
+    detailPages,
+    pagesFetched: enrich.stats.pagesFetched,
+    pagesFetchFailed: enrich.stats.pagesFetchFailed,
+    searchPasses,
+    opportunityCount,
+    topOpportunities: top.length,
+    needsResearch: bucketed.counts.NEEDS_RESEARCH,
+    sourceCatalogs: bucketed.counts.SOURCE_CATALOGS,
+    rejected: bucketed.counts.REJECTED,
+    overBudget,
+    unknownPrice,
+    adapterStats: specialized.stats,
+    specializedRaw: specialized.stats.reduce((s, a) => s + a.rawCount, 0),
+    specializedNormalized: specialized.candidates.length,
+    specializedMergedWithSerper,
+  };
+
+  const request: LiaOiSearchRequest = {
+    id: oiId("req"),
+    query: input.query,
+    plan,
+    createdAt: new Date().toISOString(),
+    createdBy: input.userId,
+    candidateIds: feed.map((c) => c.id),
+    stubMode: modeInfo.mode === "stub",
+    searchMode: modeInfo.mode,
+    providerLabel: modeInfo.providerLabel,
+    stats,
+    durationMs: Date.now() - started,
+    errorSummary: providerUnavailable
+      ? "external search unavailable"
+      : null,
+  };
+
+  for (const c of feed) {
+    c.searchRequestId = request.id;
+  }
+
+  // search_runs first — opportunities.search_run_id and link tables FK to it
+  await saveSearchRequest(request);
+  const { candidates: persistedFeed } = await upsertCandidates(feed, {
+    searchRunId: request.id,
+  });
+  // Rediscovery may keep an existing id — remap API payloads to persisted rows
+  const remapByIndex = new Map(
+    feed.map((c, i) => [c.id, persistedFeed[i] ?? c] as const),
+  );
+  const remap = (c: LiaOiCandidate) => remapByIndex.get(c.id) ?? c;
+  const persistedTop = top.map(remap);
+  const persistedNeeds = bucketed.needsResearch.map(remap);
+  const persistedCatalogs = bucketed.catalogs.map(remap);
+  const persistedRejected = bucketed.rejected.map(remap);
+  request.candidateIds = persistedFeed.map((c) => c.id);
+
+  const modeLine =
+    modeInfo.mode === "live"
+      ? `Режим: LIVE — ${modeInfo.engine}`
+      : "Режим: DEMO/STUB";
+
+  const report: LiaOiReport = {
+    id: oiId("rep"),
+    kind: "search_result",
+    title: `Результат поиска: ${input.query.slice(0, 80)}`,
+    body: [
+      modeLine,
+      providerUnavailable ? LIA_OI_LIVE_UNAVAILABLE : null,
+      `План: intent=${plan.intent}, регионы=${plan.regions.join(", ")}, бюджет_max=${plan.budgetMax ?? "—"}.`,
+      `HARD: geo=${plan.hardConstraints?.geography}, max_budget=${plan.hardConstraints?.maxBudgetRub ?? "—"}.`,
+      `Serper queries: ${stats.queriesRun} (passes=${stats.searchPasses}).`,
+      `Raw: ${stats.signalsRaw}. TOP: ${stats.topOpportunities}. Research: ${stats.needsResearch}. Catalogs: ${stats.sourceCatalogs}. Rejected: ${stats.rejected}.`,
+      `OVER_BUDGET: ${stats.overBudget}. UNKNOWN_PRICE: ${stats.unknownPrice}. DETAIL: ${stats.detailPages}.`,
+      `safe-fetch: ok=${stats.pagesFetched ?? 0}, fail=${stats.pagesFetchFailed ?? 0}.`,
+      "",
+      "Search Plan queries:",
+      ...plan.queries.map((q, i) => `  ${i + 1}. ${q}`),
+      "",
+      ...persistedTop.slice(0, 5).map(
+        (c, i) =>
+          `${i + 1}. [${c.contentIntent}/${c.pageType}] ${c.title} — ${c.budgetFit} · opp ${c.score.opportunity}/100`,
+      ),
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    stats: {
+      afterDedup: stats.afterDedup,
+      analyzed: stats.analyzed,
+      highPriority: persistedTop.filter(
+        (c) => c.score.priority === "HIGH_PRIORITY",
+      ).length,
+      providerErrors: stats.providerErrors,
+      detailPages: stats.detailPages ?? 0,
+      topOpportunities: stats.topOpportunities ?? 0,
+      needsResearch: stats.needsResearch ?? 0,
+      rejected: stats.rejected ?? 0,
+      overBudget: stats.overBudget ?? 0,
+      pagesFetched: stats.pagesFetched ?? 0,
+      queriesRun: stats.queriesRun,
+    },
+    candidateIds: persistedFeed.map((c) => c.id),
+    createdAt: new Date().toISOString(),
+    stubMode: modeInfo.mode === "stub",
+  };
+  await addReport(report);
+
+  await maybeBuildHypotheses(persistedFeed);
+
+  return {
+    request,
+    plan,
+    signalsScanned: stats.signalsRaw,
+    afterDedup: stats.afterDedup,
+    candidates: persistedFeed,
+    topOpportunities: persistedTop,
+    needsResearch: persistedNeeds,
+    sourceCatalogs: persistedCatalogs,
+    rejected: persistedRejected,
+    stubMode: modeInfo.mode === "stub",
+    searchMode: modeInfo.mode,
+    providerLabel: modeInfo.providerLabel,
+    stats,
+    providerUnavailable,
+    ownerMessage: providerUnavailable ? LIA_OI_LIVE_UNAVAILABLE : undefined,
+  };
+}
+
+async function maybeBuildHypotheses(candidates: LiaOiCandidate[]) {
+  const land = candidates.find((c) => /земл|участ/i.test(c.title));
+  const support = candidates.find((c) => /льгот|поддерж/i.test(c.title));
+  const hotel = candidates.find((c) => /гостиниц|туризм/i.test(c.title));
+
+  const hypotheses: LiaOiHypothesis[] = [];
+  if (land && support) {
+    hypotheses.push({
+      id: oiId("hyp"),
+      title: "Гипотеза: производство/переработка с опорой на льготное финансирование",
+      summary:
+        "Сигналы земли/площадки и программы поддержки можно собрать в проектную гипотезу. Это INFERENCE, не готовая сделка.",
+      supportingCandidateIds: [land.id, support.id],
+      missingPieces: [
+        "Подтверждение ВРИ и коммуникаций",
+        "Реальный инвестор/оператор",
+        "Финансовая модель",
+      ],
+      investmentScale: "15–40 млн ₽ (оценка, ESTIMATE)",
+      createdAt: new Date().toISOString(),
+      status: "DRAFT",
+    });
+  }
+  if (hotel) {
+    hypotheses.push({
+      id: oiId("hyp"),
+      title: "Гипотеза: туристический объект + партнёр ЦКР",
+      summary:
+        "Карточка гостиницы/туризма может сочетаться с инвестором/управляющей командой из базы ЦКР (matching — отдельный этап).",
+      supportingCandidateIds: [hotel.id],
+      missingPieces: ["Сезонность и загрузка", "Юридическая структура"],
+      investmentScale: hotel.askingPrice
+        ? `${Math.round(hotel.askingPrice / 1_000_000)}+ млн ₽`
+        : "уточняется",
+      createdAt: new Date().toISOString(),
+      status: "DRAFT",
+    });
+  }
+  if (hypotheses.length) await setHypotheses(hypotheses);
+}
+
+/**
+ * Seed только для STUB-режима (demo-лента).
+ * В LIVE не подмешиваем stub-корпус.
+ */
+export async function ensureLiaOiSeed(userId = "system"): Promise<void> {
+  const store = getLiaOiStore();
+  if (store.seeded) return;
+
+  const mode = resolveOiSearchMode();
+  if (mode.mode === "live") {
+    store.seeded = true;
+    return;
+  }
+
+  // Persistence already has data — do not re-seed stub corpus into supabase
+  const existing = await listCandidatesPage({ page: 1, pageSize: 1 });
+  if (existing.total > 0) {
+    store.seeded = true;
+    return;
+  }
+
+  await runOwnerSearchPipeline({
+    query: "Инвестор ищет проект до 30 млн рублей по России",
+    userId,
+  });
+  const candidates = await listCandidates();
+  const digest = buildDigestReport(candidates);
+  await addReport(digest);
+  store.seeded = true;
+}
+
+export function buildDigestReport(candidates: LiaOiCandidate[]): LiaOiReport {
+  const mode = resolveOiSearchMode();
+  const high = candidates.filter((c) => c.score.priority === "HIGH_PRIORITY");
+  const interesting = candidates.filter((c) => c.score.overall >= 55);
+  const stubOnly = candidates.every((c) => c.isStub);
+  return {
+    id: oiId("rep"),
+    kind: "daily_digest",
+    title: `ЛИЯ · Дайджест ${mode.mode === "live" ? "LIVE" : "stub"} · ${new Date().toLocaleDateString("ru-RU")}`,
+    body: [
+      mode.mode === "live"
+        ? `Внешний поиск: LIVE — ${mode.engine}`
+        : "Внешний поиск в demo/stub режиме.",
+      stubOnly && mode.mode === "live"
+        ? "Внимание: в ленте пока только stub-карточки (не смешивать с live без проверки)."
+        : null,
+      "",
+      `Просмотрено сигналов: ${Math.max(candidates.length * 3, candidates.length)}`,
+      `После dedup: ${candidates.length}`,
+      `Проанализировано: ${candidates.length}`,
+      `Рекомендую посмотреть: ${interesting.length}`,
+      `Высокий приоритет: ${high.length}`,
+      "Новых бизнес-гипотез: см. /admin/owner/lia/hypotheses",
+      "",
+      "ТОП:",
+      ...candidates.slice(0, 5).map(
+        (c, i) =>
+          `${i + 1}. ${c.title} · ${c.isStub ? "STUB" : "LIVE"} · потенциал ${c.score.overall}/100`,
+      ),
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    stats: {
+      afterDedup: candidates.length,
+      analyzed: candidates.length,
+      worthAttention: interesting.length,
+      highPriority: high.length,
+      hypotheses: 0,
+    },
+    candidateIds: candidates.map((c) => c.id),
+    createdAt: new Date().toISOString(),
+    stubMode: mode.mode === "stub",
+  };
+}
+
+export async function getTodayStats(): Promise<LiaOiTodayStats> {
+  const mode = resolveOiSearchMode();
+  const candidates = await listCandidates();
+  const interesting = candidates.filter((c) => c.score.overall >= 55);
+  const high = candidates.filter((c) => c.score.priority === "HIGH_PRIORITY");
+  const hypotheses = await listHypotheses();
+  return {
+    signalsScanned: candidates.length
+      ? Math.max(candidates.length * 3, candidates.length)
+      : 0,
+    newAfterDedup: candidates.length,
+    analyzed: candidates.length,
+    worthAttention: interesting.length,
+    highPriority: high.length,
+    newHypotheses: hypotheses.length,
+    stubMode: mode.mode === "stub",
+    searchMode: mode.mode,
+    providerLabel: mode.providerLabel,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export async function getRecommendedCandidates(
+  limit = 5,
+): Promise<LiaOiCandidate[]> {
+  const candidates = await listCandidates();
+  return candidates
+    .filter((c) => c.resultBucket === "TOP_OPPORTUNITIES" || !c.resultBucket)
+    .slice(0, limit);
+}

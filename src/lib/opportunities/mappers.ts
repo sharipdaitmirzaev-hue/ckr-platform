@@ -23,5 +23,14 @@ export function mapOpportunityRow(row: OpportunityRow): Opportunity {
       "unverified",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    sourceType: row.source_type,
+    sourceId: row.source_id ?? null,
+    sourceUrl: row.source_url ?? null,
+    canonicalUrl: row.canonical_url ?? null,
+    sourceLabel: row.source_label ?? null,
+    fingerprint: row.fingerprint ?? null,
+    amountKind: row.amount_kind ?? null,
+    deadlineAt: row.deadline_at ?? null,
+    ownerEditedFields: row.owner_edited_fields ?? [],
   };
 }

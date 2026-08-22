@@ -1,9 +1,16 @@
 import { StatsCard } from "@/components/admin/stats-card";
 import { MetricCard } from "@/components/analytics/metric-card";
 import { AnalyticsChart } from "@/components/analytics/analytics-chart";
+import { LiaTodayWidget } from "@/components/lia/oi/today-widget";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import {
+  ensureLiaOiSeed,
+  getRecommendedCandidates,
+  getTodayStats,
+} from "@/lib/lia/oi/pipeline";
 import { getOwnerDashboard } from "@/lib/owner/dashboard";
+import { getInboxStats } from "@/lib/ckr-inbox/queries";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -23,8 +30,20 @@ function formatWhen(iso: string) {
 }
 
 export default async function OwnerCabinetPage() {
-  await requireAdmin();
-  const data = await getOwnerDashboard();
+  const current = await requireAdmin();
+  await ensureLiaOiSeed(current.user.id);
+  const [data, oiStats, oiRecommended, inbox] = await Promise.all([
+    getOwnerDashboard(),
+    Promise.resolve(getTodayStats()),
+    Promise.resolve(getRecommendedCandidates(3)),
+    getInboxStats().catch(() => ({
+      newCount: 0,
+      inProgress: 0,
+      waiting: 0,
+      done: 0,
+      recent: [],
+    })),
+  ]);
 
   const demandChart = [
     {
@@ -62,6 +81,85 @@ export default async function OwnerCabinetPage() {
         Версия {data.version.version} · канал {data.version.channel} · обновлено{" "}
         {formatWhen(data.generatedAt)}
       </p>
+
+      <LiaTodayWidget stats={oiStats} recommended={oiRecommended} />
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-xl text-foreground">Заявки</h3>
+          <Link
+            href="/admin/owner/inbox"
+            className="text-sm text-accent hover:underline"
+          >
+            Открыть inbox
+            {inbox.newCount > 0 ? ` · ${inbox.newCount} новых` : ""}
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-4">
+          <StatsCard label="Новые" value={inbox.newCount} />
+          <StatsCard label="В работе" value={inbox.inProgress} />
+          <StatsCard label="Ждём клиента" value={inbox.waiting} />
+          <StatsCard label="Завершённые" value={inbox.done} />
+        </div>
+        <ul className="space-y-2 text-sm">
+          {inbox.recent.slice(0, 5).map((r) => (
+            <li key={r.id}>
+              <Link
+                href={`/admin/owner/inbox/${r.id}`}
+                className="text-accent hover:underline"
+              >
+                {r.subject || "Без темы"}
+              </Link>{" "}
+              <span className="text-muted">· {r.status}</span>
+            </li>
+          ))}
+          {!inbox.recent.length ? (
+            <li className="text-muted">Пока нет обращений в inbox.</li>
+          ) : null}
+        </ul>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="font-display text-xl text-foreground">Feed v1</h3>
+        <p className="text-sm text-muted">
+          Диагностика персональной ленты «Для вас» (без Matching Engine).
+        </p>
+        <Link
+          href="/admin/owner/feed"
+          className="text-sm text-accent hover:underline"
+        >
+          Открыть диагностику Feed →
+        </Link>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="font-display text-xl text-foreground">
+          К публикации
+        </h3>
+        <p className="text-sm text-muted">
+          Проверка найденных вариантов перед показом клиенту. Без автоматической
+          публикации.
+        </p>
+        <Link
+          href="/admin/owner/publishing"
+          className="text-sm text-accent hover:underline"
+        >
+          Открыть очередь публикации →
+        </Link>
+        <p className="mt-2 text-sm">
+          <Link href="/admin/owner/regional" className="text-accent hover:underline">
+            Региональное покрытие (Дагестан / СКФО)
+          </Link>
+          {" · "}
+          <Link href="/admin/owner/content-gap" className="text-accent hover:underline">
+            Content Gap
+          </Link>
+          {" · "}
+          <Link href="/admin/owner/companies" className="text-accent hover:underline">
+            Companies
+          </Link>
+        </p>
+      </section>
 
       <section className="space-y-4">
         <h3 className="font-display text-xl text-foreground">Платформа сейчас</h3>
@@ -300,6 +398,12 @@ export default async function OwnerCabinetPage() {
       <section className="space-y-3">
         <h3 className="font-display text-xl text-foreground">Быстрые переходы</h3>
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <Link href="/admin/owner/lia" className="text-accent hover:underline">
+            Лия — Центр возможностей
+          </Link>
+          <Link href="/admin/owner/graph" className="text-accent hover:underline">
+            Business Graph
+          </Link>
           <Link href="/admin/project-acquisition" className="text-accent hover:underline">
             Привлечение проектов
           </Link>

@@ -19,7 +19,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
         Вход в ЦКР
       </h1>
       <p className="mt-2 text-sm text-muted">
-        Войдите, чтобы открыть личный кабинет и управлять профилем.
+        Войдите в личный кабинет ЦКР. Отправить идею можно без входа.
       </p>
 
       {searchParams?.error === "blocked" ? (
@@ -38,8 +38,15 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
       <p className="mt-6 text-sm text-muted">
         Нет аккаунта?{" "}
         <Link href="/register" className="text-accent hover:underline">
-          Регистрация
+          Создать аккаунт
         </Link>
+      </p>
+      <p className="mt-3 text-sm text-muted">
+        Или{" "}
+        <Link href="/idea" className="text-accent hover:underline">
+          расскажите нам вашу идею
+        </Link>{" "}
+        без регистрации.
       </p>
     </Card>
   );

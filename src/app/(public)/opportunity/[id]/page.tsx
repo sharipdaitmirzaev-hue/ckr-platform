@@ -70,6 +70,14 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
             {opportunityVerificationLabels[opportunity.status]}
           </Badge>
           <VerificationBadge status={opportunity.verificationStatus} />
+          {opportunity.sourceType === "lia_oi" ? (
+            <>
+              <Badge variant="accent">Найдено Лией</Badge>
+              {opportunity.sourceLabel ? (
+                <Badge variant="soft">{opportunity.sourceLabel}</Badge>
+              ) : null}
+            </>
+          ) : null}
         </div>
 
         <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
@@ -111,6 +119,33 @@ export default async function OpportunityPage({ params }: OpportunityPageProps) 
               {opportunityVerificationLabels[opportunity.status]}
             </dd>
           </div>
+          {opportunity.deadlineAt ? (
+            <div>
+              <dt className="text-xs uppercase tracking-[0.16em] text-muted">
+                Дедлайн
+              </dt>
+              <dd className="mt-2 text-foreground">
+                {new Date(opportunity.deadlineAt).toLocaleString("ru-RU")}
+              </dd>
+            </div>
+          ) : null}
+          {opportunity.sourceUrl || opportunity.canonicalUrl ? (
+            <div>
+              <dt className="text-xs uppercase tracking-[0.16em] text-muted">
+                Официальный источник
+              </dt>
+              <dd className="mt-2">
+                <a
+                  href={opportunity.sourceUrl || opportunity.canonicalUrl || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  Открыть источник
+                </a>
+              </dd>
+            </div>
+          ) : null}
         </dl>
 
         <section className="mt-10">

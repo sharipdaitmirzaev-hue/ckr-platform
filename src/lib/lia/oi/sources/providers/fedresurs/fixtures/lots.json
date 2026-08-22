@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "lotId": "21000032180000000281_7",
+      "tradeNumber": "21000032180000000281",
+      "title": "Производственный цех с оборудованием",
+      "assetDescription": "Производственный цех 1200 м², линия розлива, складской блок",
+      "region": "Нижегородская область",
+      "startingPrice": 18500000,
+      "currentPrice": 19200000,
+      "deadline": "2026-08-22T15:00:00+03:00",
+      "status": "Приём заявок",
+      "organizer": "АО Торги Регион",
+      "officialUrl": "https://bankrot.fedresurs.ru/trade/view.html?id=21000032180000000281"
+    },
+    {
+      "lotId": "FR-LOT-2026-004512",
+      "tradeNumber": "А45-2026/4512",
+      "title": "Имущественный комплекс пищевого производства",
+      "assetDescription": "Здание цеха, холодильные камеры, упаковочная линия",
+      "region": "Республика Татарстан",
+      "startingPrice": 27500000,
+      "currentPrice": 27500000,
+      "deadline": "2026-09-05T12:00:00+03:00",
+      "status": "Объявлены торги",
+      "organizer": "Конкурсный управляющий Иванов И.И.",
+      "officialUrl": "https://bankrot.fedresurs.ru/trade/view.html?id=FR-LOT-2026-004512"
+    }
+  ]
+}

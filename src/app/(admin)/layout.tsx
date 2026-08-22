@@ -13,7 +13,7 @@ export default async function AdminLayout({
   const current = await requireStaff("/admin/crm");
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-16 md:pb-0">
       <AdminHeader
         fullName={current.user.fullName}
         email={current.user.email}
