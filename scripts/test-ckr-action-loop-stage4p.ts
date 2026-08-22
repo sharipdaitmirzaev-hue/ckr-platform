@@ -395,17 +395,20 @@ async function main() {
     assert.match(page, /includeInternalNotes: false/);
   });
 
-await test("register/onboarding/login preserve claim priority", () => {
-  const auth = read("src/features/auth/actions.ts");
-  assert.match(auth, /resolvePostAuthRedirect|isClaimNextPath/);
-  assert.match(auth, /claimCookie|decodeClaimCookie/);
-  // login must also prefer pending claim cookie (not only register/onboarding)
-  assert.match(auth, /loginAction[\s\S]*CLAIM_DASHBOARD_PATH|loginAction[\s\S]*decodeClaimCookie/);
-  const reg = read("src/features/auth/components/register-form.tsx");
-  assert.match(reg, /name="next"/);
-  const onb = read("src/features/auth/components/onboarding-form.tsx");
-  assert.match(onb, /name="next"/);
-});
+  await test("register/onboarding/login preserve claim priority", () => {
+    const auth = read("src/features/auth/actions.ts");
+    assert.match(auth, /resolvePostAuthRedirect|isClaimNextPath/);
+    assert.match(auth, /claimCookie|decodeClaimCookie/);
+    // login must also prefer pending claim cookie (not only register/onboarding)
+    assert.match(
+      auth,
+      /loginAction[\s\S]*CLAIM_DASHBOARD_PATH|loginAction[\s\S]*decodeClaimCookie/,
+    );
+    const reg = read("src/features/auth/components/register-form.tsx");
+    assert.match(reg, /name="next"/);
+    const onb = read("src/features/auth/components/onboarding-form.tsx");
+    assert.match(onb, /name="next"/);
+  });
 
   await test("no new SoT table / no Matching / no Scheduler", () => {
     const persist = read("src/lib/ckr-action-loop/persist.ts");
