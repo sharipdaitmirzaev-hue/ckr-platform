@@ -17,7 +17,6 @@ import {
   ckrOutcomeLabels,
   type CkrActionType,
   type CkrActionStatus,
-  type CkrOutcomeCode,
   type CkrClientCta,
 } from "@/config/ckr-action-loop";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
