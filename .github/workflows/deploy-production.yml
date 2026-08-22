@@ -1,0 +1,61 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Ветка для деплоя"
+        required: true
+        default: "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Подготовить SSH
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.CKR_SSH_PRIVATE_KEY }}" > ~/.ssh/ckr_deploy
+          chmod 600 ~/.ssh/ckr_deploy
+          ssh-keyscan -H 161.104.18.135 >> ~/.ssh/known_hosts
+
+      - name: Проверить SSH
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/ckr_deploy \
+            -o BatchMode=yes \
+            cursor-agent@161.104.18.135 \
+            "echo SSH_OK"
+
+      - name: Проверить production до обновления
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/ckr_deploy \
+            cursor-agent@161.104.18.135 \
+            "cd /var/www/ckr-platform && \
+             echo COMMIT_BEFORE && git rev-parse --short HEAD && \
+             echo SERVICE_BEFORE && sudo systemctl is-active ckr"
+
+      - name: Выполнить deploy
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/ckr_deploy \
+            cursor-agent@161.104.18.135 \
+            "cd /var/www/ckr-platform && \
+             sudo ./scripts/update-production.sh '${{ inputs.branch }}'"
+
+      - name: Проверить production после обновления
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/ckr_deploy \
+            cursor-agent@161.104.18.135 \
+            "cd /var/www/ckr-platform && \
+             echo COMMIT_AFTER && git rev-parse --short HEAD && \
+             echo SERVICE_AFTER && sudo systemctl is-active ckr"
+
+      - name: Проверить публичный сайт
+        shell: bash
+        run: |
+          curl --fail --show-error --silent https://ckr-center.ru/api/health
