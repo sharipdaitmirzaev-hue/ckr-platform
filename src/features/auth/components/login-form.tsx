@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message";
 import { loginAction, type ActionState } from "@/features/auth/actions";
 import Link from "next/link";
@@ -62,10 +63,9 @@ export function LoginForm() {
             Забыли пароль?
           </Link>
         </div>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           placeholder="••••••••"
           autoComplete="current-password"
           required
