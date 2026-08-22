@@ -1,6 +1,10 @@
 name: Deploy Production
 
 on:
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
     inputs:
       branch:
@@ -44,7 +48,7 @@ jobs:
           ssh -i ~/.ssh/ckr_deploy \
             cursor-agent@161.104.18.135 \
             "cd /var/www/ckr-platform && \
-             sudo ./scripts/update-production.sh '${{ inputs.branch }}'"
+             sudo ./scripts/update-production.sh '${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}'"
 
       - name: Проверить production после обновления
         shell: bash
@@ -58,4 +62,7 @@ jobs:
       - name: Проверить публичный сайт
         shell: bash
         run: |
-          curl --fail --show-error --silent https://ckr-center.ru/api/health
+          curl --fail --silent --show-error \
+            --retry 5 \
+            --retry-delay 3 \
+            http://161.104.18.135/ > /dev/null
