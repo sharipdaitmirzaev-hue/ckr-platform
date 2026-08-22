@@ -105,7 +105,8 @@ async function main() {
 
   await test("BASIC nav is small; ADVANCED keeps tools", () => {
     assert.ok(dashboardNavBasic.length <= 5);
-    assert.ok(dashboardNavBasic.some((i) => i.href === "/idea"));
+    // UX B: idea is primary CTA, not a BASIC nav item
+    assert.ok(!dashboardNavBasic.some((i) => i.href === "/idea"));
     assert.ok(dashboardNavBasic.some((i) => i.href === "/dashboard/ckr-requests"));
     assert.ok(dashboardNavAdvanced.some((i) => i.href === "/dashboard/projects"));
     assert.ok(dashboardNavAdvanced.some((i) => i.href === "/dashboard/for-you"));
@@ -135,7 +136,9 @@ async function main() {
       hasProjects: true,
       isAdmin: false,
     });
-    assert.ok(adv.some((i) => i.href === "/dashboard/needs"));
+    // UX B: needs live under Ещё, not primary
+    assert.ok(!adv.some((i) => i.href === "/dashboard/needs"));
+    assert.ok(adv.some((i) => i.href === "/dashboard/for-you"));
   });
 
   await test("LIA brief works offline (no provider)", () => {
