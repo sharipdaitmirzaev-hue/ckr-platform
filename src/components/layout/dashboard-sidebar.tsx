@@ -80,6 +80,17 @@ export function DashboardSidebar({
             >
               Заявки
             </Link>
+            <Link
+              href="/admin/owner/discovery"
+              className={cn(
+                "rounded-sm px-3 py-2.5 text-sm transition-colors duration-200",
+                pathname.startsWith("/admin/owner/discovery")
+                  ? "bg-accent-muted text-accent"
+                  : "text-muted hover:bg-foreground/5 hover:text-foreground",
+              )}
+            >
+              Discovery
+            </Link>
           </nav>
         </>
       ) : null}
