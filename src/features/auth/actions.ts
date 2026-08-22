@@ -315,7 +315,24 @@ export async function loginAction(
     }
 
     revalidatePath("/", "layout");
-    redirect(safeNextPath(formData.get("next")));
+
+    // Stage 4P — pending idea claim wins over arbitrary next (incl. /lia).
+    const nextRaw = safeNextPath(formData.get("next"));
+    const { cookies } = await import("next/headers");
+    const { IDEA_FORM } = await import("@/config/idea-first");
+    const { decodeClaimCookie } = await import("@/lib/idea-first/security");
+    const {
+      CLAIM_DASHBOARD_PATH,
+      isClaimNextPath,
+    } = await import("@/lib/idea-first/claim-redirect");
+    const jar = cookies();
+    const hasClaim = Boolean(
+      decodeClaimCookie(jar.get(IDEA_FORM.claimCookie)?.value),
+    );
+    if (hasClaim || isClaimNextPath(nextRaw)) {
+      redirect(CLAIM_DASHBOARD_PATH);
+    }
+    redirect(nextRaw);
   } catch (error) {
     if (
       error &&
