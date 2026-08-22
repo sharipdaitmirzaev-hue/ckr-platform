@@ -20,9 +20,11 @@ import {
   updateCkrRequestStatusAction,
 } from "@/features/ckr-inbox/actions";
 import { OwnerClientCabinetPanel } from "@/features/ckr-inbox/components/owner-client-cabinet-panel";
-import { OwnerDemandWorkbench } from "@/features/ckr-inbox/components/owner-demand-workbench";
-import { OwnerRequestDiscoveryPanel } from "@/features/opportunity-discovery/components/owner-request-discovery-panel";
+import { OwnerOneDesk } from "@/features/ckr-action-loop/components/owner-one-desk";
 import { requireStaff } from "@/lib/auth/require-staff";
+import {
+  deriveActionsFromEvents,
+} from "@/lib/ckr-action-loop";
 import { getDemandWorkbench } from "@/lib/demand-intelligence/workbench";
 import {
   getCkrRequestById,
@@ -97,6 +99,17 @@ export default async function OwnerInboxDetailPage({
       .reverse()
       .find((c) => c.visibility === "CLIENT")
       ?.body || "";
+
+  const actions = deriveActionsFromEvents(
+    events.map((e) => ({
+      id: e.id,
+      eventType: e.eventType,
+      meta: e.meta,
+      createdAt: e.createdAt,
+      visibility: e.visibility,
+    })),
+    { requestId: request.id, includeInternalNotes: true },
+  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-4 py-8">
@@ -176,14 +189,9 @@ export default async function OwnerInboxDetailPage({
         lastClientMessage={lastClientMessage}
       />
 
-      <OwnerRequestDiscoveryPanel
+      <OwnerOneDesk
         requestId={request.id}
         needProfileId={request.needProfileId}
-      />
-
-      <OwnerDemandWorkbench
-        requestId={request.id}
-        needProfileId={workbench.needProfileId}
         needTitle={workbench.needTitle}
         total={workbench.total}
         confirmed={workbench.confirmed}
@@ -192,6 +200,7 @@ export default async function OwnerInboxDetailPage({
         emptyReason={workbench.emptyReason}
         oiReviewCount={workbench.oiReviewCount}
         queryPlanSamples={workbench.queryPlanSamples}
+        actions={actions}
       />
 
       <section className="grid gap-6 lg:grid-cols-2">

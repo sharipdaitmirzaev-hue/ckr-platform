@@ -1,9 +1,15 @@
 import { RequestProgress } from "@/components/client-cabinet/request-progress";
+import { ClientActionLoopCard } from "@/features/ckr-action-loop/components/client-action-loop-card";
 import {
   appendIdeaSupplementAction,
   replyToCkrRequestAction,
 } from "@/features/client-cabinet/actions";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import {
+  deriveActionsFromEvents,
+  hasSharedCandidateInEvents,
+  toClientActionLoopView,
+} from "@/lib/ckr-action-loop";
 import {
   describeCkrNow,
   describeHumanStatus,
@@ -60,8 +66,8 @@ export default async function ClientCkrRequestDetailPage({
     listCkrEvents(request.id),
   ]);
   const clientComments = comments.filter((c) => c.visibility === "CLIENT");
-  const history = events
-    .filter((e) => e.visibility === "CLIENT")
+  const clientEvents = events.filter((e) => e.visibility === "CLIENT");
+  const history = clientEvents
     .map((e) => ({
       id: e.id,
       createdAt: e.createdAt,
@@ -70,6 +76,35 @@ export default async function ClientCkrRequestDetailPage({
     .filter((e): e is { id: string; createdAt: string; text: string } =>
       Boolean(e.text),
     );
+
+  const publicActions = deriveActionsFromEvents(
+    clientEvents.map((e) => ({
+      id: e.id,
+      eventType: e.eventType,
+      meta: e.meta,
+      createdAt: e.createdAt,
+      visibility: e.visibility,
+    })),
+    { requestId: request.id, includeInternalNotes: false },
+  );
+  const actionLoopView = toClientActionLoopView(publicActions, {
+    hasSharedOpportunity:
+      hasSharedCandidateInEvents(
+        clientEvents.map((e) => ({
+          id: e.id,
+          eventType: e.eventType,
+          meta: e.meta,
+          createdAt: e.createdAt,
+        })),
+      ) || clientComments.some((c) => isSharedCandidateMessage(c.body)),
+  });
+
+  // Defense: never leak internal notes to client page payload
+  for (const a of publicActions) {
+    if (a.noteInternal) {
+      a.noteInternal = "";
+    }
+  }
 
   let organizationName: string | null = null;
   if (request.organizationId) {
@@ -157,6 +192,13 @@ export default async function ClientCkrRequestDetailPage({
           <p className="mt-1 text-sm text-foreground">{need.text}</p>
         </div>
       </section>
+
+      {actionLoopView ? (
+        <ClientActionLoopCard
+          requestId={request.id}
+          view={actionLoopView}
+        />
+      ) : null}
 
       <section className="space-y-4">
         <h2 className="font-display text-lg text-foreground">

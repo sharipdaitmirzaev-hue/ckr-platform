@@ -29,11 +29,15 @@ export function RegisterForm() {
   const [state, formAction] = useFormState(registerAction, initialState);
   const searchParams = useSearchParams();
   const inviteFromQuery = searchParams.get("invite") ?? "";
+  const nextFromQuery = searchParams.get("next") ?? "";
   const requireInvite = isInviteRequired();
 
   return (
     <form action={formAction} className="mt-8 space-y-4">
       <AuthFormMessage error={state.error} success={state.success} />
+      {nextFromQuery ? (
+        <input type="hidden" name="next" value={nextFromQuery} />
+      ) : null}
 
       <div className="space-y-2">
         <label htmlFor="inviteCode" className="text-sm text-muted">

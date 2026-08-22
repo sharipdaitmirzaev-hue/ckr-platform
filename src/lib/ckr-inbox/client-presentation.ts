@@ -258,6 +258,16 @@ export function humanizeClientEvent(event: CkrRequestEvent): string | null {
       ? `ЦКР нашёл новый вариант: ${event.detail}`
       : "ЦКР нашёл новый вариант";
   }
+  // Stage 4P — Action Loop (CLIENT events already carry human titles)
+  if (
+    type === "ACTION_CREATED" ||
+    type === "ACTION_STATUS_CHANGED" ||
+    type === "ACTION_OUTCOME_RECORDED" ||
+    type === "CLIENT_ACTION_CTA"
+  ) {
+    if (title && !/^(ACTION_|CLIENT_ACTION_)/.test(title)) return title;
+    return title || "ЦКР обновил работу по варианту";
+  }
   if (type === "CLIENT_MESSAGE") {
     if (/дополнил/i.test(title)) return "Вы дополнили идею";
     if (/написал/i.test(title) || /сообщени/i.test(title)) {
