@@ -21,6 +21,7 @@ import {
 } from "@/features/ckr-inbox/actions";
 import { OwnerClientCabinetPanel } from "@/features/ckr-inbox/components/owner-client-cabinet-panel";
 import { OwnerDemandWorkbench } from "@/features/ckr-inbox/components/owner-demand-workbench";
+import { OwnerRequestDiscoveryPanel } from "@/features/opportunity-discovery/components/owner-request-discovery-panel";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { getDemandWorkbench } from "@/lib/demand-intelligence/workbench";
 import {
@@ -173,6 +174,11 @@ export default async function OwnerInboxDetailPage({
         publicActivityText={request.publicActivityText}
         nextStepPublic={request.nextStepPublic}
         lastClientMessage={lastClientMessage}
+      />
+
+      <OwnerRequestDiscoveryPanel
+        requestId={request.id}
+        needProfileId={request.needProfileId}
       />
 
       <OwnerDemandWorkbench

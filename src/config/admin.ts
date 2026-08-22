@@ -16,6 +16,11 @@ export const adminNavItems: AdminNavItem[] = [
     description: "Единый inbox обращений в ЦКР",
   },
   {
+    label: "Discovery",
+    href: "/admin/owner/discovery",
+    description: "Поиск возможностей: ЦКР → интернет, банк, market-driven",
+  },
+  {
     label: "Лия — Центр возможностей",
     href: "/admin/owner/lia",
     description: "Opportunity Intelligence: лента, поиск, дайджест",
