@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ButtonLink } from "@/components/ui/button-link";
 import { intentLabel } from "@/config/need-intents";
+import { humanNeedStatus, UX_CTA } from "@/config/ux-simplification";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { rowToNeed, type NeedProfileRow } from "@/lib/need-profile/mappers";
 import { createClient } from "@/lib/supabase/server";
@@ -39,15 +40,14 @@ export default async function DashboardNeedsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading
           title="Что вам нужно"
-          description="Коротко опишите, что ищете: покупателей, инвестора, партнёра, помещение и т.д. Персональные варианты появятся в разделе «Возможности для вас»."
+          description="Коротко опишите задачу. Подходящие варианты появятся в разделе «Возможности»."
         />
-        <ButtonLink href="/dashboard/needs/new">Добавить запрос</ButtonLink>
+        <ButtonLink href="/idea">{UX_CTA.newRequest}</ButtonLink>
       </div>
 
       {tableMissing ? (
         <Card variant="surface" className="p-5 text-sm text-muted">
-          Таблица need_profiles ещё не применена в этой среде. Migration
-          подготовлена (Stage 4A) — apply только после подтверждения.
+          Таблица need_profiles ещё не применена в этой среде.
         </Card>
       ) : null}
 
@@ -57,9 +57,7 @@ export default async function DashboardNeedsPage() {
             Пока пусто. Расскажите, что вам нужно — ЦКР поможет найти подходящие
             варианты.
           </p>
-          <ButtonLink href="/dashboard/needs/new">
-            Расскажите, что вам нужно
-          </ButtonLink>
+          <ButtonLink href="/idea">{UX_CTA.newRequest}</ButtonLink>
         </Card>
       ) : null}
 
@@ -74,8 +72,7 @@ export default async function DashboardNeedsPage() {
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="accent">{intentLabel(n.intentType)}</Badge>
-                  <Badge>{n.status}</Badge>
-                  <span className="text-xs text-muted">{n.visibility}</span>
+                  <Badge>{humanNeedStatus(n.status)}</Badge>
                 </div>
                 <Link
                   href={`/dashboard/needs/${n.id}`}
@@ -83,27 +80,15 @@ export default async function DashboardNeedsPage() {
                 >
                   {n.title}
                 </Link>
-                <p className="text-sm text-muted">
-                  {[
-                    n.budgetMax != null
-                      ? `до ${(n.budgetMax / 1_000_000).toLocaleString("ru-RU")} млн ₽`
-                      : null,
-                    n.regions.join(", ") || null,
-                    n.industries.join(", ") || null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "Критерии не заданы"}
-                </p>
-                <p className="text-xs text-muted">
-                  {new Date(n.createdAt).toLocaleString("ru-RU")}
-                </p>
+                {n.description ? (
+                  <p className="line-clamp-2 text-sm text-muted">
+                    {n.description}
+                  </p>
+                ) : null}
               </div>
-              <Link
-                href={`/dashboard/needs/${n.id}`}
-                className="text-sm text-accent hover:underline"
-              >
-                Открыть
-              </Link>
+              <ButtonLink href={`/dashboard/needs/${n.id}`} size="sm">
+                {UX_CTA.open}
+              </ButtonLink>
             </Card>
           </li>
         ))}

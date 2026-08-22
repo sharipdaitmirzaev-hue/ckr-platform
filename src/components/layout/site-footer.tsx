@@ -63,11 +63,38 @@ export function SiteFooter() {
                   Войти
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/about"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  О ЦКР
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contacts"
+                  className="text-sm text-foreground/90 transition-colors hover:text-accent"
+                >
+                  Контакты
+                </Link>
+              </li>
+            </ul>
+            <p className="mt-8 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+              Ещё на сайте
+            </p>
+            <ul className="mt-4 space-y-2.5">
               {mainNav
                 .filter((item) =>
-                  ["/about", "/how-it-works", "/trust", "/cases"].includes(
-                    item.href,
-                  ),
+                  [
+                    "/projects",
+                    "/opportunities",
+                    "/investments",
+                    "/experts",
+                    "/how-it-works",
+                    "/cases",
+                    "/trust",
+                  ].includes(item.href),
                 )
                 .map((item) => (
                   <li key={item.href}>

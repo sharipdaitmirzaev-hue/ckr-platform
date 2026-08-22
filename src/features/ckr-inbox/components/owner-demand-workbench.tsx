@@ -115,7 +115,7 @@ function CandidateCard(props: {
         ) : (
           <span className="self-center text-xs text-muted">
             {c.staffOnly
-              ? "Сначала Controlled Publish — клиенту нельзя показывать raw OI"
+              ? "Сначала «К публикации» — клиенту нельзя показывать непроверенное"
               : "Не опубликовано"}
           </span>
         )}
@@ -199,7 +199,7 @@ export function OwnerDemandWorkbench(props: {
       <p className="text-sm text-muted">
         Сигналы спроса по потребности
         {needTitle ? <> «{needTitle}»</> : null}. Закупка ≠ найденный покупатель.
-        Raw LIA OI виден только сотруднику.
+        Непроверенные сигналы видит только сотрудник.
       </p>
 
       {needProfileId ? (
@@ -208,7 +208,7 @@ export function OwnerDemandWorkbench(props: {
           <input type="hidden" name="needProfileId" value={needProfileId} />
           <FindMoreSubmit />
           <p className="text-xs text-muted">
-            Ручной поиск (не Scheduler). Без автопубликации и без сообщений клиенту.
+            Ручной поиск. Без автопубликации и без сообщений клиенту.
           </p>
           {state.error ? (
             <p className="text-sm text-amber-800">{state.error}</p>
@@ -236,7 +236,7 @@ export function OwnerDemandWorkbench(props: {
 
       {!needProfileId ? (
         <p className="text-sm text-amber-800">
-          {emptyReason || "Сначала свяжите Need Profile."}
+          {emptyReason || "Сначала свяжите потребность обращения."}
         </p>
       ) : null}
 
@@ -265,7 +265,7 @@ export function OwnerDemandWorkbench(props: {
 
       {oiReviewCount > 0 ? (
         <p className="text-xs text-muted">
-          Внутренних OI-кандидатов на проверку: {oiReviewCount} (клиенту не
+          Внутренних вариантов на проверку: {oiReviewCount} (клиенту не
           видны).
         </p>
       ) : null}
@@ -275,20 +275,20 @@ export function OwnerDemandWorkbench(props: {
           href="/admin/owner/publishing"
           className="text-accent hover:underline"
         >
-          Controlled Publish
+          К публикации
         </Link>
         <Link
           href="/admin/owner/lia/opportunities"
           className="text-accent hover:underline"
         >
-          LIA OI
+          Попросить Лию проверить
         </Link>
         {needProfileId ? (
           <Link
             href={`/dashboard/for-you?need=${needProfileId}`}
             className="text-accent hover:underline"
           >
-            Feed
+            Варианты клиента
           </Link>
         ) : null}
       </div>

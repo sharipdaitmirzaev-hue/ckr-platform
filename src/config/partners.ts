@@ -91,13 +91,17 @@ export const partnershipStatusLabels: Record<PartnershipStatus, string> = {
 };
 
 export const partnerNav = [
-  { label: "Обзор", href: "/partner" },
-  { label: "Профиль", href: "/partner/profile" },
+  { label: "О компании", href: "/partner" },
+  { label: "Что предлагаем / ищем", href: "/partner/offers" },
+  { label: "Обращения", href: "/partner/applications" },
   { label: "Возможности", href: "/partner/feed" },
-  { label: "Сотрудники", href: "/partner/members" },
+  { label: "Команда", href: "/partner/members" },
+] as const;
+
+/** Deep links — not top-level. Routes preserved. */
+export const partnerNavMore = [
+  { label: "Профиль и реквизиты", href: "/partner/profile" },
   { label: "Проекты", href: "/partner/projects" },
-  { label: "Предложения", href: "/partner/offers" },
-  { label: "Заявки", href: "/partner/applications" },
 ] as const;
 
 export function isOrganizationType(value: string): value is OrganizationType {

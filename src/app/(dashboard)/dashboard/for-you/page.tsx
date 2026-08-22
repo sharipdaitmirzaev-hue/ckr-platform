@@ -1,7 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { UX_CTA } from "@/config/ux-simplification";
 import { FeedRecommendationCard } from "@/features/personalized-feed/components/feed-recommendation-card";
 import { intentLabel } from "@/config/need-intents";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
@@ -11,18 +11,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Возможности для вас" };
+export const metadata: Metadata = { title: "Возможности" };
 export const dynamic = "force-dynamic";
 
+/**
+ * UX B — unified «Возможности» presentation.
+ * Tabs: Для вас | Сохранённые | Все (catalog).
+ * Backend feed unchanged. Raw OI never shown.
+ */
 export default async function ForYouPage({
   searchParams,
 }: {
-  searchParams: Promise<{ need?: string }>;
+  searchParams: Promise<{ need?: string; tab?: string }>;
 }) {
   const current = await getCurrentUser();
   if (!current) redirect("/login?next=/dashboard/for-you");
   const sp = await searchParams;
   const selectedNeedId = sp.need?.trim() || null;
+  const tab =
+    sp.tab === "all" ? "all" : sp.tab === "saved" ? "saved" : "for-you";
 
   let feed;
   try {
@@ -33,139 +40,118 @@ export default async function ForYouPage({
       limit: 20,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "feed_error";
+    const msg = e instanceof Error ? e.message : "error";
     return (
       <div className="space-y-4">
         <SectionHeading
-          eyebrow="Для вас"
-          title="Возможности для вас"
-          description="Персональные варианты по тому, что вам нужно."
+          title="Возможности"
+          description="Варианты, которые ЦКР подобрал под ваши обращения."
         />
-        <p className="text-sm text-red-700">
-          Не удалось загрузить варианты: {msg}.
+        <p className="text-sm text-muted">
+          Не удалось загрузить варианты. Попробуйте позже.
         </p>
-        <ButtonLink href="/dashboard/needs/new">
-          Расскажите, что вам нужно
-        </ButtonLink>
+        <p className="text-xs text-muted">{msg}</p>
+        <ButtonLink href="/idea">{UX_CTA.newRequest}</ButtonLink>
       </div>
     );
   }
 
-  if (!feed.needs.length) {
-    return (
-      <div className="space-y-6">
-        <SectionHeading
-          eyebrow="Для вас"
-          title="Возможности для вас"
-          description="Здесь появятся персональные варианты под ваш запрос."
-        />
-        <EmptyState
-          title="Пока нет персональных вариантов"
-          description="Расскажите, что вам нужно — ЦКР подберёт подходящие предложения. Общий каталог сайта остаётся отдельно."
-        />
-        <ButtonLink href="/dashboard/needs/new">
-          Расскажите, что вам нужно
-        </ButtonLink>
-      </div>
-    );
-  }
-
-  const selected =
-    feed.needs.find((n) => n.id === feed.selectedNeedId) || null;
+  const tabs = [
+    { id: "for-you", label: "Для вас", href: "/dashboard/for-you" },
+    {
+      id: "saved",
+      label: "Сохранённые",
+      href: "/dashboard/for-you?tab=saved",
+    },
+    { id: "all", label: "Все", href: "/opportunities" },
+  ] as const;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading
-          eyebrow="Для вас"
-          title="Возможности для вас"
-          description="Персональные варианты по вашим запросам. Это не общий каталог сайта."
+          title="Возможности"
+          description="То, что ЦКР подобрал под ваши задачи."
         />
-        <ButtonLink href="/dashboard/needs/new" variant="secondary">
-          Что вам нужно
+        <ButtonLink href="/idea" size="sm" variant="outline">
+          {UX_CTA.newRequest}
         </ButtonLink>
       </div>
 
-      <section className="space-y-3">
-        <p className="text-sm text-muted">Ваш запрос</p>
-        <div className="flex flex-wrap gap-2">
+      <nav className="flex flex-wrap gap-4 border-b border-border pb-2 text-sm">
+        {tabs.map((t) => (
           <Link
-            href="/dashboard/for-you"
-            className={`rounded-sm border px-3 py-1.5 text-sm ${
-              !selectedNeedId
-                ? "border-accent text-accent"
-                : "border-border text-foreground"
-            }`}
+            key={t.id}
+            href={t.href}
+            className={
+              tab === t.id
+                ? "border-b-2 border-accent pb-2 font-medium text-accent"
+                : "pb-2 text-muted hover:text-foreground"
+            }
           >
-            Все
+            {t.label}
           </Link>
-          {feed.needs.map((n) => (
-            <Link
-              key={n.id}
-              href={`/dashboard/for-you?need=${n.id}`}
-              className={`rounded-sm border px-3 py-1.5 text-sm ${
-                selectedNeedId === n.id
-                  ? "border-accent text-accent"
-                  : "border-border text-foreground"
-              }`}
-            >
-              {intentLabel(n.intentType)}
-              {n.budgetMax != null
-                ? ` · до ${(n.budgetMax / 1_000_000).toFixed(0)} млн`
-                : ""}
-            </Link>
-          ))}
-        </div>
-        {selected ? (
-          <p className="text-sm text-foreground">{needSummary(selected)}</p>
-        ) : (
-          <p className="text-sm text-muted">
-            Показаны рекомендации по всем ACTIVE потребностям. У каждой карточки
-            указано, под какую потребность она подобрана.
-          </p>
-        )}
-        {selected ? (
-          <Badge>
-            coverage {feed.diagnostics.coverage}
-          </Badge>
-        ) : null}
-      </section>
+        ))}
+      </nav>
 
-      {feed.diagnostics.coverage === "UNSUPPORTED" ? (
-        <p className="text-sm text-muted">
-          Для этого типа потребности пока нет безопасного публичного источника
-          кандидатов.
-        </p>
-      ) : null}
-      {feed.diagnostics.coverage === "PARTIAL" &&
-      (feed.diagnostics.intentType === "SEEK_SUPPORT" ||
-        feed.diagnostics.intentType === "SEEK_CONTRACT") &&
-      !feed.recommendations.length ? (
-        <p className="text-sm text-muted">
-          Публичные возможности этого типа появятся после controlled publish
-          владельцем (одобренные записи Лии → marketplace). Прямого доступа к
-          внутреннему LIA OI нет.
-        </p>
-      ) : null}
-
-      {!feed.recommendations.length ? (
+      {tab === "saved" ? (
         <EmptyState
-          title="Подходящих вариантов не найдено"
-          description="Попробуйте уточнить регион/бюджет в потребности или выбрать другую ACTIVE потребность."
+          title="Сохранённые появятся здесь"
+          description="Отметьте вариант как интересный — он сохранится для вас."
         />
-      ) : (
-        <section>
-          <p className="mb-2 text-sm text-muted">
-            Найдено {feed.recommendations.length} вариантов
-            {feed.diagnostics.filteredCount
-              ? ` · отфильтровано ${feed.diagnostics.filteredCount}`
-              : ""}
-          </p>
-          {feed.recommendations.map((item) => (
-            <FeedRecommendationCard key={item.recommendationId} item={item} />
-          ))}
-        </section>
-      )}
+      ) : null}
+
+      {tab === "for-you" && !feed.needs.length ? (
+        <div className="space-y-4">
+          <EmptyState
+            title="Пока нет персональных вариантов"
+            description="Отправьте обращение — ЦКР начнёт подбор. Каталог сайта — во вкладке «Все»."
+          />
+          <ButtonLink href="/idea">{UX_CTA.newRequest}</ButtonLink>
+        </div>
+      ) : null}
+
+      {tab === "for-you" && feed.needs.length ? (
+        <>
+          {feed.needs.length > 1 ? (
+            <div className="flex flex-wrap gap-2">
+              {feed.needs.map((n) => (
+                <Link
+                  key={n.id}
+                  href={`/dashboard/for-you?need=${n.id}`}
+                  className="rounded-sm border border-border px-3 py-1.5 text-xs text-muted hover:text-foreground"
+                >
+                  {intentLabel(n.intentType) || n.title}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
+          {feed.selectedNeedId ? (
+            <p className="text-sm text-muted">
+              {needSummary(
+                feed.needs.find((n) => n.id === feed.selectedNeedId) ||
+                  feed.needs[0],
+              )}
+            </p>
+          ) : null}
+
+          {feed.recommendations.length === 0 ? (
+            <EmptyState
+              title="Вариантов пока нет"
+              description="ЦКР продолжает поиск. Мы сообщим, когда появится результат."
+            />
+          ) : (
+            <ul className="divide-y divide-border">
+              {feed.recommendations.map((item) => (
+                <li key={item.recommendationId}>
+                  <FeedRecommendationCard item={item} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : null}
     </div>
   );
 }

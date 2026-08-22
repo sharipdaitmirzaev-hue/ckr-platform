@@ -5,6 +5,7 @@ import { LogoutButton } from "@/features/auth/components/logout-button";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import {
   resolveCabinetContext,
+  resolveDashboardMoreNav,
   resolveDashboardNav,
 } from "@/lib/cabinet/access";
 import Link from "next/link";
@@ -25,6 +26,7 @@ export default async function DashboardLayout({
 
   const cabinet = await resolveCabinetContext(current.user.id, current.roles);
   const navItems = resolveDashboardNav(cabinet);
+  const moreItems = resolveDashboardMoreNav(cabinet);
   const accessLabel =
     cabinet.accessLevel === "basic"
       ? "Базовый кабинет"
@@ -33,7 +35,7 @@ export default async function DashboardLayout({
         : "Расширенный доступ";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-16 md:pb-0">
       <header className="border-b border-border bg-background/90 backdrop-blur-md">
         <Container className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -45,9 +47,9 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-3">
             <Link
               href="/idea"
-              className="hidden text-sm text-accent transition-colors hover:underline sm:inline"
+              className="hidden rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-white sm:inline"
             >
-              Рассказать идею
+              + Новое обращение
             </Link>
             <Link
               href="/"
@@ -64,6 +66,7 @@ export default async function DashboardLayout({
         <DashboardSidebar
           isAdmin={current.roles.includes("admin")}
           items={navItems}
+          moreItems={moreItems}
           accessLabel={accessLabel}
         />
         <div>{children}</div>

@@ -1,7 +1,6 @@
 import {
-  dashboardNavAdvanced,
-  dashboardNavBasic,
-  dashboardNavStandard,
+  dashboardNavMore,
+  dashboardNavPrimary,
   type NavItem,
 } from "@/config/navigation";
 import type { CkrAccessLevel } from "@/config/idea-first";
@@ -27,27 +26,31 @@ export async function resolveCabinetContext(
   const supabase = createClient();
   const isAdmin = roles.includes("admin");
 
-  const [{ data: profile }, { count: orgCount }, { count: needCount }, { count: projectCount }] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("ckr_access_level")
-        .eq("id", userId)
-        .maybeSingle(),
-      supabase
-        .from("organization_members")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId),
-      supabase
-        .from("need_profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_type", "user")
-        .eq("owner_id", userId),
-      supabase
-        .from("projects")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", userId),
-    ]);
+  const [
+    { data: profile },
+    { count: orgCount },
+    { count: needCount },
+    { count: projectCount },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("ckr_access_level")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase
+      .from("organization_members")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabase
+      .from("need_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_type", "user")
+      .eq("owner_id", userId),
+    supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId),
+  ]);
 
   const hasOrganization = (orgCount ?? 0) > 0;
   const hasNeeds = (needCount ?? 0) > 0;
@@ -75,21 +78,40 @@ export async function resolveCabinetContext(
   };
 }
 
+/**
+ * UX B — primary client nav.
+ * Company only if org exists. Opportunities from STANDARD+.
+ * BASIC: Главная · Обращения · Профиль (+ Компания if org)
+ */
 export function resolveDashboardNav(ctx: CabinetContext): NavItem[] {
-  if (ctx.accessLevel === "advanced" || ctx.isAdmin) {
-    return dashboardNavAdvanced;
+  const items: NavItem[] = [
+    { label: "Главная", href: "/dashboard" },
+    { label: "Обращения", href: "/dashboard/ckr-requests" },
+  ];
+
+  if (ctx.accessLevel !== "basic" || ctx.hasNeeds) {
+    items.push({ label: "Возможности", href: "/dashboard/for-you" });
   }
-  if (ctx.accessLevel === "standard") {
-    const items = [...dashboardNavStandard];
-    if (!ctx.hasOrganization) {
-      return items.filter((i) => i.href !== "/partner");
-    }
-    return items;
-  }
-  // basic
-  const items = [...dashboardNavBasic];
+
   if (ctx.hasOrganization) {
-    items.splice(2, 0, { label: "Моя компания", href: "/partner" });
+    items.push({ label: "Компания", href: "/partner" });
   }
+
+  items.push({ label: "Профиль", href: "/dashboard/settings" });
   return items;
 }
+
+/** Power tools under «Ещё» — ADVANCED (and admin). Deep links kept. */
+export function resolveDashboardMoreNav(ctx: CabinetContext): NavItem[] {
+  if (ctx.accessLevel === "advanced" || ctx.isAdmin) {
+    return [...dashboardNavMore];
+  }
+  if (ctx.accessLevel === "standard") {
+    return dashboardNavMore.filter((i) =>
+      ["/dashboard/needs", "/dashboard/notifications"].includes(i.href),
+    );
+  }
+  return [];
+}
+
+export { dashboardNavPrimary };

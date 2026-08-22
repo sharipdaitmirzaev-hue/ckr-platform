@@ -36,7 +36,7 @@ export function OwnerRequestWorkbench(props: {
       {!needProfileId ? (
         <p className="text-sm text-amber-800">
           {emptyReason ||
-            "Сначала создайте или свяжите Need Profile — тогда здесь появятся варианты."}
+            "Сначала создайте или свяжите потребность — тогда здесь появятся варианты."}
         </p>
       ) : null}
 
@@ -48,20 +48,20 @@ export function OwnerRequestWorkbench(props: {
               href="/admin/owner/publishing"
               className="text-accent hover:underline"
             >
-              Controlled Publish
+              К публикации
             </Link>
             <Link
               href="/admin/opportunities"
               className="text-accent hover:underline"
             >
-              Opportunities
+              Возможности
             </Link>
             {needProfileId ? (
               <Link
                 href={`/dashboard/for-you?need=${needProfileId}`}
                 className="text-accent hover:underline"
               >
-                Полный Feed
+                Варианты клиента
               </Link>
             ) : null}
           </div>
@@ -155,7 +155,7 @@ export function OwnerRequestWorkbench(props: {
                 </form>
               ) : (
                 <span className="self-center text-xs text-muted">
-                  Не опубликовано — сначала Controlled Publish
+                  Не опубликовано — сначала «К публикации»
                 </span>
               )}
             </div>
@@ -170,20 +170,20 @@ export function OwnerRequestWorkbench(props: {
               href={`/dashboard/for-you?need=${needProfileId}`}
               className="text-accent hover:underline"
             >
-              Показать ещё в Feed
+              Показать ещё варианты
             </Link>
           ) : null}
           <Link
             href="/admin/owner/publishing"
             className="text-accent hover:underline"
           >
-            OI → Controlled Publish
+            К публикации
           </Link>
           <Link
             href="/admin/opportunities"
             className="text-accent hover:underline"
           >
-            Все Opportunities
+            Все возможности
           </Link>
         </div>
       ) : null}

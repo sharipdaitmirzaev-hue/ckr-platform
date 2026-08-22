@@ -105,18 +105,18 @@ export default async function OwnerInboxDetailPage({
           href="/admin/owner/inbox"
           className="text-sm text-accent hover:underline"
         >
-          ← Inbox
+          ← Заявки
         </Link>
         <SectionHeading
           className="mt-3"
-          eyebrow={isAnonymousIdea ? "Новая идея" : "Карточка заявки"}
+          eyebrow={isAnonymousIdea ? "Новая идея" : "Обращение"}
           title={request.subject || "Обращение в ЦКР"}
           description={`${ckrRequestTypeLabels[request.requestType]} · ${ckrRequestStatusLabels[request.status]}`}
         />
       </div>
 
       <section className="space-y-2">
-        <h2 className="font-display text-lg">Заявитель</h2>
+        <h2 className="font-display text-lg">Клиент</h2>
         <p className="text-sm">
           {request.contactName ||
             fromProfile?.full_name ||
@@ -274,10 +274,10 @@ export default async function OwnerInboxDetailPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-display text-lg">Need Profile</h2>
+        <h2 className="font-display text-lg">Потребность</h2>
         {request.needProfileId ? (
           <p className="text-sm">
-            Связан:{" "}
+            Связана:{" "}
             <code className="text-xs">{request.needProfileId}</code>
           </p>
         ) : (
@@ -310,12 +310,12 @@ export default async function OwnerInboxDetailPage({
           />
           <input
             name="linkExistingId"
-            placeholder="Или ID существующего Need Profile"
+            placeholder="Или ID существующей потребности"
             className="h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm"
           />
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="confirm" /> Подтверждаю создание Need
-            Profile
+            <input type="checkbox" name="confirm" /> Подтверждаю создание
+            потребности
           </label>
           <button
             type="submit"

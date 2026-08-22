@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Discovery · Кабинет владельца",
+  title: "Поиск · Кабинет владельца",
 };
 
 export const dynamic = "force-dynamic";
@@ -28,17 +28,15 @@ export default async function OwnerDiscoveryPage() {
         </Link>
         <SectionHeading
           className="mt-3"
-          eyebrow="Stage 4O"
-          title="Opportunity Discovery"
-          description="Два режима: заявка → ищем возможность; и рынок → сохраняем для будущих клиентов. Сначала ЦКР, потом интернет."
+          title="Поиск вариантов"
+          description="Сначала внутри ЦКР, затем интернет — только по вашему действию. Найденное проходит проверку перед показом клиенту."
         />
       </div>
 
       <section className="space-y-3">
-        <h2 className="font-display text-lg">Market-driven поиск</h2>
+        <h2 className="font-display text-lg">Поиск по рынку</h2>
         <p className="text-sm text-muted">
-          Для инвесторов и собственного банка ЦКР. Кандидаты остаются на owner
-          review.
+          Для инвесторов и банка ЦКР. Варианты остаются на проверке сотрудника.
         </p>
         <OwnerMarketDiscoveryForm />
       </section>
@@ -63,7 +61,7 @@ export default async function OwnerDiscoveryPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-display text-lg">Source gap (кратко)</h2>
+        <h2 className="font-display text-lg">Чего не хватает в источниках</h2>
         <ul className="space-y-1 text-sm text-muted">
           {gaps.map((g) => (
             <li key={g.category}>
@@ -76,19 +74,19 @@ export default async function OwnerDiscoveryPage() {
 
       <div className="flex flex-wrap gap-3 text-sm">
         <Link href="/admin/owner/inbox" className="text-accent hover:underline">
-          Request-driven (Inbox)
+          Заявки
         </Link>
         <Link
           href="/admin/owner/publishing"
           className="text-accent hover:underline"
         >
-          Controlled Publish
+          К публикации
         </Link>
         <Link
           href="/admin/owner/lia/search"
           className="text-accent hover:underline"
         >
-          LIA OI search
+          Попросить Лию проверить
         </Link>
       </div>
     </div>

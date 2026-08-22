@@ -134,11 +134,11 @@ export default async function OwnerCabinetPage() {
 
       <section className="space-y-2">
         <h3 className="font-display text-xl text-foreground">
-          Controlled Publish
+          К публикации
         </h3>
         <p className="text-sm text-muted">
-          Очередь «К публикации»: LIA OI → owner review → user-safe marketplace
-          opportunity. Без автоматической публикации.
+          Проверка найденных вариантов перед показом клиенту. Без автоматической
+          публикации.
         </p>
         <Link
           href="/admin/owner/publishing"

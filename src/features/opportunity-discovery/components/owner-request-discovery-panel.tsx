@@ -52,7 +52,7 @@ export function OwnerRequestDiscoveryPanel(props: {
       <section className="space-y-2 rounded-sm border border-border p-4">
         <h2 className="font-display text-lg">Найденные варианты</h2>
         <p className="text-sm text-muted">
-          Сначала свяжите Need Profile — без него поиск не запустить.
+          Сначала свяжите потребность обращения — без неё поиск не запустить.
         </p>
       </section>
     );
@@ -63,8 +63,7 @@ export function OwnerRequestDiscoveryPanel(props: {
       <div>
         <h2 className="font-display text-lg">Найденные варианты</h2>
         <p className="mt-1 text-sm text-muted">
-          Сначала ищем внутри ЦКР. Интернет — только по явному действию. Без
-          Matching Engine и без автопубликации.
+          Сначала ищем внутри ЦКР. Интернет — только по явному действию.
         </p>
       </div>
 
@@ -115,13 +114,13 @@ export function OwnerRequestDiscoveryPanel(props: {
           href="/admin/owner/discovery"
           className="text-accent hover:underline"
         >
-          Банк / market discovery
+          Расширенный поиск
         </Link>
         <Link
           href="/admin/owner/publishing"
           className="text-accent hover:underline"
         >
-          Controlled Publish
+          К публикации
         </Link>
       </div>
     </section>

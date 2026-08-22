@@ -42,11 +42,11 @@ export default async function ClientCkrRequestsPage({
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <SectionHeading
-          title="Мои обращения"
+          title="Обращения"
           description="Идеи и запросы, которые вы отправили в ЦКР."
         />
         <ButtonLink href="/idea" size="sm">
-          Рассказать идею
+          + Новое обращение
         </ButtonLink>
       </div>
 

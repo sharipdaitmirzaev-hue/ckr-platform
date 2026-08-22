@@ -140,11 +140,9 @@ async function main() {
         ].includes(i.href),
       ),
     );
-    assert.ok(
-      dashboardNavStandard.some((i) => i.label === "Возможности для вас"),
-    );
-    assert.ok(dashboardNavStandard.some((i) => i.label === "Что вам нужно"));
-    // Stage 4J: idea is CTA, not STANDARD menu item
+    // UX B: primary STANDARD uses «Возможности»; needs under Ещё
+    assert.ok(dashboardNavStandard.some((i) => i.label === "Возможности"));
+    assert.ok(dashboardNavStandard.some((i) => i.href === "/dashboard/for-you"));
     assert.ok(!dashboardNavStandard.some((i) => i.href === "/idea"));
     assert.ok(
       dashboardNavAdvanced.some((i) => i.href === "/dashboard/projects"),
