@@ -1,0 +1,8 @@
+# Minimal CLI config for staging db push. project_id is a local label, not a remote ref.
+project_id = "ckr-platform"
+
+[api]
+enabled = true
+
+[db]
+major_version = 17

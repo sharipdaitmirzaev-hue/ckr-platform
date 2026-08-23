@@ -1,22 +1,23 @@
 /**
- * Stage 4P — controlled production/dev E2E smoke for Action Loop.
+ * Stage 4P — staging-only E2E smoke for Action Loop.
  *
  * SAFETY:
- * - Requires explicit CKR_E2E_SMOKE=1
- * - Requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
- * - Creates ONLY entities marked E2E_4P_SMOKE / e2e4p.*@ckr.local
+ * - Requires CKR_E2E_SMOKE=1
+ * - Requires CKR_ENVIRONMENT=staging and CKR_ALLOW_STAGING_E2E=YES
+ * - Hard-refuses production project ref / ckr-center.ru
+ * - Requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (staging)
+ * - Creates ONLY entities marked E2E_CKR_STAGING / e2e.ckr.staging.*@ckr.local
  * - Writes manifest with exact IDs
  * - Cleanup deletes ONLY exact IDs from the manifest
  * - Refuses to touch TINDA ids
  *
  * Usage:
- *   CKR_E2E_SMOKE=1 npx tsx scripts/e2e-ckr-action-loop-stage4p-smoke.ts
- *   CKR_E2E_SMOKE=1 CKR_E2E_CLEANUP_ONLY=1 npx tsx scripts/e2e-ckr-action-loop-stage4p-smoke.ts
- *   CKR_E2E_SMOKE=1 CKR_E2E_DRY_RUN_CLEANUP=1 npx tsx ...  (list only)
+ *   CKR_E2E_SMOKE=1 CKR_ENVIRONMENT=staging CKR_ALLOW_STAGING_E2E=YES \
+ *     npx tsx scripts/e2e-ckr-action-loop-stage4p-smoke.ts
  *
  * Exit codes:
  *   0 = success
- *   2 = skipped (missing env / not enabled)
+ *   2 = skipped / refused (missing env / production target)
  *   1 = failure
  */
 import { createHash, randomUUID } from "node:crypto";
@@ -31,10 +32,16 @@ import {
   deriveActionsFromEvents,
   toClientActionLoopView,
 } from "../src/lib/ckr-action-loop/derive";
+import {
+  CKR_STAGING_SEED_MARKER,
+  assertCkrStagingTarget,
+  CkrStagingGuardError,
+} from "./lib/ckr-staging-guard";
 
-const MARKER = "E2E_4P_SMOKE";
+const MARKER = CKR_STAGING_SEED_MARKER;
 const MANIFEST_PATH = resolve(
-  "/tmp/cursor/artifacts/e2e-4p-smoke-manifest.json",
+  process.env.CKR_E2E_MANIFEST_PATH ||
+    "/tmp/cursor/artifacts/e2e-ckr-staging-manifest.json",
 );
 
 /** Known TINDA production ids — never touch. */
@@ -181,10 +188,11 @@ async function runSmoke() {
   const admin = adminClient();
   const ts = Date.now();
   const password = `E2e4p_${ts}_Xx!`;
-  const clientEmail = `e2e4p.client.${ts}@ckr.local`;
+  const clientEmail = `e2e.ckr.staging.client.${ts}@ckr.local`;
   const staffEmail =
-    process.env.CKR_E2E_STAFF_EMAIL?.trim() || `e2e4p.staff.${ts}@ckr.local`;
-  const claimEmail = `e2e4p.claim.${ts}@ckr.local`;
+    process.env.CKR_E2E_STAFF_EMAIL?.trim() ||
+    `e2e.ckr.staging.staff.${ts}@ckr.local`;
+  const claimEmail = `e2e.ckr.staging.claim.${ts}@ckr.local`;
   const m = emptyManifest();
 
   m.tindaBefore = await snapshotTinda(admin);
@@ -258,6 +266,23 @@ async function runSmoke() {
     .single();
   if (memErr) throw new Error(memErr.message);
   m.membershipIds.push(mem.id);
+
+  const { error: needErr } = await admin.from("need_profiles").insert({
+    owner_type: "user",
+    owner_id: clientId,
+    intent_type: "SEEK_BUYER",
+    status: "ACTIVE",
+    visibility: "PRIVATE",
+    title: `${MARKER} need`,
+    description: `${MARKER} synthetic need profile`,
+    matching_enabled: false,
+    created_by: clientId,
+  });
+  if (needErr) {
+    m.results.needProfileSkip = needErr.message;
+  } else {
+    m.results.needProfile = "inserted";
+  }
 
   // --- opportunity (published, technical) ---
   const oppId = randomUUID();
@@ -656,16 +681,15 @@ async function main() {
     process.exit(2);
   }
 
-  // Refuse obvious production hostname without explicit allow
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  if (
-    /ckr-center|prod/i.test(url) &&
-    process.env.CKR_E2E_ALLOW_PRODUCTION !== "1"
-  ) {
-    console.error(
-      "Refusing production-like Supabase URL without CKR_E2E_ALLOW_PRODUCTION=1",
-    );
-    process.exit(2);
+  try {
+    const target = assertCkrStagingTarget();
+    console.log("STAGING_TARGET_OK", JSON.stringify(target));
+  } catch (e) {
+    if (e instanceof CkrStagingGuardError) {
+      console.error("STAGING_TARGET_REFUSED", e.code, e.message);
+      process.exit(2);
+    }
+    throw e;
   }
 
   if (process.env.CKR_E2E_CLEANUP_ONLY === "1") {
