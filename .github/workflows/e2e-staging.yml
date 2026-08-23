@@ -86,8 +86,14 @@ jobs:
         id: e2e
         run: npm run e2e:ckr-action-loop-stage4p-smoke
 
+      - name: Stage 4Q staging E2E
+        id: e2e4q
+        run: npm run e2e:ckr-own-ideas-stage4q-smoke
+
       - name: Cleanup exact IDs
         if: always() && steps.secrets.outcome == 'success'
         env:
           CKR_E2E_CLEANUP_ONLY: "1"
-        run: npm run e2e:ckr-action-loop-stage4p-smoke
+        run: |
+          npm run e2e:ckr-action-loop-stage4p-smoke
+          npm run e2e:ckr-own-ideas-stage4q-smoke

@@ -86,6 +86,23 @@ export default async function OwnerCabinetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-xl text-foreground">
+            Собственные идеи ЦКР
+          </h3>
+          <Link
+            href="/admin/owner/own-ideas"
+            className="text-sm text-accent hover:underline"
+          >
+            Открыть
+          </Link>
+        </div>
+        <p className="text-sm text-muted">
+          Черновики рыночных связок без входящей заявки. Только владелец.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
           <h3 className="font-display text-xl text-foreground">Заявки</h3>
           <Link
             href="/admin/owner/inbox"
