@@ -253,6 +253,8 @@ async function main() {
     assert.match(persist, /deleteOwnIdeaExact/);
     const e2e = read("scripts/e2e-ckr-own-ideas-stage4q-smoke.ts");
     assert.match(e2e, /CLEANUP_OK|RESIDUAL_SMOKE_ROWS/);
+    assert.match(e2e, /from "\.\/lib\/ckr-staging-guard"/);
+    assert.doesNotMatch(e2e, /from "\.\.\/src\/lib\/ckr-staging-guard"/);
   });
 
   await test("internal search used before external", () => {
