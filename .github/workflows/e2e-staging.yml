@@ -53,6 +53,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Staging isolation tests
+        run: npm run test:ckr-staging-guard
+
       - name: Require GitHub staging secrets
         id: secrets
         shell: bash
@@ -65,31 +68,26 @@ jobs:
           done
           if (( ${#missing[@]} > 0 )); then
             echo "REQUIRES_GITHUB_STAGING_SECRETS names=${missing[*]}"
-            echo "configured=no" >> "$GITHUB_OUTPUT"
-            echo "Staging GitHub secrets are not configured yet. Job will skip live E2E."
-            exit 0
+            echo "Live Staging E2E must not skip after staging secrets were configured."
+            exit 1
           fi
           echo "configured=yes" >> "$GITHUB_OUTPUT"
 
       - name: Assert staging target
-        if: steps.secrets.outputs.configured == 'yes'
         run: npm run ckr:assert-staging
 
       - name: Staging migrations dry-run
-        if: steps.secrets.outputs.configured == 'yes'
         run: bash scripts/ckr-apply-staging-migrations.sh --dry-run-only
 
       - name: Apply staging migrations
-        if: steps.secrets.outputs.configured == 'yes'
         run: bash scripts/ckr-apply-staging-migrations.sh
 
       - name: Stage 4P staging E2E
         id: e2e
-        if: steps.secrets.outputs.configured == 'yes'
         run: npm run e2e:ckr-action-loop-stage4p-smoke
 
       - name: Cleanup exact IDs
-        if: always() && steps.secrets.outputs.configured == 'yes' && steps.e2e.outcome != 'skipped'
+        if: always() && steps.secrets.outcome == 'success'
         env:
           CKR_E2E_CLEANUP_ONLY: "1"
         run: npm run e2e:ckr-action-loop-stage4p-smoke
