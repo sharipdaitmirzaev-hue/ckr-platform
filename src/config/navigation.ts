@@ -128,6 +128,7 @@ export const adminNav: NavItem[] = [
 export const operatorPrimaryNav: NavItem[] = [
   { label: "Главная", href: "/admin/owner" },
   { label: "Заявки", href: "/admin/owner/inbox" },
+  { label: "Собственные идеи ЦКР", href: "/admin/owner/own-ideas" },
   { label: "Компании", href: "/admin/owner/companies" },
   { label: "Возможности", href: "/admin/owner/lia/opportunities" },
   { label: "Поиск", href: "/admin/owner/discovery" },
@@ -150,6 +151,11 @@ export const operatorSystemNav: NavItem[] = [
     label: "Диагностика ленты",
     href: "/admin/owner/feed",
     description: "Служебная проверка подборок",
+  },
+  {
+    label: "Opportunity Builder diagnostics",
+    href: "/admin/owner/own-ideas/diagnostics",
+    description: "Служебные метрики поиска собственных идей",
   },
   {
     label: "Связи",
