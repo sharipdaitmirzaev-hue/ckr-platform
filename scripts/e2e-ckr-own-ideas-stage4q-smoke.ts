@@ -20,7 +20,7 @@ import {
 import {
   assertCkrStagingTarget,
   CkrStagingGuardError,
-} from "../src/lib/ckr-staging-guard";
+} from "./lib/ckr-staging-guard";
 
 const MANIFEST_PATH = resolve(
   process.env.CKR_E2E_MANIFEST_PATH ||
