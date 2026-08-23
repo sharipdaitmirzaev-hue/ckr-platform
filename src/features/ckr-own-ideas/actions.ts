@@ -15,13 +15,14 @@ import {
   tractorEarthworksCatalog,
 } from "@/lib/ckr-own-ideas/fixtures";
 import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
-import type { OwnIdeaCatalog } from "@/types/ckr-own-ideas";
+import type { OwnIdeaCatalog, OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
 
 export type OwnIdeaActionState = {
   error?: string;
   success?: string;
   generated?: number;
   rejected?: number;
+  persistStatus?: OwnIdeaRunMetrics["persistStatus"];
 };
 
 function revalidateIdeas(id?: string) {
@@ -59,17 +60,71 @@ function marketCatalog(): OwnIdeaCatalog {
 export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
   await requireLiaOiOwner();
   const store = getOwnIdeaStore();
+  const existing = await store.list();
   const result = runOwnIdeaBuilder({
     catalog: marketCatalog(),
-    existing: store.list(),
+    existing,
   });
-  for (const idea of result.ideas) store.upsert(idea);
-  store.saveRun(result.metrics);
+
+  const running: OwnIdeaRunMetrics = {
+    ...result.metrics,
+    persistStatus: "running",
+    persistError: null,
+    ideasPersisted: 0,
+  };
+  try {
+    await store.saveRun(running);
+  } catch (e) {
+    return {
+      error: `Не удалось записать run: ${e instanceof Error ? e.message : "unknown"}`,
+      persistStatus: "failed",
+    };
+  }
+
+  const errors: string[] = [];
+  let persisted = 0;
+  for (const idea of result.ideas) {
+    try {
+      await store.upsert(idea);
+      persisted += 1;
+    } catch (e) {
+      errors.push(`${idea.id}: ${e instanceof Error ? e.message : "unknown"}`);
+    }
+  }
+
+  const persistStatus =
+    errors.length === 0 ? "ok" : persisted === 0 ? "failed" : "partial";
+  const finished: OwnIdeaRunMetrics = {
+    ...result.metrics,
+    persistStatus,
+    persistError: errors.length ? errors.join("; ") : null,
+    ideasPersisted: persisted,
+  };
+  try {
+    await store.saveRun(finished);
+  } catch (e) {
+    return {
+      error: `Идеи: ${persisted}, run status не обновлён: ${e instanceof Error ? e.message : "unknown"}`,
+      generated: result.metrics.ideasGenerated,
+      rejected: result.metrics.ideasRejected,
+      persistStatus: "partial",
+    };
+  }
+
   revalidateIdeas();
+  if (persistStatus !== "ok") {
+    return {
+      error: `Сохранение неполное (${persistStatus}). ${finished.persistError}`,
+      generated: result.metrics.ideasGenerated,
+      rejected: result.metrics.ideasRejected,
+      persistStatus,
+    };
+  }
   return {
     success: `Черновиков: ${result.metrics.ideasGenerated}, обновлено: ${result.metrics.ideasUpdated}`,
     generated: result.metrics.ideasGenerated,
     rejected: result.metrics.ideasRejected,
+    persistStatus: "ok",
   };
 }
 
@@ -79,14 +134,18 @@ export async function ownIdeaOwnerAction(
 ): Promise<OwnIdeaActionState> {
   await requireLiaOiOwner();
   const store = getOwnIdeaStore();
-  const idea = store.get(ideaId);
+  const idea = await store.get(ideaId);
   if (!idea) return { error: "Идея не найдена" };
   const next = applyOwnerAction(
     idea,
     action,
     action === "create_project" ? `draft-project-${idea.id}` : idea.projectId,
   );
-  store.upsert(next);
+  try {
+    await store.upsert(next);
+  } catch (e) {
+    return { error: `Не удалось сохранить решение: ${e instanceof Error ? e.message : "unknown"}` };
+  }
   revalidateIdeas(ideaId);
   return { success: "Решение владельца записано. Публикации не было." };
 }
