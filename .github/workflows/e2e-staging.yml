@@ -1,0 +1,95 @@
+# Staging-only E2E. Never uses production secrets or deploy-production.yml.
+name: Staging E2E
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ckr-staging-e2e
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  staging-e2e:
+    name: Staging migrations · seed · E2E · cleanup
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      CKR_ENVIRONMENT: staging
+      CKR_ALLOW_STAGING_E2E: YES
+      CKR_E2E_SMOKE: "1"
+      LIA_PROVIDER: mock
+      LIA_WEB_SEARCH_PROVIDER: mock
+      LIA_OI_STORE: memory
+      BUSINESS_GRAPH_STORE: memory
+      NEED_PROFILE_STORE: memory
+      PAYMENT_PROVIDER: mock
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_DEMO_MODE: "true"
+      CKR_STAGING_PROJECT_REF: ${{ secrets.CKR_STAGING_PROJECT_REF }}
+      CKR_STAGING_SUPABASE_URL: ${{ secrets.CKR_STAGING_SUPABASE_URL }}
+      CKR_STAGING_ANON_KEY: ${{ secrets.CKR_STAGING_ANON_KEY }}
+      CKR_STAGING_SERVICE_ROLE_KEY: ${{ secrets.CKR_STAGING_SERVICE_ROLE_KEY }}
+      CKR_STAGING_DB_PASSWORD: ${{ secrets.CKR_STAGING_DB_PASSWORD }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.CKR_STAGING_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.CKR_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CKR_STAGING_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Require GitHub staging secrets
+        id: secrets
+        shell: bash
+        run: |
+          missing=()
+          for k in CKR_STAGING_PROJECT_REF CKR_STAGING_SUPABASE_URL CKR_STAGING_ANON_KEY CKR_STAGING_SERVICE_ROLE_KEY CKR_STAGING_DB_PASSWORD SUPABASE_ACCESS_TOKEN; do
+            if [[ -z "${!k:-}" ]]; then
+              missing+=("$k")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "REQUIRES_GITHUB_STAGING_SECRETS names=${missing[*]}"
+            echo "configured=no" >> "$GITHUB_OUTPUT"
+            echo "Staging GitHub secrets are not configured yet. Job will skip live E2E."
+            exit 0
+          fi
+          echo "configured=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Assert staging target
+        if: steps.secrets.outputs.configured == 'yes'
+        run: npm run ckr:assert-staging
+
+      - name: Staging migrations dry-run
+        if: steps.secrets.outputs.configured == 'yes'
+        run: bash scripts/ckr-apply-staging-migrations.sh --dry-run-only
+
+      - name: Apply staging migrations
+        if: steps.secrets.outputs.configured == 'yes'
+        run: bash scripts/ckr-apply-staging-migrations.sh
+
+      - name: Stage 4P staging E2E
+        id: e2e
+        if: steps.secrets.outputs.configured == 'yes'
+        run: npm run e2e:ckr-action-loop-stage4p-smoke
+
+      - name: Cleanup exact IDs
+        if: always() && steps.secrets.outputs.configured == 'yes' && steps.e2e.outcome != 'skipped'
+        env:
+          CKR_E2E_CLEANUP_ONLY: "1"
+        run: npm run e2e:ckr-action-loop-stage4p-smoke

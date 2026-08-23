@@ -25,7 +25,7 @@ set
   status = 'cancelled',
   updated_at = now()
 where wave_id = 'c0000001-0000-4000-8000-000000000004'
-  and id like 'c0000005-%';
+  and id::text like 'c0000005-%';
 
 -- ---------------------------------------------------------------------------
 -- Новые цели Wave 2 Ecosystem Beta

@@ -27,8 +27,13 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.staging.local
 .env.production
 .env.production.local
+
+# supabase CLI local state
+supabase/.temp/
+supabase/.branches/
 # server secrets (never commit)
 /etc/ckr/
 deploy/env/*.env

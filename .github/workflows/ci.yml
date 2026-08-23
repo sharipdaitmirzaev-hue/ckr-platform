@@ -1,0 +1,71 @@
+# PR / feature-branch checks only.
+# Production deploy remains in deploy-production.yml (push to main).
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches-ignore:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Test · Lint · Typecheck · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Safe defaults for unit/static checks — no production secrets, no DB writes.
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_DEMO_MODE: "true"
+      DEMO_CATALOG_FALLBACK: "true"
+      ALLOW_DEMO_SEED_IN_PRODUCTION: "false"
+      ALLOW_PILOT_SEED_IN_PRODUCTION: "false"
+      LIA_PROVIDER: mock
+      LIA_WEB_SEARCH_PROVIDER: mock
+      LIA_OI_STORE: memory
+      BUSINESS_GRAPH_STORE: memory
+      NEED_PROFILE_STORE: memory
+      PAYMENT_PROVIDER: mock
+      NEXT_PUBLIC_BETA_REQUIRE_INVITE: "false"
+      # Placeholder public keys so Next build can compile; not production.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ci_placeholder_not_a_secret
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Align with production server (Node 22) and Cloud Agent (v22.x).
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit / stage tests
+        run: npm test
+
+      - name: Stage 4P Action Loop tests
+        run: npm run test:ckr-action-loop-stage4p
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
