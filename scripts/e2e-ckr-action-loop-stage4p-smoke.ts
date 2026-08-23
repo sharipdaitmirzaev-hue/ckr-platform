@@ -704,6 +704,11 @@ async function main() {
   }
 
   if (process.env.CKR_E2E_CLEANUP_ONLY === "1") {
+    if (!loadManifest()) {
+      console.log("CLEANUP_SKIPPED_NO_MANIFEST");
+      console.log("RESIDUAL_SMOKE_ROWS", 0);
+      return;
+    }
     await cleanup(process.env.CKR_E2E_DRY_RUN_CLEANUP === "1");
     return;
   }

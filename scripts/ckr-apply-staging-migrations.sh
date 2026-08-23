@@ -16,6 +16,9 @@ fi
 if [[ -z "${CKR_STAGING_DB_PASSWORD:-}" ]]; then
   ckr_staging_die "CKR_STAGING_DB_PASSWORD missing — cannot db push"
 fi
+if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
+  ckr_staging_die "SUPABASE_ACCESS_TOKEN missing — supabase CLI cannot db push"
+fi
 
 cd "${SCRIPT_DIR}/.."
 

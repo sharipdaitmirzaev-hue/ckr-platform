@@ -35,6 +35,7 @@ jobs:
       CKR_STAGING_ANON_KEY: ${{ secrets.CKR_STAGING_ANON_KEY }}
       CKR_STAGING_SERVICE_ROLE_KEY: ${{ secrets.CKR_STAGING_SERVICE_ROLE_KEY }}
       CKR_STAGING_DB_PASSWORD: ${{ secrets.CKR_STAGING_DB_PASSWORD }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.CKR_STAGING_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.CKR_STAGING_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CKR_STAGING_SERVICE_ROLE_KEY }}
@@ -57,7 +58,7 @@ jobs:
         shell: bash
         run: |
           missing=()
-          for k in CKR_STAGING_PROJECT_REF CKR_STAGING_SUPABASE_URL CKR_STAGING_ANON_KEY CKR_STAGING_SERVICE_ROLE_KEY CKR_STAGING_DB_PASSWORD; do
+          for k in CKR_STAGING_PROJECT_REF CKR_STAGING_SUPABASE_URL CKR_STAGING_ANON_KEY CKR_STAGING_SERVICE_ROLE_KEY CKR_STAGING_DB_PASSWORD SUPABASE_ACCESS_TOKEN; do
             if [[ -z "${!k:-}" ]]; then
               missing+=("$k")
             fi
@@ -83,11 +84,12 @@ jobs:
         run: bash scripts/ckr-apply-staging-migrations.sh
 
       - name: Stage 4P staging E2E
+        id: e2e
         if: steps.secrets.outputs.configured == 'yes'
         run: npm run e2e:ckr-action-loop-stage4p-smoke
 
       - name: Cleanup exact IDs
-        if: always() && steps.secrets.outputs.configured == 'yes'
+        if: always() && steps.secrets.outputs.configured == 'yes' && steps.e2e.outcome != 'skipped'
         env:
           CKR_E2E_CLEANUP_ONLY: "1"
         run: npm run e2e:ckr-action-loop-stage4p-smoke
