@@ -60,6 +60,7 @@ type Manifest = {
   commentIds: string[];
   eventIds: string[];
   membershipIds: string[];
+  needProfileIds: string[];
   roleRows: Array<{ user_id: string; role: string }>;
   staffUserId: string | null;
   clientUserId: string | null;
@@ -101,6 +102,7 @@ function emptyManifest(): Manifest {
     commentIds: [],
     eventIds: [],
     membershipIds: [],
+    needProfileIds: [],
     roleRows: [],
     staffUserId: null,
     clientUserId: null,
@@ -267,29 +269,34 @@ async function runSmoke() {
   if (memErr) throw new Error(memErr.message);
   m.membershipIds.push(mem.id);
 
-  const { error: needErr } = await admin.from("need_profiles").insert({
-    owner_type: "user",
-    owner_id: clientId,
-    intent_type: "SEEK_BUYER",
-    status: "ACTIVE",
-    visibility: "PRIVATE",
-    title: `${MARKER} need`,
-    description: `${MARKER} synthetic need profile`,
-    matching_enabled: false,
-    created_by: clientId,
-  });
+  const { data: needRow, error: needErr } = await admin
+    .from("need_profiles")
+    .insert({
+      owner_type: "user",
+      owner_id: clientId,
+      intent_type: "SEEK_BUYER",
+      status: "ACTIVE",
+      visibility: "PRIVATE",
+      title: `${MARKER} need`,
+      description: `${MARKER} synthetic need profile`,
+      matching_enabled: false,
+      created_by: clientId,
+    })
+    .select("id")
+    .single();
   if (needErr) {
     m.results.needProfileSkip = needErr.message;
-  } else {
+  } else if (needRow?.id) {
+    m.needProfileIds.push(needRow.id);
     m.results.needProfile = "inserted";
   }
+  saveManifest(m);
 
   // --- opportunity (published, technical) ---
   const oppId = randomUUID();
   const { error: oppErr } = await admin.from("opportunities").insert({
     id: oppId,
     title: `E2E 4P Test Opportunity ${ts}`,
-    summary: `${MARKER} synthetic opportunity — not a real buyer`,
     description: `${MARKER} technical smoke only`,
     type: "partner",
     status: "published",
@@ -305,7 +312,7 @@ async function runSmoke() {
     id: requestId,
     from_user_id: clientId,
     organization_id: orgId,
-    request_type: "SEEK_BUYER",
+    request_type: "FIND_BUYER",
     subject: `E2E 4P Test Request ${ts}`,
     body: `${MARKER} synthetic request — not TINDA, not real business`,
     status: "IN_PROGRESS",
@@ -595,6 +602,7 @@ async function cleanup(dryRun: boolean) {
   if (m.requestId) plan.push(`request:${m.requestId}`);
   if (m.claimRequestId) plan.push(`request:${m.claimRequestId}`);
   if (m.opportunityId) plan.push(`opportunity:${m.opportunityId}`);
+  push("need_profile", m.needProfileIds || []);
   push("membership", m.membershipIds);
   if (m.orgId) plan.push(`org:${m.orgId}`);
   for (const r of m.roleRows) plan.push(`role:${r.user_id}:${r.role}`);
@@ -619,6 +627,9 @@ async function cleanup(dryRun: boolean) {
   }
   if (m.opportunityId) {
     await admin.from("opportunities").delete().eq("id", m.opportunityId);
+  }
+  if ((m.needProfileIds || []).length) {
+    await admin.from("need_profiles").delete().in("id", m.needProfileIds);
   }
   if (m.membershipIds.length) {
     await admin
@@ -697,12 +708,23 @@ async function main() {
     return;
   }
 
-  await runSmoke();
-  if (process.env.CKR_E2E_SKIP_CLEANUP === "1") {
-    console.log("SKIP_CLEANUP set — manifest retained for manual review");
-    return;
+  try {
+    await runSmoke();
+    if (process.env.CKR_E2E_SKIP_CLEANUP === "1") {
+      console.log("SKIP_CLEANUP set — manifest retained for manual review");
+      return;
+    }
+    await cleanup(process.env.CKR_E2E_DRY_RUN_CLEANUP === "1");
+  } catch (e) {
+    if (process.env.CKR_E2E_SKIP_CLEANUP !== "1") {
+      try {
+        await cleanup(process.env.CKR_E2E_DRY_RUN_CLEANUP === "1");
+      } catch (cleanupErr) {
+        console.error("CLEANUP_AFTER_FAILURE", cleanupErr);
+      }
+    }
+    throw e;
   }
-  await cleanup(process.env.CKR_E2E_DRY_RUN_CLEANUP === "1");
 }
 
 main().catch((e) => {

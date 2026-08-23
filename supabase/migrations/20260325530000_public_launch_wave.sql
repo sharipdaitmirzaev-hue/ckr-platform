@@ -27,9 +27,9 @@ on conflict (id) do update set
   wave_type = 'public',
   -- не форсируем active: активация только из админки при decision = public_launch
   status = case
-    when public.launch_waves.status = 'active' then 'active'
-    when public.launch_waves.status = 'completed' then 'completed'
-    else 'planned'
+    when public.launch_waves.status = 'active' then 'active'::public.launch_wave_status
+    when public.launch_waves.status = 'completed' then 'completed'::public.launch_wave_status
+    else 'planned'::public.launch_wave_status
   end;
 
 insert into public.launch_goals (
