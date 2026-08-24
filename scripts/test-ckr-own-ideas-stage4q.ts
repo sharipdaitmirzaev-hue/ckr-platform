@@ -26,6 +26,7 @@ import {
   tractorEarthworksCatalog,
 } from "../src/lib/ckr-own-ideas";
 import { memoryOwnIdeaStore } from "../src/lib/ckr-own-ideas/store";
+import { ideaToRow, rowToIdea, rowToRun, runToRow } from "../src/lib/ckr-own-ideas/persist";
 import type { OwnIdeaComponent } from "../src/types/ckr-own-ideas";
 
 let passed = 0;
@@ -71,7 +72,7 @@ function component(partial: Partial<OwnIdeaComponent> & Pick<OwnIdeaComponent, "
 }
 
 async function main() {
-  memoryOwnIdeaStore.reset();
+  await memoryOwnIdeaStore.reset();
 
   await test("1. asset+demand creates candidate idea", () => {
     const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
@@ -150,13 +151,17 @@ async function main() {
   await test("10. rediscovery keeps owner edits", () => {
     const catalog = tractorEarthworksCatalog();
     const first = runOwnIdeaBuilder({ catalog });
-    const locked = {
+    const withOwnerTitle = {
       ...first.ideas[0],
       title: "OWNER TITLE",
-      ownerLockedFields: ["title"],
+      economics: { ...first.ideas[0].economics, disclaimer: "OWNER DISCLAIMER" },
     };
+    const locked = applyOwnerAction(withOwnerTitle, "accept");
     const second = runOwnIdeaBuilder({ catalog, existing: [locked] });
     assert.equal(second.ideas[0].title, "OWNER TITLE");
+    assert.equal(second.ideas[0].economics.disclaimer, "OWNER DISCLAIMER");
+    assert.equal(second.ideas[0].ownerState, "ACCEPTED");
+    assert.equal(second.ideas[0].rating, locked.rating);
     assert.ok(second.ideas[0].events.some((e) => e.type === "rediscovery_updated"));
   });
 
@@ -164,6 +169,10 @@ async function main() {
     const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
     const accepted = applyOwnerAction(ideas[0], "accept");
     assert.equal(accepted.ownerState, "ACCEPTED");
+    assert.ok(accepted.ownerLockedFields.includes("title"));
+    assert.ok(accepted.ownerLockedFields.includes("essence"));
+    assert.ok(accepted.ownerLockedFields.includes("economics"));
+    assert.ok(accepted.ownerLockedFields.includes("rating"));
     const rejected = applyOwnerAction(ideas[0], "reject");
     assert.equal(rejected.ownerState, "REJECTED");
     const proj = applyOwnerAction(ideas[0], "create_project", "proj-1");
@@ -255,6 +264,99 @@ async function main() {
     assert.match(e2e, /CLEANUP_OK|RESIDUAL_SMOKE_ROWS/);
     assert.match(e2e, /from "\.\/lib\/ckr-staging-guard"/);
     assert.doesNotMatch(e2e, /from "\.\.\/src\/lib\/ckr-staging-guard"/);
+    assert.match(e2e, /createSupabaseOwnIdeaStore/);
+    assert.match(e2e, /RESTART_PERSISTENCE/);
+    assert.match(e2e, /REDISCOVERY_PERSISTENCE/);
+  });
+
+  await test("production SoT is supabase, not memory", () => {
+    const store = read("src/lib/ckr-own-ideas/store.ts");
+    const server = read("src/lib/ckr-own-ideas/store-server.ts");
+    const actions = read("src/features/ckr-own-ideas/actions.ts");
+    assert.match(store, /resolveOwnIdeaStoreMode/);
+    assert.match(store, /forbidden in production/);
+    assert.match(server, /createSupabaseOwnIdeaStore/);
+    assert.match(server, /resolveOwnIdeaStoreMode\(\) === "memory"/);
+    assert.match(actions, /store-server/);
+    assert.match(actions, /persistStatus/);
+    assert.match(actions, /await store\.list\(\)/);
+    assert.match(actions, /await store\.upsert/);
+    assert.doesNotMatch(actions, /memoryOwnIdeaStore/);
+    const list = read("src/app/(admin)/admin/owner/own-ideas/page.tsx");
+    const detail = read("src/app/(admin)/admin/owner/own-ideas/[id]/page.tsx");
+    assert.match(list, /store-server/);
+    assert.match(detail, /store-server/);
+    assert.match(list, /await getOwnIdeaStore\(\)\.list\(\)/);
+    assert.match(detail, /await getOwnIdeaStore\(\)\.get/);
+    assert.doesNotMatch(store, /export function getOwnIdeaStore\(/);
+    assert.match(server, /export function getOwnIdeaStore\(/);
+    const persist = read("src/lib/ckr-own-ideas/persist.ts");
+    assert.match(persist, /refused production Supabase URL/);
+  });
+
+  await test("mapper roundtrip keeps OWNER_ONLY and locks", () => {
+    const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
+    const locked = applyOwnerAction(ideas[0], "accept");
+    const row = ideaToRow(locked);
+    const back = rowToIdea(row);
+    assert.equal(back.visibility, "OWNER_ONLY");
+    assert.equal(back.ownerState, "ACCEPTED");
+    assert.deepEqual(back.ownerLockedFields, locked.ownerLockedFields);
+    const runRow = runToRow({
+      runId: ideas[0].runId,
+      startedAt: ideas[0].createdAt,
+      finishedAt: ideas[0].updatedAt,
+      durationMs: 1,
+      queries: 0,
+      results: 0,
+      enrichments: 0,
+      sources: [],
+      ideasGenerated: 1,
+      ideasRejected: 0,
+      ideasUpdated: 0,
+      internalSearches: 0,
+      externalCalls: 0,
+      depthReached: 0,
+      stopReason: "assembled",
+      costEstimate: null,
+      clientRequestUsed: false,
+      autoPublish: false,
+      autoOutreach: false,
+      matchingEdges: false,
+      scheduler: false,
+      persistStatus: "ok",
+      ideasPersisted: 1,
+    });
+    const runBack = rowToRun(runRow);
+    assert.equal(runBack.persistStatus, "ok");
+    assert.equal(runBack.autoPublish, false);
+  });
+
+  await test("resolveOwnIdeaStoreMode defaults to supabase", async () => {
+    const { resolveOwnIdeaStoreMode } = await import("../src/lib/ckr-own-ideas/store");
+    const prev = process.env.CKR_OWN_IDEA_STORE;
+    const prevEnv = process.env.NODE_ENV;
+    const prevCkr = process.env.CKR_ENVIRONMENT;
+    try {
+      delete process.env.CKR_OWN_IDEA_STORE;
+      assert.equal(resolveOwnIdeaStoreMode(), "supabase");
+      process.env.CKR_OWN_IDEA_STORE = "memory";
+      process.env.NODE_ENV = "development";
+      delete process.env.CKR_ENVIRONMENT;
+      assert.equal(resolveOwnIdeaStoreMode(), "memory");
+      process.env.NODE_ENV = "production";
+      process.env.CKR_ENVIRONMENT = "staging";
+      assert.equal(resolveOwnIdeaStoreMode(), "memory");
+      delete process.env.CKR_ENVIRONMENT;
+      assert.throws(() => resolveOwnIdeaStoreMode(), /forbidden in production/);
+    } finally {
+      if (prev === undefined) delete process.env.CKR_OWN_IDEA_STORE;
+      else process.env.CKR_OWN_IDEA_STORE = prev;
+      if (prevEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = prevEnv;
+      if (prevCkr === undefined) delete process.env.CKR_ENVIRONMENT;
+      else process.env.CKR_ENVIRONMENT = prevCkr;
+    }
   });
 
   await test("internal search used before external", () => {

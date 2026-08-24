@@ -4,7 +4,8 @@ Proactive Opportunity Builder. Owner-only. Manual run. No Matching / Synthesis /
 
 ## SoT
 
-Новая таблица `ckr_own_ideas` (+ `ckr_own_idea_runs`).
+Production SoT: таблицы `ckr_own_ideas` + `ckr_own_idea_runs` через `SupabaseOwnIdeaStore`.
+`memoryOwnIdeaStore` только для unit tests / явного `CKR_OWN_IDEA_STORE=memory` (запрещён в production).
 
 Почему не `projects`: marketplace supply, публичный slug, чужой жизненный цикл.  
 Почему не `ckr_requests IDEA`: это клиентская идея (4H).  
