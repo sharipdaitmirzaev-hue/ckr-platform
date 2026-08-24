@@ -1,49 +1,76 @@
 import type { CkrOwnIdea, OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
 
 export type OwnIdeaStore = {
-  list(): CkrOwnIdea[];
-  get(id: string): CkrOwnIdea | undefined;
-  upsert(idea: CkrOwnIdea): void;
-  remove(id: string): void;
-  saveRun(metrics: OwnIdeaRunMetrics): void;
-  lastRun(): OwnIdeaRunMetrics | null;
-  reset(): void;
+  list(): Promise<CkrOwnIdea[]>;
+  get(id: string): Promise<CkrOwnIdea | undefined>;
+  findByFingerprint(fingerprint: string): Promise<CkrOwnIdea | undefined>;
+  upsert(idea: CkrOwnIdea): Promise<void>;
+  remove(id: string): Promise<void>;
+  saveRun(metrics: OwnIdeaRunMetrics): Promise<void>;
+  lastRun(): Promise<OwnIdeaRunMetrics | null>;
+  listRuns(): Promise<OwnIdeaRunMetrics[]>;
+  reset(): Promise<void>;
 };
 
 const ideas = new Map<string, CkrOwnIdea>();
 const runs: OwnIdeaRunMetrics[] = [];
+let testOverride: OwnIdeaStore | undefined;
 
 export const memoryOwnIdeaStore: OwnIdeaStore = {
-  list() {
+  async list() {
     return [...ideas.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   },
-  get(id) {
+  async get(id) {
     return ideas.get(id);
   },
-  upsert(idea) {
+  async findByFingerprint(fingerprint) {
+    return [...ideas.values()].find((idea) => idea.fingerprint === fingerprint);
+  },
+  async upsert(idea) {
     ideas.set(idea.id, idea);
   },
-  remove(id) {
+  async remove(id) {
     ideas.delete(id);
   },
-  saveRun(metrics) {
-    runs.unshift(metrics);
+  async saveRun(metrics) {
+    const idx = runs.findIndex((run) => run.runId === metrics.runId);
+    if (idx >= 0) runs[idx] = metrics;
+    else runs.unshift(metrics);
   },
-  lastRun() {
+  async lastRun() {
     return runs[0] ?? null;
   },
-  reset() {
+  async listRuns() {
+    return [...runs];
+  },
+  async reset() {
     ideas.clear();
     runs.length = 0;
   },
 };
 
-export function getOwnIdeaStore(): OwnIdeaStore {
-  return memoryOwnIdeaStore;
+export function isProductionOwnIdeaRuntime() {
+  return (
+    process.env.NODE_ENV === "production" &&
+    process.env.CKR_ENVIRONMENT !== "staging"
+  );
+}
+
+export function resolveOwnIdeaStoreMode(): "memory" | "supabase" {
+  const explicit = (process.env.CKR_OWN_IDEA_STORE || "").trim().toLowerCase();
+  if (explicit === "memory") {
+    if (isProductionOwnIdeaRuntime()) {
+      throw new Error("CKR_OWN_IDEA_STORE=memory is forbidden in production");
+    }
+    return "memory";
+  }
+  return "supabase";
 }
 
 export function setOwnIdeaStoreForTests(store?: OwnIdeaStore) {
-  if (store) {
-    Object.assign(memoryOwnIdeaStore, store);
-  }
+  testOverride = store;
+}
+
+export function getOwnIdeaStoreOverride() {
+  return testOverride;
 }

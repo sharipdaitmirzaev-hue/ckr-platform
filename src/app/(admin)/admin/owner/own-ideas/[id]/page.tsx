@@ -8,7 +8,7 @@ import {
 } from "@/config/ckr-own-ideas";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
 import { formatMoneyRu, formatPaybackMonths } from "@/lib/ckr-own-ideas/economics";
-import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
+import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store-server";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -21,7 +21,7 @@ export default async function OwnIdeaDetailPage({
   params: { id: string };
 }) {
   await requireLiaOiOwner();
-  const idea = getOwnIdeaStore().get(params.id);
+  const idea = await getOwnIdeaStore().get(params.id);
   if (!idea) notFound();
 
   return (

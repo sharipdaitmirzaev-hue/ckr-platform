@@ -23,4 +23,8 @@ export {
 export { assertNoAutoActions, assertOwnerOnly, forbiddenFlags } from "@/lib/ckr-own-ideas/guards";
 export { rateOwnIdea } from "@/lib/ckr-own-ideas/rating";
 export { findMissingResource, searchInternalFirst } from "@/lib/ckr-own-ideas/search";
-export { getOwnIdeaStore, memoryOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
+export {
+  memoryOwnIdeaStore,
+  resolveOwnIdeaStoreMode,
+} from "@/lib/ckr-own-ideas/store";
+export { createSupabaseOwnIdeaStore } from "@/lib/ckr-own-ideas/supabase-store";

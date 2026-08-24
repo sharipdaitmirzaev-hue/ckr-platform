@@ -14,8 +14,9 @@ import {
   procurementCatalog,
   tractorEarthworksCatalog,
 } from "@/lib/ckr-own-ideas/fixtures";
-import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
-import type { OwnIdeaCatalog } from "@/types/ckr-own-ideas";
+import { assertNoAutoActions, assertOwnerOnly } from "@/lib/ckr-own-ideas/guards";
+import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store-server";
+import type { OwnIdeaCatalog, OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
 
 export type OwnIdeaActionState = {
   error?: string;
@@ -56,16 +57,62 @@ function marketCatalog(): OwnIdeaCatalog {
   };
 }
 
+function persistErrorMessage(status: NonNullable<OwnIdeaRunMetrics["persistStatus"]>, saved: number, total: number) {
+  return `Запуск ${status}: сохранено ${saved} из ${total} идей. Успех не зафиксирован.`;
+}
+
 export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
   await requireLiaOiOwner();
   const store = getOwnIdeaStore();
+  const existing = await store.list();
   const result = runOwnIdeaBuilder({
     catalog: marketCatalog(),
-    existing: store.list(),
+    existing,
   });
-  for (const idea of result.ideas) store.upsert(idea);
-  store.saveRun(result.metrics);
+  assertNoAutoActions(result.metrics);
+  for (const idea of result.ideas) assertOwnerOnly(idea);
+
+  const total = result.ideas.length;
+  let persisted = 0;
+  try {
+    await store.saveRun({
+      ...result.metrics,
+      persistStatus: "running",
+      ideasPersisted: 0,
+    });
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : "db error";
+    return { error: `Запуск failed: не удалось сохранить run. ${detail}` };
+  }
+
+  for (const idea of result.ideas) {
+    try {
+      await store.upsert(idea);
+      persisted += 1;
+    } catch (e) {
+      console.error("own-ideas persist idea failed", idea.id, e);
+    }
+  }
+
+  const persistStatus: NonNullable<OwnIdeaRunMetrics["persistStatus"]> =
+    persisted === total ? "ok" : persisted === 0 ? "failed" : "partial";
+  try {
+    await store.saveRun({
+      ...result.metrics,
+      persistStatus,
+      ideasPersisted: persisted,
+    });
+  } catch (e) {
+    console.error("own-ideas persist run status failed", persistStatus, e);
+    return {
+      error: persistErrorMessage(persistStatus === "ok" ? "failed" : persistStatus, persisted, total),
+    };
+  }
   revalidateIdeas();
+
+  if (persistStatus !== "ok") {
+    return { error: persistErrorMessage(persistStatus, persisted, total) };
+  }
   return {
     success: `Черновиков: ${result.metrics.ideasGenerated}, обновлено: ${result.metrics.ideasUpdated}`,
     generated: result.metrics.ideasGenerated,
@@ -79,14 +126,15 @@ export async function ownIdeaOwnerAction(
 ): Promise<OwnIdeaActionState> {
   await requireLiaOiOwner();
   const store = getOwnIdeaStore();
-  const idea = store.get(ideaId);
+  const idea = await store.get(ideaId);
   if (!idea) return { error: "Идея не найдена" };
   const next = applyOwnerAction(
     idea,
     action,
     action === "create_project" ? `draft-project-${idea.id}` : idea.projectId,
   );
-  store.upsert(next);
+  assertOwnerOnly(next);
+  await store.upsert(next);
   revalidateIdeas(ideaId);
   return { success: "Решение владельца записано. Публикации не было." };
 }

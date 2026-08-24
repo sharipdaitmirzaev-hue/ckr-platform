@@ -1,6 +1,6 @@
 import { CKR_OWN_IDEAS_NAV_LABEL, CKR_OWN_IDEAS_PATH } from "@/config/ckr-own-ideas";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
-import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
+import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store-server";
 import { SectionHeading } from "@/components/ui/section-heading";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OwnIdeasDiagnosticsPage() {
   await requireLiaOiOwner();
-  const run = getOwnIdeaStore().lastRun();
+  const run = await getOwnIdeaStore().lastRun();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">

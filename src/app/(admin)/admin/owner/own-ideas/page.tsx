@@ -8,7 +8,7 @@ import {
 } from "@/config/ckr-own-ideas";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
 import { formatMoneyRu, formatPaybackMonths } from "@/lib/ckr-own-ideas/economics";
-import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
+import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store-server";
 import { internalSortScore } from "@/lib/ckr-own-ideas/rating";
 import { SectionHeading } from "@/components/ui/section-heading";
 import type { Metadata } from "next";
@@ -19,8 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OwnIdeasPage() {
   await requireLiaOiOwner();
-  const ideas = getOwnIdeaStore()
-    .list()
+  const ideas = (await getOwnIdeaStore().list())
     .slice()
     .sort((a, b) => internalSortScore(b) - internalSortScore(a));
 
