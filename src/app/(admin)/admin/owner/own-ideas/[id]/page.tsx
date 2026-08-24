@@ -21,7 +21,7 @@ export default async function OwnIdeaDetailPage({
   params: { id: string };
 }) {
   await requireLiaOiOwner();
-  const idea = getOwnIdeaStore().get(params.id);
+  const idea = await getOwnIdeaStore().get(params.id);
   if (!idea) notFound();
 
   return (

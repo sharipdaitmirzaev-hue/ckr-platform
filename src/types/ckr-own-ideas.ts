@@ -181,6 +181,9 @@ export type OwnIdeaRunMetrics = {
   autoOutreach: false;
   matchingEdges: false;
   scheduler: false;
+  persistStatus?: "running" | "ok" | "partial" | "failed";
+  persistError?: string | null;
+  ideasPersisted?: number;
 };
 
 export type OwnIdeaSignal = {

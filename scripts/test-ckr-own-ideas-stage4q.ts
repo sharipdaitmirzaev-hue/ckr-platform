@@ -14,13 +14,17 @@ import {
   FINANCING_SAFE_WORDING,
   findMissingResource,
   hasGuaranteedProfitWording,
+  ideaToRow,
   internalCapitalCatalog,
   isNegativeEconomics,
+  isOwnIdeasProductionEnv,
   landTourismCatalog,
   missingFinancingCatalog,
   negativeEconomicsCatalog,
   procurementCatalog,
   rateOwnIdea,
+  resolveOwnIdeaStoreMode,
+  rowToIdea,
   runOwnIdeaBuilder,
   searchInternalFirst,
   tractorEarthworksCatalog,
@@ -71,7 +75,7 @@ function component(partial: Partial<OwnIdeaComponent> & Pick<OwnIdeaComponent, "
 }
 
 async function main() {
-  memoryOwnIdeaStore.reset();
+  await memoryOwnIdeaStore.reset();
 
   await test("1. asset+demand creates candidate idea", () => {
     const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
@@ -255,6 +259,84 @@ async function main() {
     assert.match(e2e, /CLEANUP_OK|RESIDUAL_SMOKE_ROWS/);
     assert.match(e2e, /from "\.\/lib\/ckr-staging-guard"/);
     assert.doesNotMatch(e2e, /from "\.\.\/src\/lib\/ckr-staging-guard"/);
+    assert.match(e2e, /createSupabaseOwnIdeaStore/);
+    assert.match(e2e, /OWNER LOCKED TITLE|ownerLockedFields/);
+    assert.match(e2e, /store recreate|after store recreate|restartPersisted/);
+  });
+
+  await test("4Q.1 mapper roundtrip keeps locks and OWNER_ONLY", () => {
+    const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
+    const locked = {
+      ...ideas[0],
+      title: "LOCKED",
+      ownerLockedFields: ["title", "essence"],
+    };
+    const again = rowToIdea(ideaToRow(locked));
+    assert.equal(again.visibility, "OWNER_ONLY");
+    assert.equal(again.title, "LOCKED");
+    assert.deepEqual(again.ownerLockedFields, ["title", "essence"]);
+    assert.equal(again.fingerprint, locked.fingerprint);
+  });
+
+  await test("4Q.1 memory store only when explicitly selected", async () => {
+    const prevStore = process.env.CKR_OWN_IDEAS_STORE;
+    const prevEnv = process.env.CKR_ENVIRONMENT;
+    const prevSite = process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.CKR_OWN_IDEAS_STORE;
+    process.env.CKR_ENVIRONMENT = "staging";
+    process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+    assert.equal(isOwnIdeasProductionEnv(), false);
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.CKR_STAGING_SERVICE_ROLE_KEY) {
+      assert.throws(() => resolveOwnIdeaStoreMode(), /требуют Supabase store/);
+    }
+    process.env.CKR_OWN_IDEAS_STORE = "memory";
+    assert.equal(resolveOwnIdeaStoreMode(), "memory");
+    process.env.CKR_ENVIRONMENT = "production";
+    assert.throws(() => resolveOwnIdeaStoreMode(), /запрещён в production/);
+    process.env.CKR_ENVIRONMENT = "staging";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://ckr-center.ru";
+    assert.throws(() => resolveOwnIdeaStoreMode(), /запрещён в production/);
+    if (prevStore === undefined) delete process.env.CKR_OWN_IDEAS_STORE;
+    else process.env.CKR_OWN_IDEAS_STORE = prevStore;
+    if (prevEnv === undefined) delete process.env.CKR_ENVIRONMENT;
+    else process.env.CKR_ENVIRONMENT = prevEnv;
+    if (prevSite === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = prevSite;
+  });
+
+  await test("4Q.1 owner UI and actions are async DB store", () => {
+    const list = read("src/app/(admin)/admin/owner/own-ideas/page.tsx");
+    const detail = read("src/app/(admin)/admin/owner/own-ideas/[id]/page.tsx");
+    const diag = read("src/app/(admin)/admin/owner/own-ideas/diagnostics/page.tsx");
+    const actions = read("src/features/ckr-own-ideas/actions.ts");
+    const factory = read("src/lib/ckr-own-ideas/store.ts");
+    assert.match(list, /await getOwnIdeaStore\(\)\.list\(\)/);
+    assert.match(detail, /await getOwnIdeaStore\(\)\.get\(/);
+    assert.match(diag, /await getOwnIdeaStore\(\)\.lastRun\(\)/);
+    assert.match(actions, /await store\.list\(\)/);
+    assert.match(actions, /await store\.upsert/);
+    assert.match(actions, /persistStatus/);
+    assert.match(factory, /return createSupabaseOwnIdeaStore/);
+    assert.doesNotMatch(factory, /return memoryOwnIdeaStore;\n}/);
+    assert.match(factory, /memory запрещён в production/);
+  });
+
+  await test("4Q.1 memory restart isolation vs explicit memory SoT", async () => {
+    process.env.CKR_OWN_IDEAS_STORE = "memory";
+    process.env.CKR_ENVIRONMENT = "test";
+    process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+    await memoryOwnIdeaStore.reset();
+    const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
+    await memoryOwnIdeaStore.upsert(ideas[0]);
+    assert.equal((await memoryOwnIdeaStore.get(ideas[0].id))?.id, ideas[0].id);
+    await memoryOwnIdeaStore.reset();
+    assert.equal(await memoryOwnIdeaStore.get(ideas[0].id), undefined);
+    delete process.env.CKR_OWN_IDEAS_STORE;
+  });
+
+  await test("4Q.1 no new migration file", () => {
+    const files = read("docs/ckr-own-ideas-stage4q.md");
+    assert.match(files, /4Q\.1|persistent|Supabase/);
   });
 
   await test("internal search used before external", () => {

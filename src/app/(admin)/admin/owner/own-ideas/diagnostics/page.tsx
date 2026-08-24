@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OwnIdeasDiagnosticsPage() {
   await requireLiaOiOwner();
-  const run = getOwnIdeaStore().lastRun();
+  const run = await getOwnIdeaStore().lastRun();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">

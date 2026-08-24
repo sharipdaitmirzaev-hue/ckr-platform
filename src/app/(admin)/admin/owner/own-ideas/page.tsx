@@ -19,8 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OwnIdeasPage() {
   await requireLiaOiOwner();
-  const ideas = getOwnIdeaStore()
-    .list()
+  const ideas = (await getOwnIdeaStore().list())
     .slice()
     .sort((a, b) => internalSortScore(b) - internalSortScore(a));
 
