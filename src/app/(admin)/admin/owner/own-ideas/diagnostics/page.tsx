@@ -1,6 +1,6 @@
 import { CKR_OWN_IDEAS_NAV_LABEL, CKR_OWN_IDEAS_PATH } from "@/config/ckr-own-ideas";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
-import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store-server";
+import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
 import { SectionHeading } from "@/components/ui/section-heading";
 import Link from "next/link";
 

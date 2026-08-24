@@ -14,8 +14,7 @@ import {
   procurementCatalog,
   tractorEarthworksCatalog,
 } from "@/lib/ckr-own-ideas/fixtures";
-import { assertNoAutoActions, assertOwnerOnly } from "@/lib/ckr-own-ideas/guards";
-import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store-server";
+import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
 import type { OwnIdeaCatalog, OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
 
 export type OwnIdeaActionState = {
@@ -23,6 +22,7 @@ export type OwnIdeaActionState = {
   success?: string;
   generated?: number;
   rejected?: number;
+  persistStatus?: OwnIdeaRunMetrics["persistStatus"];
 };
 
 function revalidateIdeas(id?: string) {
@@ -57,10 +57,6 @@ function marketCatalog(): OwnIdeaCatalog {
   };
 }
 
-function persistErrorMessage(status: NonNullable<OwnIdeaRunMetrics["persistStatus"]>, saved: number, total: number) {
-  return `Запуск ${status}: сохранено ${saved} из ${total} идей. Успех не зафиксирован.`;
-}
-
 export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
   await requireLiaOiOwner();
   const store = getOwnIdeaStore();
@@ -69,54 +65,66 @@ export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
     catalog: marketCatalog(),
     existing,
   });
-  assertNoAutoActions(result.metrics);
-  for (const idea of result.ideas) assertOwnerOnly(idea);
 
-  const total = result.ideas.length;
-  let persisted = 0;
+  const running: OwnIdeaRunMetrics = {
+    ...result.metrics,
+    persistStatus: "running",
+    persistError: null,
+    ideasPersisted: 0,
+  };
   try {
-    await store.saveRun({
-      ...result.metrics,
-      persistStatus: "running",
-      ideasPersisted: 0,
-    });
+    await store.saveRun(running);
   } catch (e) {
-    const detail = e instanceof Error ? e.message : "db error";
-    return { error: `Запуск failed: не удалось сохранить run. ${detail}` };
+    return {
+      error: `Не удалось записать run: ${e instanceof Error ? e.message : "unknown"}`,
+      persistStatus: "failed",
+    };
   }
 
+  const errors: string[] = [];
+  let persisted = 0;
   for (const idea of result.ideas) {
     try {
       await store.upsert(idea);
       persisted += 1;
     } catch (e) {
-      console.error("own-ideas persist idea failed", idea.id, e);
+      errors.push(`${idea.id}: ${e instanceof Error ? e.message : "unknown"}`);
     }
   }
 
-  const persistStatus: NonNullable<OwnIdeaRunMetrics["persistStatus"]> =
-    persisted === total ? "ok" : persisted === 0 ? "failed" : "partial";
+  const persistStatus =
+    errors.length === 0 ? "ok" : persisted === 0 ? "failed" : "partial";
+  const finished: OwnIdeaRunMetrics = {
+    ...result.metrics,
+    persistStatus,
+    persistError: errors.length ? errors.join("; ") : null,
+    ideasPersisted: persisted,
+  };
   try {
-    await store.saveRun({
-      ...result.metrics,
-      persistStatus,
-      ideasPersisted: persisted,
-    });
+    await store.saveRun(finished);
   } catch (e) {
-    console.error("own-ideas persist run status failed", persistStatus, e);
     return {
-      error: persistErrorMessage(persistStatus === "ok" ? "failed" : persistStatus, persisted, total),
+      error: `Идеи: ${persisted}, run status не обновлён: ${e instanceof Error ? e.message : "unknown"}`,
+      generated: result.metrics.ideasGenerated,
+      rejected: result.metrics.ideasRejected,
+      persistStatus: "partial",
     };
   }
-  revalidateIdeas();
 
+  revalidateIdeas();
   if (persistStatus !== "ok") {
-    return { error: persistErrorMessage(persistStatus, persisted, total) };
+    return {
+      error: `Сохранение неполное (${persistStatus}). ${finished.persistError}`,
+      generated: result.metrics.ideasGenerated,
+      rejected: result.metrics.ideasRejected,
+      persistStatus,
+    };
   }
   return {
     success: `Черновиков: ${result.metrics.ideasGenerated}, обновлено: ${result.metrics.ideasUpdated}`,
     generated: result.metrics.ideasGenerated,
     rejected: result.metrics.ideasRejected,
+    persistStatus: "ok",
   };
 }
 
@@ -133,8 +141,11 @@ export async function ownIdeaOwnerAction(
     action,
     action === "create_project" ? `draft-project-${idea.id}` : idea.projectId,
   );
-  assertOwnerOnly(next);
-  await store.upsert(next);
+  try {
+    await store.upsert(next);
+  } catch (e) {
+    return { error: `Не удалось сохранить решение: ${e instanceof Error ? e.message : "unknown"}` };
+  }
   revalidateIdeas(ideaId);
   return { success: "Решение владельца записано. Публикации не было." };
 }

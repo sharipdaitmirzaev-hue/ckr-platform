@@ -23,7 +23,11 @@ export {
 export { assertNoAutoActions, assertOwnerOnly, forbiddenFlags } from "@/lib/ckr-own-ideas/guards";
 export { rateOwnIdea } from "@/lib/ckr-own-ideas/rating";
 export { findMissingResource, searchInternalFirst } from "@/lib/ckr-own-ideas/search";
+export { ideaToRow, rowToIdea } from "@/lib/ckr-own-ideas/mappers";
 export {
+  getOwnIdeaStore,
+  hasOwnIdeasSecretEnv,
+  isOwnIdeasProductionEnv,
   memoryOwnIdeaStore,
   resolveOwnIdeaStoreMode,
 } from "@/lib/ckr-own-ideas/store";

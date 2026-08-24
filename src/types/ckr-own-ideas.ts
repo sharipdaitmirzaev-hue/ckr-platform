@@ -182,6 +182,7 @@ export type OwnIdeaRunMetrics = {
   matchingEdges: false;
   scheduler: false;
   persistStatus?: "running" | "ok" | "partial" | "failed";
+  persistError?: string | null;
   ideasPersisted?: number;
 };
 

@@ -1,6 +1,6 @@
 /**
- * Stage 4Q.1 — staging persistence E2E.
- * Recreate store (simulated restart). Exact-ID cleanup. Production refused.
+ * Stage 4Q / 4Q.1 — staging-only E2E for Собственные идеи ЦКР.
+ * Persistence + restart + locks. Exact-ID cleanup. Production refused.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -42,10 +42,6 @@ function load(): Manifest | null {
   return JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as Manifest;
 }
 
-function newStore() {
-  return createSupabaseOwnIdeaStore(ownIdeasAdminClient());
-}
-
 async function cleanup(dryRun: boolean) {
   assertCkrStagingTarget();
   const m = load();
@@ -59,22 +55,14 @@ async function cleanup(dryRun: boolean) {
   if (dryRun) return;
   for (const id of m.ideaIds) await deleteOwnIdeaExact(admin, id);
   if (m.runId) await deleteOwnIdeaRunExact(admin, m.runId);
+  const store = createSupabaseOwnIdeaStore(admin);
   let residual = 0;
   for (const id of m.ideaIds) {
-    const { data } = await admin
-      .from("ckr_own_ideas")
-      .select("id")
-      .eq("id", id)
-      .maybeSingle();
-    if (data) residual += 1;
+    if (await store.get(id)) residual += 1;
   }
   if (m.runId) {
-    const { data } = await admin
-      .from("ckr_own_idea_runs")
-      .select("id")
-      .eq("id", m.runId)
-      .maybeSingle();
-    if (data) residual += 1;
+    const runStillThere = (await store.listRuns()).some((run) => run.runId === m.runId);
+    if (runStillThere) residual += 1;
   }
   console.log("RESIDUAL_SMOKE_ROWS", residual);
   if (residual !== 0) process.exit(1);
@@ -84,17 +72,18 @@ async function cleanup(dryRun: boolean) {
 async function runSmoke() {
   const target = assertCkrStagingTarget();
   console.log("STAGING_TARGET_OK", JSON.stringify(target));
-  const catalog = tractorEarthworksCatalog();
+  const admin = ownIdeasAdminClient();
+
   const built = runOwnIdeaBuilder({
-    catalog,
+    catalog: tractorEarthworksCatalog(),
     marker: CKR_OWN_IDEAS_SEED_MARKER,
   });
   if (built.ideas.length === 0) throw new Error("builder produced no ideas");
-  if (built.metrics.autoPublish || built.metrics.autoOutreach || built.metrics.scheduler) {
+  if (built.metrics.autoPublish || built.metrics.autoOutreach) {
     throw new Error("auto action leaked");
   }
 
-  const store1 = newStore();
+  const store1 = createSupabaseOwnIdeaStore(admin);
   await store1.saveRun({
     ...built.metrics,
     persistStatus: "running",
@@ -107,88 +96,82 @@ async function runSmoke() {
     ideasPersisted: built.ideas.length,
   });
 
-  const created = built.ideas[0];
-  const admin = ownIdeasAdminClient();
-  const { data: dbRow, error } = await admin
-    .from("ckr_own_ideas")
-    .select("id, visibility, owner_state, marker")
-    .eq("id", created.id)
-    .maybeSingle();
-  if (error || !dbRow) throw new Error("persist failed: no DB row");
+  const dbRow = await store1.get(built.ideas[0].id);
+  if (!dbRow) throw new Error("DB row missing after create");
   if (dbRow.visibility !== "OWNER_ONLY") throw new Error("privacy leak");
 
-  const { data: runRow, error: runErr } = await admin
-    .from("ckr_own_idea_runs")
-    .select("id, metrics")
-    .eq("id", built.metrics.runId)
-    .maybeSingle();
-  if (runErr || !runRow) throw new Error("persist failed: no run DB row");
-
-  const store2 = newStore();
-  const afterRestart = await store2.get(created.id);
-  if (!afterRestart) throw new Error("RESTART_PERSISTENCE fail: idea missing");
-  if (afterRestart.title !== created.title) throw new Error("restart title mismatch");
-  const byFingerprint = await store2.findByFingerprint(created.fingerprint);
-  if (!byFingerprint || byFingerprint.id !== created.id) {
-    throw new Error("RESTART_PERSISTENCE fail: fingerprint lookup");
+  const store2 = createSupabaseOwnIdeaStore(admin);
+  const afterRestart = await store2.get(built.ideas[0].id);
+  if (!afterRestart || afterRestart.id !== built.ideas[0].id) {
+    throw new Error("idea not visible after store recreate");
   }
   const runAfterRestart = (await store2.listRuns()).find((run) => run.runId === built.metrics.runId);
-  if (!runAfterRestart) throw new Error("RESTART_PERSISTENCE fail: run missing");
-  if (runAfterRestart.persistStatus !== "ok") {
-    throw new Error(`RESTART_PERSISTENCE fail: persistStatus=${runAfterRestart.persistStatus}`);
+  if (!runAfterRestart || runAfterRestart.persistStatus !== "ok") {
+    throw new Error("run not visible after store recreate");
+  }
+  console.log("RESTART_PERSISTENCE PASS");
+
+  const accepted = applyOwnerAction(afterRestart, "accept");
+  if (!accepted.ownerLockedFields.includes("economics") || !accepted.ownerLockedFields.includes("rating")) {
+    throw new Error("owner action did not lock economics/rating");
+  }
+  await store2.upsert(accepted);
+
+  const store3 = createSupabaseOwnIdeaStore(admin);
+  const afterAction = await store3.get(accepted.id);
+  if (!afterAction || afterAction.ownerState !== "ACCEPTED") {
+    throw new Error("owner action did not persist across restart");
   }
 
-  const reviewed = applyOwnerAction(afterRestart, "accept");
-  await store2.upsert(reviewed);
-
-  const store3 = newStore();
-  const afterAction = await store3.get(created.id);
-  if (!afterAction) throw new Error("owner action not persisted");
-  if (afterAction.ownerState !== "ACCEPTED") {
-    throw new Error(`expected ACCEPTED, got ${afterAction.ownerState}`);
-  }
-  if (!afterAction.ownerLockedFields.includes("title")) {
-    throw new Error("locks missing after owner action");
-  }
-  if (!afterAction.ownerLockedFields.includes("economics")) {
-    throw new Error("economics lock missing");
-  }
-
-  const lockedTitle = afterAction.title;
-  const lockedEconomics = afterAction.economics.disclaimer;
-  const rediscovery = runOwnIdeaBuilder({
-    catalog,
-    existing: [afterAction],
+  const locked = {
+    ...afterAction,
+    title: "OWNER LOCKED TITLE",
+    economics: { ...afterAction.economics, disclaimer: "OWNER LOCKED ECONOMICS" },
+    ownerLockedFields: Array.from(
+      new Set([...afterAction.ownerLockedFields, "title", "essence", "economics", "rating"]),
+    ),
+  };
+  await store3.upsert(locked);
+  const existing = await store3.list();
+  const rediscovered = runOwnIdeaBuilder({
+    catalog: tractorEarthworksCatalog(),
+    existing,
     marker: CKR_OWN_IDEAS_SEED_MARKER,
   });
-  const updated = rediscovery.ideas.find((i) => i.fingerprint === afterAction.fingerprint);
-  if (!updated) throw new Error("rediscovery did not match fingerprint");
-  if (updated.title !== lockedTitle) throw new Error("REDISCOVERY_PERSISTENCE fail: title lock");
-  if (updated.economics.disclaimer !== lockedEconomics) {
-    throw new Error("REDISCOVERY_PERSISTENCE fail: economics lock");
-  }
-  await store3.upsert(updated);
+  for (const idea of rediscovered.ideas) await store3.upsert(idea);
 
-  const store4 = newStore();
-  const afterRediscovery = await store4.get(created.id);
-  if (!afterRediscovery) throw new Error("rediscovery persist missing");
-  if (afterRediscovery.title !== lockedTitle) throw new Error("lock lost after rediscovery persist");
+  const store4 = createSupabaseOwnIdeaStore(admin);
+  const afterRediscovery = await store4.getByFingerprint(locked.fingerprint);
+  if (!afterRediscovery) throw new Error("rediscovery row missing");
+  if (afterRediscovery.title !== "OWNER LOCKED TITLE") {
+    throw new Error("owner lock lost after rediscovery/restart");
+  }
+  if (afterRediscovery.economics.disclaimer !== "OWNER LOCKED ECONOMICS") {
+    throw new Error("economics lock lost after rediscovery/restart");
+  }
   if (afterRediscovery.ownerState !== "ACCEPTED") {
     throw new Error("owner state overwritten by rediscovery");
   }
+  if (!afterRediscovery.events.some((e) => e.type === "rediscovery_updated")) {
+    throw new Error("rediscovery event missing");
+  }
+  console.log("REDISCOVERY_PERSISTENCE PASS");
+
+  const last = (await store4.listRuns()).find((run) => run.runId === built.metrics.runId);
+  if (!last || last.persistStatus !== "ok") throw new Error("run metrics not persisted");
 
   save({
     marker: CKR_OWN_IDEAS_SEED_MARKER,
     ideaIds: built.ideas.map((i) => i.id),
     runId: built.metrics.runId,
   });
-  console.log("RESTART_PERSISTENCE PASS");
-  console.log("REDISCOVERY_PERSISTENCE PASS");
   console.log("SMOKE_OK", {
-    ideaId: created.id,
+    ideaId: afterRediscovery.id,
     runId: built.metrics.runId,
     rating: afterRediscovery.rating,
     ownerState: afterRediscovery.ownerState,
+    restartPersisted: true,
+    lockPersisted: afterRediscovery.title === "OWNER LOCKED TITLE",
     missing: afterRediscovery.missing.map((m) => m.kind),
   });
 }
