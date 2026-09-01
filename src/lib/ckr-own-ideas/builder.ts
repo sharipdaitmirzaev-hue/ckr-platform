@@ -15,6 +15,7 @@ import {
 import { money } from "@/lib/ckr-own-ideas/money";
 import { rateOwnIdea } from "@/lib/ckr-own-ideas/rating";
 import { findMissingResource } from "@/lib/ckr-own-ideas/search";
+import { pairFits } from "@/lib/ckr-own-ideas/fit";
 import type {
   CkrOwnIdea,
   OwnIdeaCatalog,
@@ -31,6 +32,13 @@ export type BuilderInput = {
   ownerId?: string;
   marker?: string | null;
   now?: string;
+  catalogMode?: OwnIdeaRunMetrics["catalogMode"];
+  liveMeta?: {
+    queries?: number;
+    externalCalls?: number;
+    realSignals?: number;
+    rejectedSignals?: number;
+  };
 };
 
 export type BuilderResult = {
@@ -77,20 +85,35 @@ function event(type: OwnIdeaEvent["type"], note: string, at: string): OwnIdeaEve
   return { id: randomUUID(), type, at, actor: "system", note };
 }
 
-function pairSignals(signals: OwnIdeaSignal[]) {
+function pairSignals(signals: OwnIdeaSignal[]): {
+  pairs: OwnIdeaSignal[][];
+  rejected: number;
+} {
   const assets = signals.filter((s) => s.kind === "ASSET" || s.kind === "LOCATION");
   const demand = signals.filter((s) => s.kind === "DEMAND" || s.kind === "MARKET");
   const supply = signals.filter((s) => s.kind === "SUPPLY");
   const pairs: OwnIdeaSignal[][] = [];
+  let rejected = 0;
   for (const a of assets) {
-    for (const d of demand) pairs.push([a, d]);
+    for (const d of demand) {
+      const pair = [a, d];
+      if (pairFits(pair)) pairs.push(pair);
+      else rejected += 1;
+    }
   }
   if (pairs.length === 0) {
     for (const d of demand) {
-      for (const s of supply) pairs.push([d, s]);
+      for (const s of supply) {
+        const pair = [d, s];
+        if (pairFits(pair)) pairs.push(pair);
+        else rejected += 1;
+      }
     }
   }
-  return pairs.slice(0, CKR_OWN_IDEAS_BUDGETS.maxInitialIdeas);
+  return {
+    pairs: pairs.slice(0, CKR_OWN_IDEAS_BUDGETS.maxInitialIdeas),
+    rejected,
+  };
 }
 
 function neededKinds(found: OwnIdeaComponent[]): Array<{
@@ -141,10 +164,10 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
   const runId = randomUUID();
   const existing = input.existing ?? [];
   const signals = input.catalog.signals.slice(0, CKR_OWN_IDEAS_BUDGETS.maxSignalsPerRun);
-  const pairs = pairSignals(signals);
+  const { pairs, rejected: pairsRejected } = pairSignals(signals);
 
   let searches = 0;
-  let externalCalls = 0;
+  let externalCalls = input.liveMeta?.externalCalls ?? 0;
   let depth = 0;
   let ideasRejected = 0;
   const generated: CkrOwnIdea[] = [];
@@ -181,6 +204,7 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
             amountNeeded: found.find((c) => c.amount)?.amount?.amount ?? null,
             internal: input.catalog.internalResources,
             external: input.catalog.externalResources,
+            context: pair,
           });
           if (fin.searchedExternal) externalCalls += 1;
           if (fin.hit) {
@@ -201,6 +225,7 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
           query: gap.query,
           internal: input.catalog.internalResources,
           external: input.catalog.externalResources,
+          context: pair,
         });
         if (res.searchedExternal) externalCalls += 1;
         if (res.hit) {
@@ -225,6 +250,15 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
         break;
       }
     }
+
+    const uniqueMissing: OwnIdeaMissing[] = [];
+    for (const m of missing) {
+      if (!uniqueMissing.some((x) => x.kind === m.kind && x.reason === m.reason)) {
+        uniqueMissing.push(m);
+      }
+    }
+    missing.length = 0;
+    missing.push(...uniqueMissing);
 
     const economics = computeRoughEconomics(found);
     const rating = rateOwnIdea({ components: found, missing, economics });
@@ -294,7 +328,7 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
       0,
       new Date(finishedAt).getTime() - new Date(startedAt).getTime(),
     ),
-    queries: searches,
+    queries: searches + (input.liveMeta?.queries ?? 0),
     results: signals.length,
     enrichments: Math.min(searches, CKR_OWN_IDEAS_BUDGETS.maxEnrich),
     sources: [
@@ -310,13 +344,17 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
     internalSearches: searches,
     externalCalls,
     depthReached: depth,
-    stopReason,
+    stopReason: pairs.length === 0 && signals.length > 0 ? "no_compatible_pairs" : stopReason,
     costEstimate: null,
     clientRequestUsed: false,
     autoPublish: false,
     autoOutreach: false,
     matchingEdges: false,
     scheduler: false,
+    catalogMode: input.catalogMode ?? "fixture",
+    pairsRejected,
+    realSignals: input.liveMeta?.realSignals,
+    rejectedSignals: input.liveMeta?.rejectedSignals,
   };
 
   return {

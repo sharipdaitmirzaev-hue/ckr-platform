@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import { CKR_OWN_IDEAS_SEED_MARKER } from "../src/config/ckr-own-ideas";
 import {
   applyOwnerAction,
+  buildOwnIdeaCatalog,
   runOwnIdeaBuilder,
   tractorEarthworksCatalog,
 } from "../src/lib/ckr-own-ideas";
@@ -137,10 +138,94 @@ async function runSmoke() {
   const last = await store4.lastRun();
   if (!last || last.persistStatus !== "ok") throw new Error("run metrics not persisted");
 
+  const live = await buildOwnIdeaCatalog({
+    userId: "e2e-owner",
+    hooks: {
+      async search(q) {
+        if (q.plan.intent === "assets") {
+          return [
+            {
+              id: "e2e-live-asset",
+              title: "Экскаватор live torgi.gov.ru",
+              isStub: false,
+              isCatalogSource: false,
+              canonicalUrl: "https://torgi.gov.ru/lot/e2e-exc",
+              opportunityType: "AUCTION_ASSET",
+              sourceClass: "AUCTIONS_ASSETS",
+              region: "Дагестан",
+              industry: "construction",
+              askingPrice: 4_200_000,
+              sources: [
+                {
+                  id: "e2e-s1",
+                  category: "AUCTIONS",
+                  name: "torgi.gov.ru",
+                  url: "https://torgi.gov.ru/lot/e2e-exc",
+                  isStub: false,
+                },
+              ],
+            } as never,
+          ];
+        }
+        if (q.plan.intent === "tenders") {
+          return [
+            {
+              id: "e2e-live-demand",
+              title: "Закупка земляных работ live",
+              isStub: false,
+              isCatalogSource: false,
+              canonicalUrl: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=e2e",
+              opportunityType: "PROCUREMENT",
+              sourceClass: "TENDERS",
+              region: "Дагестан",
+              industry: "construction",
+              nmck: 8_500_000,
+              sources: [
+                {
+                  id: "e2e-s2",
+                  category: "PROCUREMENT",
+                  name: "zakupki.gov.ru",
+                  url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=e2e",
+                  isStub: false,
+                },
+              ],
+            } as never,
+          ];
+        }
+        return [];
+      },
+    },
+  });
+  const liveBuilt = runOwnIdeaBuilder({
+    catalog: live.catalog,
+    catalogMode: live.mode,
+    liveMeta: live,
+    marker: CKR_OWN_IDEAS_SEED_MARKER,
+  });
+  if (live.mode !== "injected") throw new Error("expected injected live catalog");
+  if (liveBuilt.ideas.some((i) => /example\.com/i.test(JSON.stringify(i)))) {
+    throw new Error("placeholder URL leaked into live ideas");
+  }
+  if (liveBuilt.metrics.scheduler || liveBuilt.metrics.autoPublish) {
+    throw new Error("auto action leaked in live catalog");
+  }
+  for (const idea of liveBuilt.ideas) await store4.upsert(idea);
+  await store4.saveRun({
+    ...liveBuilt.metrics,
+    persistStatus: "ok",
+    ideasPersisted: liveBuilt.ideas.length,
+  });
+  const liveStore = createSupabaseOwnIdeaStore(admin);
+  for (const idea of liveBuilt.ideas) {
+    const row = await liveStore.get(idea.id);
+    if (!row) throw new Error("live injected idea not persisted");
+    if (row.visibility !== "OWNER_ONLY") throw new Error("live privacy leak");
+  }
+
   save({
     marker: CKR_OWN_IDEAS_SEED_MARKER,
-    ideaIds: built.ideas.map((i) => i.id),
-    runId: built.metrics.runId,
+    ideaIds: [...built.ideas.map((i) => i.id), ...liveBuilt.ideas.map((i) => i.id)],
+    runId: liveBuilt.metrics.runId,
   });
   console.log("SMOKE_OK", {
     ideaId: afterRediscovery.id,
@@ -150,6 +235,9 @@ async function runSmoke() {
     restartPersisted: true,
     lockPersisted: afterRediscovery.title === "OWNER LOCKED TITLE",
     missing: afterRediscovery.missing.map((m) => m.kind),
+    liveCatalogMode: live.mode,
+    liveIdeas: liveBuilt.ideas.length,
+    livePersisted: true,
   });
 }
 

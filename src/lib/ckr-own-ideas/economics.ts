@@ -51,11 +51,17 @@ export function computeRoughEconomics(
   );
 
   let profit: OwnIdeaMoney = unknownMoney("прибыль нельзя посчитать без FACT/INFERENCE входа");
-  if (revenue.amount != null && capex.amount != null) {
+  const criticalUnknown =
+    fixedCosts.kind === "UNKNOWN" || financingCost.kind === "UNKNOWN";
+  if (revenue.amount != null && capex.amount != null && !criticalUnknown) {
     const costs = (variableCosts.amount ?? 0) + (fixedCosts.amount ?? 0);
     profit = inferenceMoney(
       revenue.amount - costs - (workingCapital.amount ?? 0),
       "ориентировочная прибыль = выручка − известные расходы − оборотный капитал",
+    );
+  } else if (revenue.amount != null && capex.amount != null && criticalUnknown) {
+    profit = unknownMoney(
+      "чистая прибыль не считается: топливо/налог/зарплата/ставка UNKNOWN — не создаём ложную точность",
     );
   }
 
