@@ -118,11 +118,25 @@ else:
     print("[STAGING] project did not become ACTIVE/ACTIVE_HEALTHY in time", file=sys.stderr)
     sys.exit(1)
 
-user = f"postgres.{ref}"
-host = f"aws-0-{region}.pooler.supabase.com"
+# Cluster is not always aws-0; wrong host → FATAL tenant/user not found.
+pcode, poolers = api("GET", f"/projects/{ref}/config/database/pooler")
+if pcode != 200 or not isinstance(poolers, list) or not poolers:
+    print(f"[STAGING] pooler config HTTP {pcode}", file=sys.stderr)
+    sys.exit(1)
+primary = next((p for p in poolers if (p.get("database_type") or "").upper() == "PRIMARY"), poolers[0])
+host = primary.get("db_host") or ""
+user = primary.get("db_user") or f"postgres.{ref}"
+if not host or "pooler.supabase.com" not in host:
+    print(f"[STAGING] unexpected pooler host={host!r}", file=sys.stderr)
+    sys.exit(1)
+if ref not in user or prod in host or prod in user:
+    print("[STAGING] refused non-staging pooler identity", file=sys.stderr)
+    sys.exit(2)
+# Session mode (5432) for migrations; same IPv4 host as transaction pooler.
+port = 5432
 auth = urllib.parse.quote(password, safe="")
-url = f"postgresql://{user}:{auth}@{host}:5432/postgres?sslmode=require"
-print(f"[STAGING] using IPv4 pooler host={host}", file=sys.stderr)
+url = f"postgresql://{user}:{auth}@{host}:{port}/postgres?sslmode=require"
+print(f"[STAGING] using IPv4 pooler host={host} user={user} port={port}", file=sys.stderr)
 print(url)
 PY
 )"
