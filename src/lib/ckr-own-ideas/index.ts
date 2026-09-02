@@ -8,8 +8,10 @@ export {
   isDiscoverySnippet,
   isGenericRussiaRegion,
   isOfficialDetailUrl,
+  isResolvableDiscoveryCandidate,
   rankDiscoveryCandidates,
   resolveDiscoveryCandidate,
+  sanitizeDiagnosticUrl,
 } from "@/lib/ckr-own-ideas/detail-acquire";
 export {
   buildOwnIdeaCatalog,
@@ -51,7 +53,12 @@ export {
 } from "@/lib/ckr-own-ideas/quality-gate";
 export { rateOwnIdea } from "@/lib/ckr-own-ideas/rating";
 export {
+  canConsumeDiscovery,
+  consumeActualHttp,
   createOwnIdeaRunBudget,
+  createOwnIdeaRunBudgetForTest,
+  requestTimeoutMs,
+  runWithOwnIdeaBudget,
   snapshotBudget,
   totalExternalCalls,
 } from "@/lib/ckr-own-ideas/run-budget";

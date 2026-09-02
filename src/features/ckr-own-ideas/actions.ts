@@ -61,6 +61,16 @@ export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
       detailValidationRejected: live.detailValidationRejected,
       liveFacts: live.liveFacts,
       budgetExhausted: live.budgetExhausted,
+      actualExternalHttpCalls: live.actualExternalHttpCalls,
+      discoveryExternalCalls: live.discoveryExternalCalls,
+      resolutionExternalCalls: live.resolutionExternalCalls,
+      discoveryTimeMs: live.discoveryTimeMs,
+      resolutionTimeMs: live.resolutionTimeMs,
+      runWallTimeMs: live.runWallTimeMs,
+      discoveryStoppedForResolutionReserve: live.discoveryStoppedForResolutionReserve,
+      budgetRemainingAtFirstResolution: live.budgetRemainingAtFirstResolution,
+      budgetExhaustedPhase: live.budgetExhaustedPhase,
+      candidateDiagnostics: live.candidateDiagnostics,
     },
   });
 

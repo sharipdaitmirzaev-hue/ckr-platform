@@ -11,6 +11,11 @@
 
 import dns from "node:dns/promises";
 import { isIP } from "node:net";
+import {
+  getActiveOwnIdeaBudget,
+  noteActiveExternalHttp,
+  requestTimeoutMs,
+} from "@/lib/ckr-own-ideas/run-budget";
 
 export type SafeFetchOptions = {
   timeoutMs?: number;
@@ -162,7 +167,15 @@ export async function safeFetch(
   rawUrl: string,
   options: SafeFetchOptions = {},
 ): Promise<SafeFetchResult | SafeFetchFailure> {
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const ownBudget = getActiveOwnIdeaBudget();
+  if (ownBudget) {
+    if (!noteActiveExternalHttp("resolution")) {
+      return { ok: false, error: "budget_external", code: "network" };
+    }
+  }
+  const timeoutMs = ownBudget
+    ? requestTimeoutMs(ownBudget, options.timeoutMs ?? DEFAULT_TIMEOUT_MS, "resolution")
+    : options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const maxRedirects = options.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const allowedContentTypes = options.allowedContentTypes ?? [

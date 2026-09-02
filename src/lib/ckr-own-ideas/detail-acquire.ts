@@ -4,9 +4,14 @@
  * Reuses LIA OI resolvers/extractors + safeFetch. No general-purpose scrape stack.
  * Each resolution consumes the shared own-ideas run budget.
  */
+import { CKR_OWN_IDEAS_BUDGETS } from "@/config/ckr-own-ideas";
 import {
   canConsumeExternal,
+  canConsumeResolution,
   consumeExternal,
+  getActiveOwnIdeaBudget,
+  requestTimeoutMs,
+  runWithOwnIdeaBudget,
   type OwnIdeaRunBudget,
 } from "@/lib/ckr-own-ideas/run-budget";
 import {
@@ -31,6 +36,7 @@ import {
 } from "@/lib/lia/oi/procurement";
 import type { LiaOiCandidate, LiaOiStructuredField } from "@/types/lia-oi";
 import type {
+  OwnIdeaCandidateDiagnostic,
   OwnIdeaClaimKind,
   OwnIdeaFactField,
   OwnIdeaVerificationStatus,
@@ -52,6 +58,66 @@ export type OwnIdeaAcquireStats = {
   liveFacts: number;
   budgetExhausted: boolean;
 };
+
+export function sanitizeDiagnosticUrl(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    u.hash = "";
+    u.username = "";
+    u.password = "";
+    for (const key of [...u.searchParams.keys()]) {
+      if (/key|token|secret|auth|password|api/i.test(key)) u.searchParams.delete(key);
+    }
+    return u.toString();
+  } catch {
+    return url.slice(0, 240);
+  }
+}
+
+export function isResolvableDiscoveryCandidate(candidate: LiaOiCandidate): boolean {
+  if (isExpiredOpportunity({ deadlineAt: candidate.deadlineAt, status: candidate.auctionStatus || candidate.procurementStage })) {
+    return false;
+  }
+  const url = candidate.canonicalUrl || candidate.sources?.[0]?.url || "";
+  const pageType = classifyOwnIdeaPageType({
+    url,
+    title: candidate.title,
+    snippet: candidate.description || candidate.summary,
+    liaPageType: candidate.pageType,
+    isCatalogSource: candidate.isCatalogSource,
+  });
+  if (isIdeaFactPageType(pageType)) return true;
+  return Boolean(
+    extractOfficialFromAggregator({
+      url,
+      title: candidate.title,
+      snippet: candidate.description,
+      officialId: candidate.sourceObjectId,
+    }),
+  );
+}
+
+function diagnosticOf(input: {
+  candidate: LiaOiCandidate;
+  pageType?: string | null;
+  attempted: boolean;
+  officialUrl?: string | null;
+  finalState: OwnIdeaCandidateDiagnostic["finalState"];
+  reason: string | null;
+}): OwnIdeaCandidateDiagnostic {
+  const url = input.candidate.canonicalUrl || input.candidate.sources?.[0]?.url || null;
+  return {
+    sourceDomain: hostOfUrl(url),
+    candidateUrl: sanitizeDiagnosticUrl(url),
+    pageType: input.pageType ?? input.candidate.pageType ?? null,
+    region: input.candidate.region || input.candidate.city || null,
+    resolutionAttempted: input.attempted,
+    officialUrl: sanitizeDiagnosticUrl(input.officialUrl ?? null),
+    finalState: input.finalState,
+    reason: input.reason,
+  };
+}
 
 export type OwnIdeaResolveDetailHook = (candidate: LiaOiCandidate) => Promise<LiaOiCandidate | null>;
 
@@ -223,10 +289,13 @@ async function fetchOfficialPage(
   url: string,
   budget: OwnIdeaRunBudget,
 ): Promise<SafeFetchResult | null> {
-  if (!canConsumeExternal(budget)) return null;
-  if (!consumeExternal(budget, "catalog")) return null;
+  if (!canConsumeResolution(budget) && !canConsumeExternal(budget)) return null;
+  const als = getActiveOwnIdeaBudget();
+  if (!als) {
+    if (!consumeExternal(budget, "catalog")) return null;
+  }
   const res = await safeFetch(url, {
-    timeoutMs: 8_000,
+    timeoutMs: als ? requestTimeoutMs(als, 8_000, "resolution") : 8_000,
     maxBytes: 400_000,
     maxRedirects: 3,
     allowedContentTypes: ["text/html", "application/xhtml+xml", "text/plain"],
@@ -270,7 +339,11 @@ export async function resolveDiscoveryCandidate(
   candidate: LiaOiCandidate,
   budget: OwnIdeaRunBudget,
   hooks?: { resolveDetail?: OwnIdeaResolveDetailHook },
-): Promise<{ candidate: LiaOiCandidate | null; stats: Partial<OwnIdeaAcquireStats> }> {
+): Promise<{
+  candidate: LiaOiCandidate | null;
+  stats: Partial<OwnIdeaAcquireStats>;
+  diagnostic: OwnIdeaCandidateDiagnostic;
+}> {
   const stats: Partial<OwnIdeaAcquireStats> = {};
   const url = candidate.canonicalUrl || candidate.sources?.[0]?.url || "";
   const pageType = classifyOwnIdeaPageType({
@@ -295,37 +368,77 @@ export async function resolveDiscoveryCandidate(
     })
   ) {
     stats.detailValidationRejected = 1;
-    return { candidate: null, stats };
+    const reason = !url ? "NO_DETAIL_URL" : pageType === "LISTING" || pageType === "SEARCH_RESULTS" ? "NO_DETAIL_URL" : "VALIDATION_FAILED";
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: false, finalState: "REJECT", reason }),
+    };
   }
 
   if (alreadyResolvedOfficial(candidate)) {
     stats.officialDetailsResolved = isOfficialDetailUrl(url) || candidate.dataChannel === "OFFICIAL_API" ? 1 : 0;
-    return { candidate, stats };
+    return {
+      candidate,
+      stats,
+      diagnostic: diagnosticOf({
+        candidate,
+        pageType,
+        attempted: false,
+        officialUrl: url,
+        finalState: "INFERENCE",
+        reason: null,
+      }),
+    };
   }
 
-  if (!canConsumeExternal(budget)) {
+  if (!canConsumeExternal(budget) && !canConsumeResolution(budget)) {
     stats.budgetExhausted = true;
-    return { candidate: null, stats };
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: false, finalState: "REJECT", reason: "BUDGET_EXHAUSTED" }),
+    };
   }
 
   if (hooks?.resolveDetail) {
     if (!consumeExternal(budget, "catalog")) {
       stats.budgetExhausted = true;
-      return { candidate: null, stats };
+      return {
+        candidate: null,
+        stats,
+        diagnostic: diagnosticOf({ candidate, pageType, attempted: false, finalState: "REJECT", reason: "BUDGET_EXHAUSTED" }),
+      };
     }
     stats.detailResolutionAttempts = 1;
     const resolved = await hooks.resolveDetail(candidate);
     if (!resolved) {
       stats.detailValidationRejected = 1;
-      return { candidate: null, stats };
+      return {
+        candidate: null,
+        stats,
+        diagnostic: diagnosticOf({ candidate, pageType, attempted: true, finalState: "REJECT", reason: "VALIDATION_FAILED" }),
+      };
     }
-    if (isAggregatorHost(url) && isOfficialDetailUrl(resolved.canonicalUrl || resolved.sources?.[0]?.url)) {
+    const resolvedUrl = resolved.canonicalUrl || resolved.sources?.[0]?.url;
+    if (isAggregatorHost(url) && isOfficialDetailUrl(resolvedUrl)) {
       stats.aggregatorToOfficialResolved = 1;
     }
-    if (isOfficialDetailUrl(resolved.canonicalUrl || resolved.sources?.[0]?.url) || resolved.dataChannel === "OFFICIAL_API") {
+    if (isOfficialDetailUrl(resolvedUrl) || resolved.dataChannel === "OFFICIAL_API") {
       stats.officialDetailsResolved = 1;
     }
-    return { candidate: { ...resolved, enrichedFromFetch: true }, stats };
+    return {
+      candidate: { ...resolved, enrichedFromFetch: true },
+      stats,
+      diagnostic: diagnosticOf({
+        candidate: resolved,
+        pageType: "DETAIL",
+        attempted: true,
+        officialUrl: resolvedUrl,
+        finalState: "INFERENCE",
+        reason: null,
+      }),
+    };
   }
 
   const extracted = extractOfficialFromAggregator({
@@ -341,9 +454,14 @@ export async function resolveDiscoveryCandidate(
     /zakupki\.gov\.ru|star-pro\.ru|zakupki360\.ru|tektorg\.ru/i.test(url);
 
   if (isProcurement && (extracted?.id || extractNoticeIdFromUrl(url) || extractNoticeIdFromText(candidate.title))) {
-    if (!consumeExternal(budget, "catalog")) {
+    const als = getActiveOwnIdeaBudget();
+    if (!als && !consumeExternal(budget, "catalog")) {
       stats.budgetExhausted = true;
-      return { candidate: null, stats };
+      return {
+        candidate: null,
+        stats,
+        diagnostic: diagnosticOf({ candidate, pageType, attempted: false, finalState: "REJECT", reason: "BUDGET_EXHAUSTED" }),
+      };
     }
     stats.detailResolutionAttempts = 1;
     let fetches = 0;
@@ -358,13 +476,21 @@ export async function resolveDiscoveryCandidate(
         if (fetches > 2) {
           return { ok: false, error: "budget_external", code: "network" };
         }
-        return safeFetch(target, opts);
+        return safeFetch(target, {
+          ...opts,
+          timeoutMs: als ? requestTimeoutMs(als, opts?.timeoutMs ?? 8_000, "resolution") : opts?.timeoutMs,
+        });
       },
     });
     const ok = Boolean(detail.sourcesUsed.length && (detail.customer || detail.amount != null || detail.deadlineAt || detail.officialUrl));
     if (!ok) {
       stats.detailValidationRejected = 1;
-      return { candidate: null, stats };
+      const reason = detail.sourcesUsed.length ? "INSUFFICIENT_FIELDS" : "OFFICIAL_SOURCE_UNREACHABLE";
+      return {
+        candidate: null,
+        stats,
+        diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl, finalState: "REJECT", reason }),
+      };
     }
     if (isAggregatorHost(url) && (detail.officialUrl || isOfficialDetailUrl(detail.canonicalUrl))) {
       stats.aggregatorToOfficialResolved = 1;
@@ -372,13 +498,28 @@ export async function resolveDiscoveryCandidate(
     if (detail.confidence === "OFFICIAL_CONFIRMED" || detail.officialUrl) {
       stats.officialDetailsResolved = 1;
     }
-    return { candidate: applyProcurementDetail(candidate, detail), stats };
+    return {
+      candidate: applyProcurementDetail(candidate, detail),
+      stats,
+      diagnostic: diagnosticOf({
+        candidate,
+        pageType: "DETAIL",
+        attempted: true,
+        officialUrl: detail.officialUrl || detail.canonicalUrl,
+        finalState: "INFERENCE",
+        reason: null,
+      }),
+    };
   }
 
   const targetUrl = officialUrl || url;
   if (!targetUrl) {
     stats.detailValidationRejected = 1;
-    return { candidate: null, stats };
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: false, finalState: "REJECT", reason: "NO_DETAIL_URL" }),
+    };
   }
 
   const preKind = refinePageKind({
@@ -389,7 +530,11 @@ export async function resolveDiscoveryCandidate(
   });
   if (!isEnrichableDetail(preKind.pageType) && !isOfficialDetailUrl(targetUrl)) {
     stats.detailValidationRejected = 1;
-    return { candidate: null, stats };
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: false, finalState: "REJECT", reason: "VALIDATION_FAILED" }),
+    };
   }
 
   stats.detailResolutionAttempts = 1;
@@ -397,7 +542,12 @@ export async function resolveDiscoveryCandidate(
   if (!fetched) {
     stats.detailValidationRejected = 1;
     stats.budgetExhausted = !canConsumeExternal(budget);
-    return { candidate: null, stats };
+    const reason = stats.budgetExhausted ? "BUDGET_EXHAUSTED" : "HTTP_ERROR";
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl: targetUrl, finalState: "REJECT", reason }),
+    };
   }
 
   const finalUrl = fetched.finalUrl || targetUrl;
@@ -409,46 +559,94 @@ export async function resolveDiscoveryCandidate(
   });
   if (!isEnrichableDetail(postKind.pageType) && !isOfficialDetailUrl(finalUrl)) {
     stats.detailValidationRejected = 1;
-    return { candidate: null, stats };
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl: finalUrl, finalState: "REJECT", reason: "VALIDATION_FAILED" }),
+    };
   }
 
   if (candidate.opportunityType === "SUPPORT_PROGRAM" && isGenericFinancingPage({ url: finalUrl, title: candidate.title })) {
     stats.detailValidationRejected = 1;
-    return { candidate: null, stats };
+    return {
+      candidate: null,
+      stats,
+      diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl: finalUrl, finalState: "REJECT", reason: "INSUFFICIENT_FIELDS" }),
+    };
   }
 
   const enriched = extractWithExisting(candidate, fetched.bodyText, finalUrl);
   if (isOfficialDetailUrl(finalUrl)) stats.officialDetailsResolved = 1;
   if (isAggregatorHost(url) && isOfficialDetailUrl(finalUrl)) stats.aggregatorToOfficialResolved = 1;
-  return { candidate: enriched, stats };
+  return {
+    candidate: enriched,
+    stats,
+    diagnostic: diagnosticOf({
+      candidate: enriched,
+      pageType: "DETAIL",
+      attempted: true,
+      officialUrl: finalUrl,
+      finalState: "INFERENCE",
+      reason: null,
+    }),
+  };
 }
 
 export async function acquireOwnIdeaDetails(
   candidates: LiaOiCandidate[],
   budget: OwnIdeaRunBudget,
   hooks?: { resolveDetail?: OwnIdeaResolveDetailHook },
-): Promise<{ candidates: LiaOiCandidate[]; stats: OwnIdeaAcquireStats }> {
-  const stats = emptyAcquireStats();
-  stats.discoveryCandidates = candidates.length;
-  const ranked = rankDiscoveryCandidates(candidates);
-  const kept: LiaOiCandidate[] = [];
+): Promise<{
+  candidates: LiaOiCandidate[];
+  stats: OwnIdeaAcquireStats;
+  diagnostics: OwnIdeaCandidateDiagnostic[];
+}> {
+  const run = async () => {
+    const stats = emptyAcquireStats();
+    stats.discoveryCandidates = candidates.length;
+    const ranked = rankDiscoveryCandidates(candidates);
+    const kept: LiaOiCandidate[] = [];
+    const diagnostics: OwnIdeaCandidateDiagnostic[] = [];
 
-  for (const c of ranked) {
-    if (isExpiredOpportunity({ deadlineAt: c.deadlineAt, status: c.auctionStatus || c.procurementStage })) {
-      stats.detailValidationRejected += 1;
-      continue;
+    for (const c of ranked) {
+      if (isExpiredOpportunity({ deadlineAt: c.deadlineAt, status: c.auctionStatus || c.procurementStage })) {
+        stats.detailValidationRejected += 1;
+        diagnostics.push(
+          diagnosticOf({
+            candidate: c,
+            pageType: classifyOwnIdeaPageType({
+              url: c.canonicalUrl || c.sources?.[0]?.url,
+              title: c.title,
+              snippet: c.description || c.summary,
+              liaPageType: c.pageType,
+              isCatalogSource: c.isCatalogSource,
+            }),
+            attempted: false,
+            finalState: "REJECT",
+            reason: "EXPIRED",
+          }),
+        );
+        continue;
+      }
+      const { candidate, stats: step, diagnostic } = await resolveDiscoveryCandidate(c, budget, hooks);
+      stats.detailResolutionAttempts += step.detailResolutionAttempts ?? 0;
+      stats.officialDetailsResolved += step.officialDetailsResolved ?? 0;
+      stats.aggregatorCandidates += step.aggregatorCandidates ?? 0;
+      stats.aggregatorToOfficialResolved += step.aggregatorToOfficialResolved ?? 0;
+      stats.detailValidationRejected += step.detailValidationRejected ?? 0;
+      if (step.budgetExhausted) stats.budgetExhausted = true;
+      diagnostics.push(diagnostic);
+      if (candidate) kept.push(candidate);
     }
-    const { candidate, stats: step } = await resolveDiscoveryCandidate(c, budget, hooks);
-    stats.detailResolutionAttempts += step.detailResolutionAttempts ?? 0;
-    stats.officialDetailsResolved += step.officialDetailsResolved ?? 0;
-    stats.aggregatorCandidates += step.aggregatorCandidates ?? 0;
-    stats.aggregatorToOfficialResolved += step.aggregatorToOfficialResolved ?? 0;
-    stats.detailValidationRejected += step.detailValidationRejected ?? 0;
-    if (step.budgetExhausted) stats.budgetExhausted = true;
-    if (candidate) kept.push(candidate);
-  }
 
-  return { candidates: kept, stats };
+    return {
+      candidates: kept,
+      stats,
+      diagnostics: diagnostics.slice(0, CKR_OWN_IDEAS_BUDGETS.maxCandidateDiagnostics),
+    };
+  };
+  if (getActiveOwnIdeaBudget()) return run();
+  return runWithOwnIdeaBudget(budget, run);
 }
 
 export function addStats(a: OwnIdeaAcquireStats, b: OwnIdeaAcquireStats): OwnIdeaAcquireStats {

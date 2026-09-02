@@ -57,6 +57,16 @@ export type BuilderInput = {
     detailValidationRejected?: number;
     liveFacts?: number;
     budgetExhausted?: boolean;
+    actualExternalHttpCalls?: number;
+    discoveryExternalCalls?: number;
+    resolutionExternalCalls?: number;
+    discoveryTimeMs?: number;
+    resolutionTimeMs?: number;
+    runWallTimeMs?: number;
+    discoveryStoppedForResolutionReserve?: boolean;
+    budgetRemainingAtFirstResolution?: number | null;
+    budgetExhaustedPhase?: OwnIdeaRunMetrics["budgetExhaustedPhase"];
+    candidateDiagnostics?: OwnIdeaRunMetrics["candidateDiagnostics"];
   };
   budget?: OwnIdeaRunBudget;
 };
@@ -464,6 +474,16 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
     detailValidationRejected: input.liveMeta?.detailValidationRejected,
     liveFacts: input.liveMeta?.liveFacts,
     budgetExhausted: input.liveMeta?.budgetExhausted,
+    actualExternalHttpCalls: input.liveMeta?.actualExternalHttpCalls ?? catalogExternalCalls + snap.builderExternalCalls,
+    discoveryExternalCalls: input.liveMeta?.discoveryExternalCalls,
+    resolutionExternalCalls: input.liveMeta?.resolutionExternalCalls,
+    discoveryTimeMs: input.liveMeta?.discoveryTimeMs,
+    resolutionTimeMs: input.liveMeta?.resolutionTimeMs,
+    runWallTimeMs: input.liveMeta?.runWallTimeMs,
+    discoveryStoppedForResolutionReserve: input.liveMeta?.discoveryStoppedForResolutionReserve,
+    budgetRemainingAtFirstResolution: input.liveMeta?.budgetRemainingAtFirstResolution,
+    budgetExhaustedPhase: input.liveMeta?.budgetExhaustedPhase,
+    candidateDiagnostics: input.liveMeta?.candidateDiagnostics,
   };
 
   return {

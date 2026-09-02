@@ -1,8 +1,9 @@
 /**
- * Stage 4Q.2 / 4Q.3 — live OwnIdeaCatalog from LIA OI adapters.
+ * Stage 4Q.2 / 4Q.3 / 4Q.4.1 — live OwnIdeaCatalog from LIA OI adapters.
  * No fixture fallback in owner/production. 0 signals is valid.
  * MANUAL RUN only. No Scheduler.
  * Stage 4Q.3: page-type / detail / expired gates before pairing.
+ * Stage 4Q.4.1: interleaved discovery → DETAIL with reserved budget.
  */
 import { randomUUID } from "node:crypto";
 import { CKR_OWN_IDEAS_BUDGETS } from "@/config/ckr-own-ideas";
@@ -23,11 +24,14 @@ import {
   validateDetailFields,
 } from "@/lib/ckr-own-ideas/quality-gate";
 import {
-  canConsumeExternal,
   canConsumeSearch,
-  consumeExternal,
+  consumeActualHttp,
   consumeSearch,
   createOwnIdeaRunBudget,
+  markResolvableCandidate,
+  runWithOwnIdeaBudget,
+  setOwnIdeaBudgetPhase,
+  shouldStopDiscoveryForReserve,
   snapshotBudget,
   type OwnIdeaRunBudget,
 } from "@/lib/ckr-own-ideas/run-budget";
@@ -48,11 +52,14 @@ import {
   hasVerifiedFactFields,
   hostOfUrl,
   isDiscoverySnippet,
+  isResolvableDiscoveryCandidate,
+  rankDiscoveryCandidates,
   structuredToFactFields,
   type OwnIdeaAcquireStats,
   type OwnIdeaResolveDetailHook,
 } from "@/lib/ckr-own-ideas/detail-acquire";
 import type {
+  OwnIdeaCandidateDiagnostic,
   OwnIdeaCatalog,
   OwnIdeaElementKind,
   OwnIdeaFactField,
@@ -93,6 +100,16 @@ export type LiveCatalogResult = {
   detailValidationRejected: number;
   liveFacts: number;
   budgetExhausted: boolean;
+  actualExternalHttpCalls: number;
+  discoveryExternalCalls: number;
+  resolutionExternalCalls: number;
+  discoveryTimeMs: number;
+  resolutionTimeMs: number;
+  runWallTimeMs: number;
+  discoveryStoppedForResolutionReserve: boolean;
+  budgetRemainingAtFirstResolution: number | null;
+  budgetExhaustedPhase: OwnIdeaRunBudget["budgetExhaustedPhase"];
+  candidateDiagnostics: OwnIdeaCandidateDiagnostic[];
 };
 
 function kindFromCandidate(c: LiaOiCandidate): OwnIdeaElementKind {
@@ -354,21 +371,80 @@ export function resolveOwnIdeaCatalogMode(): "live" | "fixture" {
   return "live";
 }
 
+function candidateId(c: LiaOiCandidate): string {
+  return c.id || c.canonicalUrl || c.sources?.[0]?.url || c.title;
+}
+
 export async function buildOwnIdeaCatalog(opts?: {
   userId?: string;
   hooks?: LiveCatalogHooks;
   budget?: OwnIdeaRunBudget;
 }): Promise<LiveCatalogResult> {
   const budget = opts?.budget ?? createOwnIdeaRunBudget();
+  return runWithOwnIdeaBudget(budget, () => buildOwnIdeaCatalogInner(opts, budget));
+}
+
+async function buildOwnIdeaCatalogInner(
+  opts: { userId?: string; hooks?: LiveCatalogHooks } | undefined,
+  budget: OwnIdeaRunBudget,
+): Promise<LiveCatalogResult> {
   let rejectedSignals = 0;
   const collected: LiaOiCandidate[] = [];
+  const resolvedIds = new Set<string>();
+  const resolved: LiaOiCandidate[] = [];
   const sourceLabels: string[] = [];
+  let acquire = emptyAcquireStats();
+  const diagnostics: OwnIdeaCandidateDiagnostic[] = [];
+  const discoveryStarted = Date.now();
+
+  const runResolution = async (pool: LiaOiCandidate[]) => {
+    const pending = rankDiscoveryCandidates(
+      pool.filter((c) => !resolvedIds.has(candidateId(c))),
+    );
+    if (!pending.length) return;
+    if (pending.some(isResolvableDiscoveryCandidate)) markResolvableCandidate(budget);
+    setOwnIdeaBudgetPhase(budget, "resolution");
+    const resStarted = Date.now();
+    const acquired = await acquireOwnIdeaDetails(pending, budget, {
+      resolveDetail: opts?.hooks?.resolveDetail,
+    });
+    budget.resolutionTimeMs += Date.now() - resStarted;
+    acquire = {
+      ...acquire,
+      detailResolutionAttempts: acquire.detailResolutionAttempts + acquired.stats.detailResolutionAttempts,
+      officialDetailsResolved: acquire.officialDetailsResolved + acquired.stats.officialDetailsResolved,
+      aggregatorCandidates: acquire.aggregatorCandidates + acquired.stats.aggregatorCandidates,
+      aggregatorToOfficialResolved:
+        acquire.aggregatorToOfficialResolved + acquired.stats.aggregatorToOfficialResolved,
+      detailValidationRejected: acquire.detailValidationRejected + acquired.stats.detailValidationRejected,
+      liveFacts: acquire.liveFacts + acquired.stats.liveFacts,
+      budgetExhausted: acquire.budgetExhausted || acquired.stats.budgetExhausted,
+    };
+    diagnostics.push(...acquired.diagnostics);
+    for (const c of pending) resolvedIds.add(candidateId(c));
+    resolved.push(...acquired.candidates);
+    setOwnIdeaBudgetPhase(budget, "discovery");
+  };
+
+  const afterDiscoveryBatch = async () => {
+    if (collected.some((c) => !resolvedIds.has(candidateId(c)) && isResolvableDiscoveryCandidate(c))) {
+      markResolvableCandidate(budget);
+      await runResolution(collected);
+    }
+  };
 
   if (opts?.hooks?.search) {
     for (const q of LIVE_QUERIES) {
-      if (!canConsumeSearch(budget) || !canConsumeExternal(budget)) break;
+      if (shouldStopDiscoveryForReserve(budget)) {
+        budget.discoveryStoppedForResolutionReserve = true;
+        break;
+      }
+      if (!canConsumeSearch(budget)) break;
       if (!consumeSearch(budget, "catalog")) break;
-      if (!consumeExternal(budget, "catalog")) break;
+      if (!consumeActualHttp(budget, "discovery")) {
+        budget.discoveryStoppedForResolutionReserve = true;
+        break;
+      }
       const adapterQuery: LiaOiSourceAdapterQuery = {
         rawQuery: q.rawQuery,
         userId: opts.userId || "owner",
@@ -378,15 +454,20 @@ export async function buildOwnIdeaCatalog(opts?: {
       const found = await opts.hooks.search(adapterQuery);
       collected.push(...found);
       sourceLabels.push(q.intent);
+      await afterDiscoveryBatch();
     }
-    return acquireThenPack(collected, {
+    budget.discoveryTimeMs = Math.max(0, Date.now() - discoveryStarted - budget.resolutionTimeMs);
+    await runResolution(collected);
+    acquire.discoveryCandidates = collected.length;
+    return packSignals(resolved, {
       mode: "injected",
       rejectedSignals,
       liveAvailable: true,
       reason: "injected hooks",
       sourceLabels,
       budget,
-      hooks: opts.hooks,
+      acquire,
+      diagnostics,
     });
   }
 
@@ -396,26 +477,23 @@ export async function buildOwnIdeaCatalog(opts?: {
 
   const modeInfo = resolveOiSearchMode();
   if (modeInfo.mode !== "live" || !isOiLiveConfigured()) {
-    const snap = snapshotBudget(budget);
-    return {
-      catalog: emptyCatalog(),
+    return packSignals([], {
       mode: "empty",
-      queries: snap.catalogSearches,
-      externalCalls: snap.catalogExternalCalls,
-      catalogSearches: snap.catalogSearches,
-      catalogExternalCalls: snap.catalogExternalCalls,
-      totalExternalCalls: snap.catalogExternalCalls,
-      sources: [],
       rejectedSignals: 0,
-      realSignals: 0,
       liveAvailable: false,
       reason: modeInfo.reason,
+      sourceLabels: [],
       budget,
-      ...emptyAcquireStats(),
-    };
+      acquire: emptyAcquireStats(),
+      diagnostics: [],
+    });
   }
 
   for (const q of LIVE_QUERIES) {
+    if (shouldStopDiscoveryForReserve(budget)) {
+      budget.discoveryStoppedForResolutionReserve = true;
+      break;
+    }
     if (!canConsumeSearch(budget)) break;
     const adapterQuery: LiaOiSourceAdapterQuery = {
       rawQuery: q.rawQuery,
@@ -427,8 +505,10 @@ export async function buildOwnIdeaCatalog(opts?: {
     if (!adapters.length) continue;
     if (!consumeSearch(budget, "catalog")) break;
     for (const adapter of adapters) {
-      if (!canConsumeExternal(budget)) break;
-      if (!consumeExternal(budget, "catalog")) break;
+      if (shouldStopDiscoveryForReserve(budget)) {
+        budget.discoveryStoppedForResolutionReserve = true;
+        break;
+      }
       try {
         const ran = await adapter.search(adapterQuery);
         collected.push(...ran.candidates);
@@ -439,40 +519,25 @@ export async function buildOwnIdeaCatalog(opts?: {
       } catch {
         rejectedSignals += 1;
       }
+      await afterDiscoveryBatch();
     }
   }
 
+  budget.discoveryTimeMs = Math.max(0, Date.now() - discoveryStarted - budget.resolutionTimeMs);
   const liveOnly = collected.filter((c) => !c.isStub);
   rejectedSignals += collected.length - liveOnly.length;
+  await runResolution(liveOnly);
+  acquire.discoveryCandidates = collected.length;
 
-  return acquireThenPack(liveOnly, {
-    mode: liveOnly.length ? "live" : "empty",
+  return packSignals(resolved, {
+    mode: liveOnly.length || resolved.length ? "live" : "empty",
     rejectedSignals,
     liveAvailable: true,
     reason: modeInfo.reason,
     sourceLabels,
     budget,
-  });
-}
-
-async function acquireThenPack(
-  candidates: LiaOiCandidate[],
-  meta: {
-    mode: OwnIdeaCatalogMode;
-    rejectedSignals: number;
-    liveAvailable: boolean;
-    reason: string;
-    sourceLabels: string[];
-    budget: OwnIdeaRunBudget;
-    hooks?: LiveCatalogHooks;
-  },
-): Promise<LiveCatalogResult> {
-  const acquired = await acquireOwnIdeaDetails(candidates, meta.budget, {
-    resolveDetail: meta.hooks?.resolveDetail,
-  });
-  return packSignals(acquired.candidates, {
-    ...meta,
-    acquire: acquired.stats,
+    acquire,
+    diagnostics,
   });
 }
 
@@ -486,6 +551,7 @@ function packSignals(
     sourceLabels: string[];
     budget: OwnIdeaRunBudget;
     acquire?: OwnIdeaAcquireStats;
+    diagnostics?: OwnIdeaCandidateDiagnostic[];
   },
 ): LiveCatalogResult {
   const signals: OwnIdeaSignal[] = [];
@@ -511,18 +577,27 @@ function packSignals(
       s.trustLevel !== "search_snippet" &&
       s.trustLevel !== "general_web",
   ).length;
+  const diagnostics = (meta.diagnostics ?? []).slice(0, CKR_OWN_IDEAS_BUDGETS.maxCandidateDiagnostics).map((d) => {
+    const match = sliced.find(
+      (s) => s.canonicalUrl === d.officialUrl || s.canonicalUrl === d.candidateUrl || s.sourceUrl === d.candidateUrl,
+    );
+    if (!match) return d;
+    const state = match.claimKind === "FACT" ? "FACT" : match.claimKind === "UNKNOWN" ? "REJECT" : "INFERENCE";
+    return { ...d, finalState: state };
+  });
+  const mode = rest.length || capital.length ? meta.mode : meta.mode === "injected" ? "injected" : "empty";
   return {
     catalog: {
       signals: rest,
       internalResources: [],
       externalResources: capital,
     },
-    mode: rest.length || capital.length ? meta.mode : "empty",
+    mode,
     queries: snap.catalogSearches,
-    externalCalls: snap.catalogExternalCalls,
+    externalCalls: snap.actualExternalHttpCalls,
     catalogSearches: snap.catalogSearches,
     catalogExternalCalls: snap.catalogExternalCalls,
-    totalExternalCalls: snap.catalogExternalCalls,
+    totalExternalCalls: snap.actualExternalHttpCalls,
     sources: [...new Set(meta.sourceLabels.filter(Boolean))],
     rejectedSignals: rejected,
     realSignals: rest.length + capital.length,
@@ -536,6 +611,16 @@ function packSignals(
     aggregatorToOfficialResolved: acquire.aggregatorToOfficialResolved,
     detailValidationRejected: acquire.detailValidationRejected,
     liveFacts,
-    budgetExhausted: acquire.budgetExhausted,
+    budgetExhausted: acquire.budgetExhausted || Boolean(snap.budgetExhaustedPhase),
+    actualExternalHttpCalls: snap.actualExternalHttpCalls,
+    discoveryExternalCalls: snap.discoveryExternalCalls,
+    resolutionExternalCalls: snap.resolutionExternalCalls,
+    discoveryTimeMs: snap.discoveryTimeMs,
+    resolutionTimeMs: snap.resolutionTimeMs,
+    runWallTimeMs: snap.runWallTimeMs,
+    discoveryStoppedForResolutionReserve: snap.discoveryStoppedForResolutionReserve,
+    budgetRemainingAtFirstResolution: snap.budgetRemainingAtFirstResolution,
+    budgetExhaustedPhase: snap.budgetExhaustedPhase,
+    candidateDiagnostics: diagnostics,
   };
 }

@@ -6,20 +6,30 @@
 import { getWebSearchProvider } from "@/lib/lia/search/web-provider";
 import type { ExternalSearchResult } from "@/types/lia";
 import { resolveOiSearchMode } from "@/lib/lia/oi/mode";
+import {
+  canConsumeDiscovery,
+  getActiveOwnIdeaBudget,
+  noteActiveExternalHttp,
+  requestTimeoutMs,
+  shouldStopDiscoveryForReserve,
+} from "@/lib/ckr-own-ideas/run-budget";
 
 export async function searchOfficialSites(options: {
   queries: string[];
   sites: string[];
   limitPerQuery: number;
   timeoutMs: number;
+  /** Tests: inject one HTTP-equivalent search without a new provider. */
+  searchFn?: (query: string, limit: number) => Promise<ExternalSearchResult[]>;
 }): Promise<{ results: ExternalSearchResult[]; errors: string[]; transportOk: boolean }> {
   const mode = resolveOiSearchMode();
-  if (mode.mode !== "live" || !mode.liveAvailable) {
+  const injected = Boolean(options.searchFn);
+  if (!injected && (mode.mode !== "live" || !mode.liveAvailable)) {
     return { results: [], errors: ["live search unavailable"], transportOk: false };
   }
 
-  const web = getWebSearchProvider();
-  if (web.id === "web-mock") {
+  const web = injected ? null : getWebSearchProvider();
+  if (!injected && web?.id === "web-mock") {
     return { results: [], errors: ["web provider is mock"], transportOk: false };
   }
 
@@ -27,17 +37,34 @@ export async function searchOfficialSites(options: {
   const errors: string[] = [];
 
   for (const q of options.queries) {
+    const ownBudget = getActiveOwnIdeaBudget();
+    if (ownBudget) {
+      if (shouldStopDiscoveryForReserve(ownBudget) || !canConsumeDiscovery(ownBudget)) {
+        ownBudget.discoveryStoppedForResolutionReserve = true;
+        break;
+      }
+      if (!noteActiveExternalHttp("discovery")) {
+        ownBudget.discoveryStoppedForResolutionReserve = true;
+        break;
+      }
+    }
     const siteClauses = options.sites.map((s) => `site:${s}`).join(" OR ");
     const query = `${q} (${siteClauses})`;
+    const perRequestTimeout = ownBudget
+      ? requestTimeoutMs(ownBudget, options.timeoutMs, "discovery")
+      : options.timeoutMs;
     try {
+      const searchCall = options.searchFn
+        ? options.searchFn(query, options.limitPerQuery)
+        : web!.search(query, {
+            limit: options.limitPerQuery,
+          });
       const chunk = await Promise.race([
-        web.search(query, {
-          limit: options.limitPerQuery,
-        }),
+        searchCall,
         new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error(`timeout ${options.timeoutMs}ms`)),
-            options.timeoutMs,
+            () => reject(new Error(`timeout ${perRequestTimeout}ms`)),
+            perRequestTimeout,
           ),
         ),
       ]);

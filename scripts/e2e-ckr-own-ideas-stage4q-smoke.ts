@@ -306,6 +306,32 @@ async function runSmoke() {
   if (!live.detailResolutionAttempts) {
     throw new Error("E2E must exercise detail resolution, not pre-baked FACT");
   }
+  if (live.detailResolutionAttempts < 1) {
+    throw new Error("DETAIL_RESOLUTION_ATTEMPTS < 1");
+  }
+  if (!(live.discoveryExternalCalls > 0)) {
+    throw new Error("DISCOVERY_EXTERNAL_CALLS must be > 0 (orchestration)");
+  }
+  if (!(live.resolutionExternalCalls > 0)) {
+    throw new Error("RESOLUTION_EXTERNAL_CALLS must be > 0 (orchestration)");
+  }
+  if (live.totalExternalCalls > 8 || live.actualExternalHttpCalls > 8) {
+    throw new Error(`TOTAL_EXTERNAL_CALLS ${live.totalExternalCalls} > 8`);
+  }
+  if (!live.candidateDiagnostics?.length) {
+    throw new Error("candidate diagnostics missing");
+  }
+  if (live.candidateDiagnostics.some((d) => /X-API-KEY|<html|apiKey/i.test(JSON.stringify(d)))) {
+    throw new Error("candidate diagnostics leaked secrets/html");
+  }
+  console.log("ORCHESTRATION_PROOF", {
+    note: "injected search/resolve — not live-provider proof",
+    DETAIL_RESOLUTION_ATTEMPTS: live.detailResolutionAttempts,
+    DISCOVERY_EXTERNAL_CALLS: live.discoveryExternalCalls,
+    RESOLUTION_EXTERNAL_CALLS: live.resolutionExternalCalls,
+    TOTAL_EXTERNAL_CALLS: live.totalExternalCalls,
+    candidateDiagnostics: live.candidateDiagnostics.length,
+  });
   const officialUrls = live.catalog.signals.map((s) => s.canonicalUrl || "");
   if (!officialUrls.some((u) => /zakupki\.gov\.ru|torgi\.gov\.ru/.test(u))) {
     throw new Error("official DETAIL URL missing after resolution");
@@ -446,7 +472,9 @@ async function runSmoke() {
     livePersisted: true,
     liveSearchUsed,
     garbageIdeas: garbage.ideas.length,
+    GARBAGE_IDEAS: garbage.ideas.length,
     totalExternalCalls: liveBuilt.metrics.totalExternalCalls,
+    persistedDiagnostics: (liveBuilt.metrics.candidateDiagnostics || []).length,
     pageTypeSample: live.catalog.signals.map((s) => s.pageType),
   });
 }

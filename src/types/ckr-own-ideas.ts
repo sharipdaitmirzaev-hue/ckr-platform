@@ -274,6 +274,28 @@ export type OwnIdeaRunMetrics = {
   detailValidationRejected?: number;
   liveFacts?: number;
   budgetExhausted?: boolean;
+  /** Stage 4Q.4.1 — actual HTTP accounting + deadline / reserve. */
+  actualExternalHttpCalls?: number;
+  discoveryExternalCalls?: number;
+  resolutionExternalCalls?: number;
+  discoveryTimeMs?: number;
+  resolutionTimeMs?: number;
+  runWallTimeMs?: number;
+  discoveryStoppedForResolutionReserve?: boolean;
+  budgetRemainingAtFirstResolution?: number | null;
+  budgetExhaustedPhase?: "discovery" | "resolution" | "timeout" | null;
+  candidateDiagnostics?: OwnIdeaCandidateDiagnostic[];
+};
+
+export type OwnIdeaCandidateDiagnostic = {
+  sourceDomain: string | null;
+  candidateUrl: string | null;
+  pageType: string | null;
+  region: string | null;
+  resolutionAttempted: boolean;
+  officialUrl: string | null;
+  finalState: "FACT" | "INFERENCE" | "REJECT";
+  reason: string | null;
 };
 
 export type OwnIdeaSignal = {
