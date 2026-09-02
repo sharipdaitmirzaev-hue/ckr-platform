@@ -578,7 +578,8 @@ function packSignals(
       (s) => s.canonicalUrl === d.officialUrl || s.canonicalUrl === d.candidateUrl || s.sourceUrl === d.candidateUrl,
     );
     if (!match) return d;
-    const state = match.claimKind === "FACT" ? "FACT" : match.claimKind === "UNKNOWN" ? "REJECT" : "INFERENCE";
+    const state: OwnIdeaCandidateDiagnostic["finalState"] =
+      match.claimKind === "FACT" ? "FACT" : match.claimKind === "UNKNOWN" ? "REJECT" : "INFERENCE";
     return { ...d, finalState: state };
   });
   const mode = rest.length || capital.length ? meta.mode : meta.mode === "injected" ? "injected" : "empty";
