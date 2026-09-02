@@ -1,5 +1,5 @@
 import { isNegativeEconomics } from "@/lib/ckr-own-ideas/economics";
-import { isPlaceholderSource } from "@/lib/ckr-own-ideas/live-catalog";
+import { isPlaceholderSource } from "@/lib/ckr-own-ideas/live-catalog-guards";
 import type {
   CkrOwnIdea,
   OwnIdeaComponent,
@@ -14,6 +14,8 @@ function liveFactCount(components: OwnIdeaComponent[]): number {
       c.found &&
       c.provenance.kind === "FACT" &&
       c.provenance.trustLevel !== "general_web" &&
+      c.provenance.trustLevel !== "search_snippet" &&
+      (c.pageType == null || c.pageType === "DETAIL") &&
       !isPlaceholderSource({
         url: c.provenance.sourceUrl || c.canonicalUrl,
         sourceType: c.provenance.sourceType,

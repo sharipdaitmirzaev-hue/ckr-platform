@@ -8,6 +8,7 @@ import {
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
 import { applyOwnerAction, runOwnIdeaBuilder } from "@/lib/ckr-own-ideas/builder";
 import { buildOwnIdeaCatalog } from "@/lib/ckr-own-ideas/live-catalog";
+import { createOwnIdeaRunBudget } from "@/lib/ckr-own-ideas/run-budget";
 import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
 import type { OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
 
@@ -30,9 +31,10 @@ export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
   const owner = await requireLiaOiOwner();
   const store = getOwnIdeaStore();
   const existing = await store.list();
+  const budget = createOwnIdeaRunBudget();
   let live;
   try {
-    live = await buildOwnIdeaCatalog({ userId: owner.user.id });
+    live = await buildOwnIdeaCatalog({ userId: owner.user.id, budget });
   } catch (e) {
     return {
       error: `Не удалось собрать каталог: ${e instanceof Error ? e.message : "unknown"}`,
@@ -43,11 +45,14 @@ export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
     catalog: live.catalog,
     existing,
     catalogMode: live.mode,
+    budget,
     liveMeta: {
       queries: live.queries,
       externalCalls: live.externalCalls,
       realSignals: live.realSignals,
       rejectedSignals: live.rejectedSignals,
+      catalogSearches: live.catalogSearches,
+      catalogExternalCalls: live.catalogExternalCalls,
     },
   });
 

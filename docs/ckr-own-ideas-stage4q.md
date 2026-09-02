@@ -46,6 +46,22 @@ Quality: «Перспективная» только при ≥2 живых FACT
 
 Нет Scheduler / Matching / auto-publish.
 
+## Stage 4Q.3 live signal quality gate
+
+Плохие сигналы отсекаются **до** пары ASSET×DEMAND. 0 идей — успешный результат.
+
+- Page type: `DETAIL | LISTING | CATEGORY | SEARCH_RESULTS | MIRROR | LANDING | UNKNOWN`. В идею как FACT идёт только `DETAIL`. `TradeList.aspx`, category «тендеры на белье в СКФО», индекс закупок, банковская главная — не FACT.
+- FACT только при достаточном наборе полей (notice/lot id, предмет/объект, заказчик или location, регион, URL; для закупки — дата и deadline/status). Иначе INFERENCE или reject. Домен поисковой выдачи не повышает до FACT.
+- География: страна / ФО / субъект / город. «Российская Федерация» ≠ совместимость с любым регионом. Орёл × СКФО — `INCOMPATIBLE` по умолчанию.
+- Отрасль: UNKNOWN asset category не клеится к произвольному DEMAND. Экскаватор × земляные — compatible; экскаватор × бельё — нет.
+- Expired/closed/cancelled/completed — reject. UNKNOWN deadline у закупки — не live FACT.
+- Идея: ≥2 связанных сигнала, ≥1 DETAIL FACT, второй FACT или сильный INFERENCE, отрасль+география ок. Promising / «Перспективная» — минимум 2 live FACT.
+- Финансирование проверяется после жизнеспособной пары. Generic bank landing → `financeAvailability=UNKNOWN`.
+- Economics: conservative, UNKNOWN остаётся UNKNOWN.
+- Единый run budget: `maxSearches=12`, `maxExternalCalls=8` на весь owner run (catalog+builder). Метрики: `catalogSearches`, `builderSearches`, `catalogExternalCalls`, `builderExternalCalls`, `totalExternalCalls`. Лимиты не увеличены. In-memory lookup не считается external call.
+
+Fixture только в unit/E2E tests. Нет второго production market run в этом этапе. Нет Scheduler.
+
 ## Запреты
 
 Нет auto-publish, outreach, заявок, Matching edges, Scheduler.

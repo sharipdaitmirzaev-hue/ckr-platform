@@ -4,10 +4,12 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { CKR_OWN_IDEAS_SEED_MARKER } from "../src/config/ckr-own-ideas";
+import { isOiLiveConfigured } from "../src/lib/lia/oi/mode";
+import { CKR_OWN_IDEAS_BUDGETS, CKR_OWN_IDEAS_SEED_MARKER } from "../src/config/ckr-own-ideas";
 import {
   applyOwnerAction,
   buildOwnIdeaCatalog,
+  createOwnIdeaRunBudget,
   runOwnIdeaBuilder,
   tractorEarthworksCatalog,
 } from "../src/lib/ckr-own-ideas";
@@ -138,8 +140,10 @@ async function runSmoke() {
   const last = await store4.lastRun();
   if (!last || last.persistStatus !== "ok") throw new Error("run metrics not persisted");
 
+  const liveBudget = createOwnIdeaRunBudget();
   const live = await buildOwnIdeaCatalog({
     userId: "e2e-owner",
+    budget: liveBudget,
     hooks: {
       async search(q) {
         if (q.plan.intent === "assets") {
@@ -149,21 +153,37 @@ async function runSmoke() {
               title: "Экскаватор live torgi.gov.ru",
               isStub: false,
               isCatalogSource: false,
-              canonicalUrl: "https://torgi.gov.ru/lot/e2e-exc",
+              isOfficialSource: true,
+              pageType: "DETAIL",
+              canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/e2e-exc",
               opportunityType: "AUCTION_ASSET",
               sourceClass: "AUCTIONS_ASSETS",
+              sourceObjectId: "e2e-exc",
               region: "Дагестан",
+              city: "Махачкала",
               industry: "construction",
               askingPrice: 4_200_000,
+              auctionStatus: "active",
+              address: "Махачкала",
               sources: [
                 {
                   id: "e2e-s1",
                   category: "AUCTIONS",
                   name: "torgi.gov.ru",
-                  url: "https://torgi.gov.ru/lot/e2e-exc",
+                  url: "https://torgi.gov.ru/new/public/lots/lot/e2e-exc",
                   isStub: false,
                 },
               ],
+            } as never,
+            {
+              id: "e2e-listing-asset",
+              title: "Реестр торгов TradeList",
+              isStub: false,
+              isCatalogSource: false,
+              canonicalUrl: "https://bankrot.fedresurs.ru/TradeList.aspx",
+              opportunityType: "AUCTION_ASSET",
+              region: "Орловская область",
+              askingPrice: 1,
             } as never,
           ];
         }
@@ -174,21 +194,39 @@ async function runSmoke() {
               title: "Закупка земляных работ live",
               isStub: false,
               isCatalogSource: false,
-              canonicalUrl: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=e2e",
+              isOfficialSource: true,
+              pageType: "DETAIL",
+              canonicalUrl:
+                "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
               opportunityType: "PROCUREMENT",
               sourceClass: "TENDERS",
+              sourceObjectId: "0123456789012345678",
               region: "Дагестан",
               industry: "construction",
+              customer: "МКУ Махачкала",
+              sourcePublishedAt: "2026-04-01T00:00:00.000Z",
+              deadlineAt: "2027-06-01T00:00:00.000Z",
+              procurementStage: "submission",
               nmck: 8_500_000,
               sources: [
                 {
                   id: "e2e-s2",
                   category: "PROCUREMENT",
                   name: "zakupki.gov.ru",
-                  url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=e2e",
+                  url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
                   isStub: false,
                 },
               ],
+            } as never,
+            {
+              id: "e2e-category-demand",
+              title: "тендеры на белье в СКФО",
+              isStub: false,
+              isCatalogSource: false,
+              canonicalUrl: "https://region-tenders.ru/category/belie-skfo",
+              opportunityType: "PROCUREMENT",
+              region: "СКФО",
+              nmck: 100,
             } as never,
           ];
         }
@@ -196,19 +234,78 @@ async function runSmoke() {
       },
     },
   });
+  if (live.mode !== "injected") throw new Error("expected injected live catalog");
+  if (live.totalExternalCalls > CKR_OWN_IDEAS_BUDGETS.maxExternalCalls) {
+    throw new Error(`hard budget exceeded: ${live.totalExternalCalls}`);
+  }
+  if (live.catalog.signals.some((s) => s.pageType && s.pageType !== "DETAIL" && s.claimKind === "FACT")) {
+    throw new Error("listing/category persisted as FACT in catalog");
+  }
+  if (live.catalog.signals.some((s) => /TradeList|тендеры на белье/i.test(s.title))) {
+    throw new Error("listing/category leaked into pairing catalog");
+  }
+
   const liveBuilt = runOwnIdeaBuilder({
     catalog: live.catalog,
     catalogMode: live.mode,
     liveMeta: live,
+    budget: liveBudget,
     marker: CKR_OWN_IDEAS_SEED_MARKER,
   });
-  if (live.mode !== "injected") throw new Error("expected injected live catalog");
   if (liveBuilt.ideas.some((i) => /example\.com/i.test(JSON.stringify(i)))) {
     throw new Error("placeholder URL leaked into live ideas");
   }
   if (liveBuilt.metrics.scheduler || liveBuilt.metrics.autoPublish) {
     throw new Error("auto action leaked in live catalog");
   }
+  if ((liveBuilt.metrics.totalExternalCalls ?? liveBuilt.metrics.externalCalls) > CKR_OWN_IDEAS_BUDGETS.maxExternalCalls) {
+    throw new Error("builder+catalog exceeded hard external budget");
+  }
+  for (const idea of liveBuilt.ideas) {
+    const facts = idea.components.filter((c) => c.provenance.kind === "FACT");
+    if (facts.some((c) => c.pageType && c.pageType !== "DETAIL")) {
+      throw new Error("listing/category-as-fact in idea");
+    }
+    if (/бель|underwear|TradeList/i.test(idea.title)) {
+      throw new Error("cross-industry garbage idea");
+    }
+  }
+
+  const garbage = runOwnIdeaBuilder({
+    catalog: {
+      signals: [
+        {
+          id: "orel-asset",
+          kind: "ASSET",
+          title: "Имущество банкрота",
+          origin: "EXTERNAL",
+          region: "Орловская область",
+          industry: null,
+          pageType: "LISTING",
+          claimKind: "INFERENCE",
+          canonicalUrl: "https://bankrot.fedresurs.ru/TradeList.aspx",
+        },
+        {
+          id: "skfo-underwear",
+          kind: "DEMAND",
+          title: "тендеры на белье в СКФО",
+          origin: "EXTERNAL",
+          region: "СКФО",
+          industry: "textile",
+          pageType: "CATEGORY",
+          claimKind: "INFERENCE",
+        },
+      ],
+      internalResources: [],
+      externalResources: [],
+    },
+    catalogMode: "injected",
+    marker: CKR_OWN_IDEAS_SEED_MARKER,
+  });
+  if (garbage.ideas.length !== 0) {
+    throw new Error("garbage listing/category/cross-region produced ideas");
+  }
+
   for (const idea of liveBuilt.ideas) await store4.upsert(idea);
   await store4.saveRun({
     ...liveBuilt.metrics,
@@ -222,9 +319,49 @@ async function runSmoke() {
     if (row.visibility !== "OWNER_ONLY") throw new Error("live privacy leak");
   }
 
+  const extraIds: string[] = [];
+  let liveSearchUsed = false;
+  if (isOiLiveConfigured()) {
+    liveSearchUsed = true;
+    const realBudget = createOwnIdeaRunBudget();
+    const real = await buildOwnIdeaCatalog({ userId: "e2e-owner-live", budget: realBudget });
+    if (real.totalExternalCalls > CKR_OWN_IDEAS_BUDGETS.maxExternalCalls) {
+      throw new Error("live search exceeded hard external budget");
+    }
+    if (real.catalog.signals.some((s) => s.claimKind === "FACT" && s.pageType && s.pageType !== "DETAIL")) {
+      throw new Error("live search listing/category as FACT");
+    }
+    const realBuilt = runOwnIdeaBuilder({
+      catalog: real.catalog,
+      catalogMode: real.mode,
+      liveMeta: real,
+      budget: realBudget,
+      marker: CKR_OWN_IDEAS_SEED_MARKER,
+    });
+    if (realBuilt.ideas.some((i) => /example\.com/i.test(JSON.stringify(i)))) {
+      throw new Error("fixture/example.com in live search ideas");
+    }
+    for (const idea of realBuilt.ideas) {
+      extraIds.push(idea.id);
+      await liveStore.upsert(idea);
+    }
+    console.log("LIVE_SEARCH_USED", {
+      mode: real.mode,
+      realSignals: real.realSignals,
+      liveIdeas: realBuilt.ideas.length,
+      totalExternalCalls: realBuilt.metrics.totalExternalCalls,
+    });
+  } else {
+    console.log("LIVE_SEARCH_SKIPPED_NO_SECRETS");
+  }
+
   save({
     marker: CKR_OWN_IDEAS_SEED_MARKER,
-    ideaIds: [...built.ideas.map((i) => i.id), ...liveBuilt.ideas.map((i) => i.id)],
+    ideaIds: [
+      ...built.ideas.map((i) => i.id),
+      ...liveBuilt.ideas.map((i) => i.id),
+      ...extraIds,
+    ],
     runId: liveBuilt.metrics.runId,
   });
   console.log("SMOKE_OK", {
@@ -238,6 +375,10 @@ async function runSmoke() {
     liveCatalogMode: live.mode,
     liveIdeas: liveBuilt.ideas.length,
     livePersisted: true,
+    liveSearchUsed,
+    garbageIdeas: garbage.ideas.length,
+    totalExternalCalls: liveBuilt.metrics.totalExternalCalls,
+    pageTypeSample: live.catalog.signals.map((s) => s.pageType),
   });
 }
 

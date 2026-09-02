@@ -29,7 +29,22 @@ export {
   internalCapitalCatalog,
 } from "@/lib/ckr-own-ideas/fixtures";
 export { assertNoAutoActions, assertOwnerOnly, forbiddenFlags } from "@/lib/ckr-own-ideas/guards";
+export {
+  classifyOwnIdeaPageType,
+  geoCompatibility,
+  industryCompatibility,
+  isExpiredOpportunity,
+  normalizeOwnIdeaGeo,
+  pairCompatibility,
+  passesMinIdeaGate,
+  validateDetailFields,
+} from "@/lib/ckr-own-ideas/quality-gate";
 export { rateOwnIdea } from "@/lib/ckr-own-ideas/rating";
+export {
+  createOwnIdeaRunBudget,
+  snapshotBudget,
+  totalExternalCalls,
+} from "@/lib/ckr-own-ideas/run-budget";
 export { findMissingResource, searchInternalFirst } from "@/lib/ckr-own-ideas/search";
 export { ideaToRow, rowToIdea } from "@/lib/ckr-own-ideas/mappers";
 export {

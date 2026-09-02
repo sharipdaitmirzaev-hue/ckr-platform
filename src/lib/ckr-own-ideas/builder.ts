@@ -12,8 +12,16 @@ import { FINANCING_SAFE_WORDING, searchFinancing } from "@/lib/ckr-own-ideas/fin
 import {
   ideaFingerprintFromComponents,
 } from "@/lib/ckr-own-ideas/fingerprint";
+import { isGenericFinancingPage } from "@/lib/ckr-own-ideas/live-catalog-guards";
 import { money } from "@/lib/ckr-own-ideas/money";
+import { passesMinIdeaGate } from "@/lib/ckr-own-ideas/quality-gate";
 import { rateOwnIdea } from "@/lib/ckr-own-ideas/rating";
+import {
+  consumeSearch,
+  createOwnIdeaRunBudget,
+  snapshotBudget,
+  type OwnIdeaRunBudget,
+} from "@/lib/ckr-own-ideas/run-budget";
 import { findMissingResource } from "@/lib/ckr-own-ideas/search";
 import { pairFits } from "@/lib/ckr-own-ideas/fit";
 import type {
@@ -38,7 +46,10 @@ export type BuilderInput = {
     externalCalls?: number;
     realSignals?: number;
     rejectedSignals?: number;
+    catalogSearches?: number;
+    catalogExternalCalls?: number;
   };
+  budget?: OwnIdeaRunBudget;
 };
 
 export type BuilderResult = {
@@ -52,6 +63,9 @@ function nowIso(now?: string) {
 }
 
 function signalToComponent(signal: OwnIdeaSignal, found: boolean): OwnIdeaComponent {
+  const genericCap =
+    signal.kind === "CAPITAL" &&
+    isGenericFinancingPage({ url: signal.sourceUrl || signal.canonicalUrl, title: signal.title });
   return {
     id: signal.id,
     kind: signal.kind,
@@ -68,16 +82,20 @@ function signalToComponent(signal: OwnIdeaSignal, found: boolean): OwnIdeaCompon
     requiresCheck:
       signal.kind === "CAPITAL" ||
       signal.trustLevel === "general_web" ||
-      signal.claimKind === "INFERENCE",
+      signal.claimKind === "INFERENCE" ||
+      genericCap,
     provenance: {
-      kind: signal.claimKind ?? "FACT",
+      kind: genericCap ? "UNKNOWN" : signal.claimKind ?? "FACT",
       sourceType: signal.sourceType ?? "unknown",
       sourceUrl: signal.sourceUrl ?? signal.canonicalUrl ?? null,
       sourceLabel: signal.sourceLabel ?? "источник",
       fetchedAt: new Date().toISOString(),
       verifiedAt: null,
-      trustLevel: signal.trustLevel ?? "search_snippet",
+      trustLevel: genericCap ? "general_web" : signal.trustLevel ?? "search_snippet",
     },
+    pageType: signal.pageType,
+    financeKind: signal.financeKind ?? null,
+    financeAvailability: genericCap ? "UNKNOWN" : signal.financeAvailability,
   };
 }
 
@@ -165,23 +183,24 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
   const existing = input.existing ?? [];
   const signals = input.catalog.signals.slice(0, CKR_OWN_IDEAS_BUDGETS.maxSignalsPerRun);
   const { pairs, rejected: pairsRejected } = pairSignals(signals);
+  const budget = input.budget ?? createOwnIdeaRunBudget();
 
-  let searches = 0;
-  let externalCalls = input.liveMeta?.externalCalls ?? 0;
-  let depth = 0;
   let ideasRejected = 0;
   const generated: CkrOwnIdea[] = [];
   const updated: CkrOwnIdea[] = [];
   let stopReason = "assembled";
+  let depth = 0;
 
   for (const pair of pairs) {
     if (generated.length + updated.length >= CKR_OWN_IDEAS_BUDGETS.maxInitialIdeas) {
       stopReason = "max_ideas";
       break;
     }
-    if (searches >= CKR_OWN_IDEAS_BUDGETS.maxSearches) {
-      stopReason = "budget_searches";
-      break;
+
+    const gate = passesMinIdeaGate(pair);
+    if (!gate.ok) {
+      ideasRejected += 1;
+      continue;
     }
 
     const found = pair.map((s) => signalToComponent(s, true));
@@ -196,8 +215,10 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
       depth += 1;
       let progressed = false;
       for (const gap of gaps) {
-        if (searches >= CKR_OWN_IDEAS_BUDGETS.maxSearches) break;
-        searches += 1;
+        if (!consumeSearch(budget, "builder")) {
+          stopReason = "budget_searches";
+          break;
+        }
         if (gap.kind === "CAPITAL") {
           const fin = searchFinancing({
             query: gap.query,
@@ -206,14 +227,22 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
             external: input.catalog.externalResources,
             context: pair,
           });
-          if (fin.searchedExternal) externalCalls += 1;
-          if (fin.hit) {
-            found.push(signalToComponent(fin.hit.signal, true));
+          const hit = fin.hit?.signal;
+          const generic =
+            hit &&
+            isGenericFinancingPage({
+              url: hit.sourceUrl || hit.canonicalUrl,
+              title: hit.title,
+            });
+          if (hit && !generic) {
+            found.push(signalToComponent(hit, true));
             progressed = true;
           } else {
             missing.push({
               kind: "CAPITAL",
-              reason: "Не найдено финансирование",
+              reason: generic
+                ? "Generic bank landing — financeAvailability=UNKNOWN"
+                : "Не найдено финансирование",
               searchedInternal: fin.searchedInternal,
               searchedExternal: fin.searchedExternal,
             });
@@ -227,7 +256,6 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
           external: input.catalog.externalResources,
           context: pair,
         });
-        if (res.searchedExternal) externalCalls += 1;
         if (res.hit) {
           found.push(signalToComponent(res.hit.signal, true));
           progressed = true;
@@ -277,7 +305,7 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
       ...missing.map((m) => event("resource_missing", m.reason, at)),
       event("economics_updated", economics.disclaimer, at),
     ];
-    if (found.some((c) => c.kind === "CAPITAL" && c.found)) {
+    if (found.some((c) => c.kind === "CAPITAL" && c.found && c.financeAvailability !== "UNKNOWN")) {
       events.push(event("resource_found", FINANCING_SAFE_WORDING, at));
     }
 
@@ -320,6 +348,9 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
   }
 
   const finishedAt = nowIso(input.now);
+  const snap = snapshotBudget(budget);
+  const catalogSearches = input.liveMeta?.catalogSearches ?? snap.catalogSearches;
+  const catalogExternalCalls = input.liveMeta?.catalogExternalCalls ?? snap.catalogExternalCalls;
   const metrics: OwnIdeaRunMetrics = {
     runId,
     startedAt,
@@ -328,9 +359,9 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
       0,
       new Date(finishedAt).getTime() - new Date(startedAt).getTime(),
     ),
-    queries: searches + (input.liveMeta?.queries ?? 0),
+    queries: catalogSearches + snap.builderSearches,
     results: signals.length,
-    enrichments: Math.min(searches, CKR_OWN_IDEAS_BUDGETS.maxEnrich),
+    enrichments: Math.min(snap.builderSearches, CKR_OWN_IDEAS_BUDGETS.maxEnrich),
     sources: [
       ...new Set(
         [...input.catalog.signals, ...input.catalog.internalResources, ...input.catalog.externalResources]
@@ -341,8 +372,13 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
     ideasGenerated: generated.length,
     ideasRejected,
     ideasUpdated: updated.length,
-    internalSearches: searches,
-    externalCalls,
+    internalSearches: snap.builderSearches,
+    externalCalls: catalogExternalCalls + snap.builderExternalCalls,
+    catalogSearches,
+    builderSearches: snap.builderSearches,
+    catalogExternalCalls,
+    builderExternalCalls: snap.builderExternalCalls,
+    totalExternalCalls: catalogExternalCalls + snap.builderExternalCalls,
     depthReached: depth,
     stopReason: pairs.length === 0 && signals.length > 0 ? "no_compatible_pairs" : stopReason,
     costEstimate: null,

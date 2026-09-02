@@ -17,6 +17,7 @@ import {
   hasGuaranteedProfitWording,
   ideaToRow,
   internalCapitalCatalog,
+  isExpiredOpportunity,
   isGenericFinancingPage,
   isNegativeEconomics,
   isOwnIdeasProductionEnv,
@@ -24,7 +25,12 @@ import {
   landTourismCatalog,
   missingFinancingCatalog,
   negativeEconomicsCatalog,
+  normalizeOwnIdeaGeo,
   oiCandidateToSignal,
+  pairCompatibility,
+  classifyOwnIdeaPageType,
+  geoCompatibility,
+  industryCompatibility,
   procurementCatalog,
   rateOwnIdea,
   resolveOwnIdeaCatalogMode,
@@ -33,6 +39,7 @@ import {
   runOwnIdeaBuilder,
   searchInternalFirst,
   tractorEarthworksCatalog,
+  validateDetailFields,
 } from "../src/lib/ckr-own-ideas";
 import { memoryOwnIdeaStore } from "../src/lib/ckr-own-ideas/store";
 import type { OwnIdeaComponent } from "../src/types/ckr-own-ideas";
@@ -271,6 +278,8 @@ async function main() {
     assert.match(e2e, /store recreate|after store recreate|restartPersisted/);
     assert.match(e2e, /buildOwnIdeaCatalog/);
     assert.match(e2e, /torgi\.gov\.ru|zakupki\.gov\.ru/);
+    assert.match(e2e, /TradeList|listing\/category/);
+    assert.match(e2e, /totalExternalCalls|maxExternalCalls/);
   });
 
   await test("4Q.1 mapper roundtrip keeps locks and OWNER_ONLY", () => {
@@ -484,19 +493,25 @@ async function main() {
                 title: "Экскаватор на torgi.gov.ru",
                 isStub: false,
                 isCatalogSource: false,
-                canonicalUrl: "https://torgi.gov.ru/lot/exc-1",
+                isOfficialSource: true,
+                pageType: "DETAIL",
+                canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/exc-1",
                 opportunityType: "AUCTION_ASSET",
                 sourceClass: "AUCTIONS_ASSETS",
                 sourceAdapterId: "auction_assets",
+                sourceObjectId: "exc-1",
                 region: "Дагестан",
+                city: "Махачкала",
                 industry: "construction",
                 askingPrice: 4_200_000,
+                auctionStatus: "active",
+                address: "Махачкала",
                 sources: [
                   {
                     id: "s1",
                     category: "AUCTIONS",
                     name: "torgi.gov.ru",
-                    url: "https://torgi.gov.ru/lot/exc-1",
+                    url: "https://torgi.gov.ru/new/public/lots/lot/exc-1",
                     isStub: false,
                   },
                 ],
@@ -510,20 +525,27 @@ async function main() {
                 title: "Закупка земляных работ",
                 isStub: false,
                 isCatalogSource: false,
+                isOfficialSource: true,
+                pageType: "DETAIL",
                 canonicalUrl:
-                  "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=1",
+                  "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
                 opportunityType: "PROCUREMENT",
                 sourceClass: "TENDERS",
                 sourceAdapterId: "procurement",
+                sourceObjectId: "0123456789012345678",
                 region: "Дагестан",
                 industry: "construction",
+                customer: "МКУ Махачкала",
+                sourcePublishedAt: "2026-04-01T00:00:00.000Z",
+                deadlineAt: "2027-06-01T00:00:00.000Z",
+                procurementStage: "submission",
                 nmck: 8_500_000,
                 sources: [
                   {
                     id: "s2",
                     category: "PROCUREMENT",
                     name: "zakupki.gov.ru",
-                    url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=1",
+                    url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
                     isStub: false,
                   },
                 ],
@@ -578,6 +600,355 @@ async function main() {
     const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
     assert.equal(ideas[0].economics.profit.kind, "UNKNOWN");
     assert.equal(ideas[0].economics.capex.kind, "FACT");
+  });
+
+  await test("4Q.3 TradeList.aspx rejected as asset detail", () => {
+    assert.equal(
+      classifyOwnIdeaPageType({
+        url: "https://bankrot.fedresurs.ru/TradeList.aspx",
+        title: "Реестр торгов",
+      }),
+      "LISTING",
+    );
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: false,
+        isCatalogSource: false,
+        title: "Торги имуществом банкрота",
+        canonicalUrl: "https://bankrot.fedresurs.ru/TradeList.aspx",
+        opportunityType: "AUCTION_ASSET",
+        region: "Орловская область",
+        askingPrice: 1,
+      } as never),
+      null,
+    );
+  });
+
+  await test("4Q.3 procurement category page rejected as demand FACT", () => {
+    assert.equal(
+      classifyOwnIdeaPageType({
+        url: "https://region-tenders.ru/category/belie-skfo",
+        title: "тендеры на белье в СКФО",
+      }),
+      "CATEGORY",
+    );
+    const sig = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      title: "тендеры на белье в СКФО",
+      canonicalUrl: "https://region-tenders.ru/category/belie-skfo",
+      opportunityType: "PROCUREMENT",
+      region: "СКФО",
+      nmck: 100,
+    } as never);
+    assert.equal(sig, null);
+  });
+
+  await test("4Q.3 aggregator search/list page is not FACT", () => {
+    const page = classifyOwnIdeaPageType({
+      url: "https://star-pro.ru/search?q=почта",
+      title: "Индекс закупок Почта России",
+      isCatalogSource: true,
+    });
+    assert.ok(page === "MIRROR" || page === "SEARCH_RESULTS" || page === "LISTING");
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: false,
+        isCatalogSource: false,
+        title: "Индекс закупок Почта России",
+        canonicalUrl: "https://star-pro.ru/company/post/purchases",
+        opportunityType: "PROCUREMENT",
+        pageType: "LIST",
+      } as never),
+      null,
+    );
+  });
+
+  await test("4Q.3 concrete zakupki detail page accepted FACT", () => {
+    const sig = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      isOfficialSource: true,
+      title: "Поставка ГСМ для земляных работ",
+      canonicalUrl:
+        "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+      opportunityType: "PROCUREMENT",
+      pageType: "DETAIL",
+      sourceObjectId: "0123456789012345678",
+      region: "Дагестан",
+      industry: "construction",
+      customer: "МКУ Махачкала",
+      sourcePublishedAt: "2026-04-01T00:00:00.000Z",
+      deadlineAt: "2027-06-01T00:00:00.000Z",
+      procurementStage: "submission",
+      nmck: 8_500_000,
+    } as never);
+    assert.ok(sig);
+    assert.equal(sig?.pageType, "DETAIL");
+    assert.equal(sig?.claimKind, "FACT");
+    assert.equal(sig?.kind, "DEMAND");
+  });
+
+  await test("4Q.3 concrete torgi lot accepted FACT", () => {
+    const sig = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      isOfficialSource: true,
+      title: "Экскаватор гусеничный",
+      canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/lot-exc-99",
+      opportunityType: "AUCTION_ASSET",
+      pageType: "DETAIL",
+      sourceObjectId: "lot-exc-99",
+      region: "Дагестан",
+      city: "Махачкала",
+      industry: "construction",
+      askingPrice: 4_200_000,
+      auctionStatus: "active",
+      address: "Махачкала",
+    } as never);
+    assert.ok(sig);
+    assert.equal(sig?.pageType, "DETAIL");
+    assert.equal(sig?.claimKind, "FACT");
+    assert.equal(sig?.kind, "ASSET");
+  });
+
+  await test("4Q.3 expired procurement rejected", () => {
+    assert.equal(
+      isExpiredOpportunity({ deadlineAt: "2020-01-01T00:00:00.000Z" }),
+      true,
+    );
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: false,
+        isCatalogSource: false,
+        title: "Закупка земляных работ",
+        canonicalUrl:
+          "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+        opportunityType: "PROCUREMENT",
+        pageType: "DETAIL",
+        sourceObjectId: "0123456789012345678",
+        region: "Дагестан",
+        customer: "МКУ",
+        sourcePublishedAt: "2019-01-01T00:00:00.000Z",
+        deadlineAt: "2020-01-01T00:00:00.000Z",
+        procurementStage: "completed",
+      } as never),
+      null,
+    );
+  });
+
+  await test("4Q.3 Orel × SKFO rejected unless explicit cross-region", () => {
+    assert.equal(
+      geoCompatibility("Орловская область", "СКФО"),
+      "INCOMPATIBLE",
+    );
+    const asset = tractorEarthworksCatalog().signals[0];
+    const demand = {
+      ...tractorEarthworksCatalog().signals[1],
+      region: "СКФО",
+      geo: normalizeOwnIdeaGeo("СКФО"),
+    };
+    const orel = { ...asset, region: "Орловская область", geo: normalizeOwnIdeaGeo("Орловская область") };
+    assert.equal(pairCompatibility(orel, demand).ok, false);
+    const justified = { ...demand, crossRegionJustified: true };
+    assert.equal(pairCompatibility(orel, justified).ok, true);
+    assert.equal(pairCompatibility(orel, justified).geo, "CROSS_REGION_EXPLICIT");
+  });
+
+  await test("4Q.3 RF generic × Dagestan is not SAME_REGION", () => {
+    assert.notEqual(
+      geoCompatibility("Российская Федерация", "Дагестан"),
+      "SAME_REGION",
+    );
+    assert.equal(
+      geoCompatibility("Российская Федерация", "Дагестан"),
+      "UNKNOWN",
+    );
+  });
+
+  await test("4Q.3 excavator × earthworks compatible, underwear not", () => {
+    const excavator = tractorEarthworksCatalog().signals[0];
+    const earth = tractorEarthworksCatalog().signals[1];
+    assert.equal(industryCompatibility(excavator, earth).ok, true);
+    const underwear = {
+      ...earth,
+      title: "Закупка белья",
+      industry: "textile",
+    };
+    assert.equal(industryCompatibility(excavator, underwear).ok, false);
+    const { ideas } = runOwnIdeaBuilder({
+      catalog: {
+        signals: [excavator, underwear],
+        internalResources: [],
+        externalResources: [],
+      },
+    });
+    assert.equal(ideas.length, 0);
+  });
+
+  await test("4Q.3 unknown bankruptcy asset × arbitrary tender rejected", () => {
+    const unknownAsset = {
+      ...tractorEarthworksCatalog().signals[0],
+      title: "Имущество банкрота",
+      industry: null,
+      tags: ["bankruptcy"],
+    };
+    const tender = {
+      ...tractorEarthworksCatalog().signals[1],
+      title: "Тендер на поставку",
+      industry: "food",
+    };
+    assert.equal(industryCompatibility(unknownAsset, tender).ok, false);
+    const { ideas } = runOwnIdeaBuilder({
+      catalog: { signals: [unknownAsset, tender], internalResources: [], externalResources: [] },
+    });
+    assert.equal(ideas.length, 0);
+  });
+
+  await test("4Q.3 0 valid ideas is a successful run", () => {
+    const { ideas, metrics } = runOwnIdeaBuilder({
+      catalog: { signals: [], internalResources: [], externalResources: [] },
+      catalogMode: "empty",
+    });
+    assert.equal(ideas.length, 0);
+    assert.equal(metrics.ideasGenerated, 0);
+    assert.equal(metrics.scheduler, false);
+    assert.equal(metrics.autoPublish, false);
+  });
+
+  await test("4Q.3 promising impossible with <2 live FACT", () => {
+    const rating = rateOwnIdea({
+      components: [
+        component({
+          kind: "ASSET",
+          title: "Экскаватор",
+          pageType: "DETAIL",
+          provenance: {
+            kind: "FACT",
+            sourceType: "auction",
+            sourceUrl: "https://torgi.gov.ru/lot/1",
+            sourceLabel: "torgi",
+            fetchedAt: null,
+            verifiedAt: null,
+            trustLevel: "official",
+          },
+        }),
+        component({
+          kind: "DEMAND",
+          title: "Земляные работы",
+          pageType: "DETAIL",
+          provenance: {
+            kind: "INFERENCE",
+            sourceType: "procurement",
+            sourceUrl: "https://zakupki.gov.ru/notice/1",
+            sourceLabel: "zakupki",
+            fetchedAt: null,
+            verifiedAt: null,
+            trustLevel: "search_snippet",
+          },
+        }),
+      ],
+      missing: [{ kind: "CAPITAL", reason: "нет", searchedInternal: true, searchedExternal: true }],
+      economics: computeRoughEconomics([]),
+    });
+    assert.notEqual(rating, "promising");
+  });
+
+  await test("4Q.3 generic bank page finance UNKNOWN", () => {
+    assert.equal(
+      isGenericFinancingPage({
+        url: "https://www.sberbank.ru/",
+        title: "СберБанк — официальный сайт",
+      }),
+      true,
+    );
+    const page = classifyOwnIdeaPageType({
+      url: "https://www.sberbank.ru/",
+      title: "СберБанк",
+    });
+    assert.equal(page, "LANDING");
+    const v = validateDetailFields({
+      kind: "CAPITAL",
+      pageType: "LANDING",
+      title: "Кредит бизнесу",
+      sourceUrl: "https://www.sberbank.ru/",
+      provider: "Сбер",
+    });
+    assert.equal(v.reject, true);
+    const { ideas } = runOwnIdeaBuilder({
+      catalog: {
+        ...tractorEarthworksCatalog(),
+        externalResources: [
+          {
+            id: "bank-home",
+            kind: "CAPITAL",
+            title: "Кредит наличными",
+            origin: "EXTERNAL",
+            sourceUrl: "https://www.sberbank.ru/ru/person/credits",
+            canonicalUrl: "https://www.sberbank.ru/ru/person/credits",
+            claimKind: "INFERENCE",
+            industry: "construction",
+            pageType: "LANDING",
+            financeAvailability: "UNKNOWN",
+          },
+        ],
+      },
+    });
+    const cap = ideas[0]?.components.find((c) => c.kind === "CAPITAL" && c.found);
+    assert.ok(!cap || cap.financeAvailability === "UNKNOWN" || cap.provenance.kind === "UNKNOWN");
+  });
+
+  await test("4Q.3 hard run external-call budget cannot exceed configured limit", async () => {
+    const { CKR_OWN_IDEAS_BUDGETS: budgets } = await import("../src/config/ckr-own-ideas");
+    const { consumeExternal, createOwnIdeaRunBudget, totalExternalCalls } = await import(
+      "../src/lib/ckr-own-ideas/run-budget"
+    );
+    const budget = createOwnIdeaRunBudget();
+    for (let i = 0; i < budgets.maxExternalCalls; i += 1) {
+      assert.equal(consumeExternal(budget, "catalog"), true);
+    }
+    assert.equal(consumeExternal(budget, "builder"), false);
+    assert.equal(totalExternalCalls(budget), budgets.maxExternalCalls);
+    let hookCalls = 0;
+    await buildOwnIdeaCatalog({
+      userId: "budget-test",
+      budget,
+      hooks: {
+        async search() {
+          hookCalls += 1;
+          return [];
+        },
+      },
+    });
+    assert.equal(hookCalls, 0);
+    assert.ok(totalExternalCalls(budget) <= budgets.maxExternalCalls);
+
+    const budget2 = createOwnIdeaRunBudget();
+    for (let i = 0; i < budgets.maxExternalCalls - 1; i += 1) {
+      consumeExternal(budget2, "catalog");
+    }
+    hookCalls = 0;
+    const live = await buildOwnIdeaCatalog({
+      userId: "budget-test-2",
+      budget: budget2,
+      hooks: {
+        async search() {
+          hookCalls += 1;
+          return [];
+        },
+      },
+    });
+    assert.ok(hookCalls <= 1);
+    assert.ok((live.totalExternalCalls ?? live.externalCalls) <= budgets.maxExternalCalls);
+    const built = runOwnIdeaBuilder({
+      catalog: tractorEarthworksCatalog(),
+      budget: budget2,
+      liveMeta: {
+        catalogSearches: live.catalogSearches,
+        catalogExternalCalls: live.catalogExternalCalls,
+      },
+    });
+    assert.ok((built.metrics.totalExternalCalls ?? built.metrics.externalCalls) <= budgets.maxExternalCalls);
   });
 
   console.log(`${passed} passed, ${failed} failed`);
