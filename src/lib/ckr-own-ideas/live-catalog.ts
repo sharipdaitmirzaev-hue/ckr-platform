@@ -312,10 +312,6 @@ export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
   };
 }
 
-function emptyCatalog(): OwnIdeaCatalog {
-  return { signals: [], internalResources: [], externalResources: [] };
-}
-
 function makePlan(input: {
   rawQuery: string;
   intent: LiaOiSearchIntent;
