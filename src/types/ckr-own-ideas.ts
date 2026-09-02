@@ -115,6 +115,23 @@ export const OWN_IDEA_EVENTS = [
 ] as const;
 export type OwnIdeaEventType = (typeof OWN_IDEA_EVENTS)[number];
 
+export type OwnIdeaVerificationStatus = "VERIFIED" | "UNVERIFIED" | "REJECTED";
+
+/** Stage 4Q.4 — one extracted field with explicit provenance. Absence is omitted, never invented. */
+export type OwnIdeaFactField = {
+  field: string;
+  value: string | number | null;
+  sourceUrl: string | null;
+  canonicalUrl: string | null;
+  sourceDomain: string | null;
+  fetchedAt: string | null;
+  publishedAt: string | null;
+  sourceType: string;
+  confidence: number;
+  verificationStatus: OwnIdeaVerificationStatus;
+  kind: OwnIdeaClaimKind;
+};
+
 export type OwnIdeaProvenance = {
   kind: OwnIdeaClaimKind;
   sourceType: string;
@@ -124,6 +141,10 @@ export type OwnIdeaProvenance = {
   verifiedAt: string | null;
   trustLevel: OwnIdeaTrust;
   corroborating?: Array<{ sourceLabel: string; sourceUrl: string | null }>;
+  fields?: OwnIdeaFactField[];
+  sourceDomain?: string | null;
+  verificationStatus?: OwnIdeaVerificationStatus;
+  confidence?: number;
 };
 
 export type OwnIdeaMoney = {
@@ -244,6 +265,15 @@ export type OwnIdeaRunMetrics = {
   catalogExternalCalls?: number;
   builderExternalCalls?: number;
   totalExternalCalls?: number;
+  /** Stage 4Q.4 — discovery → DETAIL acquisition (snippet is not a FACT). */
+  discoveryCandidates?: number;
+  detailResolutionAttempts?: number;
+  officialDetailsResolved?: number;
+  aggregatorCandidates?: number;
+  aggregatorToOfficialResolved?: number;
+  detailValidationRejected?: number;
+  liveFacts?: number;
+  budgetExhausted?: boolean;
 };
 
 export type OwnIdeaSignal = {
@@ -279,6 +309,15 @@ export type OwnIdeaSignal = {
   financeAvailability?: "KNOWN" | "UNKNOWN";
   geo?: OwnIdeaGeo;
   crossRegionJustified?: boolean;
+  /** Required when crossRegionJustified — logistic/economic transferability. */
+  crossRegionReason?: string | null;
+  factFields?: OwnIdeaFactField[];
+  sourceDomain?: string | null;
+  fetchedAt?: string | null;
+  verificationStatus?: OwnIdeaVerificationStatus;
+  confidence?: number;
+  /** True only after official/page resolution — never for a raw Serper snippet. */
+  detailResolved?: boolean;
 };
 
 export type OwnIdeaCatalog = {

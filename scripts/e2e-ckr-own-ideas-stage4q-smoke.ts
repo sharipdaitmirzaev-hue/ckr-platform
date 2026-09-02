@@ -149,27 +149,21 @@ async function runSmoke() {
         if (q.plan.intent === "assets") {
           return [
             {
-              id: "e2e-live-asset",
-              title: "Экскаватор live torgi.gov.ru",
+              id: "e2e-disc-asset",
+              title: "Экскаватор Дагестан — сниппет поиска",
               isStub: false,
               isCatalogSource: false,
-              isOfficialSource: true,
-              pageType: "DETAIL",
+              dataChannel: "SERPER_DISCOVERY",
+              pageType: "UNKNOWN",
               canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/e2e-exc",
               opportunityType: "AUCTION_ASSET",
               sourceClass: "AUCTIONS_ASSETS",
-              sourceObjectId: "e2e-exc",
               region: "Дагестан",
-              city: "Махачкала",
-              industry: "construction",
-              askingPrice: 4_200_000,
-              auctionStatus: "active",
-              address: "Махачкала",
               sources: [
                 {
                   id: "e2e-s1",
                   category: "AUCTIONS",
-                  name: "torgi.gov.ru",
+                  name: "serper",
                   url: "https://torgi.gov.ru/new/public/lots/lot/e2e-exc",
                   isStub: false,
                 },
@@ -180,6 +174,7 @@ async function runSmoke() {
               title: "Реестр торгов TradeList",
               isStub: false,
               isCatalogSource: false,
+              dataChannel: "SERPER_DISCOVERY",
               canonicalUrl: "https://bankrot.fedresurs.ru/TradeList.aspx",
               opportunityType: "AUCTION_ASSET",
               region: "Орловская область",
@@ -190,30 +185,23 @@ async function runSmoke() {
         if (q.plan.intent === "tenders") {
           return [
             {
-              id: "e2e-live-demand",
-              title: "Закупка земляных работ live",
+              id: "e2e-disc-demand",
+              title: "Извещение № 0123456789012345678 земляные работы",
               isStub: false,
               isCatalogSource: false,
-              isOfficialSource: true,
-              pageType: "DETAIL",
-              canonicalUrl:
-                "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+              dataChannel: "SERPER_DISCOVERY",
+              pageType: "LIST",
+              canonicalUrl: "https://star-pro.ru/region/dagestan/l0123456789012345678-1",
               opportunityType: "PROCUREMENT",
               sourceClass: "TENDERS",
               sourceObjectId: "0123456789012345678",
               region: "Дагестан",
-              industry: "construction",
-              customer: "МКУ Махачкала",
-              sourcePublishedAt: "2026-04-01T00:00:00.000Z",
-              deadlineAt: "2027-06-01T00:00:00.000Z",
-              procurementStage: "submission",
-              nmck: 8_500_000,
               sources: [
                 {
                   id: "e2e-s2",
                   category: "PROCUREMENT",
-                  name: "zakupki.gov.ru",
-                  url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+                  name: "star-pro",
+                  url: "https://star-pro.ru/region/dagestan/l0123456789012345678-1",
                   isStub: false,
                 },
               ],
@@ -223,6 +211,7 @@ async function runSmoke() {
               title: "тендеры на белье в СКФО",
               isStub: false,
               isCatalogSource: false,
+              dataChannel: "SERPER_DISCOVERY",
               canonicalUrl: "https://region-tenders.ru/category/belie-skfo",
               opportunityType: "PROCUREMENT",
               region: "СКФО",
@@ -231,6 +220,73 @@ async function runSmoke() {
           ];
         }
         return [];
+      },
+      async resolveDetail(c) {
+        if (c.id === "e2e-disc-asset") {
+          return {
+            id: "e2e-live-asset",
+            title: "Экскаватор live torgi.gov.ru",
+            isStub: false,
+            isCatalogSource: false,
+            isOfficialSource: true,
+            dataChannel: "OFFICIAL_API",
+            enrichedFromFetch: true,
+            pageType: "DETAIL",
+            canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/e2e-exc",
+            opportunityType: "AUCTION_ASSET",
+            sourceClass: "AUCTIONS_ASSETS",
+            sourceObjectId: "e2e-exc",
+            region: "Дагестан",
+            city: "Махачкала",
+            industry: "construction",
+            askingPrice: 4_200_000,
+            auctionStatus: "active",
+            address: "Махачкала",
+            sources: [
+              {
+                id: "e2e-s1r",
+                category: "AUCTIONS",
+                name: "torgi.gov.ru",
+                url: "https://torgi.gov.ru/new/public/lots/lot/e2e-exc",
+                isStub: false,
+              },
+            ],
+          } as never;
+        }
+        if (c.id === "e2e-disc-demand") {
+          return {
+            id: "e2e-live-demand",
+            title: "Закупка земляных работ live",
+            isStub: false,
+            isCatalogSource: false,
+            isOfficialSource: true,
+            dataChannel: "OFFICIAL_API",
+            enrichedFromFetch: true,
+            pageType: "DETAIL",
+            canonicalUrl:
+              "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+            opportunityType: "PROCUREMENT",
+            sourceClass: "TENDERS",
+            sourceObjectId: "0123456789012345678",
+            region: "Дагестан",
+            industry: "construction",
+            customer: "МКУ Махачкала",
+            sourcePublishedAt: "2026-04-01T00:00:00.000Z",
+            deadlineAt: "2027-06-01T00:00:00.000Z",
+            procurementStage: "submission",
+            nmck: 8_500_000,
+            sources: [
+              {
+                id: "e2e-s2r",
+                category: "PROCUREMENT",
+                name: "zakupki.gov.ru",
+                url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+                isStub: false,
+              },
+            ],
+          } as never;
+        }
+        return null;
       },
     },
   });
@@ -243,6 +299,19 @@ async function runSmoke() {
   }
   if (live.catalog.signals.some((s) => /TradeList|тендеры на белье/i.test(s.title))) {
     throw new Error("listing/category leaked into pairing catalog");
+  }
+  if (live.liveFacts < 2) {
+    throw new Error(`expected discovery→DETAIL liveFacts>=2, got ${live.liveFacts}`);
+  }
+  if (!live.detailResolutionAttempts) {
+    throw new Error("E2E must exercise detail resolution, not pre-baked FACT");
+  }
+  const officialUrls = live.catalog.signals.map((s) => s.canonicalUrl || "");
+  if (!officialUrls.some((u) => /zakupki\.gov\.ru|torgi\.gov\.ru/.test(u))) {
+    throw new Error("official DETAIL URL missing after resolution");
+  }
+  if (!live.catalog.signals.some((s) => (s.factFields || []).some((f) => f.verificationStatus === "VERIFIED"))) {
+    throw new Error("FACT provenance missing after resolution");
   }
 
   const liveBuilt = runOwnIdeaBuilder({

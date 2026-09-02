@@ -40,9 +40,22 @@ import type {
   LiaOiSourceClass,
 } from "@/types/lia-oi";
 import type { LiaOiSourceAdapterQuery } from "@/lib/lia/oi/sources/types";
+import {
+  acquireOwnIdeaDetails,
+  alreadyResolvedOfficial,
+  emptyAcquireStats,
+  factField,
+  hasVerifiedFactFields,
+  hostOfUrl,
+  isDiscoverySnippet,
+  structuredToFactFields,
+  type OwnIdeaAcquireStats,
+  type OwnIdeaResolveDetailHook,
+} from "@/lib/ckr-own-ideas/detail-acquire";
 import type {
   OwnIdeaCatalog,
   OwnIdeaElementKind,
+  OwnIdeaFactField,
   OwnIdeaSignal,
   OwnIdeaTrust,
 } from "@/types/ckr-own-ideas";
@@ -52,8 +65,10 @@ export { isGenericFinancingPage, isPlaceholderSource };
 export type OwnIdeaCatalogMode = "live" | "empty" | "injected";
 
 export type LiveCatalogHooks = {
-  /** Tests: inject OI-like candidates, no network. */
+  /** Tests: inject discovery candidates (search snippets), no network. */
   search?: (query: LiaOiSourceAdapterQuery) => Promise<LiaOiCandidate[]>;
+  /** Tests: discovery → DETAIL resolution without live HTTP. */
+  resolveDetail?: OwnIdeaResolveDetailHook;
 };
 
 export type LiveCatalogResult = {
@@ -70,6 +85,14 @@ export type LiveCatalogResult = {
   liveAvailable: boolean;
   reason: string;
   budget: OwnIdeaRunBudget;
+  discoveryCandidates: number;
+  detailResolutionAttempts: number;
+  officialDetailsResolved: number;
+  aggregatorCandidates: number;
+  aggregatorToOfficialResolved: number;
+  detailValidationRejected: number;
+  liveFacts: number;
+  budgetExhausted: boolean;
 };
 
 function kindFromCandidate(c: LiaOiCandidate): OwnIdeaElementKind {
@@ -174,9 +197,58 @@ export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
     claimKind = "INFERENCE";
   }
 
+  const fetchedAt = c.enrichedFromFetch ? c.lastSeenAt || new Date().toISOString() : null;
+  const factFields: OwnIdeaFactField[] = structuredToFactFields(
+    c.structuredFields,
+    url,
+    fetchedAt,
+    fields.publishedAt,
+  );
+  for (const extra of [
+    factField({
+      field: "official_id",
+      value: officialId,
+      sourceUrl: url,
+      canonicalUrl: url,
+      fetchedAt,
+      publishedAt: fields.publishedAt,
+      sourceType: alreadyResolvedOfficial(c) || c.enrichedFromFetch ? "official_page" : "search_snippet",
+      confidence: officialId ? 90 : 0,
+      verificationStatus: alreadyResolvedOfficial(c) || c.enrichedFromFetch ? "VERIFIED" : "UNVERIFIED",
+      kind: officialId && (alreadyResolvedOfficial(c) || c.enrichedFromFetch) ? "FACT" : "INFERENCE",
+    }),
+    factField({
+      field: "customer",
+      value: fields.customer,
+      sourceUrl: url,
+      canonicalUrl: url,
+      fetchedAt,
+      publishedAt: fields.publishedAt,
+      sourceType: alreadyResolvedOfficial(c) || c.enrichedFromFetch ? "official_page" : "search_snippet",
+      confidence: fields.customer ? 85 : 0,
+      verificationStatus: alreadyResolvedOfficial(c) || c.enrichedFromFetch ? "VERIFIED" : "UNVERIFIED",
+    }),
+  ]) {
+    if (extra && !factFields.some((f) => f.field === extra.field)) factFields.push(extra);
+  }
+
+  const resolved = alreadyResolvedOfficial(c) || Boolean(c.enrichedFromFetch);
+  if (isDiscoverySnippet(c) && !resolved) {
+    if (claimKind === "FACT") claimKind = "INFERENCE";
+  }
+  if (claimKind === "FACT" && !resolved && !hasVerifiedFactFields(factFields)) {
+    claimKind = "INFERENCE";
+  }
+
   const financeKind = kind === "CAPITAL" ? classifyFinanceKind({ title: c.title, url }) : null;
   const financeAvailability =
     kind === "CAPITAL" ? (genericCap || claimKind === "UNKNOWN" ? "UNKNOWN" : "KNOWN") : undefined;
+
+  const trust = genericCap
+    ? "general_web"
+    : isDiscoverySnippet(c) && !resolved
+      ? "search_snippet"
+      : trustFromCandidate(c);
 
   return {
     id: c.id || randomUUID(),
@@ -192,9 +264,9 @@ export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
     sourceType: c.opportunityType || c.sourceAdapterId || "lia_oi",
     sourceLabel: c.sources?.[0]?.name || c.sourceAdapterId || "LIA OI",
     sourceUrl: url,
-    trustLevel: genericCap ? "general_web" : trustFromCandidate(c),
+    trustLevel: trust,
     region: c.region || c.city || null,
-    industry: c.industry || c.subindustry || null,
+    industry: c.industry || c.subindustry || c.assetType || null,
     tags: [c.opportunityType, c.sourceClass].filter(Boolean) as string[],
     pageType,
     customer: fields.customer,
@@ -209,11 +281,17 @@ export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
     sourceQuality: sourceQualityOf({
       url,
       pageType,
-      isOfficialSource: c.isOfficialSource,
+      isOfficialSource: resolved && Boolean(c.isOfficialSource || /zakupki\.gov|torgi\.gov|fedresurs/i.test(url || "")),
     }),
     financeKind,
     financeAvailability,
     geo,
+    factFields,
+    sourceDomain: hostOfUrl(url),
+    fetchedAt,
+    verificationStatus: resolved && claimKind === "FACT" ? "VERIFIED" : "UNVERIFIED",
+    confidence: claimKind === "FACT" ? 85 : claimKind === "INFERENCE" ? 50 : 20,
+    detailResolved: resolved,
   };
 }
 
@@ -231,7 +309,7 @@ function makePlan(input: {
     rawQuery: input.rawQuery,
     intent: input.intent,
     country: "Россия",
-    regions: ["Дагестан"],
+    regions: ["Республика Дагестан", "СКФО"],
     industries: [],
     assetTypes: [],
     hypotheses: [],
@@ -247,17 +325,17 @@ const LIVE_QUERIES: Array<{
   sourceClasses: LiaOiSourceClass[];
 }> = [
   {
-    rawQuery: "торги спецтехника земля имущество Дагестан",
+    rawQuery: "торги спецтехника земля имущество Республика Дагестан",
     intent: "assets",
     sourceClasses: ["AUCTIONS_ASSETS"],
   },
   {
-    rawQuery: "закупка тендер 44-ФЗ Дагестан СКФО",
+    rawQuery: "закупка тендер 44-ФЗ Республика Дагестан",
     intent: "tenders",
     sourceClasses: ["TENDERS"],
   },
   {
-    rawQuery: "лизинг кредит грант поддержка МСП Дагестан",
+    rawQuery: "лизинг кредит грант поддержка МСП Республика Дагестан",
     intent: "support_programs",
     sourceClasses: ["SUPPORT_PROGRAMS"],
   },
@@ -301,13 +379,14 @@ export async function buildOwnIdeaCatalog(opts?: {
       collected.push(...found);
       sourceLabels.push(q.intent);
     }
-    return packSignals(collected, {
+    return acquireThenPack(collected, {
       mode: "injected",
       rejectedSignals,
       liveAvailable: true,
       reason: "injected hooks",
       sourceLabels,
       budget,
+      hooks: opts.hooks,
     });
   }
 
@@ -332,6 +411,7 @@ export async function buildOwnIdeaCatalog(opts?: {
       liveAvailable: false,
       reason: modeInfo.reason,
       budget,
+      ...emptyAcquireStats(),
     };
   }
 
@@ -365,13 +445,34 @@ export async function buildOwnIdeaCatalog(opts?: {
   const liveOnly = collected.filter((c) => !c.isStub);
   rejectedSignals += collected.length - liveOnly.length;
 
-  return packSignals(liveOnly, {
+  return acquireThenPack(liveOnly, {
     mode: liveOnly.length ? "live" : "empty",
     rejectedSignals,
     liveAvailable: true,
     reason: modeInfo.reason,
     sourceLabels,
     budget,
+  });
+}
+
+async function acquireThenPack(
+  candidates: LiaOiCandidate[],
+  meta: {
+    mode: OwnIdeaCatalogMode;
+    rejectedSignals: number;
+    liveAvailable: boolean;
+    reason: string;
+    sourceLabels: string[];
+    budget: OwnIdeaRunBudget;
+    hooks?: LiveCatalogHooks;
+  },
+): Promise<LiveCatalogResult> {
+  const acquired = await acquireOwnIdeaDetails(candidates, meta.budget, {
+    resolveDetail: meta.hooks?.resolveDetail,
+  });
+  return packSignals(acquired.candidates, {
+    ...meta,
+    acquire: acquired.stats,
   });
 }
 
@@ -384,6 +485,7 @@ function packSignals(
     reason: string;
     sourceLabels: string[];
     budget: OwnIdeaRunBudget;
+    acquire?: OwnIdeaAcquireStats;
   },
 ): LiveCatalogResult {
   const signals: OwnIdeaSignal[] = [];
@@ -400,6 +502,15 @@ function packSignals(
   const capital = sliced.filter((s) => s.kind === "CAPITAL");
   const rest = sliced.filter((s) => s.kind !== "CAPITAL");
   const snap = snapshotBudget(meta.budget);
+  const acquire = meta.acquire ?? emptyAcquireStats();
+  const liveFacts = sliced.filter(
+    (s) =>
+      s.claimKind === "FACT" &&
+      s.pageType === "DETAIL" &&
+      s.detailResolved &&
+      s.trustLevel !== "search_snippet" &&
+      s.trustLevel !== "general_web",
+  ).length;
   return {
     catalog: {
       signals: rest,
@@ -418,5 +529,13 @@ function packSignals(
     liveAvailable: meta.liveAvailable,
     reason: meta.reason,
     budget: meta.budget,
+    discoveryCandidates: acquire.discoveryCandidates,
+    detailResolutionAttempts: acquire.detailResolutionAttempts,
+    officialDetailsResolved: acquire.officialDetailsResolved,
+    aggregatorCandidates: acquire.aggregatorCandidates,
+    aggregatorToOfficialResolved: acquire.aggregatorToOfficialResolved,
+    detailValidationRejected: acquire.detailValidationRejected,
+    liveFacts,
+    budgetExhausted: acquire.budgetExhausted,
   };
 }

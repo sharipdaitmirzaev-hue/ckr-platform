@@ -26,6 +26,11 @@ import {
   missingFinancingCatalog,
   negativeEconomicsCatalog,
   normalizeOwnIdeaGeo,
+  alreadyResolvedOfficial,
+  acquireOwnIdeaDetails,
+  isDiscoverySnippet,
+  isGenericRussiaRegion,
+  isOfficialDetailUrl,
   oiCandidateToSignal,
   pairCompatibility,
   classifyOwnIdeaPageType,
@@ -280,6 +285,9 @@ async function main() {
     assert.match(e2e, /torgi\.gov\.ru|zakupki\.gov\.ru/);
     assert.match(e2e, /TradeList|listing\/category/);
     assert.match(e2e, /totalExternalCalls|maxExternalCalls/);
+    assert.match(e2e, /resolveDetail/);
+    assert.match(e2e, /SERPER_DISCOVERY/);
+    assert.match(e2e, /liveFacts/);
   });
 
   await test("4Q.1 mapper roundtrip keeps locks and OWNER_ONLY", () => {
@@ -750,9 +758,15 @@ async function main() {
     };
     const orel = { ...asset, region: "Орловская область", geo: normalizeOwnIdeaGeo("Орловская область") };
     assert.equal(pairCompatibility(orel, demand).ok, false);
-    const justified = { ...demand, crossRegionJustified: true };
+    const justified = {
+      ...demand,
+      crossRegionJustified: true,
+      crossRegionReason: "Перевозка спецтехники автотранспортом, срок 3 дня",
+    };
     assert.equal(pairCompatibility(orel, justified).ok, true);
     assert.equal(pairCompatibility(orel, justified).geo, "CROSS_REGION_EXPLICIT");
+    const flagOnly = { ...demand, crossRegionJustified: true };
+    assert.equal(pairCompatibility(orel, flagOnly).ok, false);
   });
 
   await test("4Q.3 RF generic × Dagestan is not SAME_REGION", () => {
@@ -949,6 +963,335 @@ async function main() {
       },
     });
     assert.ok((built.metrics.totalExternalCalls ?? built.metrics.externalCalls) <= budgets.maxExternalCalls);
+  });
+
+  const serperProcurement = {
+    id: "serper-proc",
+    isStub: false,
+    isCatalogSource: false,
+    isOfficialSource: true,
+    dataChannel: "SERPER_DISCOVERY",
+    title: "Закупка земляных работ № 0123456789012345678",
+    description: "snippet only",
+    canonicalUrl: "https://star-pro.ru/search?q=земля",
+    opportunityType: "PROCUREMENT",
+    pageType: "UNKNOWN",
+    sourceObjectId: "0123456789012345678",
+    region: "Дагестан",
+    industry: "construction",
+    customer: "МКУ Махачкала",
+    sourcePublishedAt: "2026-04-01T00:00:00.000Z",
+    deadlineAt: "2027-06-01T00:00:00.000Z",
+    procurementStage: "submission",
+    nmck: 8_500_000,
+    sources: [{ id: "s", category: "PROCUREMENT", name: "serper", url: "https://star-pro.ru/search?q=земля", isStub: false }],
+  } as never;
+
+  const officialProcurement = {
+    id: "official-proc",
+    isStub: false,
+    isCatalogSource: false,
+    isOfficialSource: true,
+    dataChannel: "OFFICIAL_API",
+    enrichedFromFetch: true,
+    title: "Поставка ГСМ для земляных работ",
+    canonicalUrl:
+      "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+    opportunityType: "PROCUREMENT",
+    pageType: "DETAIL",
+    sourceObjectId: "0123456789012345678",
+    region: "Дагестан",
+    industry: "construction",
+    customer: "МКУ Махачкала",
+    sourcePublishedAt: "2026-04-01T00:00:00.000Z",
+    deadlineAt: "2027-06-01T00:00:00.000Z",
+    procurementStage: "submission",
+    nmck: 8_500_000,
+    sources: [
+      {
+        id: "o",
+        category: "PROCUREMENT",
+        name: "zakupki.gov.ru",
+        url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0123456789012345678",
+        isStub: false,
+      },
+    ],
+  } as never;
+
+  const officialLot = {
+    id: "official-lot",
+    isStub: false,
+    isCatalogSource: false,
+    isOfficialSource: true,
+    dataChannel: "OFFICIAL_API",
+    enrichedFromFetch: true,
+    title: "Экскаватор гусеничный",
+    canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/lot-exc-99",
+    opportunityType: "AUCTION_ASSET",
+    pageType: "DETAIL",
+    sourceObjectId: "lot-exc-99",
+    region: "Дагестан",
+    city: "Махачкала",
+    industry: "construction",
+    assetType: "экскаватор",
+    askingPrice: 4_200_000,
+    auctionStatus: "active",
+    address: "Махачкала",
+    sources: [
+      {
+        id: "l",
+        category: "AUCTIONS",
+        name: "torgi.gov.ru",
+        url: "https://torgi.gov.ru/new/public/lots/lot/lot-exc-99",
+        isStub: false,
+      },
+    ],
+  } as never;
+
+  await test("4Q.4 Serper snippet itself is not FACT", () => {
+    assert.equal(isDiscoverySnippet(serperProcurement), true);
+    const sig = oiCandidateToSignal(serperProcurement);
+    assert.ok(sig);
+    assert.notEqual(sig?.claimKind, "FACT");
+    assert.equal(sig?.trustLevel, "search_snippet");
+    assert.equal(sig?.detailResolved, false);
+  });
+
+  await test("4Q.4 zakupki mirror resolves to official procurement FACT", async () => {
+    const { createOwnIdeaRunBudget } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudget();
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q4-mirror",
+      budget,
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "tenders") {
+            return [
+              {
+                ...serperProcurement,
+                canonicalUrl: "https://star-pro.ru/region/dagestan/l0123456789012345678-1",
+                sources: [
+                  {
+                    id: "m",
+                    category: "PROCUREMENT",
+                    name: "star-pro",
+                    url: "https://star-pro.ru/region/dagestan/l0123456789012345678-1",
+                    isStub: false,
+                  },
+                ],
+              } as never,
+            ];
+          }
+          return [];
+        },
+        async resolveDetail() {
+          return officialProcurement;
+        },
+      },
+    });
+    assert.ok(live.aggregatorCandidates >= 1 || live.aggregatorToOfficialResolved >= 1);
+    assert.ok(live.officialDetailsResolved >= 1);
+    const demand = live.catalog.signals.find((s) => s.kind === "DEMAND");
+    assert.ok(demand);
+    assert.equal(demand?.claimKind, "FACT");
+    assert.equal(demand?.detailResolved, true);
+    assert.match(demand?.canonicalUrl || "", /zakupki\.gov\.ru/);
+    assert.ok(demand?.factFields?.some((f) => f.field === "official_id" && f.verificationStatus === "VERIFIED"));
+  });
+
+  await test("4Q.4 concrete official procurement is validated FACT", () => {
+    const sig = oiCandidateToSignal(officialProcurement);
+    assert.ok(sig);
+    assert.equal(sig?.claimKind, "FACT");
+    assert.equal(sig?.pageType, "DETAIL");
+    assert.ok(sig?.factFields && sig.factFields.length >= 1);
+    assert.ok(sig?.sourceDomain === "zakupki.gov.ru");
+  });
+
+  await test("4Q.4 torgi listing is not FACT; official lot is", async () => {
+    const listing = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      dataChannel: "SERPER_DISCOVERY",
+      title: "Реестр торгов",
+      canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot",
+      opportunityType: "AUCTION_ASSET",
+    } as never);
+    assert.ok(!listing || listing.claimKind !== "FACT" || listing.pageType !== "DETAIL");
+    const lot = oiCandidateToSignal(officialLot);
+    assert.ok(lot);
+    assert.equal(lot?.claimKind, "FACT");
+    assert.equal(lot?.kind, "ASSET");
+    assert.ok(isOfficialDetailUrl(lot?.canonicalUrl));
+  });
+
+  await test("4Q.4 generic TradeList is not FACT", () => {
+    const sig = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      dataChannel: "SERPER_DISCOVERY",
+      title: "Торги - Единый федеральный реестр",
+      canonicalUrl: "https://old.bankrot.fedresurs.ru/TradeList.aspx",
+      opportunityType: "AUCTION_ASSET",
+      askingPrice: 1,
+    } as never);
+    assert.equal(sig, null);
+  });
+
+  await test("4Q.4 concrete asset lot is FACT", () => {
+    const sig = oiCandidateToSignal(officialLot);
+    assert.equal(sig?.claimKind, "FACT");
+    assert.equal(sig?.verificationStatus, "VERIFIED");
+    assert.ok(sig?.factFields?.some((f) => f.kind === "FACT"));
+  });
+
+  await test("4Q.4 expired detail rejected after resolution", async () => {
+    const { createOwnIdeaRunBudget } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudget();
+    const { candidates } = await acquireOwnIdeaDetails(
+      [
+        {
+          ...serperProcurement,
+          deadlineAt: "2020-01-01T00:00:00.000Z",
+          procurementStage: "completed",
+        } as never,
+      ],
+      budget,
+      {
+        async resolveDetail() {
+          throw new Error("should not resolve expired");
+        },
+      },
+    );
+    assert.equal(candidates.length, 0);
+  });
+
+  await test("4Q.4 generic MSP page is not financing FACT", () => {
+    const sig = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      dataChannel: "SERPER_DISCOVERY",
+      title: "Меры поддержки МСП",
+      canonicalUrl: "https://мсп.рф/",
+      opportunityType: "SUPPORT_PROGRAM",
+      pageType: "HOMEPAGE",
+    } as never);
+    assert.ok(!sig || sig.claimKind !== "FACT");
+  });
+
+  await test("4Q.4 concrete support program is validated support FACT", () => {
+    const sig = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      isOfficialSource: true,
+      dataChannel: "OFFICIAL_API",
+      enrichedFromFetch: true,
+      title: "Льготный лизинг спецтехники МСП.РФ",
+      canonicalUrl: "https://мсп.рф/services/lease/special-tech",
+      opportunityType: "SUPPORT_PROGRAM",
+      pageType: "DETAIL",
+      organizer: "Корпорация МСП",
+      eligibility: "МСП Республика Дагестан, спецтехника",
+      regionApplicability: "Дагестан",
+      region: "Дагестан",
+      sourcePublishedAt: "2026-03-01T00:00:00.000Z",
+      industry: "construction",
+    } as never);
+    assert.ok(sig);
+    assert.equal(sig?.kind, "CAPITAL");
+    assert.equal(sig?.claimKind, "FACT");
+    assert.equal(sig?.financeAvailability, "KNOWN");
+  });
+
+  await test("4Q.4 missing price stays UNKNOWN, missing demand deadline not FACT", () => {
+    const asset = oiCandidateToSignal({
+      ...officialLot,
+      askingPrice: null,
+      nmck: null,
+      startingPrice: null,
+    } as never);
+    assert.ok(asset);
+    assert.equal(asset?.amount ?? null, null);
+    assert.equal(asset?.priceUnknown, true);
+    const demand = oiCandidateToSignal({
+      ...officialProcurement,
+      deadlineAt: null,
+      procurementStage: null,
+    } as never);
+    assert.ok(demand);
+    assert.notEqual(demand?.claimKind, "FACT");
+  });
+
+  await test("4Q.4 Dagestan preferred; RF generic != Dagestan", () => {
+    assert.equal(isGenericRussiaRegion("Российская Федерация"), true);
+    assert.equal(isGenericRussiaRegion("Республика Дагестан"), false);
+    assert.notEqual(geoCompatibility("Российская Федерация", "Дагестан"), "SAME_REGION");
+    assert.equal(geoCompatibility("Махачкала", "Республика Дагестан"), "SAME_REGION");
+    assert.ok(!alreadyResolvedOfficial(serperProcurement));
+  });
+
+  await test("4Q.4 detail resolution respects global external-call budget", async () => {
+    const { CKR_OWN_IDEAS_BUDGETS: budgets } = await import("../src/config/ckr-own-ideas");
+    const { consumeExternal, createOwnIdeaRunBudget, totalExternalCalls } = await import(
+      "../src/lib/ckr-own-ideas/run-budget"
+    );
+    const budget = createOwnIdeaRunBudget();
+    for (let i = 0; i < budgets.maxExternalCalls; i += 1) {
+      consumeExternal(budget, "catalog");
+    }
+    let resolves = 0;
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q4-budget",
+      budget,
+      hooks: {
+        async search() {
+          return [serperProcurement];
+        },
+        async resolveDetail() {
+          resolves += 1;
+          return officialProcurement;
+        },
+      },
+    });
+    assert.equal(resolves, 0);
+    assert.ok(totalExternalCalls(budget) <= budgets.maxExternalCalls);
+    assert.ok((live.totalExternalCalls ?? 0) <= budgets.maxExternalCalls);
+    assert.equal(live.liveFacts, 0);
+  });
+
+  await test("4Q.4 0 resolved facts is a successful run with 0 ideas", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q4-zero",
+      hooks: {
+        async search() {
+          return [];
+        },
+      },
+    });
+    assert.equal(live.liveFacts, 0);
+    const { ideas, metrics } = runOwnIdeaBuilder({
+      catalog: live.catalog,
+      catalogMode: live.mode,
+      liveMeta: live,
+    });
+    assert.equal(ideas.length, 0);
+    assert.equal(metrics.ideasGenerated, 0);
+    assert.equal(metrics.scheduler, false);
+    assert.equal(metrics.liveFacts, 0);
+  });
+
+  await test("4Q.4 no new search provider / crawler / scheduler", () => {
+    const acquire = read("src/lib/ckr-own-ideas/detail-acquire.ts");
+    const catalog = read("src/lib/ckr-own-ideas/live-catalog.ts");
+    assert.match(acquire, /resolveProcurementDetail/);
+    assert.match(acquire, /safeFetch/);
+    assert.doesNotMatch(acquire, /puppeteer|playwright|cheerio/i);
+    assert.doesNotMatch(acquire, /new SearchProvider|second search stack/i);
+    assert.doesNotMatch(catalog, /LIA_WEB_SEARCH_PROVIDER\s*=/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /scheduler:\s*false/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /maxExternalCalls:\s*8/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /maxSearches:\s*12/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /timeoutMs:\s*15_000/);
   });
 
   console.log(`${passed} passed, ${failed} failed`);

@@ -2,6 +2,16 @@ export { CKR_OWN_IDEAS_BUDGETS, CKR_OWN_IDEAS_FORBIDDEN } from "@/config/ckr-own
 export { applyOwnerAction, runOwnIdeaBuilder } from "@/lib/ckr-own-ideas/builder";
 export { pairFits, signalsFit, titleOverlap } from "@/lib/ckr-own-ideas/fit";
 export {
+  acquireOwnIdeaDetails,
+  alreadyResolvedOfficial,
+  emptyAcquireStats,
+  isDiscoverySnippet,
+  isGenericRussiaRegion,
+  isOfficialDetailUrl,
+  rankDiscoveryCandidates,
+  resolveDiscoveryCandidate,
+} from "@/lib/ckr-own-ideas/detail-acquire";
+export {
   buildOwnIdeaCatalog,
   isGenericFinancingPage,
   isPlaceholderSource,

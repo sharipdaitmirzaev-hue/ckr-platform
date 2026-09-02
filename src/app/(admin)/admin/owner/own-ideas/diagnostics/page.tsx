@@ -17,7 +17,7 @@ export default async function OwnIdeasDiagnosticsPage() {
       </Link>
       <SectionHeading
         title="Opportunity Builder diagnostics"
-        description="Служебные метрики поиска. catalogMode=live|empty. Quality gate 4Q.3. Планировщик не используется."
+        description="Служебные метрики поиска. catalogMode=live|empty. Quality gate 4Q.3 + DETAIL FACT 4Q.4. Планировщик не используется."
       />
       {!run ? (
         <p className="text-sm text-muted">Запусков ещё не было.</p>

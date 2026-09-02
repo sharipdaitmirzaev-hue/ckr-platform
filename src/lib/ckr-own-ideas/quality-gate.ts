@@ -228,7 +228,7 @@ export function normalizeOwnIdeaGeo(region?: string | null): OwnIdeaGeo {
 export function geoCompatibility(
   a: OwnIdeaGeo | string | null | undefined,
   b: OwnIdeaGeo | string | null | undefined,
-  opts?: { explicitCrossRegion?: boolean },
+  opts?: { explicitCrossRegion?: boolean; crossRegionReason?: string | null },
 ): OwnIdeaGeoCompatibility {
   const ga = typeof a === "object" && a ? a : normalizeOwnIdeaGeo(a ?? null);
   const gb = typeof b === "object" && b ? b : normalizeOwnIdeaGeo(b ?? null);
@@ -239,6 +239,8 @@ export function geoCompatibility(
 
   if (ga.subject && gb.subject && ga.subject === gb.subject) return "SAME_REGION";
   if (ga.city && gb.city && ga.city === gb.city) return "SAME_REGION";
+  if (ga.city && gb.subject && ga.city === gb.subject) return "SAME_REGION";
+  if (gb.city && ga.subject && gb.city === ga.subject) return "SAME_REGION";
 
   const sameDistrict =
     ga.federalDistrict &&
@@ -246,7 +248,9 @@ export function geoCompatibility(
     ga.federalDistrict === gb.federalDistrict;
   if (sameDistrict) return "NEAR_REGION";
 
-  if (opts?.explicitCrossRegion) return "CROSS_REGION_EXPLICIT";
+  if (opts?.explicitCrossRegion && opts.crossRegionReason?.trim()) {
+    return "CROSS_REGION_EXPLICIT";
+  }
   return "INCOMPATIBLE";
 }
 
@@ -472,6 +476,7 @@ export function pairCompatibility(
   const industry = industryCompatibility(a, b);
   const geo = geoCompatibility(a.geo || a.region, b.geo || b.region, {
     explicitCrossRegion: Boolean(a.crossRegionJustified || b.crossRegionJustified),
+    crossRegionReason: a.crossRegionReason || b.crossRegionReason || null,
   });
   if (!industry.ok) {
     return { ok: false, reason: industry.reason, geo, industryOk: false };
