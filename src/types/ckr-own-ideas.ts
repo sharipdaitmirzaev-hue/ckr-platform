@@ -184,6 +184,10 @@ export type OwnIdeaRunMetrics = {
   persistStatus?: "running" | "ok" | "partial" | "failed";
   persistError?: string | null;
   ideasPersisted?: number;
+  catalogMode?: "live" | "empty" | "injected" | "fixture";
+  pairsRejected?: number;
+  realSignals?: number;
+  rejectedSignals?: number;
 };
 
 export type OwnIdeaSignal = {

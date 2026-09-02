@@ -7,15 +7,9 @@ import {
 } from "@/config/ckr-own-ideas";
 import { requireLiaOiOwner } from "@/lib/auth/require-lia-oi-owner";
 import { applyOwnerAction, runOwnIdeaBuilder } from "@/lib/ckr-own-ideas/builder";
-import {
-  landTourismCatalog,
-  missingFinancingCatalog,
-  negativeEconomicsCatalog,
-  procurementCatalog,
-  tractorEarthworksCatalog,
-} from "@/lib/ckr-own-ideas/fixtures";
+import { buildOwnIdeaCatalog } from "@/lib/ckr-own-ideas/live-catalog";
 import { getOwnIdeaStore } from "@/lib/ckr-own-ideas/store";
-import type { OwnIdeaCatalog, OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
+import type { OwnIdeaRunMetrics } from "@/types/ckr-own-ideas";
 
 export type OwnIdeaActionState = {
   error?: string;
@@ -32,38 +26,29 @@ function revalidateIdeas(id?: string) {
   if (id) revalidatePath(`${CKR_OWN_IDEAS_PATH}/${id}`);
 }
 
-function marketCatalog(): OwnIdeaCatalog {
-  const a = tractorEarthworksCatalog();
-  const b = landTourismCatalog();
-  const c = procurementCatalog();
-  const d = missingFinancingCatalog();
-  const e = negativeEconomicsCatalog();
-  return {
-    signals: [...a.signals, ...b.signals, ...c.signals, ...d.signals, ...e.signals],
-    internalResources: [
-      ...a.internalResources,
-      ...b.internalResources,
-      ...c.internalResources,
-      ...d.internalResources,
-      ...e.internalResources,
-    ],
-    externalResources: [
-      ...a.externalResources,
-      ...b.externalResources,
-      ...c.externalResources,
-      ...d.externalResources,
-      ...e.externalResources,
-    ],
-  };
-}
-
 export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
-  await requireLiaOiOwner();
+  const owner = await requireLiaOiOwner();
   const store = getOwnIdeaStore();
   const existing = await store.list();
+  let live;
+  try {
+    live = await buildOwnIdeaCatalog({ userId: owner.user.id });
+  } catch (e) {
+    return {
+      error: `Не удалось собрать каталог: ${e instanceof Error ? e.message : "unknown"}`,
+      persistStatus: "failed",
+    };
+  }
   const result = runOwnIdeaBuilder({
-    catalog: marketCatalog(),
+    catalog: live.catalog,
     existing,
+    catalogMode: live.mode,
+    liveMeta: {
+      queries: live.queries,
+      externalCalls: live.externalCalls,
+      realSignals: live.realSignals,
+      rejectedSignals: live.rejectedSignals,
+    },
   });
 
   const running: OwnIdeaRunMetrics = {
@@ -121,7 +106,7 @@ export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
     };
   }
   return {
-    success: `Черновиков: ${result.metrics.ideasGenerated}, обновлено: ${result.metrics.ideasUpdated}`,
+    success: `Черновиков: ${result.metrics.ideasGenerated}, обновлено: ${result.metrics.ideasUpdated}. Каталог: ${live.mode}.`,
     generated: result.metrics.ideasGenerated,
     rejected: result.metrics.ideasRejected,
     persistStatus: "ok",

@@ -35,14 +35,14 @@ export function addMoney(a: OwnIdeaMoney, b: OwnIdeaMoney): OwnIdeaMoney {
   if (a.amount == null && b.amount == null) {
     return unknownMoney([a.note, b.note].filter(Boolean).join("; "));
   }
-  const sum = (a.amount ?? 0) + (b.amount ?? 0);
+  if (a.amount == null) return b;
+  if (b.amount == null) return a;
+  const sum = a.amount + b.amount;
   const kind: OwnIdeaClaimKind =
-    a.kind === "UNKNOWN" || b.kind === "UNKNOWN"
-      ? a.amount == null || b.amount == null
-        ? "UNKNOWN"
-        : "INFERENCE"
-      : a.kind === "FACT" && b.kind === "FACT"
-        ? "FACT"
+    a.kind === "FACT" && b.kind === "FACT"
+      ? "FACT"
+      : a.kind === "UNKNOWN" || b.kind === "UNKNOWN"
+        ? "INFERENCE"
         : "INFERENCE";
   return money(sum, kind);
 }

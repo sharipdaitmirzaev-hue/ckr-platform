@@ -19,12 +19,14 @@ export function searchFinancing(input: {
   amountNeeded: number | null;
   internal: OwnIdeaSignal[];
   external: OwnIdeaSignal[];
+  context?: OwnIdeaSignal[];
 }) {
   const result = findMissingResource({
     kind: "CAPITAL",
     query: input.query,
     internal: input.internal,
     external: input.external,
+    context: input.context,
   });
   return {
     ...result,

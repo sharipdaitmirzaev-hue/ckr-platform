@@ -166,6 +166,7 @@ export function negativeEconomicsCatalog(): OwnIdeaCatalog {
         sourceType: "auction",
         sourceLabel: "Торги",
         trustLevel: "official",
+        industry: "construction",
       }),
       sig({
         id: "sig-demand-5",
@@ -177,6 +178,7 @@ export function negativeEconomicsCatalog(): OwnIdeaCatalog {
         sourceType: "procurement",
         sourceLabel: "Контракт",
         trustLevel: "official",
+        industry: "construction",
       }),
     ],
     internalResources: [
@@ -189,6 +191,7 @@ export function negativeEconomicsCatalog(): OwnIdeaCatalog {
         sourceType: "ckr_internal",
         sourceLabel: "Внутренний капитал",
         trustLevel: "ckr_internal",
+        industry: "construction",
       }),
     ],
     externalResources: [],

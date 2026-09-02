@@ -9,6 +9,7 @@ import { CKR_OWN_IDEAS_FORBIDDEN } from "../src/config/ckr-own-ideas";
 import { operatorPrimaryNav, operatorSystemNav } from "../src/config/navigation";
 import {
   applyOwnerAction,
+  buildOwnIdeaCatalog,
   computeRoughEconomics,
   formatPaybackMonths,
   FINANCING_SAFE_WORDING,
@@ -16,13 +17,17 @@ import {
   hasGuaranteedProfitWording,
   ideaToRow,
   internalCapitalCatalog,
+  isGenericFinancingPage,
   isNegativeEconomics,
   isOwnIdeasProductionEnv,
+  isPlaceholderSource,
   landTourismCatalog,
   missingFinancingCatalog,
   negativeEconomicsCatalog,
+  oiCandidateToSignal,
   procurementCatalog,
   rateOwnIdea,
+  resolveOwnIdeaCatalogMode,
   resolveOwnIdeaStoreMode,
   rowToIdea,
   runOwnIdeaBuilder,
@@ -213,6 +218,8 @@ async function main() {
     assert.equal(metrics.scheduler, false);
     const actions = read("src/features/ckr-own-ideas/actions.ts");
     assert.match(actions, /findNewOwnIdeasAction/);
+    assert.match(actions, /buildOwnIdeaCatalog/);
+    assert.doesNotMatch(actions, /tractorEarthworksCatalog|marketCatalog/);
     assert.doesNotMatch(actions, /cron|schedule\(/);
   });
 
@@ -262,6 +269,8 @@ async function main() {
     assert.match(e2e, /createSupabaseOwnIdeaStore/);
     assert.match(e2e, /OWNER LOCKED TITLE|ownerLockedFields/);
     assert.match(e2e, /store recreate|after store recreate|restartPersisted/);
+    assert.match(e2e, /buildOwnIdeaCatalog/);
+    assert.match(e2e, /torgi\.gov\.ru|zakupki\.gov\.ru/);
   });
 
   await test("4Q.1 mapper roundtrip keeps locks and OWNER_ONLY", () => {
@@ -316,6 +325,8 @@ async function main() {
     assert.match(actions, /await store\.list\(\)/);
     assert.match(actions, /await store\.upsert/);
     assert.match(actions, /persistStatus/);
+    assert.match(actions, /buildOwnIdeaCatalog/);
+    assert.doesNotMatch(actions, /tractorEarthworksCatalog/);
     assert.match(factory, /return createSupabaseOwnIdeaStore/);
     assert.doesNotMatch(factory, /return memoryOwnIdeaStore;\n}/);
     assert.match(factory, /memory запрещён в production/);
@@ -391,6 +402,182 @@ async function main() {
   await test("4P action loop still present", () => {
     const p = read("src/lib/ckr-action-loop/derive.ts");
     assert.match(p, /deriveActionsFromEvents/);
+  });
+
+  await test("4Q.2 cross-industry pairs rejected", () => {
+    const mixed = {
+      signals: [
+        ...tractorEarthworksCatalog().signals,
+        ...procurementCatalog().signals,
+      ],
+      internalResources: [],
+      externalResources: tractorEarthworksCatalog().externalResources,
+    };
+    const { ideas, metrics } = runOwnIdeaBuilder({ catalog: mixed });
+    assert.ok(ideas.length >= 1);
+    assert.ok(ideas.every((i) => !/консерв/i.test(i.title)));
+    assert.ok((metrics.pairsRejected ?? 0) >= 1);
+  });
+
+  await test("4Q.2 empty live catalog is valid", () => {
+    const { ideas, metrics } = runOwnIdeaBuilder({
+      catalog: { signals: [], internalResources: [], externalResources: [] },
+      catalogMode: "empty",
+    });
+    assert.equal(ideas.length, 0);
+    assert.equal(metrics.ideasGenerated, 0);
+    assert.equal(metrics.scheduler, false);
+    assert.equal(metrics.catalogMode, "empty");
+  });
+
+  await test("4Q.2 mapper drops stub, catalog, example, expired", () => {
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: true,
+        title: "stub",
+        isCatalogSource: false,
+        canonicalUrl: "https://zakupki.gov.ru/1",
+      } as never),
+      null,
+    );
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: false,
+        isCatalogSource: true,
+        title: "catalog",
+        canonicalUrl: "https://zakupki.gov.ru/1",
+      } as never),
+      null,
+    );
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: false,
+        isCatalogSource: false,
+        title: "fake",
+        canonicalUrl: "https://torgi.example/lot",
+        opportunityType: "AUCTION_ASSET",
+      } as never),
+      null,
+    );
+    assert.equal(
+      oiCandidateToSignal({
+        isStub: false,
+        isCatalogSource: false,
+        title: "old",
+        canonicalUrl: "https://zakupki.gov.ru/old",
+        opportunityType: "PROCUREMENT",
+        deadlineAt: "2020-01-01T00:00:00.000Z",
+      } as never),
+      null,
+    );
+  });
+
+  await test("4Q.2 live injected catalog pairs same industry", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "owner-test",
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") {
+            return [
+              {
+                id: "live-asset",
+                title: "Экскаватор на torgi.gov.ru",
+                isStub: false,
+                isCatalogSource: false,
+                canonicalUrl: "https://torgi.gov.ru/lot/exc-1",
+                opportunityType: "AUCTION_ASSET",
+                sourceClass: "AUCTIONS_ASSETS",
+                sourceAdapterId: "auction_assets",
+                region: "Дагестан",
+                industry: "construction",
+                askingPrice: 4_200_000,
+                sources: [
+                  {
+                    id: "s1",
+                    category: "AUCTIONS",
+                    name: "torgi.gov.ru",
+                    url: "https://torgi.gov.ru/lot/exc-1",
+                    isStub: false,
+                  },
+                ],
+              } as never,
+            ];
+          }
+          if (q.plan.intent === "tenders") {
+            return [
+              {
+                id: "live-demand",
+                title: "Закупка земляных работ",
+                isStub: false,
+                isCatalogSource: false,
+                canonicalUrl:
+                  "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=1",
+                opportunityType: "PROCUREMENT",
+                sourceClass: "TENDERS",
+                sourceAdapterId: "procurement",
+                region: "Дагестан",
+                industry: "construction",
+                nmck: 8_500_000,
+                sources: [
+                  {
+                    id: "s2",
+                    category: "PROCUREMENT",
+                    name: "zakupki.gov.ru",
+                    url: "https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=1",
+                    isStub: false,
+                  },
+                ],
+              } as never,
+            ];
+          }
+          return [];
+        },
+      },
+    });
+    assert.equal(live.mode, "injected");
+    assert.ok(live.realSignals >= 2);
+    const { ideas, metrics } = runOwnIdeaBuilder({
+      catalog: live.catalog,
+      catalogMode: live.mode,
+      liveMeta: live,
+    });
+    assert.ok(ideas.length >= 1);
+    assert.ok(ideas[0].components.every((c) => !/example\.com/i.test(c.provenance.sourceUrl || "")));
+    assert.equal(metrics.scheduler, false);
+    assert.equal(metrics.autoPublish, false);
+    assert.equal(metrics.catalogMode, "injected");
+  });
+
+  await test("4Q.2 generic bank page is not confirmed financing", () => {
+    assert.equal(
+      isGenericFinancingPage({
+        url: "https://www.sberbank.ru/ru/person/credits",
+        title: "Кредит наличными",
+      }),
+      true,
+    );
+    assert.equal(isPlaceholderSource({ url: "https://torgi.example/x" }), true);
+    assert.equal(isPlaceholderSource({ url: "https://zakupki.gov.ru/1" }), false);
+  });
+
+  await test("4Q.2 fixture catalog env forbidden in production", () => {
+    const prevCat = process.env.CKR_OWN_IDEAS_CATALOG;
+    const prevEnv = process.env.CKR_ENVIRONMENT;
+    process.env.CKR_OWN_IDEAS_CATALOG = "fixture";
+    process.env.CKR_ENVIRONMENT = "production";
+    assert.throws(() => resolveOwnIdeaCatalogMode(), /запрещён в production/);
+    process.env.CKR_ENVIRONMENT = "test";
+    assert.equal(resolveOwnIdeaCatalogMode(), "fixture");
+    if (prevCat === undefined) delete process.env.CKR_OWN_IDEAS_CATALOG;
+    else process.env.CKR_OWN_IDEAS_CATALOG = prevCat;
+    if (prevEnv === undefined) delete process.env.CKR_ENVIRONMENT;
+    else process.env.CKR_ENVIRONMENT = prevEnv;
+  });
+
+  await test("4Q.2 profit stays UNKNOWN when critical costs unknown", () => {
+    const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
+    assert.equal(ideas[0].economics.profit.kind, "UNKNOWN");
+    assert.equal(ideas[0].economics.capex.kind, "FACT");
   });
 
   console.log(`${passed} passed, ${failed} failed`);

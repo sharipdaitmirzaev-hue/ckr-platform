@@ -1,5 +1,13 @@
 export { CKR_OWN_IDEAS_BUDGETS, CKR_OWN_IDEAS_FORBIDDEN } from "@/config/ckr-own-ideas";
 export { applyOwnerAction, runOwnIdeaBuilder } from "@/lib/ckr-own-ideas/builder";
+export { pairFits, signalsFit, titleOverlap } from "@/lib/ckr-own-ideas/fit";
+export {
+  buildOwnIdeaCatalog,
+  isGenericFinancingPage,
+  isPlaceholderSource,
+  oiCandidateToSignal,
+  resolveOwnIdeaCatalogMode,
+} from "@/lib/ckr-own-ideas/live-catalog";
 export {
   computeRoughEconomics,
   formatMoneyRu,

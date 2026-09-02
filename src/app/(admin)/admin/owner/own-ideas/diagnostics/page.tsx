@@ -17,7 +17,7 @@ export default async function OwnIdeasDiagnosticsPage() {
       </Link>
       <SectionHeading
         title="Opportunity Builder diagnostics"
-        description="Служебные метрики поиска. Не для ежедневной работы."
+        description="Служебные метрики поиска. catalogMode=live|empty. Планировщик не используется."
       />
       {!run ? (
         <p className="text-sm text-muted">Запусков ещё не было.</p>
