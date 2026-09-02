@@ -62,6 +62,28 @@ Quality: «Перспективная» только при ≥2 живых FACT
 
 Fixture только в unit/E2E tests. Нет второго production market run в этом этапе. Нет Scheduler.
 
+## Stage 4Q.4 DETAIL FACT acquisition
+
+Поисковый snippet — discovery candidate, не FACT.
+
+Путь: Serper/web_api hit → candidate URL → official DETAIL (zakupki.gov.ru / torgi.gov.ru / ЕФРСБ / мсп.рф) → structured extraction (существующие LIA OI resolver/extractors + `safeFetch`) → validation → FACT / INFERENCE / reject.
+
+Агрегатор только для discovery. Если есть номер закупки/лота — резолв в официальный URL. Иначе reject/INFERENCE. Нет нового search provider, crawler, Scheduler, Matching, Synthesis.
+
+FACT хранит per-field provenance: value, source/canonical URL, domain, fetched_at, publication date, source type, confidence, verification status. Отсутствие цены/срока не выдумывается.
+
+Приоритет discovery: Республика Дагестан → СКФО → РФ только при явной переносимости. «Российская Федерация» ≠ Дагестан. Cross-region требует `crossRegionReason`.
+
+Пары: demand-first, затем asset-first best-fit. Не декартово произведение.
+
+Detail resolution расходует тот же budget (`maxSearches=12`, `maxExternalCalls=8`, `timeoutMs=15000`). Лучше 0 FACT, чем обход лимита.
+
+Метрики: `discoveryCandidates`, `detailResolutionAttempts`, `officialDetailsResolved`, `aggregatorCandidates`, `aggregatorToOfficialResolved`, `detailValidationRejected`, `liveFacts`, `budgetExhausted` — плюс прежние 4Q.3.
+
+E2E инжектит discovery snippet и проверяет путь resolution, а не готовый FACT в builder. Live Serper в CI не считается доказательством, если ключ не настроен (`LIVE_SEARCH_SKIPPED_NO_SECRETS`).
+
+Существующие 9 production ideas не менять. Нет merge/deploy/production run в этом этапе.
+
 ## Запреты
 
 Нет auto-publish, outreach, заявок, Matching edges, Scheduler.

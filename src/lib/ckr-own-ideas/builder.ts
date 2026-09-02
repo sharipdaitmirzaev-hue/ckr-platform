@@ -23,7 +23,8 @@ import {
   type OwnIdeaRunBudget,
 } from "@/lib/ckr-own-ideas/run-budget";
 import { findMissingResource } from "@/lib/ckr-own-ideas/search";
-import { pairFits } from "@/lib/ckr-own-ideas/fit";
+import { pairFits, signalsFit } from "@/lib/ckr-own-ideas/fit";
+import { geoCompatibility } from "@/lib/ckr-own-ideas/quality-gate";
 import type {
   CkrOwnIdea,
   OwnIdeaCatalog,
@@ -48,6 +49,14 @@ export type BuilderInput = {
     rejectedSignals?: number;
     catalogSearches?: number;
     catalogExternalCalls?: number;
+    discoveryCandidates?: number;
+    detailResolutionAttempts?: number;
+    officialDetailsResolved?: number;
+    aggregatorCandidates?: number;
+    aggregatorToOfficialResolved?: number;
+    detailValidationRejected?: number;
+    liveFacts?: number;
+    budgetExhausted?: boolean;
   };
   budget?: OwnIdeaRunBudget;
 };
@@ -89,9 +98,13 @@ function signalToComponent(signal: OwnIdeaSignal, found: boolean): OwnIdeaCompon
       sourceType: signal.sourceType ?? "unknown",
       sourceUrl: signal.sourceUrl ?? signal.canonicalUrl ?? null,
       sourceLabel: signal.sourceLabel ?? "источник",
-      fetchedAt: new Date().toISOString(),
-      verifiedAt: null,
+      fetchedAt: signal.fetchedAt ?? new Date().toISOString(),
+      verifiedAt: signal.detailResolved && signal.claimKind === "FACT" ? signal.fetchedAt ?? null : null,
       trustLevel: genericCap ? "general_web" : signal.trustLevel ?? "search_snippet",
+      fields: signal.factFields,
+      sourceDomain: signal.sourceDomain ?? null,
+      verificationStatus: signal.verificationStatus,
+      confidence: signal.confidence,
     },
     pageType: signal.pageType,
     financeKind: signal.financeKind ?? null,
@@ -103,6 +116,31 @@ function event(type: OwnIdeaEvent["type"], note: string, at: string): OwnIdeaEve
   return { id: randomUUID(), type, at, actor: "system", note };
 }
 
+function pairScore(anchor: OwnIdeaSignal, other: OwnIdeaSignal): number {
+  const geo = geoCompatibility(anchor.geo || anchor.region, other.geo || other.region, {
+    explicitCrossRegion: Boolean(anchor.crossRegionJustified || other.crossRegionJustified),
+    crossRegionReason: anchor.crossRegionReason || other.crossRegionReason || null,
+  });
+  if (geo === "SAME_REGION") return 3;
+  if (geo === "NEAR_REGION") return 2;
+  if (geo === "CROSS_REGION_EXPLICIT") return 1;
+  return 0;
+}
+
+function bestPartner(anchor: OwnIdeaSignal, pool: OwnIdeaSignal[]): OwnIdeaSignal | null {
+  let best: OwnIdeaSignal | null = null;
+  let bestScore = -1;
+  for (const candidate of pool) {
+    if (!signalsFit(anchor, candidate).ok) continue;
+    const score = pairScore(anchor, candidate);
+    if (score > bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 function pairSignals(signals: OwnIdeaSignal[]): {
   pairs: OwnIdeaSignal[][];
   rejected: number;
@@ -111,23 +149,50 @@ function pairSignals(signals: OwnIdeaSignal[]): {
   const demand = signals.filter((s) => s.kind === "DEMAND" || s.kind === "MARKET");
   const supply = signals.filter((s) => s.kind === "SUPPLY");
   const pairs: OwnIdeaSignal[][] = [];
+  const used = new Set<string>();
   let rejected = 0;
-  for (const a of assets) {
-    for (const d of demand) {
-      const pair = [a, d];
-      if (pairFits(pair)) pairs.push(pair);
-      else rejected += 1;
+
+  for (const d of demand) {
+    if (used.has(d.id)) continue;
+    const pool = assets.filter((a) => !used.has(a.id));
+    const best = bestPartner(d, pool);
+    if (best) {
+      pairs.push([best, d]);
+      used.add(best.id);
+      used.add(d.id);
+      rejected += assets.filter((a) => a.id !== best.id && !pairFits([a, d])).length;
+    } else if (assets.length) {
+      rejected += assets.filter((a) => !pairFits([a, d])).length || 1;
     }
   }
+
+  for (const a of assets.filter((x) => !used.has(x.id))) {
+    const pool = demand.filter((d) => !used.has(d.id));
+    const best = bestPartner(a, pool);
+    if (best) {
+      pairs.push([a, best]);
+      used.add(a.id);
+      used.add(best.id);
+    } else if (pool.length) {
+      rejected += 1;
+    }
+  }
+
   if (pairs.length === 0) {
     for (const d of demand) {
-      for (const s of supply) {
-        const pair = [d, s];
-        if (pairFits(pair)) pairs.push(pair);
-        else rejected += 1;
+      if (used.has(d.id)) continue;
+      const pool = supply.filter((s) => !used.has(s.id));
+      const best = bestPartner(d, pool);
+      if (best) {
+        pairs.push([d, best]);
+        used.add(d.id);
+        used.add(best.id);
+      } else if (pool.length) {
+        rejected += 1;
       }
     }
   }
+
   return {
     pairs: pairs.slice(0, CKR_OWN_IDEAS_BUDGETS.maxInitialIdeas),
     rejected,
@@ -391,6 +456,14 @@ export function runOwnIdeaBuilder(input: BuilderInput): BuilderResult {
     pairsRejected,
     realSignals: input.liveMeta?.realSignals,
     rejectedSignals: input.liveMeta?.rejectedSignals,
+    discoveryCandidates: input.liveMeta?.discoveryCandidates,
+    detailResolutionAttempts: input.liveMeta?.detailResolutionAttempts,
+    officialDetailsResolved: input.liveMeta?.officialDetailsResolved,
+    aggregatorCandidates: input.liveMeta?.aggregatorCandidates,
+    aggregatorToOfficialResolved: input.liveMeta?.aggregatorToOfficialResolved,
+    detailValidationRejected: input.liveMeta?.detailValidationRejected,
+    liveFacts: input.liveMeta?.liveFacts,
+    budgetExhausted: input.liveMeta?.budgetExhausted,
   };
 
   return {

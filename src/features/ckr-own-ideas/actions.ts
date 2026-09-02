@@ -53,6 +53,14 @@ export async function findNewOwnIdeasAction(): Promise<OwnIdeaActionState> {
       rejectedSignals: live.rejectedSignals,
       catalogSearches: live.catalogSearches,
       catalogExternalCalls: live.catalogExternalCalls,
+      discoveryCandidates: live.discoveryCandidates,
+      detailResolutionAttempts: live.detailResolutionAttempts,
+      officialDetailsResolved: live.officialDetailsResolved,
+      aggregatorCandidates: live.aggregatorCandidates,
+      aggregatorToOfficialResolved: live.aggregatorToOfficialResolved,
+      detailValidationRejected: live.detailValidationRejected,
+      liveFacts: live.liveFacts,
+      budgetExhausted: live.budgetExhausted,
     },
   });
 
