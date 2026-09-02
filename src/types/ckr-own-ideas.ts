@@ -38,6 +38,53 @@ export type OwnIdeaOwnerState = (typeof OWN_IDEA_OWNER_STATES)[number];
 export const OWN_IDEA_CLAIM_KINDS = ["FACT", "INFERENCE", "UNKNOWN"] as const;
 export type OwnIdeaClaimKind = (typeof OWN_IDEA_CLAIM_KINDS)[number];
 
+/** Stage 4Q.3 — page class for an external result. Only DETAIL may become an idea FACT. */
+export const OWN_IDEA_PAGE_TYPES = [
+  "DETAIL",
+  "LISTING",
+  "CATEGORY",
+  "SEARCH_RESULTS",
+  "MIRROR",
+  "LANDING",
+  "UNKNOWN",
+] as const;
+export type OwnIdeaPageType = (typeof OWN_IDEA_PAGE_TYPES)[number];
+
+export const OWN_IDEA_GEO_COMPAT = [
+  "SAME_REGION",
+  "NEAR_REGION",
+  "CROSS_REGION_EXPLICIT",
+  "INCOMPATIBLE",
+  "UNKNOWN",
+] as const;
+export type OwnIdeaGeoCompatibility = (typeof OWN_IDEA_GEO_COMPAT)[number];
+
+export const OWN_IDEA_FINANCE_KINDS = [
+  "INTERNAL_CAPITAL",
+  "LOAN",
+  "LEASING",
+  "INVESTOR",
+  "GRANT",
+  "SUBSIDY",
+] as const;
+export type OwnIdeaFinanceKind = (typeof OWN_IDEA_FINANCE_KINDS)[number];
+
+export const OWN_IDEA_SOURCE_QUALITY = [
+  "OFFICIAL_PRIMARY",
+  "OFFICIAL_DETAIL",
+  "AGGREGATOR_DETAIL",
+  "OTHER",
+] as const;
+export type OwnIdeaSourceQuality = (typeof OWN_IDEA_SOURCE_QUALITY)[number];
+
+export type OwnIdeaGeo = {
+  country: "ru" | null;
+  federalDistrict: string | null;
+  subject: string | null;
+  city: string | null;
+  raw: string | null;
+};
+
 export const OWN_IDEA_TRUST = [
   "ckr_internal",
   "official",
@@ -99,6 +146,9 @@ export type OwnIdeaComponent = {
   found: boolean;
   requiresCheck: boolean;
   provenance: OwnIdeaProvenance;
+  pageType?: OwnIdeaPageType;
+  financeKind?: OwnIdeaFinanceKind | null;
+  financeAvailability?: "KNOWN" | "UNKNOWN";
 };
 
 export type OwnIdeaMissing = {
@@ -188,6 +238,12 @@ export type OwnIdeaRunMetrics = {
   pairsRejected?: number;
   realSignals?: number;
   rejectedSignals?: number;
+  /** Stage 4Q.3 — transparent per-layer budget (hard cap is the sum, not per layer). */
+  catalogSearches?: number;
+  builderSearches?: number;
+  catalogExternalCalls?: number;
+  builderExternalCalls?: number;
+  totalExternalCalls?: number;
 };
 
 export type OwnIdeaSignal = {
@@ -207,6 +263,22 @@ export type OwnIdeaSignal = {
   region?: string | null;
   industry?: string | null;
   tags?: string[];
+  pageType?: OwnIdeaPageType;
+  customer?: string | null;
+  publishedAt?: string | null;
+  deadlineAt?: string | null;
+  status?: string | null;
+  objectTitle?: string | null;
+  location?: string | null;
+  provider?: string | null;
+  applicability?: string | null;
+  freshness?: string | null;
+  priceUnknown?: boolean;
+  sourceQuality?: OwnIdeaSourceQuality;
+  financeKind?: OwnIdeaFinanceKind | null;
+  financeAvailability?: "KNOWN" | "UNKNOWN";
+  geo?: OwnIdeaGeo;
+  crossRegionJustified?: boolean;
 };
 
 export type OwnIdeaCatalog = {

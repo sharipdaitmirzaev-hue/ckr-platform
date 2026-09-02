@@ -1,15 +1,38 @@
 /**
- * Stage 4Q.2 — live OwnIdeaCatalog from LIA OI adapters.
+ * Stage 4Q.2 / 4Q.3 — live OwnIdeaCatalog from LIA OI adapters.
  * No fixture fallback in owner/production. 0 signals is valid.
  * MANUAL RUN only. No Scheduler.
+ * Stage 4Q.3: page-type / detail / expired gates before pairing.
  */
 import { randomUUID } from "node:crypto";
-import {
-  CKR_OWN_IDEAS_BUDGETS,
-} from "@/config/ckr-own-ideas";
+import { CKR_OWN_IDEAS_BUDGETS } from "@/config/ckr-own-ideas";
 import { isOwnIdeasProductionEnv } from "@/lib/ckr-own-ideas/store";
+import {
+  isGenericFinancingPage,
+  isPlaceholderSource,
+} from "@/lib/ckr-own-ideas/live-catalog-guards";
+import {
+  candidateToGateFields,
+  classifyFinanceKind,
+  classifyOwnIdeaPageType,
+  extractOfficialFromAggregator,
+  isExpiredOpportunity,
+  isIdeaFactPageType,
+  normalizeOwnIdeaGeo,
+  sourceQualityOf,
+  validateDetailFields,
+} from "@/lib/ckr-own-ideas/quality-gate";
+import {
+  canConsumeExternal,
+  canConsumeSearch,
+  consumeExternal,
+  consumeSearch,
+  createOwnIdeaRunBudget,
+  snapshotBudget,
+  type OwnIdeaRunBudget,
+} from "@/lib/ckr-own-ideas/run-budget";
 import { isOiLiveConfigured, resolveOiSearchMode } from "@/lib/lia/oi/mode";
-import { runMatchingSourceAdapters } from "@/lib/lia/oi/sources/registry";
+import { listSourceAdapters } from "@/lib/lia/oi/sources/registry";
 import type {
   LiaOiSearchIntent,
   LiaOiSearchPlan,
@@ -24,6 +47,8 @@ import type {
   OwnIdeaTrust,
 } from "@/types/ckr-own-ideas";
 
+export { isGenericFinancingPage, isPlaceholderSource };
+
 export type OwnIdeaCatalogMode = "live" | "empty" | "injected";
 
 export type LiveCatalogHooks = {
@@ -36,45 +61,16 @@ export type LiveCatalogResult = {
   mode: OwnIdeaCatalogMode;
   queries: number;
   externalCalls: number;
+  catalogSearches: number;
+  catalogExternalCalls: number;
+  totalExternalCalls: number;
   sources: string[];
   rejectedSignals: number;
   realSignals: number;
   liveAvailable: boolean;
   reason: string;
+  budget: OwnIdeaRunBudget;
 };
-
-const PLACEHOLDER_RE =
-  /example\.com|example\.org|\.example(?:[./:]|$)|localhost|127\.0\.0\.1|\bfixture\b|e2e_ckr|\bsmoke\b/i;
-
-export function isPlaceholderSource(input: {
-  url?: string | null;
-  sourceType?: string | null;
-  sourceLabel?: string | null;
-  id?: string | null;
-}): boolean {
-  const blob = [input.url, input.sourceType, input.sourceLabel, input.id]
-    .filter(Boolean)
-    .join(" ");
-  return PLACEHOLDER_RE.test(blob);
-}
-
-export function isGenericFinancingPage(input: {
-  url?: string | null;
-  title?: string | null;
-}): boolean {
-  const blob = `${input.url || ""} ${input.title || ""}`.toLowerCase();
-  const bank =
-    /sberbank|sber\.ru|vtb\.ru|alfabank|tinkoff|банки\.ру|banki\.ru|\bcredits?\b|\bкредит/;
-  const confirmed = /оферта|одобрен|договор лизинг|ключевая ставка сделки/;
-  return bank.test(blob) && !confirmed.test(blob);
-}
-
-function isExpired(deadlineAt?: string | null): boolean {
-  if (!deadlineAt) return false;
-  const t = Date.parse(deadlineAt);
-  if (Number.isNaN(t)) return false;
-  return t < Date.now() - 24 * 60 * 60 * 1000;
-}
 
 function kindFromCandidate(c: LiaOiCandidate): OwnIdeaElementKind {
   if (c.opportunityType === "AUCTION_ASSET" || c.opportunityType === "GOVERNMENT_ASSET") {
@@ -102,8 +98,26 @@ function trustFromCandidate(c: LiaOiCandidate): OwnIdeaTrust {
 export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
   if (c.isStub) return null;
   if (c.isCatalogSource) return null;
-  if (isExpired(c.deadlineAt)) return null;
-  const url = c.canonicalUrl || c.sources?.[0]?.url || null;
+  const fields = candidateToGateFields(c);
+  if (
+    isExpiredOpportunity({
+      deadlineAt: fields.deadlineAt,
+      status: fields.status,
+    })
+  ) {
+    return null;
+  }
+
+  let url = fields.url;
+  const extracted = extractOfficialFromAggregator({
+    url,
+    title: c.title,
+    officialId: fields.officialId,
+  });
+  if (extracted && url && !/zakupki\.gov\.ru|torgi\.gov\.ru/i.test(url)) {
+    url = extracted.url;
+  }
+
   if (
     isPlaceholderSource({
       url,
@@ -114,20 +128,67 @@ export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
   ) {
     return null;
   }
+
+  const pageType = classifyOwnIdeaPageType({
+    url,
+    title: c.title,
+    snippet: c.description || c.summary,
+    liaPageType: c.pageType,
+    isCatalogSource: c.isCatalogSource,
+  });
+  if (!isIdeaFactPageType(pageType)) {
+    return null;
+  }
+
   const kind = kindFromCandidate(c);
   if (kind === "OTHER") return null;
+
   const genericCap = kind === "CAPITAL" && isGenericFinancingPage({ url, title: c.title });
   const amount = c.nmck ?? c.askingPrice ?? c.investmentRequired ?? null;
+  const officialId = fields.officialId || extracted?.id || null;
+  const geo = normalizeOwnIdeaGeo(c.region || c.city || c.address || null);
+  const validation = validateDetailFields({
+    kind,
+    pageType,
+    officialId,
+    title: c.title,
+    customer: fields.customer,
+    region: c.region || c.city,
+    location: fields.location,
+    publishedAt: fields.publishedAt,
+    deadlineAt: fields.deadlineAt,
+    status: fields.status,
+    sourceUrl: url,
+    amount,
+    priceUnknown: amount == null,
+    provider: fields.provider,
+    applicability: fields.applicability,
+    freshness: fields.freshness,
+    objectTitle: c.assetType || c.title,
+  });
+  if (validation.reject) return null;
+
+  let claimKind = validation.claimKind;
+  if (genericCap) claimKind = "UNKNOWN";
+  if (kind === "DEMAND" && !fields.deadlineAt && !fields.status && claimKind === "FACT") {
+    claimKind = "INFERENCE";
+  }
+
+  const financeKind = kind === "CAPITAL" ? classifyFinanceKind({ title: c.title, url }) : null;
+  const financeAvailability =
+    kind === "CAPITAL" ? (genericCap || claimKind === "UNKNOWN" ? "UNKNOWN" : "KNOWN") : undefined;
+
   return {
     id: c.id || randomUUID(),
     kind,
     title: c.title,
     origin: "EXTERNAL",
     identityKey: c.fingerprint || c.canonicalKey || c.id,
-    officialId: c.sourceObjectId ?? null,
+    officialId,
     canonicalUrl: url,
     amount,
-    claimKind: genericCap || kind === "CAPITAL" ? "INFERENCE" : amount != null ? "FACT" : "INFERENCE",
+    priceUnknown: amount == null,
+    claimKind,
     sourceType: c.opportunityType || c.sourceAdapterId || "lia_oi",
     sourceLabel: c.sources?.[0]?.name || c.sourceAdapterId || "LIA OI",
     sourceUrl: url,
@@ -135,6 +196,24 @@ export function oiCandidateToSignal(c: LiaOiCandidate): OwnIdeaSignal | null {
     region: c.region || c.city || null,
     industry: c.industry || c.subindustry || null,
     tags: [c.opportunityType, c.sourceClass].filter(Boolean) as string[],
+    pageType,
+    customer: fields.customer,
+    publishedAt: fields.publishedAt,
+    deadlineAt: fields.deadlineAt,
+    status: fields.status,
+    objectTitle: c.assetType || c.title,
+    location: fields.location,
+    provider: fields.provider,
+    applicability: fields.applicability,
+    freshness: fields.freshness,
+    sourceQuality: sourceQualityOf({
+      url,
+      pageType,
+      isOfficialSource: c.isOfficialSource,
+    }),
+    financeKind,
+    financeAvailability,
+    geo,
   };
 }
 
@@ -200,22 +279,18 @@ export function resolveOwnIdeaCatalogMode(): "live" | "fixture" {
 export async function buildOwnIdeaCatalog(opts?: {
   userId?: string;
   hooks?: LiveCatalogHooks;
+  budget?: OwnIdeaRunBudget;
 }): Promise<LiveCatalogResult> {
-  const started = Date.now();
-  const timeoutMs = CKR_OWN_IDEAS_BUDGETS.timeoutMs;
-  let queries = 0;
-  let externalCalls = 0;
+  const budget = opts?.budget ?? createOwnIdeaRunBudget();
   let rejectedSignals = 0;
   const collected: LiaOiCandidate[] = [];
   const sourceLabels: string[] = [];
 
   if (opts?.hooks?.search) {
     for (const q of LIVE_QUERIES) {
-      if (Date.now() - started > timeoutMs) break;
-      if (queries >= CKR_OWN_IDEAS_BUDGETS.maxQueries) break;
-      if (externalCalls >= CKR_OWN_IDEAS_BUDGETS.maxExternalCalls) break;
-      queries += 1;
-      externalCalls += 1;
+      if (!canConsumeSearch(budget) || !canConsumeExternal(budget)) break;
+      if (!consumeSearch(budget, "catalog")) break;
+      if (!consumeExternal(budget, "catalog")) break;
       const adapterQuery: LiaOiSourceAdapterQuery = {
         rawQuery: q.rawQuery,
         userId: opts.userId || "owner",
@@ -228,12 +303,11 @@ export async function buildOwnIdeaCatalog(opts?: {
     }
     return packSignals(collected, {
       mode: "injected",
-      queries,
-      externalCalls,
       rejectedSignals,
       liveAvailable: true,
       reason: "injected hooks",
       sourceLabels,
+      budget,
     });
   }
 
@@ -243,42 +317,48 @@ export async function buildOwnIdeaCatalog(opts?: {
 
   const modeInfo = resolveOiSearchMode();
   if (modeInfo.mode !== "live" || !isOiLiveConfigured()) {
+    const snap = snapshotBudget(budget);
     return {
       catalog: emptyCatalog(),
       mode: "empty",
-      queries: 0,
-      externalCalls: 0,
+      queries: snap.catalogSearches,
+      externalCalls: snap.catalogExternalCalls,
+      catalogSearches: snap.catalogSearches,
+      catalogExternalCalls: snap.catalogExternalCalls,
+      totalExternalCalls: snap.catalogExternalCalls,
       sources: [],
       rejectedSignals: 0,
       realSignals: 0,
       liveAvailable: false,
       reason: modeInfo.reason,
+      budget,
     };
   }
 
   for (const q of LIVE_QUERIES) {
-    if (Date.now() - started > timeoutMs) break;
-    if (queries >= CKR_OWN_IDEAS_BUDGETS.maxQueries) break;
-    if (externalCalls >= CKR_OWN_IDEAS_BUDGETS.maxExternalCalls) break;
-    queries += 1;
+    if (!canConsumeSearch(budget)) break;
     const adapterQuery: LiaOiSourceAdapterQuery = {
       rawQuery: q.rawQuery,
       userId: opts?.userId || "owner",
       mode: "live",
       plan: makePlan(q),
     };
-    try {
-      const ran = await runMatchingSourceAdapters(adapterQuery);
-      externalCalls += Math.max(1, ran.stats.length);
-      collected.push(...ran.candidates);
-      for (const s of ran.stats) {
-        if (s.label) sourceLabels.push(s.label);
-        if (s.transport === "fixture") {
-          rejectedSignals += s.rawCount;
+    const adapters = listSourceAdapters().filter((a) => a.matches(adapterQuery));
+    if (!adapters.length) continue;
+    if (!consumeSearch(budget, "catalog")) break;
+    for (const adapter of adapters) {
+      if (!canConsumeExternal(budget)) break;
+      if (!consumeExternal(budget, "catalog")) break;
+      try {
+        const ran = await adapter.search(adapterQuery);
+        collected.push(...ran.candidates);
+        if (ran.label) sourceLabels.push(ran.label);
+        if (ran.transport === "fixture") {
+          rejectedSignals += ran.rawCount;
         }
+      } catch {
+        rejectedSignals += 1;
       }
-    } catch {
-      rejectedSignals += 1;
     }
   }
 
@@ -287,12 +367,11 @@ export async function buildOwnIdeaCatalog(opts?: {
 
   return packSignals(liveOnly, {
     mode: liveOnly.length ? "live" : "empty",
-    queries,
-    externalCalls,
     rejectedSignals,
     liveAvailable: true,
     reason: modeInfo.reason,
     sourceLabels,
+    budget,
   });
 }
 
@@ -300,12 +379,11 @@ function packSignals(
   candidates: LiaOiCandidate[],
   meta: {
     mode: OwnIdeaCatalogMode;
-    queries: number;
-    externalCalls: number;
     rejectedSignals: number;
     liveAvailable: boolean;
     reason: string;
     sourceLabels: string[];
+    budget: OwnIdeaRunBudget;
   },
 ): LiveCatalogResult {
   const signals: OwnIdeaSignal[] = [];
@@ -321,6 +399,7 @@ function packSignals(
   const sliced = signals.slice(0, CKR_OWN_IDEAS_BUDGETS.maxSignalsPerRun);
   const capital = sliced.filter((s) => s.kind === "CAPITAL");
   const rest = sliced.filter((s) => s.kind !== "CAPITAL");
+  const snap = snapshotBudget(meta.budget);
   return {
     catalog: {
       signals: rest,
@@ -328,12 +407,16 @@ function packSignals(
       externalResources: capital,
     },
     mode: rest.length || capital.length ? meta.mode : "empty",
-    queries: meta.queries,
-    externalCalls: meta.externalCalls,
+    queries: snap.catalogSearches,
+    externalCalls: snap.catalogExternalCalls,
+    catalogSearches: snap.catalogSearches,
+    catalogExternalCalls: snap.catalogExternalCalls,
+    totalExternalCalls: snap.catalogExternalCalls,
     sources: [...new Set(meta.sourceLabels.filter(Boolean))],
     rejectedSignals: rejected,
     realSignals: rest.length + capital.length,
     liveAvailable: meta.liveAvailable,
     reason: meta.reason,
+    budget: meta.budget,
   };
 }

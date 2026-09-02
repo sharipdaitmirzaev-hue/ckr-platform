@@ -3,6 +3,7 @@ import type { OwnIdeaCatalog, OwnIdeaSignal } from "@/types/ckr-own-ideas";
 function sig(
   partial: OwnIdeaSignal,
 ): OwnIdeaSignal {
+  const region = partial.region ?? "Дагестан";
   return {
     identityKey: partial.identityKey ?? partial.id,
     officialId: partial.officialId ?? null,
@@ -11,11 +12,19 @@ function sig(
     claimKind: partial.claimKind ?? "FACT",
     sourceType: partial.sourceType ?? "fixture",
     sourceLabel: partial.sourceLabel ?? "fixture",
-    sourceUrl: partial.sourceUrl ?? null,
+    sourceUrl: partial.sourceUrl ?? partial.canonicalUrl ?? null,
     trustLevel: partial.trustLevel ?? "trusted_secondary",
-    region: partial.region ?? "Дагестан",
+    region,
     industry: partial.industry ?? null,
     tags: partial.tags ?? [],
+    pageType: partial.pageType ?? "DETAIL",
+    customer: partial.customer ?? (partial.kind === "DEMAND" ? "Заказчик (fixture)" : null),
+    publishedAt: partial.publishedAt ?? "2026-03-01T00:00:00.000Z",
+    deadlineAt: partial.deadlineAt ?? "2027-12-31T00:00:00.000Z",
+    status: partial.status ?? "active",
+    objectTitle: partial.objectTitle ?? partial.title,
+    location: partial.location ?? region,
+    priceUnknown: partial.priceUnknown ?? partial.amount == null,
     ...partial,
   };
 }
@@ -212,6 +221,7 @@ export function missingFinancingCatalog(): OwnIdeaCatalog {
         sourceType: "auction",
         sourceLabel: "Торги",
         trustLevel: "official",
+        industry: "warehouse",
       }),
       sig({
         id: "sig-demand-ok",
@@ -223,6 +233,7 @@ export function missingFinancingCatalog(): OwnIdeaCatalog {
         sourceType: "market",
         sourceLabel: "Спрос",
         trustLevel: "trusted_secondary",
+        industry: "warehouse",
       }),
     ],
     internalResources: [],

@@ -1,47 +1,23 @@
 /**
- * Stage 4Q.2 — pair only compatible industry/region signals.
+ * Stage 4Q.2 / 4Q.3 — pair only compatible industry/region DETAIL signals.
  * Empty result is valid. No Matching Engine.
  */
+import {
+  geoCompatibility,
+  industryKeyOf,
+  industriesCompatibleKeys,
+  normalizeOwnIdeaGeo,
+  pairCompatibility,
+} from "@/lib/ckr-own-ideas/quality-gate";
 import type { OwnIdeaSignal } from "@/types/ckr-own-ideas";
 
-const INDUSTRY_ALIASES: Record<string, string> = {
-  construction: "construction",
-  строитель: "construction",
-  земля: "construction",
-  экскаватор: "construction",
-  спецтех: "construction",
-  tourism: "tourism",
-  туризм: "tourism",
-  гостиниц: "tourism",
-  турбаз: "tourism",
-  hospitality: "tourism",
-  food: "food",
-  пищев: "food",
-  консерв: "food",
-  продукт: "food",
-  напиток: "food",
-  warehouse: "warehouse",
-  склад: "warehouse",
-  ритейл: "warehouse",
-  retail: "warehouse",
-};
-
-const COMPATIBLE: Record<string, string[]> = {
-  construction: ["construction"],
-  tourism: ["tourism"],
-  food: ["food"],
-  warehouse: ["warehouse"],
-};
-
-function tokens(s: string): string[] {
-  return s
-    .toLowerCase()
-    .replace(/ё/g, "е")
-    .split(/[^a-z0-9а-я]+/i)
-    .filter((t) => t.length > 3);
-}
-
 export function titleOverlap(a: string, b: string): boolean {
+  const tokens = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/ё/g, "е")
+      .split(/[^a-z0-9а-я]+/i)
+      .filter((t) => t.length > 3);
   const A = tokens(a);
   const B = tokens(b);
   return B.some((bt) =>
@@ -56,61 +32,41 @@ export function titleOverlap(a: string, b: string): boolean {
 }
 
 export function industryKey(signal: Pick<OwnIdeaSignal, "industry" | "title" | "tags">): string | null {
-  const raw = (signal.industry || "").trim().toLowerCase();
-  if (raw && INDUSTRY_ALIASES[raw]) return INDUSTRY_ALIASES[raw];
-  if (raw) {
-    for (const [alias, key] of Object.entries(INDUSTRY_ALIASES)) {
-      if (raw.includes(alias)) return key;
-    }
-  }
-  const blob = `${signal.title || ""} ${(signal.tags || []).join(" ")}`.toLowerCase();
-  for (const [alias, key] of Object.entries(INDUSTRY_ALIASES)) {
-    if (blob.includes(alias)) return key;
-  }
-  return null;
+  return industryKeyOf(signal);
 }
 
 export function regionKey(region?: string | null): string | null {
-  if (!region) return null;
-  const t = region.toLowerCase().replace(/ё/g, "е");
-  if (/дагестан|махачкал|каспийск|избербаш|дербент/.test(t)) return "dagestan";
-  if (/скфо|северо.?кавказ|чечн|ингуш|осетия|кабардин|ставропол/.test(t)) return "skfo";
-  if (/россия|рф|russia/.test(t)) return "ru";
-  return t.slice(0, 24);
-}
-
-function regionsCompatible(a: string | null, b: string | null): boolean {
-  if (!a || !b) return true;
-  if (a === b) return true;
-  if ((a === "dagestan" && b === "skfo") || (a === "skfo" && b === "dagestan")) return true;
-  if (a === "ru" || b === "ru") return true;
-  return false;
+  const geo = normalizeOwnIdeaGeo(region ?? null);
+  if (geo.subject) return geo.subject;
+  if (geo.city) return geo.city;
+  if (geo.federalDistrict) return geo.federalDistrict;
+  if (geo.country === "ru") return "ru_generic";
+  return geo.raw ? geo.raw.slice(0, 24) : null;
 }
 
 export function industriesCompatible(a: string | null, b: string | null): boolean {
-  if (!a || !b) return true;
-  if (a === b) return true;
-  return (COMPATIBLE[a] || []).includes(b);
+  return industriesCompatibleKeys(a, b);
 }
 
 export function signalsFit(
   a: OwnIdeaSignal,
   b: OwnIdeaSignal,
 ): { ok: boolean; reason: string } {
-  const ia = industryKey(a);
-  const ib = industryKey(b);
-  if (ia && ib && !industriesCompatible(ia, ib)) {
-    return { ok: false, reason: "industry_mismatch" };
+  const support =
+    a.kind === "CAPITAL" ||
+    b.kind === "CAPITAL" ||
+    a.kind === "TEAM" ||
+    b.kind === "TEAM";
+  if (support) {
+    const ia = industryKey(a);
+    const ib = industryKey(b);
+    if (ia && ib && !industriesCompatible(ia, ib)) {
+      return { ok: false, reason: "industry_mismatch" };
+    }
+    return { ok: true, reason: "support_attach" };
   }
-  const ra = regionKey(a.region);
-  const rb = regionKey(b.region);
-  if (!regionsCompatible(ra, rb)) {
-    return { ok: false, reason: "region_mismatch" };
-  }
-  if (ia && ib && industriesCompatible(ia, ib)) return { ok: true, reason: "industry" };
-  if (titleOverlap(a.title, b.title)) return { ok: true, reason: "title_overlap" };
-  if (ia && ib) return { ok: true, reason: "industry" };
-  return { ok: false, reason: "weak_link" };
+  const fit = pairCompatibility(a, b);
+  return { ok: fit.ok, reason: fit.reason };
 }
 
 export function pairFits(pair: OwnIdeaSignal[]): boolean {
@@ -125,3 +81,5 @@ export function signalFitsContext(
   if (!context.length) return true;
   return context.every((c) => signalsFit(c, candidate).ok);
 }
+
+export { geoCompatibility };
