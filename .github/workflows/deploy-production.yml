@@ -1,3 +1,4 @@
+# Production deploy via SSH. Never uses staging secrets.
 name: Deploy Production
 
 on:
@@ -14,7 +15,13 @@ on:
 
 jobs:
   deploy:
+    name: deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SSH_HOST: 161.104.18.135
+      # Keep the session alive during long npm ci / next build (no stdout for minutes).
+      SSH_OPTS: "-i /home/runner/.ssh/ckr_deploy -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=40 -o TCPKeepAlive=yes -o StrictHostKeyChecking=yes"
 
     steps:
       - name: Подготовить SSH
@@ -23,21 +30,17 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.CKR_SSH_PRIVATE_KEY }}" > ~/.ssh/ckr_deploy
           chmod 600 ~/.ssh/ckr_deploy
-          ssh-keyscan -H 161.104.18.135 >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
 
       - name: Проверить SSH
         shell: bash
         run: |
-          ssh -i ~/.ssh/ckr_deploy \
-            -o BatchMode=yes \
-            cursor-agent@161.104.18.135 \
-            "echo SSH_OK"
+          ssh ${SSH_OPTS} cursor-agent@${SSH_HOST} "echo SSH_OK"
 
       - name: Проверить production до обновления
         shell: bash
         run: |
-          ssh -i ~/.ssh/ckr_deploy \
-            cursor-agent@161.104.18.135 \
+          ssh ${SSH_OPTS} cursor-agent@${SSH_HOST} \
             "cd /var/www/ckr-platform && \
              echo COMMIT_BEFORE && git rev-parse --short HEAD && \
              echo SERVICE_BEFORE && sudo systemctl is-active ckr"
@@ -45,16 +48,14 @@ jobs:
       - name: Выполнить deploy
         shell: bash
         run: |
-          ssh -i ~/.ssh/ckr_deploy \
-            cursor-agent@161.104.18.135 \
+          ssh ${SSH_OPTS} cursor-agent@${SSH_HOST} \
             "cd /var/www/ckr-platform && \
              sudo ./scripts/update-production.sh '${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}'"
 
       - name: Проверить production после обновления
         shell: bash
         run: |
-          ssh -i ~/.ssh/ckr_deploy \
-            cursor-agent@161.104.18.135 \
+          ssh ${SSH_OPTS} cursor-agent@${SSH_HOST} \
             "cd /var/www/ckr-platform && \
              echo COMMIT_AFTER && git rev-parse --short HEAD && \
              echo SERVICE_AFTER && sudo systemctl is-active ckr"
@@ -65,4 +66,5 @@ jobs:
           curl --fail --silent --show-error \
             --retry 5 \
             --retry-delay 3 \
-            http://161.104.18.135/ > /dev/null
+            -L --max-time 30 \
+            https://ckr-center.ru/api/health

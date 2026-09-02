@@ -192,13 +192,30 @@ EOF
   fi
 }
 
+# Keep GitHub Actions SSH alive during long silent steps (npm ci / next build).
+with_ssh_heartbeat() {
+  local label="$1"
+  shift
+  (
+    while sleep 20; do
+      log_info "${label} still running..."
+    done
+  ) &
+  local hb=$!
+  "$@"
+  local rc=$?
+  kill "${hb}" 2>/dev/null || true
+  wait "${hb}" 2>/dev/null || true
+  return "${rc}"
+}
+
 # /etc/ckr/ckr.env задаёт NODE_ENV=production. При этом npm ci по умолчанию
 # пропускает devDependencies, а Next.js build нуждается в них:
 # tailwindcss, postcss, typescript, eslint-config-next и т.п.
 # Runtime (systemd npm start) остаётся с NODE_ENV=production.
 npm_ci_for_build() {
   log_info "npm ci --include=dev (build-time deps: tailwindcss/postcss/typescript)"
-  run_as_app "npm ci --include=dev"
+  with_ssh_heartbeat "npm ci" run_as_app "npm ci --include=dev"
   # Жёсткая проверка: без этих модулей webpack/Next build падает.
   run_as_app "node -e \"require.resolve('tailwindcss'); require.resolve('postcss'); require.resolve('typescript');\""
   log_ok "build dependencies установлены (включая devDependencies)"

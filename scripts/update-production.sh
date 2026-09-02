@@ -47,7 +47,7 @@ npm_ci_for_build
 assert_build_sources
 
 log_info "npm run build"
-run_as_app "npm run build"
+with_ssh_heartbeat "npm run build" run_as_app "npm run build"
 log_ok "build"
 
 if [[ -f "${CKR_APP_DIR}/deploy/systemd/ckr.service" ]]; then
