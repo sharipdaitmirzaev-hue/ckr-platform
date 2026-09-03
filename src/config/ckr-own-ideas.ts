@@ -29,12 +29,23 @@ export const CKR_OWN_IDEAS_BUDGETS = {
   maxDepth: 3,
   maxSearches: 12,
   maxExternalCalls: 8,
+  /** Actual HTTP in discovery phase. Remaining calls stay for DETAIL. */
+  discoveryMaxExternalCalls: 4,
+  resolutionReservedExternalCalls: 4,
   maxSignalsPerRun: 40,
   maxInitialIdeas: 8,
   maxQueries: 12,
   maxEnrich: 6,
   maxCandidatesPerElement: 5,
+  /**
+   * Shared run deadline. Not a per-request timeout.
+   * 15s is enough for 1 search + 1 official fetch when requests
+   * use remainingMs and discovery stops for the resolution reserve.
+   */
   timeoutMs: 15_000,
+  /** Wall time kept for DETAIL after discovery must stop. */
+  resolutionReserveMs: 6_000,
+  maxCandidateDiagnostics: 20,
 } as const;
 
 export const OWN_IDEA_RATING_LABELS = {

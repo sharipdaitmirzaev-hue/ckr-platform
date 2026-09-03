@@ -84,6 +84,24 @@ E2E инжектит discovery snippet и проверяет путь resolution
 
 Существующие 9 production ideas не менять. Нет merge/deploy/production run в этом этапе.
 
+## Stage 4Q.4.1 live resolution budget
+
+Run 3 (`245354ef-…`) потратил `timeoutMs=15000` на discovery: 3 `adapter.search` × до 3 Serper (локальный timeout 12s), каждый adapter считался как 1 external call. `detailResolutionAttempts=0`.
+
+4Q.4.1:
+
+- Единица `externalCalls` — фактический HTTP (Serper query / `safeFetch` / injected hook stand-in), не вызов `adapter.search`.
+- Shared `RunBudgetContext` (AsyncLocalStorage): Serper, official fetch, aggregator fetch.
+- Discovery ≤ 4 HTTP; минимум 4 слота и `resolutionReserveMs=6000` для DETAIL.
+- Interleaved: search → rank (Dagestan-first) → resolve best → продолжить discovery только при остатке.
+- Adapter fan-out видит тот же budget и останавливается.
+- Invariant: eligible official/detail URL + живой budget → `detailResolutionAttempts >= 1`.
+- Метрики: `actualExternalHttpCalls`, `discoveryExternalCalls`, `resolutionExternalCalls`, `discoveryTimeMs`, `resolutionTimeMs`, `runWallTimeMs`, `discoveryStoppedForResolutionReserve`, `budgetRemainingAtFirstResolution`, `budgetExhaustedPhase`, bounded `candidateDiagnostics` (≤20, без секретов/HTML).
+- `maxExternalCalls=8` не увеличен. `timeoutMs` остаётся 15000: deadline-aware `remainingMs` + reserve делают 1 search + 1 official fetch выполнимыми без 12s×N fan-out.
+- Quality gates 4Q.3 не ослаблены. 0 FACT валиден. Fixture в production запрещён. Scheduler/Matching/auto-publish OFF.
+
+OLD_TIMEOUT=15000. NEW_TIMEOUT=15000. WHY_REQUIRED=не меняли: проблема была в учёте и fan-out, не в абсолютной длительности одного search+fetch.
+
 ## Запреты
 
 Нет auto-publish, outreach, заявок, Matching edges, Scheduler.

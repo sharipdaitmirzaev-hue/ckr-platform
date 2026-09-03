@@ -1292,6 +1292,279 @@ async function main() {
     assert.match(read("src/config/ckr-own-ideas.ts"), /maxExternalCalls:\s*8/);
     assert.match(read("src/config/ckr-own-ideas.ts"), /maxSearches:\s*12/);
     assert.match(read("src/config/ckr-own-ideas.ts"), /timeoutMs:\s*15_000/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /discoveryMaxExternalCalls:\s*4/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /resolutionReservedExternalCalls:\s*4/);
+  });
+
+  await test("4Q.4.1 nested Serper queries count as actual external HTTP", async () => {
+    const { searchOfficialSites } = await import("../src/lib/lia/oi/sources/serper-site");
+    const {
+      createOwnIdeaRunBudgetForTest,
+      runWithOwnIdeaBudget,
+      totalExternalCalls,
+    } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudgetForTest({ maxDiscoveryExternalCalls: 2, maxExternalCalls: 8 });
+    let http = 0;
+    await runWithOwnIdeaBudget(budget, async () => {
+      await searchOfficialSites({
+        queries: ["q1", "q2", "q3"],
+        sites: ["torgi.gov.ru"],
+        limitPerQuery: 1,
+        timeoutMs: 12_000,
+        searchFn: async () => {
+          http += 1;
+          return [
+            {
+              id: "t1",
+              title: "lot",
+              url: "https://torgi.gov.ru/new/public/lots/lot/1",
+              description: "x",
+              source: "serper",
+              published_at: "",
+              trust_score: 0.4,
+              trusted: false,
+              query: "q",
+            },
+          ];
+        },
+      });
+    });
+    assert.equal(http, 2);
+    assert.equal(budget.discoveryExternalCalls, 2);
+    assert.equal(totalExternalCalls(budget), 2);
+    assert.equal(budget.discoveryStoppedForResolutionReserve, true);
+  });
+
+  await test("4Q.4.1 adapter fan-out cannot bypass global discovery reserve", async () => {
+    const {
+      canConsumeDiscovery,
+      consumeActualHttp,
+      createOwnIdeaRunBudget,
+      markResolvableCandidate,
+    } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudget();
+    markResolvableCandidate(budget);
+    let ok = 0;
+    for (let i = 0; i < 8; i += 1) {
+      if (!canConsumeDiscovery(budget)) break;
+      if (!consumeActualHttp(budget, "discovery")) break;
+      ok += 1;
+    }
+    assert.ok(ok <= 4);
+    assert.ok(budget.discoveryExternalCalls <= 4);
+    assert.ok(8 - budget.discoveryExternalCalls >= 4);
+  });
+
+  await test("4Q.4.1 discovery cannot spend all 8 calls when a resolvable candidate exists", async () => {
+    const { createOwnIdeaRunBudget } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudget();
+    let searches = 0;
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q41-reserve",
+      budget,
+      hooks: {
+        async search() {
+          searches += 1;
+          return [serperProcurement];
+        },
+        async resolveDetail() {
+          return officialProcurement;
+        },
+      },
+    });
+    assert.ok(searches <= 4);
+    assert.ok(live.discoveryExternalCalls <= 4);
+    assert.ok((live.resolutionExternalCalls ?? 0) >= 1);
+    assert.ok(live.detailResolutionAttempts >= 1);
+    assert.ok(live.totalExternalCalls <= 8);
+    assert.ok((live.actualExternalHttpCalls ?? live.totalExternalCalls) === live.totalExternalCalls);
+  });
+
+  await test("4Q.4.1 eligible official DETAIL yields detailResolutionAttempts >= 1", async () => {
+    const { createOwnIdeaRunBudget } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudget();
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q41-invariant",
+      budget,
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "tenders") return [serperProcurement];
+          return [];
+        },
+        async resolveDetail() {
+          return officialProcurement;
+        },
+      },
+    });
+    assert.ok(live.detailResolutionAttempts >= 1);
+    assert.ok((live.resolutionExternalCalls ?? 0) >= 1);
+    assert.ok((live.discoveryExternalCalls ?? 0) >= 1);
+    assert.ok(live.liveFacts >= 1);
+  });
+
+  await test("4Q.4.1 Dagestan candidate is resolved before other regions", async () => {
+    const { createOwnIdeaRunBudget } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const order: string[] = [];
+    const orel = {
+      ...officialLot,
+      id: "orel-lot",
+      region: "Орловская область",
+      city: "Залегощь",
+      dataChannel: "SERPER_DISCOVERY",
+      enrichedFromFetch: false,
+      isOfficialSource: false,
+      canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/orel-1",
+    };
+    const dag = {
+      ...officialLot,
+      id: "dag-lot",
+      region: "Республика Дагестан",
+      city: "Махачкала",
+      dataChannel: "SERPER_DISCOVERY",
+      enrichedFromFetch: false,
+      isOfficialSource: false,
+      canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/dag-1",
+    };
+    await buildOwnIdeaCatalog({
+      userId: "4q41-dag",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search() {
+          return [orel as never, dag as never];
+        },
+        async resolveDetail(c) {
+          order.push(String(c.region));
+          return { ...c, dataChannel: "OFFICIAL_API", enrichedFromFetch: true, isOfficialSource: true };
+        },
+      },
+    });
+    assert.ok(order.length >= 1);
+    assert.match(order[0] || "", /Дагестан/i);
+  });
+
+  await test("4Q.4.1 slow discovery stops to leave resolution time", async () => {
+    const { createOwnIdeaRunBudgetForTest, requestTimeoutMs } = await import(
+      "../src/lib/ckr-own-ideas/run-budget"
+    );
+    const budget = createOwnIdeaRunBudgetForTest({
+      timeoutMs: 400,
+      resolutionReserveMs: 200,
+      maxDiscoveryExternalCalls: 4,
+    });
+    const now = budget.startedAt + 180;
+    const discoveryCap = requestTimeoutMs(budget, 12_000, "discovery", now);
+    assert.ok(discoveryCap < 12_000, `discovery request must see remaining phase, got ${discoveryCap}`);
+    assert.ok(discoveryCap <= 250);
+    let searches = 0;
+    let resolves = 0;
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q41-deadline",
+      budget: createOwnIdeaRunBudgetForTest({
+        timeoutMs: 800,
+        resolutionReserveMs: 250,
+      }),
+      hooks: {
+        async search() {
+          searches += 1;
+          await new Promise((r) => setTimeout(r, 80));
+          return [serperProcurement];
+        },
+        async resolveDetail() {
+          resolves += 1;
+          return officialProcurement;
+        },
+      },
+    });
+    assert.ok(resolves >= 1, "resolution must run after bounded discovery");
+    assert.ok(live.detailResolutionAttempts >= 1);
+    assert.ok(searches >= 1);
+    assert.ok(searches < 3 || live.discoveryStoppedForResolutionReserve || live.detailResolutionAttempts >= 1);
+  });
+
+  await test("4Q.4.1 deadline propagates into nested adapter search timeout", async () => {
+    const { createOwnIdeaRunBudgetForTest, requestTimeoutMs, setOwnIdeaBudgetPhase } = await import(
+      "../src/lib/ckr-own-ideas/run-budget"
+    );
+    const budget = createOwnIdeaRunBudgetForTest({ timeoutMs: 15_000, resolutionReserveMs: 6_000 });
+    const t = requestTimeoutMs(budget, 12_000, "discovery", budget.startedAt);
+    assert.ok(t <= 9_000);
+    setOwnIdeaBudgetPhase(budget, "resolution");
+    const resT = requestTimeoutMs(budget, 8_000, "resolution", budget.startedAt + 10_000);
+    assert.ok(resT <= 5_000);
+  });
+
+  await test("4Q.4.1 resolution timeout is classified, 0 FACT is valid", async () => {
+    const { createOwnIdeaRunBudgetForTest } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const budget = createOwnIdeaRunBudgetForTest({ timeoutMs: 1, resolutionReserveMs: 0 });
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q41-timeout-class",
+      budget,
+      hooks: {
+        async search() {
+          return [serperProcurement];
+        },
+        async resolveDetail() {
+          throw new Error("should not resolve after deadline");
+        },
+      },
+    });
+    assert.equal(live.liveFacts, 0);
+    const { ideas, metrics } = runOwnIdeaBuilder({
+      catalog: live.catalog,
+      catalogMode: live.mode,
+      liveMeta: live,
+    });
+    assert.equal(ideas.length, 0);
+    assert.equal(metrics.liveFacts, 0);
+    assert.ok(live.budgetExhaustedPhase === "timeout" || live.budgetExhausted || live.detailResolutionAttempts === 0);
+  });
+
+  await test("4Q.4.1 candidate diagnostics persist without secrets", async () => {
+    const { createOwnIdeaRunBudget } = await import("../src/lib/ckr-own-ideas/run-budget");
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q41-diag",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "tenders") return [serperProcurement];
+          return [];
+        },
+        async resolveDetail() {
+          return officialProcurement;
+        },
+      },
+    });
+    assert.ok(live.candidateDiagnostics.length >= 1);
+    assert.ok(live.candidateDiagnostics.length <= 20);
+    for (const d of live.candidateDiagnostics) {
+      const blob = JSON.stringify(d);
+      assert.doesNotMatch(blob, /X-API-KEY|apiKey|Bearer |<html/i);
+      assert.ok(d.candidateUrl || d.officialUrl || d.reason);
+    }
+    const { metrics } = runOwnIdeaBuilder({
+      catalog: live.catalog,
+      catalogMode: live.mode,
+      liveMeta: live,
+    });
+    assert.ok((metrics.candidateDiagnostics || []).length >= 1);
+    assert.doesNotMatch(JSON.stringify(metrics.candidateDiagnostics), /<html|X-API-KEY/i);
+  });
+
+  await test("4Q.4.1 quality gates 4Q.3 stay closed", () => {
+    assert.equal(
+      classifyOwnIdeaPageType({ url: "https://old.bankrot.fedresurs.ru/TradeList.aspx" }),
+      "LISTING",
+    );
+    const listing = oiCandidateToSignal({
+      isStub: false,
+      isCatalogSource: false,
+      dataChannel: "SERPER_DISCOVERY",
+      title: "Торги - Единый федеральный реестр",
+      canonicalUrl: "https://old.bankrot.fedresurs.ru/TradeList.aspx",
+      opportunityType: "AUCTION_ASSET",
+    } as never);
+    assert.equal(listing, null);
+    assert.notEqual(geoCompatibility("Орловская область", "Дагестан"), "SAME_REGION");
   });
 
   console.log(`${passed} passed, ${failed} failed`);
