@@ -23,6 +23,10 @@ export type SafeFetchOptions = {
   maxRedirects?: number;
   allowedContentTypes?: string[];
   method?: "GET" | "HEAD";
+  /** Optional Accept; not a scraper UA switch. */
+  accept?: string;
+  /** Same-origin Referer only (official SPA → official API). */
+  referer?: string;
 };
 
 export type SafeFetchResult = {
@@ -33,6 +37,7 @@ export type SafeFetchResult = {
   contentType: string;
   bodyText: string;
   bytes: number;
+  elapsedMs: number;
 };
 
 export type SafeFetchFailure = {
@@ -49,6 +54,10 @@ export type SafeFetchFailure = {
     | "http_error"
     | "redirect_limit"
     | "network";
+  status?: number | null;
+  contentType?: string | null;
+  finalUrl?: string | null;
+  elapsedMs?: number;
 };
 
 const DEFAULT_TIMEOUT_MS = 8_000;
@@ -184,11 +193,32 @@ export async function safeFetch(
     "application/xhtml+xml",
     "application/json",
   ];
+  const started = Date.now();
+  const elapsed = () => Date.now() - started;
+  const headers: Record<string, string> = {
+    Accept:
+      options.accept ||
+      "text/html,text/plain,application/json;q=0.9,*/*;q=0.1",
+    "User-Agent": "CKR-LiaOI-SafeFetch/2A",
+  };
+  if (options.referer) {
+    try {
+      const target = new URL(rawUrl);
+      const ref = new URL(options.referer);
+      if (ref.protocol.startsWith("http") && ref.hostname === target.hostname) {
+        headers.Referer = ref.toString();
+      }
+    } catch {
+      /* ignore invalid referer */
+    }
+  }
 
   let current = rawUrl;
   for (let hop = 0; hop <= maxRedirects; hop += 1) {
     const checked = await assertSafeUrl(current);
-    if ("ok" in checked && checked.ok === false) return checked;
+    if ("ok" in checked && checked.ok === false) {
+      return { ...checked, elapsedMs: elapsed(), finalUrl: current };
+    }
     const { url } = checked as { url: URL; addresses: string[] };
 
     const controller = new AbortController();
@@ -199,10 +229,7 @@ export async function safeFetch(
         method: options.method ?? "GET",
         redirect: "manual",
         signal: controller.signal,
-        headers: {
-          Accept: "text/html,text/plain,application/json;q=0.9,*/*;q=0.1",
-          "User-Agent": "CKR-LiaOI-SafeFetch/2A",
-        },
+        headers,
         cache: "no-store",
       });
 
@@ -213,6 +240,9 @@ export async function safeFetch(
             ok: false,
             error: "Redirect without Location",
             code: "http_error",
+            status: response.status,
+            finalUrl: url.toString(),
+            elapsedMs: elapsed(),
           };
         }
         current = new URL(loc, url).toString();
@@ -221,36 +251,63 @@ export async function safeFetch(
             ok: false,
             error: "Too many redirects",
             code: "redirect_limit",
+            status: response.status,
+            finalUrl: url.toString(),
+            elapsedMs: elapsed(),
           };
         }
         continue;
       }
 
+      const contentType = response.headers.get("content-type") || "";
       if (!response.ok) {
         return {
           ok: false,
           error: `HTTP ${response.status}`,
           code: "http_error",
+          status: response.status,
+          contentType,
+          finalUrl: url.toString(),
+          elapsedMs: elapsed(),
         };
       }
 
-      const contentType = response.headers.get("content-type") || "";
       if (!contentTypeAllowed(contentType, allowedContentTypes)) {
         return {
           ok: false,
           error: `Blocked content-type: ${contentType.slice(0, 80)}`,
           code: "bad_content_type",
+          status: response.status,
+          contentType,
+          finalUrl: url.toString(),
+          elapsedMs: elapsed(),
         };
       }
 
       const cl = response.headers.get("content-length");
       if (cl && Number(cl) > maxBytes) {
-        return { ok: false, error: "Response too large", code: "too_large" };
+        return {
+          ok: false,
+          error: "Response too large",
+          code: "too_large",
+          status: response.status,
+          contentType,
+          finalUrl: url.toString(),
+          elapsedMs: elapsed(),
+        };
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        return { ok: false, error: "Empty body", code: "http_error" };
+        return {
+          ok: false,
+          error: "Empty body",
+          code: "http_error",
+          status: response.status,
+          contentType,
+          finalUrl: url.toString(),
+          elapsedMs: elapsed(),
+        };
       }
 
       const chunks: Uint8Array[] = [];
@@ -266,7 +323,15 @@ export async function safeFetch(
             } catch {
               /* ignore */
             }
-            return { ok: false, error: "Response too large", code: "too_large" };
+            return {
+              ok: false,
+              error: "Response too large",
+              code: "too_large",
+              status: response.status,
+              contentType,
+              finalUrl: url.toString(),
+              elapsedMs: elapsed(),
+            };
           }
           chunks.push(value);
         }
@@ -284,22 +349,38 @@ export async function safeFetch(
         contentType,
         bodyText: body,
         bytes: total,
+        elapsedMs: elapsed(),
       };
     } catch (error) {
+      const msg = error instanceof Error ? error.message.slice(0, 160) : "network";
+      const tls = /ssl|tls|handshake|certificate|CERT/i.test(msg);
       if (error instanceof Error && error.name === "AbortError") {
-        return { ok: false, error: "Timeout", code: "timeout" };
+        return {
+          ok: false,
+          error: tls ? "TLS handshake timeout" : "Timeout",
+          code: "timeout",
+          finalUrl: url.toString(),
+          elapsedMs: elapsed(),
+        };
       }
       return {
         ok: false,
-        error: error instanceof Error ? error.message.slice(0, 120) : "network",
+        error: msg,
         code: "network",
+        finalUrl: url.toString(),
+        elapsedMs: elapsed(),
       };
     } finally {
       clearTimeout(timer);
     }
   }
 
-  return { ok: false, error: "Too many redirects", code: "redirect_limit" };
+  return {
+    ok: false,
+    error: "Too many redirects",
+    code: "redirect_limit",
+    elapsedMs: elapsed(),
+  };
 }
 
 /** Утилита для тестов / diagnostics. */

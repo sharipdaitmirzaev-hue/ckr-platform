@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { CKR_OWN_IDEAS_FORBIDDEN } from "../src/config/ckr-own-ideas";
+import { CKR_OWN_IDEAS_BUDGETS, CKR_OWN_IDEAS_FORBIDDEN } from "../src/config/ckr-own-ideas";
 import { operatorPrimaryNav, operatorSystemNav } from "../src/config/navigation";
 import {
   applyOwnerAction,
@@ -1284,7 +1284,9 @@ async function main() {
     const acquire = read("src/lib/ckr-own-ideas/detail-acquire.ts");
     const catalog = read("src/lib/ckr-own-ideas/live-catalog.ts");
     assert.match(acquire, /resolveProcurementDetail/);
-    assert.match(acquire, /safeFetch/);
+    assert.match(acquire, /fetchOfficialDetail/);
+    assert.match(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /safeFetch/);
+    assert.match(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /torgi_api/);
     assert.doesNotMatch(acquire, /puppeteer|playwright|cheerio/i);
     assert.doesNotMatch(acquire, /new SearchProvider|second search stack/i);
     assert.doesNotMatch(catalog, /LIA_WEB_SEARCH_PROVIDER\s*=/);
@@ -1294,6 +1296,7 @@ async function main() {
     assert.match(read("src/config/ckr-own-ideas.ts"), /timeoutMs:\s*15_000/);
     assert.match(read("src/config/ckr-own-ideas.ts"), /discoveryMaxExternalCalls:\s*4/);
     assert.match(read("src/config/ckr-own-ideas.ts"), /resolutionReservedExternalCalls:\s*4/);
+    assert.match(read("src/config/ckr-own-ideas.ts"), /perDetailTimeoutMs:\s*4_000/);
   });
 
   await test("4Q.4.1 nested Serper queries count as actual external HTTP", async () => {
@@ -1565,6 +1568,353 @@ async function main() {
     } as never);
     assert.equal(listing, null);
     assert.notEqual(geoCompatibility("Орловская область", "Дагестан"), "SAME_REGION");
+  });
+
+  const { parseTorgiLotJson, applyTorgiLotToCandidate } = await import("../src/lib/ckr-own-ideas/torgi-lot");
+  const { classifyOfficialFetchFailure, isHtmlShell } = await import(
+    "../src/lib/ckr-own-ideas/official-detail-fetch"
+  );
+  const { createOwnIdeaRunBudget, createOwnIdeaRunBudgetForTest, requestTimeoutMs, totalExternalCalls } =
+    await import("../src/lib/ckr-own-ideas/run-budget");
+
+  const torgiJson = (id: string, extra: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      id,
+      lotName: extra.lotName ?? "Экскаватор гусеничный",
+      lotStatus: extra.lotStatus ?? { name: "Опубликован" },
+      priceMin: extra.priceMin,
+      subjectRFName: extra.subjectRFName ?? "Республика Дагестан",
+      estateAddress: extra.estateAddress ?? "г. Махачкала",
+      biddOrg: { orgName: extra.organizer ?? "ТУ Росимущества" },
+      firstVersionPublicationDate: extra.publishedAt ?? "2026-04-01T00:00:00.000Z",
+      biddEndTime: extra.deadlineAt ?? "2027-06-01T12:00:00.000Z",
+    });
+
+  function serperTorgi(id: string) {
+    return {
+      id: `disc-${id}`,
+      isStub: false,
+      isCatalogSource: false,
+      dataChannel: "SERPER_DISCOVERY",
+      title: "лот сниппет serper",
+      canonicalUrl: `https://torgi.gov.ru/new/public/lots/lot/${id}`,
+      opportunityType: "AUCTION_ASSET",
+      sourceAdapterId: "auction_assets",
+      pageType: "DETAIL",
+      sourceObjectId: id,
+      sources: [
+        {
+          id: `s-${id}`,
+          category: "AUCTIONS",
+          name: "serper",
+          url: `https://torgi.gov.ru/new/public/lots/lot/${id}`,
+          isStub: false,
+        },
+      ],
+    } as never;
+  }
+
+  await test("4Q.4.2 torgi official JSON reaches extraction", () => {
+    const parsed = parseTorgiLotJson(torgiJson("lot-ok-1", { priceMin: 4_200_000 }), "https://torgi.gov.ru/new/public/lots/lot/lot-ok-1");
+    assert.ok(parsed);
+    assert.equal(parsed?.lotId, "lot-ok-1");
+    assert.equal(parsed?.title, "Экскаватор гусеничный");
+    assert.equal(parsed?.region, "Республика Дагестан");
+    assert.equal(parsed?.price, 4_200_000);
+    const applied = applyTorgiLotToCandidate(serperTorgi("lot-ok-1"), parsed!);
+    assert.equal(applied.dataChannel, "OFFICIAL_API");
+    assert.equal(applied.enrichedFromFetch, true);
+    assert.ok((applied.structuredFields || []).some((f) => f.field === "lot_id" && f.source === "official_api"));
+    assert.ok(!(applied.structuredFields || []).some((f) => f.source === "search_snippet"));
+  });
+
+  await test("4Q.4.2 structured API preferred over JS shell", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-api",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-api-1")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          if (url.includes("/api/public/lotcards/lot/")) {
+            return {
+              ok: true,
+              url,
+              finalUrl: url,
+              status: 200,
+              contentType: "application/json",
+              bodyText: torgiJson("lot-api-1", { priceMin: 1_000_000 }),
+              bytes: 200,
+              elapsedMs: 12,
+            };
+          }
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "text/html",
+            bodyText: `<html><app-root></app-root><script>webpackJsonp</script><title>ГИС Торги</title></html>`,
+            bytes: 80,
+            elapsedMs: 12,
+          };
+        },
+      },
+    });
+    assert.ok(live.officialDetailsResolved >= 1);
+    assert.equal(live.candidateDiagnostics.some((d) => d.fetchStrategy === "torgi_api"), true);
+    const sig = live.catalog.signals.find((s) => s.officialId === "lot-api-1");
+    assert.ok(sig);
+    assert.notEqual(sig?.title, "лот сниппет serper");
+  });
+
+  await test("4Q.4.2 HTML shell classified", async () => {
+    assert.equal(
+      isHtmlShell(`<html ng-version="17"><app-root></app-root><script src="/main.js"></script></html>`, "text/html"),
+      true,
+    );
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-shell",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-shell")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "text/html",
+            bodyText: `<!doctype html><html><app-root></app-root></html>`,
+            bytes: 60,
+            elapsedMs: 8,
+          };
+        },
+      },
+    });
+    assert.ok(live.candidateDiagnostics.some((d) => d.errorCategory === "HTML_SHELL" || d.reason === "HTML_SHELL"));
+    assert.equal(live.liveFacts, 0);
+  });
+
+  await test("4Q.4.2 HTTP 4xx classified", () => {
+    assert.equal(
+      classifyOfficialFetchFailure({ ok: false, error: "HTTP 403", code: "http_error", status: 403, elapsedMs: 20 }),
+      "HTTP_4XX",
+    );
+  });
+
+  await test("4Q.4.2 HTTP 5xx classified", () => {
+    assert.equal(
+      classifyOfficialFetchFailure({ ok: false, error: "HTTP 502", code: "http_error", status: 502, elapsedMs: 20 }),
+      "HTTP_5XX",
+    );
+  });
+
+  await test("4Q.4.2 first DETAIL timeout still attempts second candidate", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-queue",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-slow"), serperTorgi("lot-ok-2")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          if (url.includes("lot-slow")) {
+            return { ok: false, error: "Timeout", code: "timeout", elapsedMs: 40, finalUrl: url };
+          }
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "application/json",
+            bodyText: torgiJson("lot-ok-2", { priceMin: 2_000_000 }),
+            bytes: 180,
+            elapsedMs: 15,
+          };
+        },
+      },
+    });
+    assert.ok(live.detailResolutionAttempts >= 2);
+    assert.ok(live.officialDetailsResolved >= 1);
+    assert.ok(live.resolutionExternalCalls >= 2);
+    assert.ok((live.actualExternalHttpCalls ?? 0) <= 8);
+    const slow = live.candidateDiagnostics.find((d) => (d.candidateUrl || "").includes("lot-slow"));
+    const ok = live.candidateDiagnostics.find((d) => (d.officialUrl || d.candidateUrl || "").includes("lot-ok-2"));
+    assert.equal(slow?.errorCategory || slow?.reason, "CONNECT_TIMEOUT");
+    assert.ok(ok?.resolutionAttempted);
+  });
+
+  await test("4Q.4.2 per-detail timeout respects remainingMs", () => {
+    const budget = createOwnIdeaRunBudgetForTest({ timeoutMs: 800, resolutionReserveMs: 0, now: Date.now() - 500 });
+    const t = requestTimeoutMs(budget, CKR_OWN_IDEAS_BUDGETS.perDetailTimeoutMs, "resolution");
+    assert.ok(t <= 400);
+    assert.ok(t >= 250);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.timeoutMs, 15_000);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.perDetailTimeoutMs, 4_000);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.maxExternalCalls, 8);
+  });
+
+  await test("4Q.4.2 fetches count in actualExternalHttpCalls", async () => {
+    const budget = createOwnIdeaRunBudget();
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-count",
+      budget,
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-count")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "application/json",
+            bodyText: torgiJson("lot-count", { priceMin: 3_000_000 }),
+            bytes: 120,
+            elapsedMs: 9,
+          };
+        },
+      },
+    });
+    assert.ok((live.resolutionExternalCalls ?? 0) >= 1);
+    assert.ok((live.actualExternalHttpCalls ?? 0) >= (live.resolutionExternalCalls ?? 0));
+    assert.equal(totalExternalCalls(budget), live.actualExternalHttpCalls);
+  });
+
+  await test("4Q.4.2 successful official detail can become validated FACT", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-fact",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-fact")];
+          return [];
+        },
+        async fetchOfficial() {
+          return {
+            ok: true,
+            url: "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-fact",
+            finalUrl: "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-fact",
+            status: 200,
+            contentType: "application/json",
+            bodyText: torgiJson("lot-fact", { priceMin: 4_200_000 }),
+            bytes: 200,
+            elapsedMs: 10,
+          };
+        },
+      },
+    });
+    const sig = live.catalog.signals.find((s) => s.officialId === "lot-fact");
+    assert.ok(sig);
+    assert.equal(sig?.pageType, "DETAIL");
+    assert.equal(sig?.claimKind, "FACT");
+    assert.ok((sig?.factFields || []).some((f) => f.kind === "FACT" && f.verificationStatus === "VERIFIED"));
+    assert.ok(live.liveFacts >= 1);
+  });
+
+  await test("4Q.4.2 expired official lot still rejected", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-exp",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-exp")];
+          return [];
+        },
+        async fetchOfficial() {
+          return {
+            ok: true,
+            url: "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-exp",
+            finalUrl: "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-exp",
+            status: 200,
+            contentType: "application/json",
+            bodyText: torgiJson("lot-exp", {
+              lotStatus: { name: "Торги завершены" },
+              deadlineAt: "2020-01-01T00:00:00.000Z",
+              priceMin: 100,
+            }),
+            bytes: 180,
+            elapsedMs: 10,
+          };
+        },
+      },
+    });
+    assert.ok(live.officialDetailsResolved >= 1);
+    assert.equal(live.liveFacts, 0);
+    assert.ok(live.candidateDiagnostics.some((d) => d.reason === "EXPIRED"));
+  });
+
+  await test("4Q.4.2 missing price remains UNKNOWN", () => {
+    const parsed = parseTorgiLotJson(torgiJson("lot-np"), "https://torgi.gov.ru/new/public/lots/lot/lot-np");
+    assert.equal(parsed?.price, null);
+    const applied = applyTorgiLotToCandidate(serperTorgi("lot-np"), parsed!);
+    assert.equal(applied.priceStatus, "UNKNOWN");
+    const sig = oiCandidateToSignal(applied);
+    assert.ok(sig);
+    assert.equal(sig?.amount, null);
+    assert.equal(sig?.priceUnknown, true);
+    assert.equal(sig?.claimKind, "FACT");
+  });
+
+  await test("4Q.4.2 Serper snippet is not promoted to FACT on fetch failure", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-snip",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-snip")];
+          return [];
+        },
+        async fetchOfficial() {
+          return { ok: false, error: "HTTP 404", code: "http_error", status: 404, elapsedMs: 11 };
+        },
+      },
+    });
+    assert.equal(live.liveFacts, 0);
+    assert.ok(!live.catalog.signals.some((s) => s.claimKind === "FACT"));
+    assert.ok(live.candidateDiagnostics.some((d) => d.errorCategory === "HTTP_4XX" || d.reason === "HTTP_4XX"));
+  });
+
+  await test("4Q.4.2 candidate diagnostics persist fetch failure metadata", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q42-diag",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-diag")];
+          return [];
+        },
+        async fetchOfficial() {
+          return { ok: false, error: "HTTP 503", code: "http_error", status: 503, elapsedMs: 33, finalUrl: "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-diag" };
+        },
+      },
+    });
+    const d = live.candidateDiagnostics.find((x) => x.resolutionAttempted);
+    assert.ok(d);
+    assert.equal(d?.httpStatus, 503);
+    assert.equal(d?.elapsedMs, 33);
+    assert.equal(d?.fetchStrategy, "torgi_api");
+    assert.equal(d?.errorCategory, "HTTP_5XX");
+    assert.ok(d?.finalUrl);
+    assert.doesNotMatch(JSON.stringify(d), /<html|X-API-KEY|apiKey/i);
+  });
+
+  await test("4Q.4.2 quality gates unchanged", () => {
+    assert.equal(
+      classifyOwnIdeaPageType({ url: "https://old.bankrot.fedresurs.ru/TradeList.aspx" }),
+      "LISTING",
+    );
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.maxExternalCalls, 8);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.timeoutMs, 15_000);
   });
 
   console.log(`${passed} passed, ${failed} failed`);

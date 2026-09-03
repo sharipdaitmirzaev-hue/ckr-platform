@@ -309,6 +309,12 @@ async function runSmoke() {
   if (live.detailResolutionAttempts < 1) {
     throw new Error("DETAIL_RESOLUTION_ATTEMPTS < 1");
   }
+  if (live.detailResolutionAttempts < 2) {
+    throw new Error(`DETAIL_RESOLUTION_ATTEMPTS ${live.detailResolutionAttempts} < 2`);
+  }
+  if ((live.officialDetailsResolved ?? 0) < 1) {
+    throw new Error(`OFFICIAL_DETAILS_RESOLVED ${live.officialDetailsResolved} < 1`);
+  }
   if (!(live.discoveryExternalCalls > 0)) {
     throw new Error("DISCOVERY_EXTERNAL_CALLS must be > 0 (orchestration)");
   }
@@ -325,8 +331,9 @@ async function runSmoke() {
     throw new Error("candidate diagnostics leaked secrets/html");
   }
   console.log("ORCHESTRATION_PROOF", {
-    note: "injected search/resolve — not live-provider proof",
+    note: "injected search/resolve — not live torgi proof",
     DETAIL_RESOLUTION_ATTEMPTS: live.detailResolutionAttempts,
+    OFFICIAL_DETAILS_RESOLVED: live.officialDetailsResolved,
     DISCOVERY_EXTERNAL_CALLS: live.discoveryExternalCalls,
     RESOLUTION_EXTERNAL_CALLS: live.resolutionExternalCalls,
     TOTAL_EXTERNAL_CALLS: live.totalExternalCalls,
@@ -400,6 +407,111 @@ async function runSmoke() {
   if (garbage.ideas.length !== 0) {
     throw new Error("garbage listing/category/cross-region produced ideas");
   }
+
+  const fetchBudget = createOwnIdeaRunBudget();
+  const torgiJson = JSON.stringify({
+    id: "e2e-fetch-ok",
+    lotName: "Экскаватор official JSON",
+    lotStatus: { name: "Опубликован" },
+    priceMin: 4_200_000,
+    subjectRFName: "Республика Дагестан",
+    estateAddress: "г. Махачкала",
+    biddOrg: { orgName: "ТУ Росимущества" },
+    firstVersionPublicationDate: "2026-04-01T00:00:00.000Z",
+    biddEndTime: "2027-06-01T12:00:00.000Z",
+  });
+  const fetchProof = await buildOwnIdeaCatalog({
+    userId: "e2e-fetch-proof",
+    budget: fetchBudget,
+    hooks: {
+      async search(q) {
+        if (q.plan.intent !== "assets") return [];
+        return [
+          {
+            id: "e2e-timeout-lot",
+            title: "лот timeout snippet",
+            isStub: false,
+            isCatalogSource: false,
+            dataChannel: "SERPER_DISCOVERY",
+            pageType: "DETAIL",
+            canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/e2e-timeout",
+            opportunityType: "AUCTION_ASSET",
+            sourceObjectId: "e2e-timeout",
+            sources: [
+              {
+                id: "e2e-to",
+                category: "AUCTIONS",
+                name: "serper",
+                url: "https://torgi.gov.ru/new/public/lots/lot/e2e-timeout",
+                isStub: false,
+              },
+            ],
+          } as never,
+          {
+            id: "e2e-ok-lot",
+            title: "лот ok snippet",
+            isStub: false,
+            isCatalogSource: false,
+            dataChannel: "SERPER_DISCOVERY",
+            pageType: "DETAIL",
+            canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/e2e-fetch-ok",
+            opportunityType: "AUCTION_ASSET",
+            sourceObjectId: "e2e-fetch-ok",
+            sources: [
+              {
+                id: "e2e-ok",
+                category: "AUCTIONS",
+                name: "serper",
+                url: "https://torgi.gov.ru/new/public/lots/lot/e2e-fetch-ok",
+                isStub: false,
+              },
+            ],
+          } as never,
+        ];
+      },
+      async fetchOfficial(url) {
+        if (url.includes("e2e-timeout")) {
+          return { ok: false, error: "Timeout", code: "timeout", elapsedMs: 25, finalUrl: url };
+        }
+        return {
+          ok: true,
+          url,
+          finalUrl: url,
+          status: 200,
+          contentType: "application/json",
+          bodyText: torgiJson,
+          bytes: torgiJson.length,
+          elapsedMs: 18,
+        };
+      },
+    },
+  });
+  if (fetchProof.detailResolutionAttempts < 2) {
+    throw new Error(`fetch proof DETAIL_RESOLUTION_ATTEMPTS ${fetchProof.detailResolutionAttempts} < 2`);
+  }
+  if ((fetchProof.officialDetailsResolved ?? 0) < 1) {
+    throw new Error(`fetch proof OFFICIAL_DETAILS_RESOLVED ${fetchProof.officialDetailsResolved} < 1`);
+  }
+  if (!(fetchProof.resolutionExternalCalls > 0)) {
+    throw new Error("fetch proof RESOLUTION_EXTERNAL_CALLS must be > 0");
+  }
+  if (fetchProof.totalExternalCalls > 8) {
+    throw new Error(`fetch proof TOTAL_EXTERNAL_CALLS ${fetchProof.totalExternalCalls} > 8`);
+  }
+  const timeoutThenOk =
+    fetchProof.candidateDiagnostics.some((d) => d.reason === "CONNECT_TIMEOUT" || d.errorCategory === "CONNECT_TIMEOUT") &&
+    fetchProof.candidateDiagnostics.some((d) => d.fetchStrategy === "torgi_api" && d.resolutionAttempted);
+  if (!timeoutThenOk) {
+    throw new Error("first DETAIL timeout did not leave a second attempt");
+  }
+  console.log("FETCH_ORCHESTRATION_PROOF", {
+    note: "injected fetchOfficial — not live torgi.gov.ru proof",
+    DETAIL_RESOLUTION_ATTEMPTS: fetchProof.detailResolutionAttempts,
+    OFFICIAL_DETAILS_RESOLVED: fetchProof.officialDetailsResolved,
+    RESOLUTION_EXTERNAL_CALLS: fetchProof.resolutionExternalCalls,
+    TOTAL_EXTERNAL_CALLS: fetchProof.totalExternalCalls,
+    LIVE_FACTS: fetchProof.liveFacts,
+  });
 
   for (const idea of liveBuilt.ideas) await store4.upsert(idea);
   await store4.saveRun({

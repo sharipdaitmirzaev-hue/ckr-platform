@@ -45,6 +45,12 @@ export const CKR_OWN_IDEAS_BUDGETS = {
   timeoutMs: 15_000,
   /** Wall time kept for DETAIL after discovery must stop. */
   resolutionReserveMs: 6_000,
+  /**
+   * Cap one official DETAIL (API + optional HTML fallback).
+   * Staging/dev: torgi.gov.ru TLS/handshake hangs past 5s; 4s leaves
+   * room for a second candidate inside remaining resolution budget.
+   */
+  perDetailTimeoutMs: 4_000,
   maxCandidateDiagnostics: 20,
 } as const;
 
