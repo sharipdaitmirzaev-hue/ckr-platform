@@ -10,6 +10,7 @@ import {
   canConsumeResolution,
   consumeExternal,
   getActiveOwnIdeaBudget,
+  remainingMs,
   requestTimeoutMs,
   runWithOwnIdeaBudget,
   type OwnIdeaRunBudget,
@@ -22,6 +23,11 @@ import {
   normalizeOwnIdeaGeo,
 } from "@/lib/ckr-own-ideas/quality-gate";
 import { isGenericFinancingPage } from "@/lib/ckr-own-ideas/live-catalog-guards";
+import {
+  fetchOfficialDetail,
+  type OfficialDetailTransport,
+} from "@/lib/ckr-own-ideas/official-detail-fetch";
+import { isTorgiHost } from "@/lib/ckr-own-ideas/torgi-lot";
 import { auctionAssetExtractor } from "@/lib/lia/oi/enrichment/extractors/auction";
 import { supportProgramExtractor } from "@/lib/lia/oi/enrichment/extractors/support";
 import { extractTitleTag, stripHtml } from "@/lib/lia/oi/enrichment/html";
@@ -105,6 +111,11 @@ function diagnosticOf(input: {
   officialUrl?: string | null;
   finalState: OwnIdeaCandidateDiagnostic["finalState"];
   reason: string | null;
+  httpStatus?: number | null;
+  elapsedMs?: number | null;
+  fetchStrategy?: string | null;
+  errorCategory?: OwnIdeaCandidateDiagnostic["errorCategory"];
+  finalUrl?: string | null;
 }): OwnIdeaCandidateDiagnostic {
   const url = input.candidate.canonicalUrl || input.candidate.sources?.[0]?.url || null;
   return {
@@ -116,10 +127,20 @@ function diagnosticOf(input: {
     officialUrl: sanitizeDiagnosticUrl(input.officialUrl ?? null),
     finalState: input.finalState,
     reason: input.reason,
+    httpStatus: input.httpStatus ?? null,
+    elapsedMs: input.elapsedMs ?? null,
+    fetchStrategy: input.fetchStrategy ?? null,
+    errorCategory: input.errorCategory ?? null,
+    finalUrl: sanitizeDiagnosticUrl(input.finalUrl ?? null),
   };
 }
 
 export type OwnIdeaResolveDetailHook = (candidate: LiaOiCandidate) => Promise<LiaOiCandidate | null>;
+
+export type OwnIdeaAcquireHooks = {
+  resolveDetail?: OwnIdeaResolveDetailHook;
+  fetchOfficial?: OfficialDetailTransport;
+};
 
 export function emptyAcquireStats(): OwnIdeaAcquireStats {
   return {
@@ -285,24 +306,6 @@ function applyProcurementDetail(base: LiaOiCandidate, detail: ResolvedProcuremen
   });
 }
 
-async function fetchOfficialPage(
-  url: string,
-  budget: OwnIdeaRunBudget,
-): Promise<SafeFetchResult | null> {
-  if (!canConsumeResolution(budget) && !canConsumeExternal(budget)) return null;
-  const als = getActiveOwnIdeaBudget();
-  if (!als) {
-    if (!consumeExternal(budget, "catalog")) return null;
-  }
-  const res = await safeFetch(url, {
-    timeoutMs: als ? requestTimeoutMs(als, 8_000, "resolution") : 8_000,
-    maxBytes: 400_000,
-    maxRedirects: 3,
-    allowedContentTypes: ["text/html", "application/xhtml+xml", "text/plain"],
-  });
-  return res.ok ? res : null;
-}
-
 function extractWithExisting(
   candidate: LiaOiCandidate,
   html: string,
@@ -338,7 +341,7 @@ function extractWithExisting(
 export async function resolveDiscoveryCandidate(
   candidate: LiaOiCandidate,
   budget: OwnIdeaRunBudget,
-  hooks?: { resolveDetail?: OwnIdeaResolveDetailHook },
+  hooks?: OwnIdeaAcquireHooks,
 ): Promise<{
   candidate: LiaOiCandidate | null;
   stats: Partial<OwnIdeaAcquireStats>;
@@ -538,17 +541,91 @@ export async function resolveDiscoveryCandidate(
   }
 
   stats.detailResolutionAttempts = 1;
-  const fetched = await fetchOfficialPage(targetUrl, budget);
-  if (!fetched) {
+  const official = await fetchOfficialDetail({
+    candidate,
+    url: targetUrl,
+    budget,
+    transport: hooks?.fetchOfficial,
+  });
+  if (!official.ok) {
     stats.detailValidationRejected = 1;
-    stats.budgetExhausted = !canConsumeExternal(budget);
-    const reason = stats.budgetExhausted ? "BUDGET_EXHAUSTED" : "HTTP_ERROR";
+    const leftover = remainingMs(budget);
+    stats.budgetExhausted = leftover < 250 || !canConsumeExternal(budget);
     return {
       candidate: null,
       stats,
-      diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl: targetUrl, finalState: "REJECT", reason }),
+      diagnostic: diagnosticOf({
+        candidate,
+        pageType,
+        attempted: true,
+        officialUrl: targetUrl,
+        finalState: "REJECT",
+        reason: official.errorCategory,
+        httpStatus: official.status,
+        elapsedMs: official.elapsedMs,
+        fetchStrategy: official.strategy,
+        errorCategory: official.errorCategory,
+        finalUrl: official.finalUrl,
+      }),
     };
   }
+
+  if (official.strategy === "torgi_api") {
+    const enriched = official.candidate;
+    if (
+      isExpiredOpportunity({
+        deadlineAt: enriched.deadlineAt,
+        status: enriched.auctionStatus,
+      })
+    ) {
+      stats.officialDetailsResolved = 1;
+      stats.detailValidationRejected = 1;
+      return {
+        candidate: null,
+        stats,
+        diagnostic: diagnosticOf({
+          candidate: enriched,
+          pageType: "DETAIL",
+          attempted: true,
+          officialUrl: official.finalUrl,
+          finalState: "REJECT",
+          reason: "EXPIRED",
+          httpStatus: official.status,
+          elapsedMs: official.elapsedMs,
+          fetchStrategy: official.strategy,
+          finalUrl: official.finalUrl,
+        }),
+      };
+    }
+    stats.officialDetailsResolved = 1;
+    return {
+      candidate: enriched,
+      stats,
+      diagnostic: diagnosticOf({
+        candidate: enriched,
+        pageType: "DETAIL",
+        attempted: true,
+        officialUrl: official.finalUrl,
+        finalState: "INFERENCE",
+        reason: null,
+        httpStatus: official.status,
+        elapsedMs: official.elapsedMs,
+        fetchStrategy: official.strategy,
+        finalUrl: official.finalUrl,
+      }),
+    };
+  }
+
+  const fetched: SafeFetchResult = {
+    ok: true,
+    url: official.url,
+    finalUrl: official.finalUrl,
+    status: official.status,
+    contentType: official.contentType,
+    bodyText: official.bodyText,
+    bytes: official.bodyText.length,
+    elapsedMs: official.elapsedMs,
+  };
 
   const finalUrl = fetched.finalUrl || targetUrl;
   const postKind = refinePageKind({
@@ -562,7 +639,19 @@ export async function resolveDiscoveryCandidate(
     return {
       candidate: null,
       stats,
-      diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl: finalUrl, finalState: "REJECT", reason: "VALIDATION_FAILED" }),
+      diagnostic: diagnosticOf({
+        candidate,
+        pageType,
+        attempted: true,
+        officialUrl: finalUrl,
+        finalState: "REJECT",
+        reason: "VALIDATION_FAILED",
+        httpStatus: official.status,
+        elapsedMs: official.elapsedMs,
+        fetchStrategy: official.strategy,
+        errorCategory: "OTHER",
+        finalUrl,
+      }),
     };
   }
 
@@ -571,12 +660,23 @@ export async function resolveDiscoveryCandidate(
     return {
       candidate: null,
       stats,
-      diagnostic: diagnosticOf({ candidate, pageType, attempted: true, officialUrl: finalUrl, finalState: "REJECT", reason: "INSUFFICIENT_FIELDS" }),
+      diagnostic: diagnosticOf({
+        candidate,
+        pageType,
+        attempted: true,
+        officialUrl: finalUrl,
+        finalState: "REJECT",
+        reason: "INSUFFICIENT_FIELDS",
+        httpStatus: official.status,
+        elapsedMs: official.elapsedMs,
+        fetchStrategy: official.strategy,
+        finalUrl,
+      }),
     };
   }
 
   const enriched = extractWithExisting(candidate, fetched.bodyText, finalUrl);
-  if (isOfficialDetailUrl(finalUrl)) stats.officialDetailsResolved = 1;
+  if (isOfficialDetailUrl(finalUrl) || isTorgiHost(finalUrl)) stats.officialDetailsResolved = 1;
   if (isAggregatorHost(url) && isOfficialDetailUrl(finalUrl)) stats.aggregatorToOfficialResolved = 1;
   return {
     candidate: enriched,
@@ -588,6 +688,10 @@ export async function resolveDiscoveryCandidate(
       officialUrl: finalUrl,
       finalState: "INFERENCE",
       reason: null,
+      httpStatus: official.status,
+      elapsedMs: official.elapsedMs,
+      fetchStrategy: official.strategy,
+      finalUrl,
     }),
   };
 }
@@ -595,7 +699,7 @@ export async function resolveDiscoveryCandidate(
 export async function acquireOwnIdeaDetails(
   candidates: LiaOiCandidate[],
   budget: OwnIdeaRunBudget,
-  hooks?: { resolveDetail?: OwnIdeaResolveDetailHook },
+  hooks?: OwnIdeaAcquireHooks,
 ): Promise<{
   candidates: LiaOiCandidate[];
   stats: OwnIdeaAcquireStats;

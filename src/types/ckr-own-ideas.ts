@@ -287,6 +287,23 @@ export type OwnIdeaRunMetrics = {
   candidateDiagnostics?: OwnIdeaCandidateDiagnostic[];
 };
 
+/** Stage 4Q.4.2 — fetch failure category. Not a FACT. */
+export const OWN_IDEA_FETCH_ERROR_CATEGORIES = [
+  "HTTP_4XX",
+  "HTTP_5XX",
+  "REDIRECT_ERROR",
+  "DNS_ERROR",
+  "TLS_ERROR",
+  "CONNECT_TIMEOUT",
+  "RESPONSE_TIMEOUT",
+  "UNSUPPORTED_CONTENT_TYPE",
+  "HTML_SHELL",
+  "OFFICIAL_API_ERROR",
+  "PARSE_ERROR",
+  "OTHER",
+] as const;
+export type OwnIdeaFetchErrorCategory = (typeof OWN_IDEA_FETCH_ERROR_CATEGORIES)[number];
+
 export type OwnIdeaCandidateDiagnostic = {
   sourceDomain: string | null;
   candidateUrl: string | null;
@@ -296,6 +313,12 @@ export type OwnIdeaCandidateDiagnostic = {
   officialUrl: string | null;
   finalState: "FACT" | "INFERENCE" | "REJECT";
   reason: string | null;
+  /** Stage 4Q.4.2 — fetch metadata, no secrets / no HTML body. */
+  httpStatus?: number | null;
+  elapsedMs?: number | null;
+  fetchStrategy?: string | null;
+  errorCategory?: OwnIdeaFetchErrorCategory | string | null;
+  finalUrl?: string | null;
 };
 
 export type OwnIdeaSignal = {

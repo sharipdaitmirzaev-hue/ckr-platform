@@ -56,6 +56,7 @@ import {
   rankDiscoveryCandidates,
   structuredToFactFields,
   type OwnIdeaAcquireStats,
+  type OwnIdeaAcquireHooks,
   type OwnIdeaResolveDetailHook,
 } from "@/lib/ckr-own-ideas/detail-acquire";
 import type {
@@ -76,6 +77,8 @@ export type LiveCatalogHooks = {
   search?: (query: LiaOiSourceAdapterQuery) => Promise<LiaOiCandidate[]>;
   /** Tests: discovery → DETAIL resolution without live HTTP. */
   resolveDetail?: OwnIdeaResolveDetailHook;
+  /** Tests: inject official DETAIL HTTP (fetch/orchestration proof). */
+  fetchOfficial?: OwnIdeaAcquireHooks["fetchOfficial"];
 };
 
 export type LiveCatalogResult = {
@@ -403,6 +406,7 @@ async function buildOwnIdeaCatalogInner(
     const resStarted = Date.now();
     const acquired = await acquireOwnIdeaDetails(pending, budget, {
       resolveDetail: opts?.hooks?.resolveDetail,
+      fetchOfficial: opts?.hooks?.fetchOfficial,
     });
     budget.resolutionTimeMs += Date.now() - resStarted;
     acquire = {

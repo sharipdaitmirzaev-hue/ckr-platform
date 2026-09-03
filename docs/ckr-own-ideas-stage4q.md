@@ -102,6 +102,22 @@ Run 3 (`245354ef-…`) потратил `timeoutMs=15000` на discovery: 3 `ada
 
 OLD_TIMEOUT=15000. NEW_TIMEOUT=15000. WHY_REQUIRED=не меняли: проблема была в учёте и fan-out, не в абсолютной длительности одного search+fetch.
 
+## Stage 4Q.4.2 official DETAIL fetch reliability
+
+Run 4 (`c489e1f8-…`): `DETAIL_RESOLUTION_ATTEMPTS=2`, reserve сработал, но `OFFICIAL_DETAILS_RESOLVED=0`. Первый torgi DETAIL ушёл в `HTTP_ERROR`; фактически это был connect/TLS/response hang (~8s default), съевший resolution budget. До EXTRACTION очередь не доходила.
+
+4Q.4.2:
+
+- Search stack не менялся (Serper / LIA adapters / ranking / quality gates / RunBudgetContext / safeFetch).
+- Bounded `OfficialDetailFetcher`: torgi.gov.ru предпочитает публичный JSON ` /new/api/public/lotcards/lot/{id} ` (тот же endpoint, что SPA), HTML — fallback только при shell/неверном content-type.
+- `bankrot.fedresurs.ru` — та же abstraction (`fedresurs_html`); credentialed REST не включается (нет договора).
+- `perDetailTimeoutMs=4000` внутри `timeoutMs=15000`. Один зависший DETAIL не блокирует очередь.
+- Diagnostics: HTTP status, elapsedMs, strategy, error category (`HTTP_4XX` / `HTML_SHELL` / `CONNECT_TIMEOUT` / …). Без HTML/секретов.
+- FACT только после official parse + существующие 4Q.3 gates. Цена не выдумывается.
+- Dagestan discovery не трогали.
+
+E2E: injected `fetchOfficial` — fetch/orchestration proof, не live torgi. Live read-only probe: DNS/TCP ок, TLS handshake timeout из cloud agent env.
+
 ## Запреты
 
 Нет auto-publish, outreach, заявок, Matching edges, Scheduler.
