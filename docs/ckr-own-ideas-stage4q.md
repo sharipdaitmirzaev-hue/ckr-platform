@@ -133,6 +133,20 @@ Run 5 (`5ca5e57b-…`): 3 official `torgi_api` attempts → `CONNECT_TIMEOUT`, `
 - Diagnostics: `IPV4_CONNECT_TIMEOUT` / `IPV6_CONNECT_TIMEOUT` / `TLS_HANDSHAKE_TIMEOUT` / `CONNECT_REFUSED` / `HEADERS_TIMEOUT` / `BODY_TIMEOUT`.
 - Шестой production market run не запускался.
 
+## Stage 4Q.4.3.1 Russian Trusted CA isolated test
+
+Гипотеза: с 04.07.2026 torgi.gov.ru на сертификате Минцифры (Russian Trusted Sub CA), а Linux/Node trust store его не знает.
+
+Проверено read-only (cloud agent; SSH на production VPS нет):
+
+- Live chain torgi.gov.ru получить нельзя: TCP IPv4 ок, TLS handshake hang (openssl/curl/Node). `TORGI_CERT_*=UNKNOWN`.
+- Официальный CA: `https://www.gosuslugi.ru/crt` → `https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt` (+ Sub CA). DER SHA-256 root `d26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31`.
+- Root/Sub отсутствуют в OS store и в `tls.rootCertificates` Node.
+- Isolated `curl --cacert` и Node `https.request({ ca, rejectUnauthorized: true })` к lot `24000013200000000013_2` — тот же TLS timeout. CA валиден (`openssl verify` Sub→Root OK).
+- Вывод: отсутствие российского root согласуется с регламентом, но **не объясняет handshake timeout** (проверка цепочки начинается после ServerHello; TLS-записи не приходят). Proxy/VPN/`rejectUnauthorized=false` не внедрялись. System trust store не менялся. OfficialHttpTransport без custom CA.
+- `scripts/diag-torgi-russian-tls-ca.mjs`, lock `scripts/lib/russian-trusted-ca.lock.json`.
+- Шестой market run не запускался. 9 ideas / 6 runs не менялись.
+
 ## Запреты
 
 Нет auto-publish, outreach, заявок, Matching edges, Scheduler.

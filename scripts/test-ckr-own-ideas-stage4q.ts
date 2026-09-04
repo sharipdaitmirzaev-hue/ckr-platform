@@ -2209,6 +2209,38 @@ async function main() {
     assert.equal(CKR_OWN_IDEAS_FORBIDDEN.scheduler, false);
   });
 
+  await test("4Q.4.3.1 official CA lock is gosuslugi/gu-st only", () => {
+    const lock = JSON.parse(read("scripts/lib/russian-trusted-ca.lock.json"));
+    assert.match(lock.instructionUrl, /^https:\/\/www\.gosuslugi\.ru\/crt$/);
+    assert.match(lock.rootPemUrl, /^https:\/\/gu-st\.ru\/content\/lending\/russian_trusted_root_ca_pem\.crt$/);
+    assert.match(lock.subPemUrl, /^https:\/\/gu-st\.ru\/content\/lending\/russian_trusted_sub_ca_pem\.crt$/);
+    assert.match(lock.rootDerSha256, /^[0-9a-f]{64}$/);
+    assert.match(lock.subDerSha256, /^[0-9a-f]{64}$/);
+    assert.equal(lock.rootDerSha256, "d26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31");
+    assert.doesNotMatch(JSON.stringify(lock), /github\.com|raw\.githubusercontent|forum|mirror/i);
+  });
+
+  await test("4Q.4.3.1 TLS verification cannot be disabled", () => {
+    const transport = read("src/lib/http/official-http-transport.ts");
+    const safe = read("src/lib/http/safe-fetch.ts");
+    const serper = read("src/lib/lia/oi/sources/serper-site.ts");
+    assert.doesNotMatch(transport, /rejectUnauthorized\s*:\s*false/);
+    assert.doesNotMatch(safe, /rejectUnauthorized\s*:\s*false/);
+    assert.doesNotMatch(serper, /rejectUnauthorized\s*:\s*false/);
+    assert.doesNotMatch(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /NODE_TLS_REJECT_UNAUTHORIZED/);
+    assert.doesNotMatch(transport, /NODE_TLS_REJECT_UNAUTHORIZED/);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.maxExternalCalls, 8);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.timeoutMs, 15_000);
+  });
+
+  await test("4Q.4.3.1 official CA is not wired into search or global TLS", () => {
+    const transport = read("src/lib/http/official-http-transport.ts");
+    const serper = read("src/lib/lia/oi/sources/serper-site.ts");
+    assert.doesNotMatch(transport, /russian_trusted|official-ca-bundle|ca:\s*caPem/);
+    assert.doesNotMatch(serper, /russian_trusted|gu-st\.ru|official-ca-bundle/);
+    assert.match(read("src/lib/http/official-http-transport.ts"), /ipv4_preferred/);
+  });
+
   console.log(`${passed} passed, ${failed} failed`);
   if (failed) process.exit(1);
 }
