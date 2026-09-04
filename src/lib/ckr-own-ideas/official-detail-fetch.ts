@@ -1,6 +1,6 @@
 /**
- * Stage 4Q.4.2 — bounded source-specific official DETAIL fetch.
- * Uses safeFetch + RunBudgetContext. Not a general-purpose crawler.
+ * Stage 4Q.4.2 / 4Q.4.3 — bounded source-specific official DETAIL fetch.
+ * Uses OfficialHttpTransport + RunBudgetContext. Not a crawler / proxy.
  */
 import { CKR_OWN_IDEAS_BUDGETS } from "@/config/ckr-own-ideas";
 import {
@@ -21,7 +21,8 @@ import {
   torgiLotPageUrl,
 } from "@/lib/ckr-own-ideas/torgi-lot";
 import { stripHtml } from "@/lib/lia/oi/enrichment/html";
-import { safeFetch, type SafeFetchFailure, type SafeFetchResult } from "@/lib/http/safe-fetch";
+import { officialHttpFetch } from "@/lib/http/official-http-transport";
+import type { SafeFetchFailure, SafeFetchResult } from "@/lib/http/safe-fetch";
 import type { LiaOiCandidate } from "@/types/lia-oi";
 import type { OwnIdeaFetchErrorCategory } from "@/types/ckr-own-ideas";
 
@@ -71,6 +72,13 @@ export type OfficialDetailFetchFail = {
 
 export type OfficialDetailFetchResult = OfficialDetailFetchOk | OfficialDetailFetchFail;
 
+/** HTML fallback only after the host answered with a useless API payload. */
+export function shouldRetryOfficialHtmlFallback(
+  category: OwnIdeaFetchErrorCategory | string | null | undefined,
+): boolean {
+  return category === "HTML_SHELL" || category === "UNSUPPORTED_CONTENT_TYPE";
+}
+
 export function isHtmlShell(bodyText: string, contentType?: string | null): boolean {
   const ct = (contentType || "").toLowerCase();
   const looksHtml =
@@ -92,8 +100,16 @@ export function classifyOfficialFetchFailure(
   opts?: { expectJson?: boolean; bodyText?: string | null; contentType?: string | null },
 ): OwnIdeaFetchErrorCategory {
   const msg = `${fail.error || ""} ${fail.code || ""}`;
-  if (/ssl|tls|handshake|certificate/i.test(msg)) return "TLS_ERROR";
   if (fail.code === "dns_failed") return "DNS_ERROR";
+  if (fail.code === "ipv4_connect_timeout") return "IPV4_CONNECT_TIMEOUT";
+  if (fail.code === "ipv6_connect_timeout") return "IPV6_CONNECT_TIMEOUT";
+  if (fail.code === "tls_handshake_timeout") return "TLS_HANDSHAKE_TIMEOUT";
+  if (fail.code === "connect_refused") return "CONNECT_REFUSED";
+  if (fail.code === "headers_timeout") return "HEADERS_TIMEOUT";
+  if (fail.code === "body_timeout") return "BODY_TIMEOUT";
+  if (/ssl|tls|handshake|certificate/i.test(msg)) {
+    return /timeout/i.test(msg) ? "TLS_HANDSHAKE_TIMEOUT" : "TLS_ERROR";
+  }
   if (fail.code === "redirect_limit" || /Redirect without Location/i.test(fail.error || "")) {
     return "REDIRECT_ERROR";
   }
@@ -141,13 +157,14 @@ async function callTransport(
       allowedContentTypes: opts.allowedContentTypes,
     });
   }
-  return safeFetch(url, {
+  return officialHttpFetch(url, {
     timeoutMs: opts.timeoutMs,
     accept: opts.accept,
     referer: opts.referer,
     allowedContentTypes: opts.allowedContentTypes,
     maxBytes: 400_000,
     maxRedirects: 3,
+    ipFamilyPolicy: "ipv4_preferred",
   });
 }
 
@@ -322,7 +339,7 @@ async function fetchTorgi(input: {
   const retryHtml =
     leftover >= 250 &&
     canConsumeResolution(input.budget) &&
-    (category === "HTML_SHELL" || category === "UNSUPPORTED_CONTENT_TYPE");
+    shouldRetryOfficialHtmlFallback(category);
   if (retryHtml) {
     return fetchHtml({
       candidate: input.candidate,
