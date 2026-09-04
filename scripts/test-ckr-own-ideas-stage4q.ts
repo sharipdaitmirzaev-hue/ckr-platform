@@ -1285,7 +1285,7 @@ async function main() {
     const catalog = read("src/lib/ckr-own-ideas/live-catalog.ts");
     assert.match(acquire, /resolveProcurementDetail/);
     assert.match(acquire, /fetchOfficialDetail/);
-    assert.match(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /safeFetch/);
+    assert.match(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /officialHttpFetch/);
     assert.match(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /torgi_api/);
     assert.doesNotMatch(acquire, /puppeteer|playwright|cheerio/i);
     assert.doesNotMatch(acquire, /new SearchProvider|second search stack/i);
@@ -1571,9 +1571,15 @@ async function main() {
   });
 
   const { parseTorgiLotJson, applyTorgiLotToCandidate } = await import("../src/lib/ckr-own-ideas/torgi-lot");
-  const { classifyOfficialFetchFailure, isHtmlShell } = await import(
+  const { classifyOfficialFetchFailure, isHtmlShell, shouldRetryOfficialHtmlFallback } = await import(
     "../src/lib/ckr-own-ideas/official-detail-fetch"
   );
+  const {
+    officialHttpFetch,
+    pickOfficialAddress,
+    OFFICIAL_IP_FAMILY_POLICY,
+    classifyTransportErrno,
+  } = await import("../src/lib/http/official-http-transport");
   const { createOwnIdeaRunBudget, createOwnIdeaRunBudgetForTest, requestTimeoutMs, totalExternalCalls } =
     await import("../src/lib/ckr-own-ideas/run-budget");
 
@@ -1915,6 +1921,292 @@ async function main() {
     );
     assert.equal(CKR_OWN_IDEAS_BUDGETS.maxExternalCalls, 8);
     assert.equal(CKR_OWN_IDEAS_BUDGETS.timeoutMs, 15_000);
+  });
+
+  const fakeSafe = async (raw: string) => ({ url: new URL(raw), addresses: ["203.0.113.10"] });
+  const okJson = (url: string, id = "lot-v4") => ({
+    ok: true as const,
+    url,
+    finalUrl: url,
+    status: 200,
+    contentType: "application/json",
+    bodyText: torgiJson(id, { priceMin: 1_000_000 }),
+    bytes: 80,
+    elapsedMs: 7,
+  });
+
+  await test("4Q.4.3 IPv6 fail + IPv4 success uses IPv4", async () => {
+    let used: { family: number; address: string } | null = null;
+    const res = await officialHttpFetch(
+      "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-v4",
+      { timeoutMs: 800 },
+      {
+        assertSafe: fakeSafe,
+        lookupAll: async () => [
+          { address: "2001:db8::1", family: 6 },
+          { address: "203.0.113.10", family: 4 },
+        ],
+        requestOnce: async (url, address) => {
+          used = address;
+          if (address.family === 6) {
+            return { ok: false, error: "ipv6 timeout", code: "ipv6_connect_timeout", elapsedMs: 5 };
+          }
+          return okJson(url.toString());
+        },
+      },
+    );
+    assert.equal(res.ok, true);
+    assert.equal(used?.family, 4);
+    assert.equal(used?.address, "203.0.113.10");
+    assert.equal(OFFICIAL_IP_FAMILY_POLICY, "ipv4_preferred");
+    assert.equal(
+      pickOfficialAddress(
+        [
+          { address: "2001:db8::1", family: 6 },
+          { address: "203.0.113.10", family: 4 },
+        ],
+      )?.family,
+      4,
+    );
+  });
+
+  await test("4Q.4.3 IPv4 preference is official-transport only", () => {
+    const official = read("src/lib/http/official-http-transport.ts");
+    const safe = read("src/lib/http/safe-fetch.ts");
+    const serper = read("src/lib/lia/oi/sources/serper-site.ts");
+    assert.match(official, /ipv4_preferred/);
+    assert.doesNotMatch(safe, /ipv4_preferred|OFFICIAL_IP_FAMILY_POLICY/);
+    assert.doesNotMatch(serper, /officialHttpFetch|ipv4_preferred/);
+    assert.match(read("src/lib/ckr-own-ideas/official-detail-fetch.ts"), /officialHttpFetch/);
+  });
+
+  await test("4Q.4.3 DNS fail classified", async () => {
+    const res = await officialHttpFetch(
+      "https://torgi.gov.ru/new/api/public/lotcards/lot/x",
+      { timeoutMs: 400 },
+      {
+        assertSafe: fakeSafe,
+        lookupAll: async () => {
+          throw new Error("ENOTFOUND");
+        },
+      },
+    );
+    assert.equal(res.ok, false);
+    if (res.ok) throw new Error("expected fail");
+    assert.equal(res.code, "dns_failed");
+    assert.equal(classifyOfficialFetchFailure(res), "DNS_ERROR");
+  });
+
+  await test("4Q.4.3 TLS timeout classified", () => {
+    assert.equal(
+      classifyOfficialFetchFailure({
+        ok: false,
+        error: "tls timeout",
+        code: "tls_handshake_timeout",
+        elapsedMs: 40,
+      }),
+      "TLS_HANDSHAKE_TIMEOUT",
+    );
+    assert.equal(
+      classifyTransportErrno({ code: "TIMEOUT", message: "tls timeout" }, "tls", 4),
+      "tls_handshake_timeout",
+    );
+  });
+
+  await test("4Q.4.3 connect timeout classified", () => {
+    assert.equal(
+      classifyOfficialFetchFailure({
+        ok: false,
+        error: "connect timeout",
+        code: "ipv4_connect_timeout",
+        elapsedMs: 40,
+      }),
+      "IPV4_CONNECT_TIMEOUT",
+    );
+    assert.equal(
+      classifyTransportErrno({ code: "ETIMEDOUT", message: "connect" }, "connect", 6),
+      "ipv6_connect_timeout",
+    );
+    assert.equal(
+      classifyTransportErrno({ code: "ECONNREFUSED", message: "refused" }, "connect", 4),
+      "connect_refused",
+    );
+    assert.equal(
+      classifyOfficialFetchFailure({
+        ok: false,
+        error: "headers timeout",
+        code: "headers_timeout",
+        elapsedMs: 12,
+      }),
+      "HEADERS_TIMEOUT",
+    );
+    assert.equal(
+      classifyOfficialFetchFailure({
+        ok: false,
+        error: "body timeout",
+        code: "body_timeout",
+        elapsedMs: 12,
+      }),
+      "BODY_TIMEOUT",
+    );
+  });
+
+  await test("4Q.4.3 one DETAIL transport fail still attempts next", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q43-queue",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-tls"), serperTorgi("lot-ok-43")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          if (url.includes("lot-tls")) {
+            return { ok: false, error: "tls timeout", code: "tls_handshake_timeout", elapsedMs: 30, finalUrl: url };
+          }
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "application/json",
+            bodyText: torgiJson("lot-ok-43", { priceMin: 2_000_000 }),
+            bytes: 180,
+            elapsedMs: 12,
+          };
+        },
+      },
+    });
+    assert.ok(live.detailResolutionAttempts >= 2);
+    assert.ok(live.officialDetailsResolved >= 1);
+    assert.ok((live.actualExternalHttpCalls ?? 0) <= 8);
+    const failD = live.candidateDiagnostics.find((d) => (d.candidateUrl || "").includes("lot-tls"));
+    assert.equal(failD?.errorCategory, "TLS_HANDSHAKE_TIMEOUT");
+  });
+
+  await test("4Q.4.3 host unavailable does not HTML-fallback", async () => {
+    const urls: string[] = [];
+    assert.equal(shouldRetryOfficialHtmlFallback("TLS_HANDSHAKE_TIMEOUT"), false);
+    assert.equal(shouldRetryOfficialHtmlFallback("IPV4_CONNECT_TIMEOUT"), false);
+    assert.equal(shouldRetryOfficialHtmlFallback("CONNECT_TIMEOUT"), false);
+    assert.equal(shouldRetryOfficialHtmlFallback("DNS_ERROR"), false);
+    assert.equal(shouldRetryOfficialHtmlFallback("HTML_SHELL"), true);
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q43-nofallback",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-dead")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          urls.push(url);
+          return { ok: false, error: "tls timeout", code: "tls_handshake_timeout", elapsedMs: 22, finalUrl: url };
+        },
+      },
+    });
+    assert.equal(urls.filter((u) => u.includes("/api/public/lotcards/lot/")).length, 1);
+    assert.equal(urls.filter((u) => u.includes("/new/public/lots/lot/") && !u.includes("/api/")).length, 0);
+    assert.equal(live.officialDetailsResolved, 0);
+    assert.equal(live.liveFacts, 0);
+  });
+
+  await test("4Q.4.3 API HTML shell allows HTML fallback", async () => {
+    const urls: string[] = [];
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q43-shell-fb",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-shell-fb")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          urls.push(url);
+          if (url.includes("/api/public/lotcards/lot/")) {
+            return {
+              ok: true,
+              url,
+              finalUrl: url,
+              status: 200,
+              contentType: "text/html",
+              bodyText: `<!doctype html><html ng-version="17"><app-root></app-root></html>`,
+              bytes: 70,
+              elapsedMs: 8,
+            };
+          }
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "text/html",
+            bodyText: `<html><body>Номер лота lot-shell-fb. Предмет торгов экскаватор. Организатор торгов ТУ. Начальная цена 1000000. Республика Дагестан, г. Махачкала. Лот опубликован до 2027 года и содержит достаточно текста для прохождения html-shell detector threshold in tests.</body></html>`,
+            bytes: 280,
+            elapsedMs: 9,
+          };
+        },
+      },
+    });
+    assert.ok(urls.some((u) => u.includes("/api/public/lotcards/lot/")));
+    assert.ok(urls.some((u) => u.includes("/new/public/lots/lot/") && !u.includes("/api/")));
+    assert.ok(live.detailResolutionAttempts >= 1);
+  });
+
+  await test("4Q.4.3 transport counts one actual HTTP attempt", async () => {
+    const budget = createOwnIdeaRunBudget();
+    const { runWithOwnIdeaBudget, totalExternalCalls } = await import("../src/lib/ckr-own-ideas/run-budget");
+    let requests = 0;
+    await runWithOwnIdeaBudget(budget, async () => {
+      await officialHttpFetch(
+        "https://torgi.gov.ru/new/api/public/lotcards/lot/lot-count-43",
+        { timeoutMs: 400 },
+        {
+          assertSafe: fakeSafe,
+          lookupAll: async () => [{ address: "203.0.113.10", family: 4 }],
+          requestOnce: async (url) => {
+            requests += 1;
+            return okJson(url.toString(), "lot-count-43");
+          },
+        },
+      );
+    });
+    assert.equal(requests, 1);
+    assert.equal(totalExternalCalls(budget), 1);
+    assert.equal(budget.resolutionExternalCalls, 1);
+  });
+
+  await test("4Q.4.3 global budget remains <=8 and extraction unchanged", async () => {
+    const live = await buildOwnIdeaCatalog({
+      userId: "4q43-extract",
+      budget: createOwnIdeaRunBudget(),
+      hooks: {
+        async search(q) {
+          if (q.plan.intent === "assets") return [serperTorgi("lot-ext-43")];
+          return [];
+        },
+        async fetchOfficial(url) {
+          return {
+            ok: true,
+            url,
+            finalUrl: url,
+            status: 200,
+            contentType: "application/json",
+            bodyText: torgiJson("lot-ext-43", { priceMin: 4_200_000 }),
+            bytes: 200,
+            elapsedMs: 10,
+          };
+        },
+      },
+    });
+    assert.ok((live.actualExternalHttpCalls ?? 0) <= 8);
+    const sig = live.catalog.signals.find((s) => s.officialId === "lot-ext-43");
+    assert.ok(sig);
+    assert.equal(sig?.claimKind, "FACT");
+    assert.ok(live.liveFacts >= 1);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.maxExternalCalls, 8);
+    assert.equal(CKR_OWN_IDEAS_BUDGETS.timeoutMs, 15_000);
+    assert.equal(CKR_OWN_IDEAS_FORBIDDEN.scheduler, false);
   });
 
   console.log(`${passed} passed, ${failed} failed`);
