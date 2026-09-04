@@ -523,7 +523,9 @@ export function applyOwnerAction(
     ...idea,
     ownerState: map.state,
     projectId: action === "create_project" ? projectId ?? idea.projectId : idea.projectId,
-    ownerLockedFields: Array.from(new Set([...idea.ownerLockedFields, "title", "essence"])),
+    ownerLockedFields: Array.from(
+      new Set([...idea.ownerLockedFields, "title", "essence", "economics", "rating"]),
+    ),
     updatedAt: at,
     events: [...idea.events, { id: randomUUID(), type: map.type, at, actor: "owner", note: map.note }],
   };

@@ -171,13 +171,17 @@ async function main() {
   await test("10. rediscovery keeps owner edits", () => {
     const catalog = tractorEarthworksCatalog();
     const first = runOwnIdeaBuilder({ catalog });
-    const locked = {
+    const withOwnerEdits = {
       ...first.ideas[0],
       title: "OWNER TITLE",
-      ownerLockedFields: ["title"],
+      economics: { ...first.ideas[0].economics, disclaimer: "OWNER DISCLAIMER" },
     };
+    const locked = applyOwnerAction(withOwnerEdits, "accept");
     const second = runOwnIdeaBuilder({ catalog, existing: [locked] });
     assert.equal(second.ideas[0].title, "OWNER TITLE");
+    assert.equal(second.ideas[0].economics.disclaimer, "OWNER DISCLAIMER");
+    assert.equal(second.ideas[0].ownerState, "ACCEPTED");
+    assert.equal(second.ideas[0].rating, locked.rating);
     assert.ok(second.ideas[0].events.some((e) => e.type === "rediscovery_updated"));
   });
 
@@ -185,6 +189,10 @@ async function main() {
     const { ideas } = runOwnIdeaBuilder({ catalog: tractorEarthworksCatalog() });
     const accepted = applyOwnerAction(ideas[0], "accept");
     assert.equal(accepted.ownerState, "ACCEPTED");
+    assert.ok(accepted.ownerLockedFields.includes("title"));
+    assert.ok(accepted.ownerLockedFields.includes("essence"));
+    assert.ok(accepted.ownerLockedFields.includes("economics"));
+    assert.ok(accepted.ownerLockedFields.includes("rating"));
     const rejected = applyOwnerAction(ideas[0], "reject");
     assert.equal(rejected.ownerState, "REJECTED");
     const proj = applyOwnerAction(ideas[0], "create_project", "proj-1");

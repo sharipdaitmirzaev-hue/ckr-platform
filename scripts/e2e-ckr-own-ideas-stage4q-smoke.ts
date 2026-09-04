@@ -46,6 +46,7 @@ function load(): Manifest | null {
 }
 
 async function cleanup(dryRun: boolean) {
+  assertCkrStagingTarget();
   const m = load();
   if (!m) {
     console.log("CLEANUP_SKIPPED_NO_MANIFEST");
@@ -61,6 +62,10 @@ async function cleanup(dryRun: boolean) {
   let residual = 0;
   for (const id of m.ideaIds) {
     if (await store.get(id)) residual += 1;
+  }
+  if (m.runId) {
+    const runStillThere = (await store.listRuns()).some((run) => run.runId === m.runId);
+    if (runStillThere) residual += 1;
   }
   console.log("RESIDUAL_SMOKE_ROWS", residual);
   if (residual !== 0) process.exit(1);
@@ -103,8 +108,16 @@ async function runSmoke() {
   if (!afterRestart || afterRestart.id !== built.ideas[0].id) {
     throw new Error("idea not visible after store recreate");
   }
+  const runAfterRestart = (await store2.listRuns()).find((run) => run.runId === built.metrics.runId);
+  if (!runAfterRestart || runAfterRestart.persistStatus !== "ok") {
+    throw new Error("run not visible after store recreate");
+  }
+  console.log("RESTART_PERSISTENCE PASS");
 
   const accepted = applyOwnerAction(afterRestart, "accept");
+  if (!accepted.ownerLockedFields.includes("economics") || !accepted.ownerLockedFields.includes("rating")) {
+    throw new Error("owner action did not lock economics/rating");
+  }
   await store2.upsert(accepted);
 
   const store3 = createSupabaseOwnIdeaStore(admin);
@@ -116,7 +129,10 @@ async function runSmoke() {
   const locked = {
     ...afterAction,
     title: "OWNER LOCKED TITLE",
-    ownerLockedFields: Array.from(new Set([...afterAction.ownerLockedFields, "title"])),
+    economics: { ...afterAction.economics, disclaimer: "OWNER LOCKED ECONOMICS" },
+    ownerLockedFields: Array.from(
+      new Set([...afterAction.ownerLockedFields, "title", "essence", "economics", "rating"]),
+    ),
   };
   await store3.upsert(locked);
   const existing = await store3.list();
@@ -133,11 +149,18 @@ async function runSmoke() {
   if (afterRediscovery.title !== "OWNER LOCKED TITLE") {
     throw new Error("owner lock lost after rediscovery/restart");
   }
+  if (afterRediscovery.economics.disclaimer !== "OWNER LOCKED ECONOMICS") {
+    throw new Error("economics lock lost after rediscovery/restart");
+  }
+  if (afterRediscovery.ownerState !== "ACCEPTED") {
+    throw new Error("owner state overwritten by rediscovery");
+  }
   if (!afterRediscovery.events.some((e) => e.type === "rediscovery_updated")) {
     throw new Error("rediscovery event missing");
   }
+  console.log("REDISCOVERY_PERSISTENCE PASS");
 
-  const last = await store4.lastRun();
+  const last = (await store4.listRuns()).find((run) => run.runId === built.metrics.runId);
   if (!last || last.persistStatus !== "ok") throw new Error("run metrics not persisted");
 
   const liveBudget = createOwnIdeaRunBudget();
