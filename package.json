@@ -11,6 +11,7 @@
     "test:ckr-action-loop-stage4p": "npx --yes tsx scripts/test-ckr-action-loop-stage4p.ts",
     "test:ckr-own-ideas-stage4q": "npx --yes tsx scripts/test-ckr-own-ideas-stage4q.ts",
     "diag:torgi-connectivity": "node scripts/diag-torgi-official-connectivity.mjs",
+    "diag:torgi-russian-tls-ca": "node scripts/diag-torgi-russian-tls-ca.mjs",
     "test:ckr-staging-guard": "npx --yes tsx scripts/test-ckr-staging-guard.ts",
     "ckr:assert-staging": "npx --yes tsx scripts/ckr-assert-staging-target.ts",
     "e2e:ckr-action-loop-stage4p-smoke": "npx --yes tsx scripts/e2e-ckr-action-loop-stage4p-smoke.ts",

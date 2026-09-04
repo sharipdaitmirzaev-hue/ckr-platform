@@ -1,0 +1,14 @@
+{
+  "instructionUrl": "https://www.gosuslugi.ru/crt",
+  "rootPemUrl": "https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt",
+  "subPemUrl": "https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt",
+  "rootSubject": "CN=Russian Trusted Root CA, O=The Ministry of Digital Development and Communications, C=RU",
+  "rootIssuer": "CN=Russian Trusted Root CA, O=The Ministry of Digital Development and Communications, C=RU",
+  "rootNotBefore": "2022-03-01T21:04:15.000Z",
+  "rootNotAfter": "2032-02-27T21:04:15.000Z",
+  "rootDerSha256": "d26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31",
+  "subSubject": "CN=Russian Trusted Sub CA, O=The Ministry of Digital Development and Communications, C=RU",
+  "subIssuer": "CN=Russian Trusted Root CA, O=The Ministry of Digital Development and Communications, C=RU",
+  "subDerSha256": "bbbde2103e790b999ec62bd03cf625a5a2e7c316e10afe6a490eedead8b3fd9b",
+  "note": "Fingerprints are SHA-256 of the certificate DER. Isolated --cacert test on 2026-09-04 did not complete the TLS handshake to torgi.gov.ru; OfficialHttpTransport was not given a custom CA."
+}
