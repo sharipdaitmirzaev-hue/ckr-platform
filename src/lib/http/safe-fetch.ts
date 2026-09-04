@@ -53,7 +53,13 @@ export type SafeFetchFailure = {
     | "bad_content_type"
     | "http_error"
     | "redirect_limit"
-    | "network";
+    | "network"
+    | "ipv4_connect_timeout"
+    | "ipv6_connect_timeout"
+    | "tls_handshake_timeout"
+    | "connect_refused"
+    | "headers_timeout"
+    | "body_timeout";
   status?: number | null;
   contentType?: string | null;
   finalUrl?: string | null;

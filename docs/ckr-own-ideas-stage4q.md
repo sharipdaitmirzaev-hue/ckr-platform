@@ -118,6 +118,21 @@ Run 4 (`c489e1f8-…`): `DETAIL_RESOLUTION_ATTEMPTS=2`, reserve сработал
 
 E2E: injected `fetchOfficial` — fetch/orchestration proof, не live torgi. Live read-only probe: DNS/TCP ок, TLS handshake timeout из cloud agent env.
 
+## Stage 4Q.4.3 official source connectivity
+
+Run 5 (`5ca5e57b-…`): 3 official `torgi_api` attempts → `CONNECT_TIMEOUT`, `OFFICIAL_DETAILS_RESOLVED=0`. Queue после fail работала. Budget 4Q.4.1 жив.
+
+4Q.4.3:
+
+- Search / quality / FACT / RunBudgetContext / `maxExternalCalls=8` / `timeoutMs=15000` не менялись.
+- Read-only `scripts/diag-torgi-official-connectivity.mjs` (`npm run diag:torgi-connectivity`): DNS A/AAAA, TCP/TLS IPv4/IPv6, curl -4/-6, Node default vs Node IPv4. Без body, без Supabase, без market run.
+- Live proof (cloud agent, unrestricted egress): DNS A=`95.167.245.141`, AAAA нет, TCP IPv4 ок (~2ms), TLS handshake hang (curl + openssl + Node). IPv6 не причина. Это не Node/Undici-only.
+- `OfficialHttpTransport` только для OfficialDetailFetcher: `ipv4_preferred`, phase timeouts (connect / TLS / headers / body), тот же budget.
+- Proxy/VPN не внедрялся: прямое TCP есть, ломается TLS на пути к torgi.gov.ru.
+- HTML fallback по-прежнему только `HTML_SHELL` / `UNSUPPORTED_CONTENT_TYPE`, не на connect/TLS fail.
+- Diagnostics: `IPV4_CONNECT_TIMEOUT` / `IPV6_CONNECT_TIMEOUT` / `TLS_HANDSHAKE_TIMEOUT` / `CONNECT_REFUSED` / `HEADERS_TIMEOUT` / `BODY_TIMEOUT`.
+- Шестой production market run не запускался.
+
 ## Запреты
 
 Нет auto-publish, outreach, заявок, Matching edges, Scheduler.

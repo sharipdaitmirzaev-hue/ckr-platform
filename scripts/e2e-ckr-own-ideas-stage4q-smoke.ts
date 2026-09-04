@@ -513,6 +513,72 @@ async function runSmoke() {
     LIVE_FACTS: fetchProof.liveFacts,
   });
 
+  const transportSrc = readFileSync(resolve("src/lib/http/official-http-transport.ts"), "utf8");
+  const fetchSrc = readFileSync(resolve("src/lib/ckr-own-ideas/official-detail-fetch.ts"), "utf8");
+  if (!transportSrc.includes("ipv4_preferred") || !fetchSrc.includes("officialHttpFetch")) {
+    throw new Error("4Q.4.3 official HTTP transport not wired");
+  }
+  if (!fetchSrc.includes("shouldRetryOfficialHtmlFallback")) {
+    throw new Error("4Q.4.3 HTML fallback gate missing");
+  }
+  const connectUrls: string[] = [];
+  const connectProof = await buildOwnIdeaCatalog({
+    userId: "e2e-owner-4q43",
+    budget: createOwnIdeaRunBudget(),
+    hooks: {
+      async search(q) {
+        if (q.plan.intent !== "assets") return [];
+        return [
+          {
+            id: "e2e-dead-lot",
+            title: "лот tls snippet",
+            isStub: false,
+            isCatalogSource: false,
+            dataChannel: "SERPER_DISCOVERY",
+            pageType: "DETAIL",
+            canonicalUrl: "https://torgi.gov.ru/new/public/lots/lot/e2e-dead-lot",
+            opportunityType: "AUCTION_ASSET",
+            sourceObjectId: "e2e-dead-lot",
+            sources: [
+              {
+                id: "e2e-dead",
+                category: "AUCTIONS",
+                name: "serper",
+                url: "https://torgi.gov.ru/new/public/lots/lot/e2e-dead-lot",
+                isStub: false,
+              },
+            ],
+          } as never,
+        ];
+      },
+      async fetchOfficial(url) {
+        connectUrls.push(url);
+        return {
+          ok: false,
+          error: "tls timeout",
+          code: "tls_handshake_timeout",
+          elapsedMs: 20,
+          finalUrl: url,
+        };
+      },
+    },
+  });
+  if (!connectUrls.every((u) => u.includes("/api/public/lotcards/lot/"))) {
+    throw new Error("connect failure attempted HTML fallback");
+  }
+  if (connectProof.officialDetailsResolved !== 0) {
+    throw new Error("connect failure must not resolve official detail");
+  }
+  if ((connectProof.actualExternalHttpCalls ?? 0) > 8) {
+    throw new Error("4Q.4.3 transport proof exceeded maxExternalCalls");
+  }
+  console.log("OFFICIAL_TRANSPORT_PROOF", {
+    note: "injected tls_handshake_timeout — HTML fallback not attempted",
+    FETCH_URLS: connectUrls.length,
+    OFFICIAL_DETAILS_RESOLVED: connectProof.officialDetailsResolved,
+    TOTAL_EXTERNAL_CALLS: connectProof.totalExternalCalls,
+  });
+
   for (const idea of liveBuilt.ideas) await store4.upsert(idea);
   await store4.saveRun({
     ...liveBuilt.metrics,

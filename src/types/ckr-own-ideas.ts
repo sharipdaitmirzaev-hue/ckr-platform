@@ -287,14 +287,20 @@ export type OwnIdeaRunMetrics = {
   candidateDiagnostics?: OwnIdeaCandidateDiagnostic[];
 };
 
-/** Stage 4Q.4.2 — fetch failure category. Not a FACT. */
+/** Stage 4Q.4.2 / 4Q.4.3 — fetch failure category. Not a FACT. */
 export const OWN_IDEA_FETCH_ERROR_CATEGORIES = [
   "HTTP_4XX",
   "HTTP_5XX",
   "REDIRECT_ERROR",
   "DNS_ERROR",
   "TLS_ERROR",
+  "TLS_HANDSHAKE_TIMEOUT",
   "CONNECT_TIMEOUT",
+  "IPV4_CONNECT_TIMEOUT",
+  "IPV6_CONNECT_TIMEOUT",
+  "CONNECT_REFUSED",
+  "HEADERS_TIMEOUT",
+  "BODY_TIMEOUT",
   "RESPONSE_TIMEOUT",
   "UNSUPPORTED_CONTENT_TYPE",
   "HTML_SHELL",
